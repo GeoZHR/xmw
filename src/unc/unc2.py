@@ -15,7 +15,6 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from hv import *
 from unc import *
 from util import *
 
@@ -28,8 +27,8 @@ d1,d2= 0.004, 0.025
 f1,f2= 110.0*d1,10.0*d2
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
-pngDir = "../../../png/"
-seismicDir = "../../data/unc/"
+pngDir = "../../../png/unc/"
+seismicDir = "../../../data/unc/"
 #############################################################################
 
 def main(args):
@@ -54,7 +53,7 @@ def main(args):
   plot(p,"slopem",cbi=0.2,cbar="Slope",cmap=jet,cmin=min(p),cmax=max(p),interp=False)
   
   #plotVectors2(f,u1,u2,u1m,u2m,"normalVectors")
-  #flatten(f,us,ut2,u1m,u2m)
+  flatten(f,us,ut2,u1m,u2m)
 def unc(f,ut1,ut2,us):
   u  = zerofloat(n1,n2)
   uc1 = zerofloat(n1,n2)
@@ -92,7 +91,7 @@ def unweightedLof(f,u1,u2):
   el = pow(el,8.0)
   p2 = div(u2,u1)
   p2 = mul(p2,-1.0)
-  fl2 = Flattener2()
+  fl2 = Flattener2unc()
   mp = fl2.getMappingsFromSlopes(s1,s2,p2,el,el,w1)
   g = mp.flatten(f)
   rgt = mp.u1
@@ -127,17 +126,20 @@ def flatten(f,us,ut,u1,u2):
   el = zerofloat(n1,n2)
   lof = LocalOrientFilter(2.0,8.0)
   lof.applyForNormalLinear(f,u1,u2,el)
-  fl2 = Flattener2()
-  fl2.setSmoothings(75,75)
-  el = pow(el,9.0)
+  fl2 = Flattener2unc()
+  fl2.setSmoothings(12,12)
+  el = pow(el,2.0)
   w1 = zerofloat(n1,n2)
   #add(w1,0.01,w1)
   #mul(w1,el,w1)
-  wp1 = pow(ut,80)
+  wp1 = pow(ut,20)
+  fl2.setWeights(1.0,0.1,wp1)
+  plot(wp1,"wp1",cmap=jet)
   mul(w1,wp1,w1)
-  mul(el,wp1,wp1)
+  #mul(el,wp1,wp1)
   plot(wp1,"w1",cmap=jet)
-  mp = fl2.getMappingsFromSlopes(s1,s2,p,wp1,wp1,w1)
+  wp2 = copy(wp1)
+  mp = fl2.getMappingsFromSlopes(s1,s2,p,wp1,wp2,w1)
   ft = mp.flatten(f)
   rgt = mp.u1
   plot(f,"input",cbi=1.0,cbar="Amplitude",cmap=gray,cmin=-2.0,cmax=2.0,interp=False)

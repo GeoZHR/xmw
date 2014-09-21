@@ -4,10 +4,10 @@ This program and accompanying materials are made available under the terms of
 the Common Public License - v1.0, which accompanies this distribution, and is 
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
-package hv;
+package uff;
 
+import vec.*;
 import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.interp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -64,9 +64,6 @@ public class Flattener3C {
     
     /** Array of sampled x1(u1,u2,u3). */
     public float[][][] x1;
-
-    /** Array of sampled sf(x1,x2,x3). */
-    public float[][][] sf;
 
     /**
      * Uses these mappings to flatten the specified image.
@@ -132,14 +129,13 @@ public class Flattener3C {
 
     private Mappings(
       Sampling s1, Sampling s2, Sampling s3, 
-      float[][][] u1, float[][][] x1, float[][][] r) 
+      float[][][] u1, float[][][] x1) 
     {
       this.s1 = s1;
       this.s2 = s2;
       this.s3 = s3;
       this.u1 = u1;
       this.x1 = x1;
-      this.sf = r ;
     }
 
     private float[][][] apply(final float[][][] ux, final float[][][] f) {
@@ -148,7 +144,7 @@ public class Flattener3C {
       final int n3 = s3.getCount();
       final double d1 = s1.getDelta();
       final double f1 = s1.getFirst();
-      final SincInterpolator si = new SincInterpolator();
+      final SincInterp si = new SincInterp();
       final float[][][] g = new float[n3][n2][n1];
       Parallel.loop(n3,new Parallel.LoopInt() {
       public void compute(int i3) {
@@ -157,23 +153,6 @@ public class Flattener3C {
       }});
       return g;
     }
-  }
-
-  /**
-   * Sets the relative weight of the PDE dr(x1,x2)/dx1 = 0.
-   * Increasing this weight will cause shifts r(x1,x2) and s(u1,u2) to vary
-   * more slowly with vertical coordinates x1 and u1, respectively. A weight
-   * of 1.0 will cause this equation to get as much weight as other PDEs that
-   * cause contours of constant u1 = u1(x1,x2) to be aligned with coherent
-   * planar image features.
-   * @param w1 the weight.
-   */
-  public void setWeight1(double w1) {
-    _weight1 = (float)w1;
-  }
-  
-  public void setScale(double sc) {
-    _scale = (float)sc;
   }
 
   /**
@@ -206,57 +185,16 @@ public class Flattener3C {
    * @param wp array of weights for slopes.
    * @param ws array of weights for smoothings.
    */
-  public Mappings getMappingsFromSlopes(
-    Sampling s1, Sampling s2, Sampling s3,
-    float[][][] p2, float[][][] p3, float[][][] wp, float[][][] ws, 
-    float[][] rd, float[][] k1, float[][] k2, float[][] k3) 
+  public Mappings getMappingsFromShifts(
+    Sampling s1, Sampling s2, Sampling s3, float[][][] r)
   {
     // Sampling parameters.
     final int n1 = s1.getCount();
     final int n2 = s2.getCount();
     final int n3 = s3.getCount();
     float d1 = (float)s1.getDelta();
-    float d2 = (float)s2.getDelta();
-    float d3 = (float)s3.getDelta();
     float f1 = (float)s1.getFirst();
-    int nc = k1.length;
-    int[][] k1a = new int[nc][];
-    int[][] k2a = new int[nc][];
-    int[][] k3a = new int[nc][];
-    for (int ic=0; ic<nc; ++ic) {
-      int np = k1[ic].length;
-      k1a[ic] = new int[np];
-      k2a[ic] = new int[np];
-      k3a[ic] = new int[np];
-      for (int ip=0; ip<np; ++ip) {
-        k1a[ic][ip] = (int)k1[ic][ip];
-        k2a[ic][ip] = (int)k2[ic][ip];
-        k3a[ic][ip] = (int)k3[ic][ip];
-      }
-    }
-    // If necessary, convert units for slopes to samples per sample.
-    if (d1!=d2)
-      p2 = mul(d2/d1,p2);
-    if (d1!=d3)
-      p3 = mul(d3/d1,p3);
-
-    // Compute shifts r(x1,x2,x3), in samples.
-    float[][][] b = new float[n3][n2][n1]; // right-hand side
-    float[][][] r = new float[n3][n2][n1]; // shifts, in samples
-    initializeShifts(rd,k1a,k2a,k3a,r); // initial shifts to satisfy constraints
-    VecArrayFloat3 vb = new VecArrayFloat3(b);
-    VecArrayFloat3 vr = new VecArrayFloat3(r);
-    setWeightsForSmoothing(wp);
-    setWeightsForSmoothing(ws);
-    A3 a3 = new A3(_scale,_weight1,wp,p2,p3);
-    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,ws,k1a,k2a,k3a);
-    //testSpd("a2",n1,n2,a2);
-    //testSpd("m2",n1,n2,m2);
-    CgSolver cs = new CgSolver(_small,_niter);
-    makeRhs(wp,p2,p3,b);
-    cs.solve(a3,m3,vb,vr);
-    //checkShifts(k1a,k2a,k3a,r);
-    cleanShifts(r);
+    
     // Compute u1(x1,x2,x3).
     final float[][][] u1 = r;
     for (int i3=0; i3<n3; ++i3) {
@@ -269,28 +207,122 @@ public class Flattener3C {
     }
 
     // Compute x1(u1,u2).
-    final float[][][] x1 = b;
+    final float[][][] x1 = new float[n3][n2][n1];
     final InverseInterpolator ii = new InverseInterpolator(s1,s1);
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2) 
         ii.invert(u1[i3][i2],x1[i3][i2]);
     }});
-    System.out.println("minX1"+min(x1));
-    System.out.println("maxX1"+max(x1));
 
-    return new Mappings(s1,s2,s3,u1,x1,r);
+    return new Mappings(s1,s2,s3,u1,x1);
   }
 
-  ///////////////////////////////////////////////////////////////////////////
-  // private
-  private float _scale = 0.0f;    // scale the curvature term
-  private float _weight1 = 0.01f; // weight for dr/d1 = 0 equation
-  private float _sigma1 = 4.0f; // precon smoothing extent for 1st dim
-  private float _sigma2 = 4.0f; // precon smoothing extent for 2nd dim
-  private float _sigma3 = 4.0f; // precon smoothing extent for 3rd dim
-  private float _small = 0.01f; // stop CG iterations if residuals small
-  private int _niter = 1000; // maximum number of CG iterations
+  public void computeShifts(
+    float[][][] p2, float[][][] p3, float[][][] wp, 
+    float[][][] cs, float[][][] r) 
+  {
+    int n3 = p2.length;
+    int n2 = p2[0].length;
+    int n1 = p2[0][0].length;
+    float[][][] b = new float[n3][n2][n1]; // right-hand side
+    initializeShifts(cs,r); // initial shifts to satisfy constraints
+    VecArrayFloat3 vb = new VecArrayFloat3(b);
+    VecArrayFloat3 vr = new VecArrayFloat3(r);
+    //float[][][] w1 = setWeightsFromUnconformities(wp,uc);
+    float[][][] ws = setWeightsForSmoothing(wp);
+    A3 a3 = new A3(ws,p2,p3);
+    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,ws,cs[0],cs[1],cs[2]);
+    CgSolver cg = new CgSolver(_small,_niter);
+    makeRhs(wp,p2,p3,b);
+    cg.solve(a3,m3,vb,vr);
+    //checkShifts(cs[0],cs[1],cs[2],r);
+    cleanShifts(r);
+  }
+
+  private float[][][] setWeightsFromUnconformities(float[][][] wp, int[][][] uc) {
+    int n3 = wp.length;
+    int n2 = wp[0].length;
+    int n1 = wp[0][0].length;
+    if (uc==null) {
+      return fillfloat(0.01f,n1,n2,n3);
+    } else {
+      int nc = uc[0].length;
+      float[][][] w1 = fillfloat(0.06f,n1,n2,n3);
+      float[][][] mk = fillfloat(0.00f,n1,n2,n3);
+      for (int ic=0; ic<nc; ++ic) {
+        int np = uc[0][ic].length;
+        for (int ip=0; ip<np; ++ip) {
+          int i1 = uc[0][ic][ip];
+          int i2 = uc[1][ic][ip];
+          int i3 = uc[2][ic][ip];
+          wp[i3][i2][i1] = 0.0005f;
+          w1[i3][i2][i1] = 0.0001f;
+          mk[i3][i2][i1] = 1.0000f;
+          int i1m = i1-1;
+          int i1p = i1+1;
+          if(i1m>=0) {
+            wp[i3][i2][i1m] = 0.0025f;
+            w1[i3][i2][i1m] = 0.0005f;
+            mk[i3][i2][i1m] = 1.0000f;
+          }
+          if(i1p<n1) {
+            wp[i3][i2][i1p] = 0.0025f;
+            w1[i3][i2][i1p] = 0.0005f;
+            mk[i3][i2][i1p] = 1.0000f;
+          }
+        }
+      }
+      extend(wp,w1,mk);
+      return w1;
+    }
+  }
+
+  private void extend(float[][] wp, float[][] w1, float[][] mk) {
+    int n2 = wp.length;
+    int n1 = wp[0].length;
+    for (int i2=2; i2<n2-2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float mki = mk[i2][i1];
+        float wpi = wp[i2][i1];
+        float w1i = w1[i2][i1];
+        if(mki==1.0f){
+          wp[i2-1][i1] = wpi; 
+          wp[i2-2][i1] = wpi; 
+          wp[i2+1][i1] = wpi; 
+          wp[i2+2][i1] = wpi; 
+          w1[i2-1][i1] = w1i;
+          w1[i2-2][i1] = w1i;
+          w1[i2+1][i1] = w1i;
+          w1[i2+2][i1] = w1i;
+        }
+      }
+    }
+  }
+
+  private void extend(float[][][] wp, float[][][] w1, float[][][] mk) {
+    int n3 = wp.length;
+    int n2 = wp[0].length;
+    int n1 = wp[0][0].length;
+    for (int i3=0; i3<n3; ++i3) 
+      extend(wp[i3],w1[i3],mk[i3]);
+    float[][] wpi2  = new float[n3][n1];
+    float[][] w1i2  = new float[n3][n1];
+    float[][] mki2  = new float[n3][n1];
+    for (int i2=0; i2<n2; ++i2) { 
+      for (int i3=0; i3<n3; ++i3) {
+        wpi2[i3]  = wp[i3][i2];
+        w1i2[i3]  = w1[i3][i2];
+        mki2[i3]  = mk[i3][i2];
+      }
+      extend(wpi2,w1i2,mki2);
+      for (int i3=0; i3<n3; ++i3) { 
+        wp[i3][i2] = wpi2[i3];
+        w1[i3][i2] = w1i2[i3];
+      }
+    }
+  }
+
 
   private float[][][] setWeightsForSmoothing(float[][][] wp) {
     int n3 = wp.length;
@@ -301,8 +333,8 @@ public class Flattener3C {
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=0; i1<n1; ++i1) {
           float wpi = wp[i3][i2][i1];
-          if (wpi<0.00005f) {
-            ws[i3][i2][i1] = 0.00005f;
+          if (wpi<0.0005f) {
+            ws[i3][i2][i1] = 0.0005f;
           }
         }
       }
@@ -310,17 +342,21 @@ public class Flattener3C {
     return ws;
   }
 
+  ///////////////////////////////////////////////////////////////////////////
+  // private
+  private float _sigma1 = 4.0f; // precon smoothing extent for 1st dim
+  private float _sigma2 = 4.0f; // precon smoothing extent for 2nd dim
+  private float _sigma3 = 4.0f; // precon smoothing extent for 3rd dim
+  private float _small = 0.01f; // stop CG iterations if residuals small
+  private int _niter = 1000; // maximum number of CG iterations
 
   // Conjugate-gradient operators.
   private static class A3 implements CgSolver.A {
-    A3(float sc, float w1, float[][][] wp, 
-       float[][][] p2, float[][][] p3) 
+    A3(float[][][] wp, float[][][] p2, float[][][] p3) 
     {
       _wp = wp;
       _p2 = p2;
       _p3 = p3;
-      _sc = sc;
-      _w1 = w1;
       //testSpd();
     }
     public void apply(Vec vx, Vec vy) {
@@ -329,20 +365,9 @@ public class Flattener3C {
       float[][][] x = v3x.getArray();
       float[][][] y = v3y.getArray();
       float[][][] z = copy(x);
-      float[][][] y1 = copy(x);
-      float[][][] y2 = copy(x);
-      VecArrayFloat3 v3yy = new VecArrayFloat3(y2);
-      v3yy.zero();
       zero(y);
-      applyLhs(_w1,_wp,_p2,_p3,z,y);
-      if (_sc>0.0f) {
-        applyLaplace(_wp,z ,y1);
-        applyLaplace(_wp,y1,y2);
-        v3y.add(1.f,v3yy,_sc);
-      }
+      applyLhs(_wp,_p2,_p3,z,y);
     }
-    private float _sc;
-    private float _w1;
     private float[][][] _wp;
     private float[][][] _p2;
     private float[][][] _p3;
@@ -373,13 +398,13 @@ public class Flattener3C {
 
   // Preconditioner; includes smoothers and (optional) constraints.
   private static class M3 implements CgSolver.A {
-    M3(float sigma1, float sigma2, float sigma3, float[][][] wp, 
-       int[][] k1, int[][] k2, int[][] k3) 
+    M3(float sigma1, float sigma2, float sigma3, 
+       float[][][] wp, float[][] k1, float[][] k2, float[][] k3) 
     {
+      _wp = wp;
       _sigma1 = sigma1;
       _sigma2 = sigma2;
       _sigma3 = sigma3;
-      _wp = wp;
       if (k1!=null && k2!=null && k3!=null) {
         _k1 = copy(k1);
         _k2 = copy(k2);
@@ -404,47 +429,67 @@ public class Flattener3C {
     }
     private float _sigma1,_sigma2,_sigma3;
     private float[][][] _wp;
-    private int[][] _k1,_k2,_k3;
+    private float[][] _k1,_k2,_k3;
   }
 
-  public static void initializeShifts
-    (float[][] rd, int[][] k1, int[][] k2, 
-     int[][] k3, float[][][] r) 
-  {
-    zero(r);
-    if (k1!=null && k2!=null &&k3!=null) {
-      int nc = k1.length;
+  public static void initializeShifts(float[][][] cs, float[][][] r) {
+    if (cs!=null) {
+      int nc = cs[0].length;
       for (int ic=0; ic<nc; ++ic) {
-        int nk = k1[ic].length;
+        int nk = cs[0][ic].length;
+        float sum = 0.0f;
+        for (int ik=0; ik<nk; ++ik) {
+          sum += cs[0][ic][ik];
+        }
+        float avg = sum/(float)nk;
+        for (int ik=0; ik<nk; ++ik) {
+          int i1 = (int)cs[0][ic][ik];
+          int i2 = (int)cs[1][ic][ik];
+          int i3 = (int)cs[2][ic][ik];
+          r[i3][i2][i1] = avg-(float)i1;
+        }
+
+      }
+    }
+  }
+
+
+  /*
+  public static void initializeShifts(float[][][] cs, float[][][] r) {
+    if (cs!=null) {
+      int nc = cs[0].length;
+      for (int ic=0; ic<nc; ++ic) {
+        int nk = cs[0][ic].length;
         int ik = 0;
-        int i1 = k1[ic][ik];
-        int i2 = k2[ic][ik];
-        int i3 = k3[ic][ik];
-        float i1f = i1 + rd[ic][ik]; 
+        int i1 = (int)cs[0][ic][ik];
+        int i2 = (int)cs[1][ic][ik];
+        int i3 = (int)cs[2][ic][ik];
+        float i1f = (float)i1 + cs[3][ic][ik]; 
         r[i3][i2][i1] = i1-i1f;
         for (ik=1; ik<nk; ++ik) {
           float ip = i1f;
           float rp = r[i3][i2][i1];
-          i1  = k1[ic][ik];
-          i2  = k2[ic][ik];
-          i3  = k3[ic][ik];
-          i1f = i1+rd[ic][ik];
+          i1  = (int)cs[0][ic][ik];
+          i2  = (int)cs[1][ic][ik];
+          i3  = (int)cs[2][ic][ik];
+          i1f = (float)i1+cs[3][ic][ik];
           r[i3][i2][i1] = rp+ip-i1f;
         }
       }
     }
   }
+  */
 
-  public static void checkShifts(int[][] k1, int[][] k2, int[][] k3, float[][][] r) {
+  public static void checkShifts(float[][] k1, float[][] k2, float[][] k3, float[][][] r) {
     if (k1!=null && k2!=null &&k3!=null) {
       int nc = k1.length;
       for (int ic=0; ic<nc; ++ic) {
         trace("ic="+ic);
         int nk = k1[ic].length;
         for (int ik=0; ik<nk; ++ik) {
-          int i1 = k1[ic][ik];
-          int i2 = k2[ic][ik];
-          int i3 = k3[ic][ik];
+          int i1 = (int)k1[ic][ik];
+          int i2 = (int)k2[ic][ik];
+          int i3 = (int)k3[ic][ik];
           trace("  i1="+i1+" i2="+i2+" i3="+i3+" r="+r[i3][i2][i1]+" u="+(i1+r[i3][i2][i1]));
           //assert r[i2][i1]==rp+ip-i1:"shifts r satisfy constraints";
         }
@@ -452,23 +497,25 @@ public class Flattener3C {
     }
   }
 
-  public static void constrain(int[][] k1, int[][] k2, int[][] k3, float[][][] x) {
+  public static void constrain(
+    float[][] k1, float[][] k2, float[][] k3, float[][][] x) 
+  {
     if (k1!=null && k2!=null &&k3!=null) {
       int nc = k1.length;
       for (int ic=0; ic<nc; ++ic) {
         int nk = k1[ic].length;
         float sum = 0.0f;
         for (int ik=0; ik<nk; ++ik) {
-          int i1 = k1[ic][ik];
-          int i2 = k2[ic][ik];
-          int i3 = k3[ic][ik];
+          int i1 = (int)k1[ic][ik];
+          int i2 = (int)k2[ic][ik];
+          int i3 = (int)k3[ic][ik];
           sum += x[i3][i2][i1];
         }
         float avg = sum/(float)nk;
         for (int ik=0; ik<nk; ++ik) {
-          int i1 = k1[ic][ik];
-          int i2 = k2[ic][ik];
-          int i3 = k3[ic][ik];
+          int i1 = (int)k1[ic][ik];
+          int i2 = (int)k2[ic][ik];
+          int i3 = (int)k3[ic][ik];
           x[i3][i2][i1] = avg;
         }
       }
@@ -476,16 +523,6 @@ public class Flattener3C {
   }
 
   // Smoothing for dimension 1.
-  private static void smooth1(float sigma, float[][][] x) {
-    if (sigma<=0.0f)
-      return;
-    RecursiveExponentialFilter.Edges edges =
-      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
-    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
-    ref.setEdges(edges);
-    ref.apply1(x,x);
-  }
-  
   private static void smooth1(float sigma, float[][] s, float[][] x) {
     if (sigma<1.0f)
       return;
@@ -510,7 +547,6 @@ public class Flattener3C {
   }
   private static void smooth1(final float sigma, final float[][][] s, final float[][][] x) {
     final int n3 = x.length;
-    final int n2 = x[0].length;
     Parallel.loop(n3, new Parallel.LoopInt() {
     public void compute(int i3) {
       float[][] x3 = x[i3];
@@ -600,7 +636,7 @@ public class Flattener3C {
       for (int i2=1,i2m=0; i2<n2; ++i2,++i2m) {
         for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
           float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
-          if(wpi<0.01f) {wpi=0.01f;}
+          if(wpi<0.05f) {wpi=0.05f;}
           float p2i = p2[i3][i2][i1];
           float p3i = p3[i3][i2][i1];
           float b12 = wpi*p2i;
@@ -629,94 +665,28 @@ public class Flattener3C {
     }
   }
 
-  private static void applyLaplace(
-    final float[][][] wp, final float[][][]x, final float[][][] y)
-  {   
-    final int n3 = x.length; 
-    Parallel.loop(1,n3,2,new Parallel.LoopInt() { // i3 = 1, 3, 5, ...
-    public void compute(int i3) {
-      applyLaplaceSlice3(i3,wp,x,y);
-    }});
-    Parallel.loop(2,n3,2,new Parallel.LoopInt() { // i3 = 2, 4, 6, ...
-    public void compute(int i3) {
-      applyLaplaceSlice3(i3,wp,x,y);
-    }});
-  }
-  private static void applyLaplaceSlice3(
-    int i3, float[][][] wp, float[][][] x, float[][][] y) 
-  {
-    int n1 = x[0][0].length;
-    int n2 = x[0].length;
-    for (int i2=1; i2<n2; ++i2) {
-      float[] x00 = x[i3  ][i2  ];
-      float[] x01 = x[i3  ][i2-1];
-      float[] x10 = x[i3-1][i2  ];
-      float[] x11 = x[i3-1][i2-1];
-      float[] y00 = y[i3  ][i2  ];
-      float[] y01 = y[i3  ][i2-1];
-      float[] y10 = y[i3-1][i2  ];
-      float[] y11 = y[i3-1][i2-1];
-      for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
-        float d11 = 1.0f;
-        float d22 = 1.0f;
-        float d33 = 1.0f;
-        float xa = 0.0f;
-        float xb = 0.0f;
-        float xc = 0.0f;
-        float xd = 0.0f;
-        xa += x00[i1 ];
-        xd -= x00[i1m];
-        xb += x01[i1 ];
-        xc -= x01[i1m];
-        xc += x10[i1 ];
-        xb -= x10[i1m];
-        xd += x11[i1 ];
-        xa -= x11[i1m];
-        float x1 = 0.25f*(xa+xb+xc+xd);
-        float x2 = 0.25f*(xa-xb+xc-xd);
-        float x3 = 0.25f*(xa+xb-xc-xd);
-        float y1 = d11*x1;
-        float y2 = d22*x2;
-        float y3 = d33*x3;
-        float ya = 0.25f*(y1+y2+y3);
-        float yb = 0.25f*(y1-y2+y3);
-        float yc = 0.25f*(y1+y2-y3);
-        float yd = 0.25f*(y1-y2-y3);
-        y00[i1 ] += ya;
-        y00[i1m] -= yd;
-        y01[i1 ] += yb;
-        y01[i1m] -= yc;
-        y10[i1 ] += yc;
-        y10[i1m] -= yb;
-        y11[i1 ] += yd;
-        y11[i1m] -= ya;
-      }
-    }
-  }
-
   private static void applyLhs(
-    final float w1, final float[][][] wp, 
+    final float[][][] wp, 
     final float[][][] p2, final float[][][] p3,
     final float[][][] x, final float[][][] y) 
   {
     final int n3 = x.length;
     Parallel.loop(1,n3,2,new Parallel.LoopInt() { // i3 = 1, 3, 5, ...
     public void compute(int i3) {
-      applyLhsSlice3(i3,w1,wp,p2,p3,x,y);
+      applyLhsSlice3(i3,wp,p2,p3,x,y);
     }});
     Parallel.loop(2,n3,2,new Parallel.LoopInt() { // i3 = 2, 4, 6, ...
     public void compute(int i3) {
-      applyLhsSlice3(i3,w1,wp,p2,p3,x,y);
+      applyLhsSlice3(i3,wp,p2,p3,x,y);
     }});
   }
   private static void applyLhsSlice3(
-    int i3, float w1,
+    int i3, 
     float[][][] wp, float[][][] p2, float[][][] p3,
     float[][][] x, float[][][] y) 
   {
     int n1 = x[0][0].length;
     int n2 = x[0].length;
-    float w1s = w1*w1;
     for (int i2=1; i2<n2; ++i2) {
       float[] x00 = x[i3  ][i2  ];
       float[] x01 = x[i3  ][i2-1];
@@ -728,9 +698,12 @@ public class Flattener3C {
       float[] y11 = y[i3-1][i2-1];
       for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
         float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
-        if(wpi<0.01f) {wpi=0.01f;}
+        if(wpi<0.05f) {wpi=0.05f;}
+        float w1i = 0.02f;
+        //float w1i = w1[i3][i2][i1];
         float p2i = p2[i3][i2][i1];
         float p3i = p3[i3][i2][i1];
+        float w1s = w1i*w1i;
         float wps = wpi*wpi;
         float p2s = p2i*p2i;
         float p3s = p3i*p3i;

@@ -16,7 +16,7 @@ from hv import *
 from fault import *
 from util import *
 
-seismicDir = "../../data/"
+seismicDir = "../../../data/"
 ffile = "tp73"
 s1 = Sampling(251,1.0,0.0)
 s2 = Sampling(357,1.0,0.0)

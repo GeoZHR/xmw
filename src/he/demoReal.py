@@ -18,8 +18,8 @@ from he import *
 from util import *
 
 #pngDir = None
-pngDir = "../../png/"
-seismicDir = "../../data/f3d/"
+pngDir = "../../../png/"
+seismicDir = "../../../data/f3d/"
 s1 = Sampling(155,1.0,0)
 s2 = Sampling(951,1.0,0)
 s3 = Sampling(550,1.0,0)

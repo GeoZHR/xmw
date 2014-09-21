@@ -16,7 +16,7 @@ from hv import *
 from fault import *
 from util import *
 
-seismicDir = "../../data/"
+seismicDir = "../../../data/"
 ffile = "tp73"
 s1 = Sampling(251,1.0,0.0)
 s2 = Sampling(357,1.0,0.0)
@@ -67,8 +67,11 @@ def flatten():
     h = fm.unflatten(g)
     s = fm.getShiftsS()
     u = fm.u1
+    x = fm.x1
     mul(u,sp1.delta,u)
     add(u,sp1.first,u)
+    mul(x,sp1.delta,x)
+    add(x,sp1.first,x)
     if cs:
       nc = len(cs[0])
       for ic in range(nc):
@@ -78,6 +81,7 @@ def flatten():
           i2 = cs[1][ic][ip]
           cs[0][ic][ip]=i1+s[i2][i1]
     plot(sp1,sp2,u,cmap=jet,clab="RGT",vlabel="Time (s)",hlabel="Inline (km)",png="rgt"+psuffix)
+    plot(sp1,sp2,x,cmap=jet,clab="Time (s)",vlabel="RGT",hlabel="Inline (km)",png="hv"+psuffix)
     plot(sp1,sp2,f,u=u,clab="RGT",vlabel="Time (s)",hlabel="Inline (km)",png="hs"+psuffix)
     plot(sp1,sp2,g,c=cs,clab="Amplitude",vlabel="RGT",hlabel="Inline (km)",png="g"+psuffix)
     #plot(sp1,sp2,h,title="Unflattened"+tsuffix,png="h"+psuffix)
@@ -113,7 +117,7 @@ def gain(x):
 gray = ColorMap.GRAY
 jet = ColorMap.JET
 pngDir = None
-pngDir = "../../png/hv/2d/"
+pngDir = "../../../png/hv/2d/"
 def plot(s1,s2,x,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=None,
   cmin=0,cmax=0,title=None,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)

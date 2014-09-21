@@ -25,7 +25,8 @@ repositories.mavenCentral() // for Scala jars
 dependencies {
   compile fileTree('../jtk/build/libs') // for edu_mines_jtk.jar
   compile fileTree('../jtk/libs') // jars provided with the Mines JTK
-  compile fileTree('../idh/bench/build/libs') // jars provided with the Mines JTK
-  compile fileTree('../idh/bench/libs') // jars used in research, not in the Mines JTK
+  compile fileTree('../idh/bench/build/libs') // for idh
+  compile fileTree('../idh/bench/libs') // for idh.jar
+  compile fileTree('../ipf/build/libs') // for dave_ipf.jar
   compile 'org.scala-lang:scala-library:2.10.+' // contains Scala jars
 }
