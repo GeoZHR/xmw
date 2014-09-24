@@ -283,7 +283,6 @@ def goUnfault():
 def goFlatten():
   gx = readImage(gxfile)
   fi = readImage(fifile)
-  '''
   gsx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 4.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gsx)
@@ -294,6 +293,7 @@ def goFlatten():
   ws = pow(ep,8.0)
   sh = fillfloat(0.0,n1,n2,n3)
   cs = cfs.getWeightsAndConstraints(ws)
+  '''
   flc = Flattener3C()
   flc.setSmoothings(12.0,12.0);
   flc.setIterations(0.01,200);
