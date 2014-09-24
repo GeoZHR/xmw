@@ -8,7 +8,7 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "/Users/xinwu/Home/research/data/seis/sch/dat/"
+_datdir = "../../../data/seis/sch/dat/"
 
 #############################################################################
 # Setup
