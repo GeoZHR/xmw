@@ -18,6 +18,7 @@ epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 flfile  = "fl" # fault likelihood
+fifile  = "fi" # flattened image
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
@@ -281,6 +282,8 @@ def goUnfault():
   """
 def goFlatten():
   gx = readImage(gxfile)
+  fi = readImage(fifile)
+  '''
   gsx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 4.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gsx)
@@ -298,8 +301,9 @@ def goFlatten():
   fm = flc.getMappingsFromShifts(s1,s2,s3,sh)
   gf = fm.flatten(gx)
   plot3(ws,clab="Weights",png="ws")
+  '''
   plot3(gx,clab="Amplitude",png="gx")
-  plot3(gf,clab="Amplitude",png="gf")
+  plot3(fi,clab="Amplitude",png="fi")
 
 
 #############################################################################

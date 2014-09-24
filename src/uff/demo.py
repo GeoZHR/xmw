@@ -60,8 +60,8 @@ def main(args):
   goSmooth()
   goSkin()
   goSlip()
-  goFlatten()
   '''
+  goFlatten()
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -247,10 +247,13 @@ def goSlip():
 def goFlatten():
   gx = readImage(gxfile)
   gsx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 4.0,1.0,1.0,5.0
+  sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gsx)
   skins = readSkins(fskbase)
   wse,cse=1,1
+  #p = zerofloat(n1,n2,n3)
+  #q = zerofloat(n1,n2,n3)
+  #cfs = ConstraintsFromSkins(skins,wse,cse,p,q,pow(ep,8.0))
   cfs = ConstraintsFromSkins(skins,wse,cse,p2,p3,pow(ep,8.0))
   #ws = fillfloat(1.0,n1,n2,n3)
   ws = pow(ep,8.0)

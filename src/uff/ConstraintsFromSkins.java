@@ -8,6 +8,8 @@ package uff;
 
 import ipf.*;
 import java.util.*;
+import edu.mines.jtk.dsp.Sampling;
+import edu.mines.jtk.dsp.SincInterpolator;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -49,6 +51,7 @@ public class ConstraintsFromSkins {
       for (FaultCell fc:fs) {
         float[] pi = fc.getX();
         float[] si = fc.getS();
+        float[] wi = fc.getW();
         float[] pp = add(pi,si);
         int pi1 = round(pi[0]);
         int pi2 = round(pi[1]);
@@ -74,7 +77,8 @@ public class ConstraintsFromSkins {
         float[][] sfp = subSurfer(pp,bp);
         float[][] ps = findControlPoint(pi,pp,bi,bp,sfi,sfp);
         */
-        float[][] ps = getControlPoints(pi,pp);
+        //float[][] ps = getControlPoints(pi,pp);
+        float[][] ps = getControlPoints(pi,pp,wi);
         if (ps==null){continue;}
         cl.add(ps);
       }
@@ -91,6 +95,7 @@ public class ConstraintsFromSkins {
       cs[1][ip][1] = ps[1][1];
       cs[2][ip][1] = ps[1][2];
     }
+    checkConstraints(cs);
     return cs;
   }
 
@@ -109,28 +114,89 @@ public class ConstraintsFromSkins {
   }
 
   private float[][] getControlPoints(float[] pi, float[] pp) {
-        int pi1 = round(pi[0]);
-        int pi2 = round(pi[1]);
-        int pi3 = round(pi[2]);
-        int pp1 = round(pp[0]);
-        int pp2 = round(pp[1]);
-        int pp3 = round(pp[2]);
-        if (pp2>pi2) {pp2 +=_cse;pi2 -=_cse;} 
-        else         {pp2 -=_cse;pi2 +=_cse;}
-        if (pp3>pi3) {pp3 +=_cse;pi3 -=_cse;} 
-        else         {pp3 -=_cse;pi3 +=_cse;}
-        if (pi1<0||pi1>=_n1) {return null;}
-        if (pp1<0||pp1>=_n1) {return null;}
-        if (pi2<0||pi2>=_n2) {return null;}
-        if (pp2<0||pp2>=_n2) {return null;}
-        if (pi3<0||pi3>=_n3) {return null;}
-        if (pp3<0||pp3>=_n3) {return null;}
-        if (pi1!=pp1 || pi2!=pp2 || pi3!=pp3) { 
-          float[] p1 = new float[]{pi1,pi2,pi3};
-          float[] p2 = new float[]{pp1,pp2,pp3};
-          return new float[][]{p1,p2};
-        } else {return null;}
+    int pi1 = round(pi[0]);
+    int pi2 = round(pi[1]);
+    int pi3 = round(pi[2]);
+    int pp1 = round(pp[0]);
+    int pp2 = round(pp[1]);
+    int pp3 = round(pp[2]);
+    if (pp2>pi2) {pp2 +=_cse;pi2 -=_cse;} 
+    else         {pp2 -=_cse;pi2 +=_cse;}
+    if (pp3>pi3) {pp3 +=_cse;pi3 -=_cse;} 
+    else         {pp3 -=_cse;pi3 +=_cse;}
+    if (pi1<0||pi1>=_n1) {return null;}
+    if (pp1<0||pp1>=_n1) {return null;}
+    if (pi2<0||pi2>=_n2) {return null;}
+    if (pp2<0||pp2>=_n2) {return null;}
+    if (pi3<0||pi3>=_n3) {return null;}
+    if (pp3<0||pp3>=_n3) {return null;}
+    if (pi1!=pp1 || pi2!=pp2 || pi3!=pp3) { 
+      float[] p1 = new float[]{pi1,pi2,pi3};
+      float[] p2 = new float[]{pp1,pp2,pp3};
+      return new float[][]{p1,p2};
+    } else {return null;}
   }
+
+  private void checkConstraints(float[][][] cs) {
+    int nc = cs[0].length;
+    int[][][] mk = new int[_n3][_n2][_n1];
+    int np = 0;
+    for (int ic=0; ic<nc; ic++) {
+      for (int ip=0; ip<=1; ++ip) {
+        int i1 = (int)cs[0][ic][ip];
+        int i2 = (int)cs[1][ic][ip];
+        int i3 = (int)cs[2][ic][ip];
+        mk[i3][i2][i1] +=1;
+        if(mk[i3][i2][i1]>1) {
+          np++;
+        }
+      }
+    }
+    System.out.println("np="+np);
+  }
+
+  private float[][] getControlPoints(float[] pi, float[] pp, float[] wi) {
+    float ds = 1.5f;
+    float w2 = wi[1];
+    float w3 = wi[2];
+    float sc = 1.0f/sqrt(w2*w2+w3*w3);
+    float dw2 = ds*w2*sc;
+    float dw3 = ds*w3*sc;
+    int pi1 = round(pi[0]);
+    int pp1 = round(pp[0]);
+    int pi2 = round(pi[1]-dw2);
+    int pi3 = round(pi[2]-dw3);
+    int pp2 = round(pp[1]+dw2);
+    int pp3 = round(pp[2]+dw3);
+    if(pi1<0){pi1=0;} if(pi1>=_n1){pi1=_n1-1;}
+    if(pi2<0){pi2=0;} if(pi2>=_n2){pi2=_n2-1;}
+    if(pi3<0){pi3=0;} if(pi3>=_n3){pi3=_n3-1;}
+    if(pp1<0){pp1=0;} if(pp1>=_n1){pp1=_n1-1;}
+    if(pp2<0){pp2=0;} if(pp2>=_n2){pp2=_n2-1;}
+    if(pp3<0){pp3=0;} if(pp3>=_n3){pp3=_n3-1;}
+    float p2i = _p[pi3][pi2][pi1]; 
+    float p3i = _q[pi3][pi2][pi1]; 
+    float p2p = _p[pp3][pp2][pp1]; 
+    float p3p = _q[pp3][pp2][pp1]; 
+    float di1 = dw2*p2i+dw3*p3i;
+    float dp1 = dw2*p2p+dw3*p3p;
+    pi1 = round(pi[0]-di1);
+    pp1 = round(pp[0]+dp1);
+    if (pi1<0||pi1>=_n1) {return null;}
+    if (pp1<0||pp1>=_n1) {return null;}
+    if (pi2<0||pi2>=_n2) {return null;}
+    if (pp2<0||pp2>=_n2) {return null;}
+    if (pi3<0||pi3>=_n3) {return null;}
+    if (pp3<0||pp3>=_n3) {return null;}
+    if (pi1==pp1 && pi2==pp2 && pi3==pp3) { 
+      return null;
+    } else {
+      float[] p1 = new float[]{pi1,pi2,pi3};
+      float[] p2 = new float[]{pp1,pp2,pp3};
+      return new float[][]{p1,p2};
+    }
+  }
+
 
   private float[][] subSurfer(float[] cp, int[] bs) {
     int k1 = round(cp[0]);
