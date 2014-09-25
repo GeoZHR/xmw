@@ -19,6 +19,7 @@ p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 flfile  = "fl" # fault likelihood
 fifile  = "fi" # flattened image
+wsfile  = "ws" # weight image for flattening
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
