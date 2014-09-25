@@ -262,7 +262,7 @@ def goFlatten():
   flc = Flattener3C()
   flc.setSmoothings(12.0,12.0);
   flc.setIterations(0.01,200);
-  flc.computeShifts(p2,p3,ws,cs,sh);
+  flc.computeShifts(p2,p3,ws,None,sh);
   fm = flc.getMappingsFromShifts(s1,s2,s3,sh)
   gf = fm.flatten(gx)
   plot3(ws,clab="Weights",png="ws")

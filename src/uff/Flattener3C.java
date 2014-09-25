@@ -232,7 +232,7 @@ public class Flattener3C {
     //float[][][] w1 = setWeightsFromUnconformities(wp,uc);
     float[][][] ws = setWeightsForSmoothing(wp);
     A3 a3 = new A3(ws,p2,p3);
-    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,ws,cs[0],cs[1],cs[2]);
+    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,ws,cs);
     CgSolver cg = new CgSolver(_small,_niter);
     makeRhs(wp,p2,p3,b);
     cg.solve(a3,m3,vb,vr);
@@ -399,16 +399,14 @@ public class Flattener3C {
   // Preconditioner; includes smoothers and (optional) constraints.
   private static class M3 implements CgSolver.A {
     M3(float sigma1, float sigma2, float sigma3, 
-       float[][][] wp, float[][] k1, float[][] k2, float[][] k3) 
+       float[][][] wp, float[][][] cs) 
     {
       _wp = wp;
       _sigma1 = sigma1;
       _sigma2 = sigma2;
       _sigma3 = sigma3;
-      if (k1!=null && k2!=null && k3!=null) {
-        _k1 = copy(k1);
-        _k2 = copy(k2);
-        _k3 = copy(k3);
+      if (cs!=null) {
+        _cs = copy(cs);
       }
     }
     public void apply(Vec vx, Vec vy) {
@@ -417,7 +415,7 @@ public class Flattener3C {
       float[][][] x = v3x.getArray();
       float[][][] y = v3y.getArray();
       copy(x,y);
-      constrain(_k1,_k2,_k3,y);
+      constrain(_cs,y);
       removeAverage(y);
       smooth3(_sigma3,_wp,y);
       smooth2(_sigma2,_wp,y);
@@ -425,11 +423,11 @@ public class Flattener3C {
       smooth2(_sigma2,_wp,y);
       smooth3(_sigma3,_wp,y);
       removeAverage(y);
-      constrain(_k1,_k2,_k3,y);
+      constrain(_cs,y);
     }
     private float _sigma1,_sigma2,_sigma3;
     private float[][][] _wp;
-    private float[][] _k1,_k2,_k3;
+    private float[][][] _cs;
   }
 
   public static void initializeShifts(float[][][] cs, float[][][] r) {
@@ -497,25 +495,24 @@ public class Flattener3C {
     }
   }
 
-  public static void constrain(
-    float[][] k1, float[][] k2, float[][] k3, float[][][] x) 
+  public static void constrain(float[][][] cs, float[][][] x) 
   {
-    if (k1!=null && k2!=null &&k3!=null) {
-      int nc = k1.length;
+    if (cs!=null) {
+      int nc = cs[0].length;
       for (int ic=0; ic<nc; ++ic) {
-        int nk = k1[ic].length;
+        int nk = cs[0][ic].length;
         float sum = 0.0f;
         for (int ik=0; ik<nk; ++ik) {
-          int i1 = (int)k1[ic][ik];
-          int i2 = (int)k2[ic][ik];
-          int i3 = (int)k3[ic][ik];
+          int i1 = (int)cs[0][ic][ik];
+          int i2 = (int)cs[1][ic][ik];
+          int i3 = (int)cs[2][ic][ik];
           sum += x[i3][i2][i1];
         }
         float avg = sum/(float)nk;
         for (int ik=0; ik<nk; ++ik) {
-          int i1 = (int)k1[ic][ik];
-          int i2 = (int)k2[ic][ik];
-          int i3 = (int)k3[ic][ik];
+          int i1 = (int)cs[0][ic][ik];
+          int i2 = (int)cs[1][ic][ik];
+          int i3 = (int)cs[2][ic][ik];
           x[i3][i2][i1] = avg;
         }
       }
@@ -699,7 +696,7 @@ public class Flattener3C {
       for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
         float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
         if(wpi<0.05f) {wpi=0.05f;}
-        float w1i = 0.001f;
+        float w1i = 0.02f;
         //float w1i = w1[i3][i2][i1];
         float p2i = p2[i3][i2][i1];
         float p3i = p3[i3][i2][i1];

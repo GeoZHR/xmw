@@ -282,10 +282,8 @@ def goUnfault():
   """
 def goFlatten():
   gx = readImage(gxfile)
-  fi = readImage(fifile)
-  '''
   gsx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 4.0,1.0,1.0,5.0
+  sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gsx)
   skins = readSkins(fslbase)
   wse,cse=1,1
@@ -299,9 +297,12 @@ def goFlatten():
   flc.setIterations(0.01,200);
   flc.computeShifts(p2,p3,ws,cs,sh);
   fm = flc.getMappingsFromShifts(s1,s2,s3,sh)
-  gf = fm.flatten(gx)
+  fi = fm.flatten(gx)
+  writeImage(fifile,fi)
+  writeImage(wsfile,ws)
+  fi = readImage(fifile)
+  ws = readImage(wsfile)
   plot3(ws,clab="Weights",png="ws")
-  '''
   plot3(gx,clab="Amplitude",png="gx")
   plot3(fi,clab="Amplitude",png="fi")
 
