@@ -254,7 +254,7 @@ def goFlatten():
   #p = zerofloat(n1,n2,n3)
   #q = zerofloat(n1,n2,n3)
   #cfs = ConstraintsFromSkins(skins,wse,cse,p,q,pow(ep,8.0))
-  cfs = ConstraintsFromSkins(skins,wse,cse,p2,p3,pow(ep,8.0))
+  cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,pow(ep,8.0))
   #ws = fillfloat(1.0,n1,n2,n3)
   ws = pow(ep,8.0)
   sh = fillfloat(0.0,n1,n2,n3)
