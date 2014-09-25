@@ -84,18 +84,29 @@ public class ConstraintsFromSkins {
       }
     }
     int np = cl.size();
-    System.out.println("sets of constraints:"+np);
-    float[][][] cs = new float[3][np][2];
+    System.out.println("sets of constraints before:"+np);
+    int nn = checkConstraints(cl);
+    np = cl.size();
+    int nc = np-nn;
+    System.out.println("sets of constraints after:"+np);
+    System.out.println("sets of constraints after:"+nc);
+    float[][][] cs = new float[3][nc][];
+    int ic = 0;
     for (int ip=0; ip<np; ++ip) {
       float[][] ps = cl.get(ip);
-      cs[0][ip][0] = ps[0][0];
-      cs[1][ip][0] = ps[0][1];
-      cs[2][ip][0] = ps[0][2];
-      cs[0][ip][1] = ps[1][0];
-      cs[1][ip][1] = ps[1][1];
-      cs[2][ip][1] = ps[1][2];
+      if(ps!=null) {
+        int ns = ps.length;
+        cs[0][ic] = new float[ns];
+        cs[1][ic] = new float[ns];
+        cs[2][ic] = new float[ns];
+        for (int is=0; is<ns; ++is) {
+          cs[0][ic][is] = ps[is][0];
+          cs[1][ic][is] = ps[is][1];
+          cs[2][ic][is] = ps[is][2];
+        }
+        ic++;
+      }
     }
-    checkConstraints(cs);
     return cs;
   }
 
@@ -137,22 +148,57 @@ public class ConstraintsFromSkins {
     } else {return null;}
   }
 
-  private void checkConstraints(float[][][] cs) {
-    int nc = cs[0].length;
-    int[][][] mk = new int[_n3][_n2][_n1];
-    int np = 0;
+  private int checkConstraints(ArrayList<float[][]> cl) {
+    int n12 = _n1*_n2;
+    int np  = n12*_n3;
+    int nc = cl.size();
+    int[][][] mp = new int[np][2][10];
     for (int ic=0; ic<nc; ic++) {
-      for (int ip=0; ip<=1; ++ip) {
-        int i1 = (int)cs[0][ic][ip];
-        int i2 = (int)cs[1][ic][ip];
-        int i3 = (int)cs[2][ic][ip];
-        mk[i3][i2][i1] +=1;
-        if(mk[i3][i2][i1]>1) {
-          np++;
+      float[][] ps = cl.get(ic);
+      for (int is=0; is<=1; ++is) {
+        int i1 = (int)ps[is][0];
+        int i2 = (int)ps[is][1];
+        int i3 = (int)ps[is][2];
+        int n2 = i2*_n1;
+        int n3 = i3*n12;
+        int pi = i1+n2+n3;
+        mp[pi][0][0] += 1;
+        int id = mp[pi][0][0];
+        mp[pi][0][id] = ic;
+        mp[pi][1][id] = is;
+      }
+    }
+    for (int ip=0; ip<np; ++ip) {
+      int mpi = mp[ip][0][0]+1;
+      float[][] cs = new float[mpi][3];
+      if (mpi>2) {
+        for (int i=1; i<mpi; i++) {
+          int ic = mp[ip][0][i];
+          int is = mp[ip][1][i];
+          float[][] ps = cl.get(ic);
+          if (is==0) {cs[0]=ps[0];cs[i] = ps[1];} 
+          else       {cs[0]=ps[1];cs[i] = ps[0];}
+        }
+        cl.add(cs);
+      }
+    }
+    int nn = 0;
+    for (int ip=0; ip<np; ++ip) {
+      int mpi = mp[ip][0][0]+1;
+      if (mpi>2) {
+        for (int i=1; i<mpi; i++) {
+          int ic = mp[ip][0][i];
+          float[][] ps = cl.get(ic);
+          if(ps!=null){
+            cl.set(ic,null);
+            nn++;
+          }
         }
       }
     }
-    System.out.println("np="+np);
+    System.out.println("nn="+nn);
+    System.out.println("listSize="+cl.size());
+    return nn;
   }
 
   private float[][] getControlPoints(float[] pi, float[] pp, float[] wi) {
