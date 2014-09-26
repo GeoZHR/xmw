@@ -64,11 +64,9 @@ public class ConstraintsFromSkinsM {
         ws[pi3][pi2][pi1] = 0.0f;
         ws[pi3][p2m][pi1] = 0.0f;
         ws[p3m][pi2][pi1] = 0.0f;
-        /*
         ws[pi3][p2p][pi1] = 0.0f;
         ws[p3m][pi2][pi1] = 0.0f;
         ws[p3p][pi2][pi1] = 0.0f;
-        */
         /*
         boolean bd = boundCheck(pi,pp);
         if(bd){continue;}
