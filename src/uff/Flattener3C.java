@@ -416,13 +416,13 @@ public class Flattener3C {
       float[][][] y = v3y.getArray();
       copy(x,y);
       constrain(_cs,y);
-      removeAverage(y);
+      //removeAverage(y);
       smooth3(_sigma3,_wp,y);
       smooth2(_sigma2,_wp,y);
       smooth1(2.0f*_sigma1,_wp,y);
       smooth2(_sigma2,_wp,y);
       smooth3(_sigma3,_wp,y);
-      removeAverage(y);
+      //removeAverage(y);
       constrain(_cs,y);
     }
     private float _sigma1,_sigma2,_sigma3;
