@@ -18,7 +18,8 @@ epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 flfile  = "fl" # fault likelihood
-fifile  = "fi" # flattened image
+fifile  = "fic" # flattened image
+fgfile  = "fici1" # flattened image
 wsfile  = "ws" # weight image for flattening
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -51,7 +52,7 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
-pngDir = "./png/"
+pngDir = "../../../png/sch/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
 plotOnly = True
@@ -282,7 +283,7 @@ def goUnfault():
   ov.setScale(2.5)
   """
 def goFlatten():
-  gx = readImage(gxfile)
+  gx = readImage(fifile)
   '''
   gsx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
@@ -304,7 +305,7 @@ def goFlatten():
   writeImage(wsfile,ws)
   ws = readImage(wsfile)
   '''
-  fi = readImage(fifile)
+  fi = readImage(fgfile)
   #plot3(ws,clab="Weights",png="ws")
   plot3(gx,clab="Amplitude",png="gx")
   plot3(fi,clab="Amplitude",png="fi")
