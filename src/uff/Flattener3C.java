@@ -416,13 +416,13 @@ public class Flattener3C {
       float[][][] y = v3y.getArray();
       copy(x,y);
       constrain(_cs,y);
-      //removeAverage(y);
+      removeAverage(y);
       smooth3(_sigma3,_wp,y);
       smooth2(_sigma2,_wp,y);
       smooth1(2.0f*_sigma1,_wp,y);
       smooth2(_sigma2,_wp,y);
       smooth3(_sigma3,_wp,y);
-      //removeAverage(y);
+      removeAverage(y);
       constrain(_cs,y);
     }
     private float _sigma1,_sigma2,_sigma3;
@@ -696,7 +696,7 @@ public class Flattener3C {
       for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
         float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
         if(wpi<0.05f) {wpi=0.05f;}
-        float w1i = 0.001f;
+        float w1i = 0.0f;
         //float w1i = w1[i3][i2][i1];
         float p2i = p2[i3][i2][i1];
         float p3i = p3[i3][i2][i1];
