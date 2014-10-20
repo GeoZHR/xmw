@@ -289,7 +289,7 @@ public class Flattener2 {
       int n2 = x.length;
       for (int i2=0; i2<n2; ++i2) {
         x[i2][   0] = 0.0f;
-        x[i2][n1-1] = 0.0f;
+        //x[i2][n1-1] = 0.0f;
       }
     }
   }

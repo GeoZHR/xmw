@@ -282,7 +282,7 @@ def makeFrame(world,png=None):
   #lightPosition=[0.,0.,1.0,0.0] #default position
   frame = SimpleFrame(world)
   view = frame.getOrbitView()
-  view.setLightPosition(lightPosition)
+  #view.setLightPosition(lightPosition)
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   view.setAxesScale(1.0,1.0,zscale)
   view.setScale(1.1)

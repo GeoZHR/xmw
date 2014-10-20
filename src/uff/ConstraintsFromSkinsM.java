@@ -22,7 +22,8 @@ import static edu.mines.jtk.util.ArrayMath.*;
 
 public class ConstraintsFromSkinsM {
 
-  public ConstraintsFromSkinsM(FaultSkin[] fss, int wse, int cse, float[][][] p, float[][][] q, float[][][] w) {
+  public ConstraintsFromSkinsM(
+    FaultSkin[] fss, int wse, int cse, float[][][] p, float[][][] q, float[][][] w) {
     _p = p;
     _q = q;
     _w = w;
@@ -35,13 +36,33 @@ public class ConstraintsFromSkinsM {
     _mk = new float[_n3][_n2][_n1];
   }
 
-  public void setForHorizonExtraction(float sigma1, float sigma2, float small, int niter) {
+  public void setForHorizonExtraction(
+    float sigma1, float sigma2, float small, int niter) {
     _small = small;
     _niter = niter;
     _sigma1 = sigma1;
     _sigma2 = sigma2;
     _se.setCG(_small,_niter);
     _se.setSmoothings(_sigma1,_sigma2);
+  }
+
+  public int[][][] getFaultMap() {
+    int fn = _fss.length;
+    int[][][] fm = new int[3][fn][]; 
+    for (int fi=0; fi<fn; ++fi) { 
+      FaultCell[] fcs = _fss[fi].getCells();
+      int nc = fcs.length;
+      fm[0][fi] = new int[nc];
+      fm[1][fi] = new int[nc];
+      fm[2][fi] = new int[nc];
+      for (int ic=0; ic<nc; ++ic) { 
+        float[] xc = fcs[ic].getX();
+        fm[0][fi][ic] = round(xc[0]);
+        fm[1][fi][ic] = round(xc[1]);
+        fm[2][fi][ic] = round(xc[2]);
+      }
+    }
+    return fm;
   }
 
   public float[][][] getWeightsAndConstraints(float[][][] ws) {
@@ -65,7 +86,6 @@ public class ConstraintsFromSkinsM {
         ws[pi3][p2m][pi1] = 0.0f;
         ws[p3m][pi2][pi1] = 0.0f;
         ws[pi3][p2p][pi1] = 0.0f;
-        ws[p3m][pi2][pi1] = 0.0f;
         ws[p3p][pi2][pi1] = 0.0f;
         /*
         boolean bd = boundCheck(pi,pp);
@@ -95,25 +115,199 @@ public class ConstraintsFromSkinsM {
     for (int ip=0; ip<np; ++ip) {
       float[][] ps = cl.get(ip);
       for (int is=0; is<2; ++is) {
-        cs[0][ip][is] = ps[is][0];
-        cs[1][ip][is] = ps[is][1];
-        cs[2][ip][is] = ps[is][2];
-        }
+        float p1 = ps[is][0];
+        float p2 = ps[is][0];
+        float p3 = ps[is][0];
+        cs[0][ip][is] = p1;
+        cs[1][ip][is] = p2;
+        cs[2][ip][is] = p3;
+        int i1 = round(p1);
+        int i2 = round(p2);
+        int i3 = round(p3);
+        ws[i3][i2][i1] = 1.0f;
+      }
     }
     return cs;
   }
 
-  private boolean boundCheck(float[] pi, float[] pp) {
-    if(pi[0]>=_n1)  {return true;}
-    if(pp[0]>=_n1)  {return true;}
-    if(pi[1]<=1)    {return true;}
-    if(pp[1]<=1)    {return true;}
-    if(pi[2]<=1)    {return true;}
-    if(pp[2]<=1)    {return true;}
-    if(pi[1]+2>=_n2){return true;}
-    if(pp[1]+2>=_n2){return true;}
-    if(pi[2]+2>=_n3){return true;}
-    if(pp[2]+2>=_n3){return true;}
+  public float[][][] getWeightsAndConstraintsM(float[][][] ws, float[][][] cp) {
+    setWeightsOnFault(ws);
+    ArrayList<float[][]> cl = new ArrayList<float[][]>();
+    for (FaultSkin fs:_fss) {
+      FaultCell[] fcs = fs.getCells();
+      int nc = fcs.length;
+      for (int ic=0; ic<nc; ic+=1) {
+        FaultCell fc = fcs[ic];
+        boolean valid = false;
+        float[] ai = fc.getX();
+        float[] ci = copy(ai);
+        float[] si = fc.getS();
+        float[] wi = fc.getW();
+        float wi2 = abs(wi[1]);
+        float wi3 = abs(wi[2]);
+        float[] bi = add(ci,si);
+        float[] ki = copy(bi);
+        if (wi2>wi3) {valid = shift2(wi[1],ci,ki);} 
+        else         {valid = shift3(wi[2],ci,ki);}
+        if(valid) {
+          if (onFault(ci,ws)) {continue;}
+          if (onFault(ki,ws)) {continue;}
+          //cl.add(new float[][]{ci,ki,si});
+          cl.add(new float[][]{ci,ki,si});
+          addPoints(ci,ki,cp);
+        }
+      }
+    }
+    int ns = cl.size();
+    System.out.println("sets of constraints:"+ns);
+    float[][][] cs = new float[3][ns][3];
+    for (int is=0; is<ns; ++is) {
+      float[][] ps = cl.get(is);
+      for (int ip=0; ip<3; ++ip) {
+        cs[0][is][ip] = ps[ip][0];
+        cs[1][is][ip] = ps[ip][1];
+        cs[2][is][ip] = ps[ip][2];
+      }
+    }
+    return cs;
+  }
+
+
+  private void addPoints(float[] c, float[] k, float[][][] cp) {
+    int c1 = round(c[0]);
+    int c2 = round(c[1]);
+    int c3 = round(c[2]);
+    int k1 = round(k[0]);
+    int k2 = round(k[1]);
+    int k3 = round(k[2]);
+    cp[c3][c2][c1] = 1.0f;
+    cp[k3][k2][k1] = 1.0f;
+  }
+
+
+
+  private boolean shift2(float w2, float[] c, float[] k) {
+    float ep = 0.5f;
+    float sn2 = (w2<0.f)?-1.f:1.f;
+    float dp2 = sn2*2.0f;
+    float ds2 = sn2*2.0f;
+    int c1 = round(c[0]);
+    int c3 = round(c[2]);
+    int c2 = round(c[1]-dp2);
+    if(onBound(c1,c2,c3)){return false;}
+    float wi = _w[c3][c2][c1];
+    if(wi<ep) {return false;}
+    float cp2 = _p[c3][c2][c1];
+
+    int k1 = round(k[0]);
+    int k3 = round(k[2]);
+    int k2 = round(k[1]+dp2);
+    if(onBound(k1,k2,k3)){return false;}
+    wi = _w[c3][c2][c1];
+    if(wi<ep) {return false;}
+    float kp2 = _p[k3][k2][k1];
+
+    c[1] -= ds2;
+    k[1] += ds2;
+    c[0] -= ds2*cp2;
+    k[0] += ds2*kp2;
+
+    c1 = round(c[0]); c2 = round(c[1]);
+    if(onBound(c1,c2,c3)) {return false;}
+    _mk[c3][c2][c1] += 1;
+    if(_mk[c3][c2][c1]>1) {return false;}
+    k1 = round(k[0]); k2 = round(k[1]);
+    if(onBound(k1,k2,k3)) {return false;}
+    _mk[k3][k2][k1] += 1;
+    if(_mk[k3][k2][k1]>1) {return false;}
+ 
+    return true;
+  }
+
+  private boolean shift3(float w3, float[] c, float[] k) {
+    float ep = 0.5f;
+    float sn3 = (w3<0.f)?-1.f:1.f;
+    float dp3 = sn3*2.0f;
+    float ds3 = sn3*2.0f;
+
+    int c1 = round(c[0]);
+    int c2 = round(c[1]);
+    int c3 = round(c[2]-dp3);
+    if(onBound(c1,c2,c3)){return false;}
+    float wi = _w[c3][c2][c1];
+    if(wi<ep) {return false;}
+    float cp3 = _q[c3][c2][c1];
+
+    int k1 = round(k[0]);
+    int k2 = round(k[1]);
+    int k3 = round(k[2]+dp3);
+    if(onBound(k1,k2,k3)){return false;}
+    wi = _w[c3][c2][c1];
+    if(wi<ep) {return false;}
+    float kp3 = _q[k3][k2][k1];
+
+    c[2] -= ds3;    
+    k[2] += ds3;
+    c[0] -= ds3*cp3;
+    k[0] += ds3*kp3;
+
+    c1 = round(c[0]); c3 = round(c[2]);
+    if(onBound(c1,c2,c3)) {return false;}
+    _mk[c3][c2][c1] += 1;
+    if(_mk[c3][c2][c1]>1) {return false;}
+    k1 = round(k[0]); k3 = round(k[2]);
+    if(onBound(k1,k2,k3)) {return false;}
+    _mk[k3][k2][k1] += 1;
+    if(_mk[k3][k2][k1]>1) {return false;}
+
+    return true;
+  }
+
+
+  private void setWeightsOnFault(float[][][] ws) {
+    int n3 = ws.length;
+    int n2 = ws[0].length;
+    int m2 = n2-1;
+    int m3 = n3-1;
+    for (FaultSkin fs:_fss) {
+      for (FaultCell fc:fs) {
+        float[] pi = fc.getX();
+        int pi1 = round(pi[0]);
+        int pi2 = round(pi[1]);
+        int pi3 = round(pi[2]);
+        int p2m = pi2-1;if(p2m<0) {p2m=0;}
+        int p2p = pi2+1;if(p2p>m2){p2p=m2;}
+        int p3m = pi3-1;if(p3m<0) {p3m=0;}
+        int p3p = pi3+1;if(p3p>m3){p3p=m3;}
+        ws[pi3][pi2][pi1] = 0.0f;
+        ws[p3m][pi2][pi1] = 0.0f;
+        ws[p3p][pi2][pi1] = 0.0f;
+        ws[pi3][p2m][pi1] = 0.0f;
+        ws[pi3][p2p][pi1] = 0.0f;
+      }
+    }
+  }
+
+  private boolean onFault(float[] p, float[][][] w) {
+    int i1 = round(p[0]);
+    int i2 = round(p[1]);
+    int i3 = round(p[2]);
+    float wi = w[i3][i2][i1];
+    if (wi==0.0f){return true;} 
+    else {return false;}
+  }
+
+  private boolean onBound(float[] p) {
+    int p1 = round(p[0]);
+    int p2 = round(p[1]);
+    int p3 = round(p[2]);
+    return onBound(p1,p2,p3);
+  }
+
+  private boolean onBound(int p1, int p2, int p3) {
+    if(p1<0||p1>=_n1){return true;}
+    if(p2<0||p2>=_n2){return true;}
+    if(p3<0||p3>=_n3){return true;}
     return false;
   }
 
@@ -195,7 +389,7 @@ public class ConstraintsFromSkinsM {
   }
 
   private float[][] getControlPoints(float[] pi, float[] pp, float[] wi) {
-    float ds = 1.5f;
+    float ds = 1.0f;
     float w2 = wi[1];
     float w3 = wi[2];
     float sc = 1.0f/sqrt(w2*w2+w3*w3);
@@ -207,26 +401,24 @@ public class ConstraintsFromSkinsM {
     int pi3 = round(pi[2]-dw3);
     int pp2 = round(pp[1]+dw2);
     int pp3 = round(pp[2]+dw3);
-    if(pi1<0){pi1=0;} if(pi1>=_n1){pi1=_n1-1;}
-    if(pi2<0){pi2=0;} if(pi2>=_n2){pi2=_n2-1;}
-    if(pi3<0){pi3=0;} if(pi3>=_n3){pi3=_n3-1;}
-    if(pp1<0){pp1=0;} if(pp1>=_n1){pp1=_n1-1;}
-    if(pp2<0){pp2=0;} if(pp2>=_n2){pp2=_n2-1;}
-    if(pp3<0){pp3=0;} if(pp3>=_n3){pp3=_n3-1;}
-    float p2i = _p[pi3][pi2][pi1]; 
-    float p3i = _q[pi3][pi2][pi1]; 
-    float p2p = _p[pp3][pp2][pp1]; 
-    float p3p = _q[pp3][pp2][pp1]; 
-    float di1 = dw2*p2i+dw3*p3i;
-    float dp1 = dw2*p2p+dw3*p3p;
-    pi1 = round(pi[0]-di1);
-    pp1 = round(pp[0]+dp1);
     if (pi1<0||pi1>=_n1) {return null;}
     if (pp1<0||pp1>=_n1) {return null;}
     if (pi2<0||pi2>=_n2) {return null;}
     if (pp2<0||pp2>=_n2) {return null;}
     if (pi3<0||pi3>=_n3) {return null;}
     if (pp3<0||pp3>=_n3) {return null;}
+
+    float p2i = _p[pi3][pi2][pi1]; 
+    float p3i = _q[pi3][pi2][pi1]; 
+    float p2p = _p[pp3][pp2][pp1]; 
+    float p3p = _q[pp3][pp2][pp1]; 
+
+    float di1 = dw2*p2i+dw3*p3i;
+    float dp1 = dw2*p2p+dw3*p3p;
+    pi1 = round(pi[0]-di1);
+    pp1 = round(pp[0]+dp1);
+    if (pi1<0||pi1>=_n1) {return null;}
+    if (pp1<0||pp1>=_n1) {return null;}
     if (pi1==pp1 && pi2==pp2 && pi3==pp3) { 
       return null;
     } else {
@@ -240,8 +432,8 @@ public class ConstraintsFromSkinsM {
       i3 = (int)pp3;
       _mk[i3][i2][i1] += 1;
       if(_mk[i3][i2][i1]>1) {return null;}
-      float[] p1 = new float[]{pi1,pi2,pi3};
-      float[] p2 = new float[]{pp1,pp2,pp3};
+      float[] p1 = new float[]{pi[0]-di1,pi[1]-dw2,pi[2]-dw3};
+      float[] p2 = new float[]{pp[0]+dp1,pp[1]+dw2,pp[2]+dw3};
       return new float[][]{p1,p2};
     }
   }

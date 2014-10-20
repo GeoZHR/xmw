@@ -19,7 +19,7 @@ p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 flfile  = "fl" # fault likelihood
 fifile  = "fic" # flattened image
-fgfile  = "fici1" # flattened image
+fgfile  = "fi1" # flattened image
 wsfile  = "ws" # weight image for flattening
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -283,7 +283,8 @@ def goUnfault():
   ov.setScale(2.5)
   """
 def goFlatten():
-  gx = readImage(fifile)
+  fi = readImage(fifile)
+  gx = readImage(gxfile)
   '''
   gsx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
@@ -305,10 +306,11 @@ def goFlatten():
   writeImage(wsfile,ws)
   ws = readImage(wsfile)
   '''
-  fi = readImage(fgfile)
+  fg = readImage(fgfile)
   #plot3(ws,clab="Weights",png="ws")
   plot3(gx,clab="Amplitude",png="gx")
   plot3(fi,clab="Amplitude",png="fi")
+  plot3(fg,clab="Amplitude",png="fg")
 
 
 #############################################################################

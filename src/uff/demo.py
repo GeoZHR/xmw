@@ -3,7 +3,6 @@ Demonstrate 3D seismic image processing for faults and horizons
 Author: Dave Hale, Colorado School of Mines
 Version: 2014.07.17
 """
-
 from fakeutils import *
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -19,6 +18,7 @@ p3kfile = "p3k" # crossline slopes (known)
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
+gwfile  = "gw" # unfault image
 fltfile = "flt" # fault likelihood thinned
 fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
@@ -26,6 +26,15 @@ fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
+
+u1file = "u1" # normal vector (1st component)
+u2file = "u2" # normal vector (2nd component)
+u3file = "u3" # normal vector (3rd component)
+r1file = "r1" # unfolding shifts (1st component)
+r2file = "r2" # unfolding shifts (2nd component)
+r3file = "r3" # unfolding shifts (3rd component)
+hxfile = "hx" # unfolded image 
+
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -52,7 +61,6 @@ pngDir = "../../../png/uff/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  '''
   goFakeData()
   goSlopes()
   goScan()
@@ -61,14 +69,19 @@ def main(args):
   goSkin()
   goSlip()
   '''
-  goFlatten()
+  goUnfold()
+  goFlatten1()
+  goUnfoldc()
+  goFlatten2()
+  goTest()
+  '''
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 6 # number of planar faults
+  nplanar = 3 # number of planar faults
   conjugate = False # if True, two large planar faults will intersect
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
@@ -241,21 +254,108 @@ def goSlip():
   plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
   gw = fsl.unfault([s1,s2,s3],gx)
+  writeImage(gwfile,gw)
   plot3(gx)
   plot3(gw,clab="Amplitude",png="gw")
 
-def goFlatten():
+def goUnfold():
+  hx = zerofloat(n1,n2,n3)
+  gx = readImage(gwfile)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(2.0,2.0)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  pow(ep,8.0,ep)
+  wse,cse=1,1
+  p2,p3,ep = FaultScanner.slopes(2.0,2.0,2.0,5.0,gx)
+  skins = readSkins(fskbase)
+  cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,ep)
+  cs = cfs.getWeightsAndConstraints(ep)
+  p = array(u1,u2,u3,ep)
+  flattener = FlattenerRT(12.0,12.0)
+  r = flattener.findShifts(p)
+  flattener.applyShifts(r,gx,hx)
+  writeImage(r1file,r[0])
+  writeImage(r2file,r[1])
+  writeImage(r3file,r[2])
+  writeImage(hxfile,hx)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
+  plot3(r[0],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift1",png="r1")
+  plot3(r[1],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift2",png="r2")
+  plot3(r[2],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift3",png="r3")
+
+def goTest():
   gx = readImage(gxfile)
-  gsx = readImage(gxfile)
+  p2,p3,ep = FaultScanner.slopes(2.0,1.0,1.0,5.0,gx)
+  skins = readSkins(fskbase)
+  cfs = ConstraintsFromFaults(skins,p2,p3,ep)
+  cp  = zerofloat(n1,n2,n3)
+  cs = cfs.getWeightsAndConstraints(ep,cp)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
+  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="gx")
+
+
+def goUnfoldc():
+  hx = zerofloat(n1,n2,n3)
+  gx = readImage(gxfile)
+  gw = readImage(gwfile)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(2.0,1.0)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  wp = copy(ep)
+  #ep = fillfloat(1.0,n1,n2,n3)
+  wse,cse=1,1
+  cp  = zerofloat(n1,n2,n3)
+  cpm = zerofloat(n1,n2,n3)
+  p2,p3,ep = FaultScanner.slopes(2.0,1.0,1.0,5.0,gx)
+  skins = readSkins(fskbase)
+  #cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,wp)
+  p2 = fillfloat(0.0,n1,n2,n3)
+  p3 = fillfloat(0.0,n1,n2,n3)
+  cfs = ConstraintsFromFaults(skins,p2,p3,wp)
+  wp = pow(wp,2.0)
+  #cs = cfs.getWeightsAndConstraintsM(wp,cp)
+  cs = cfs.getWeightsAndConstraints(wp,cp)
+  fm = cfs.getFaultMap()
+  u1 = fillfloat(1.0,n1,n2,n3)
+  u2 = fillfloat(0.0,n1,n2,n3)
+  u3 = fillfloat(0.0,n1,n2,n3)
+  p = array(u1,u2,u3,wp)
+  flattener = FlattenerRTD(6.0,6.0)
+  r = flattener.computeShifts(fm,cs,p,cpm)
+  flattener.applyShifts(r,gx,hx)
+  writeImage(r1file,r[0])
+  writeImage(r2file,r[1])
+  writeImage(r3file,r[2])
+  writeImage(hxfile,hx)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")
+  plot3(cpm,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cpm")
+  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
+  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
+  plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gw")
+  #plot3(wp,cmin=hmin,cmax=hmax,cmap=hmap,clab="Weights",png="wp")
+  #plot3(r[0],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift1",png="r1")
+  #plot3(r[1],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift2",png="r2")
+  #plot3(r[2],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift3",png="r3")
+
+
+def goFlatten1():
+  gx = readImage(gwfile)
+  gsx = readImage(gwfile)
   sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gsx)
   skins = readSkins(fskbase)
   wse,cse=1,1
-  #p = zerofloat(n1,n2,n3)
-  #q = zerofloat(n1,n2,n3)
   #cfs = ConstraintsFromSkins(skins,wse,cse,p,q,pow(ep,8.0))
   cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,pow(ep,8.0))
-  #ws = fillfloat(1.0,n1,n2,n3)
   ws = pow(ep,8.0)
   sh = fillfloat(0.0,n1,n2,n3)
   cs = cfs.getWeightsAndConstraints(ws)
@@ -265,11 +365,43 @@ def goFlatten():
   flc.computeShifts(p2,p3,ws,None,sh);
   fm = flc.getMappingsFromShifts(s1,s2,s3,sh)
   gf = fm.flatten(gx)
+#  plot3(ws,clab="Weights",png="ws")
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gf,clab="Amplitude",png="gf")
+def goFlatten2():
+  gx = readImage(gxfile)
+  sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  skins = readSkins(fskbase)
+  wse,cse=1,1
+  cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,pow(ep,1.0))
+  ws = pow(ep,8.0)
+  sh = fillfloat(0.0,n1,n2,n3)
+  cp = fillfloat(0.0,n1,n2,n3)
+  cs = cfs.getWeightsAndConstraintsM(ws,cp)
+  fk = cfs.getFaultMap()
+  flc = Flattener3C()
+  flc.setSmoothings(12.0,12.0);
+  flc.setIterations(0.01,200);
+  flc.computeShifts(p2,p3,ws,fk,cs,sh);
+  fm = flc.getMappingsFromShifts(s1,s2,s3,sh)
+  gf = fm.flatten(gx)
   plot3(ws,clab="Weights",png="ws")
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gf,clab="Amplitude",png="gf")
+  plot3(sh,cmin=0,cmax=100,clab="Shifts",png="sh")
 
 
+
+def array(x1,x2,x3=None,x4=None):
+  if x3 and x4:
+    return jarray.array([x1,x2,x3,x4],Class.forName('[[[F'))
+  elif x3:
+    return jarray.array([x1,x2,x3],Class.forName('[[[F'))
+  else:
+    return jarray.array([x1,x2],Class.forName('[[[F'))
 
 
 #############################################################################

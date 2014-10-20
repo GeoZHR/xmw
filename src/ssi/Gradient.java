@@ -1,6 +1,5 @@
-package util;
+package ssi;
 
-import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Parallel;
 import static edu.mines.jtk.util.ArrayMath.*;
 // backward and forward finite difference for gradient computation

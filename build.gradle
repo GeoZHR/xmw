@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'scala'
 
-defaultTasks 'compileJava','compileScala'
+defaultTasks 'compileJava'
 
 description = "Xinming's research"
 sourceCompatibility = 1.7
@@ -28,5 +28,4 @@ dependencies {
   compile fileTree('../idh/bench/build/libs') // for idh
   compile fileTree('../idh/bench/libs') // for idh.jar
   compile fileTree('../ipf/build/libs') // for dave_ipf.jar
-  compile 'org.scala-lang:scala-library:2.10.+' // contains Scala jars
 }
