@@ -357,6 +357,13 @@ def goUnfoldc():
         clab="Crossline shift (samples)",png="gxs3i")
 
 
+def array(x1,x2,x3=None,x4=None):
+  if x3 and x4:
+    return jarray.array([x1,x2,x3,x4],Class.forName('[[[F'))
+  elif x3:
+    return jarray.array([x1,x2,x3],Class.forName('[[[F'))
+  else:
+    return jarray.array([x1,x2],Class.forName('[[[F'))
 
 #############################################################################
 # graphics
