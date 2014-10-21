@@ -71,7 +71,7 @@ def main(args):
   #goThin()
   #goSmooth()
   #goSkin()
-  #goSlip()
+  goSlip()
   #goUnfault()
   #goFlatten()
   goUnfoldc()
