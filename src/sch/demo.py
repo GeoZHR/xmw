@@ -73,7 +73,8 @@ def main(args):
   #goSkin()
   #goSlip()
   #goUnfault()
-  goFlatten()
+  #goFlatten()
+  goUnfoldc()
 
 def goDisplay():
   print "goDisplay ..."
