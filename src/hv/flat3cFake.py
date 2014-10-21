@@ -117,18 +117,22 @@ def goFlattenC():
   kk4 = sc.extend(k41,k42,k43,n2,n3,p2,p3,wp,gx)
   kk5 = sc.extend(k51,k52,k53,n2,n3,p2,p3,wp,gx)
   kk6 = sc.extend(k61,k62,k63,n2,n3,p2,p3,wp,gx)
-  k1 = [kk1[0],kk2[0],kk3[0],kk4[0],kk5[0],kk6[0]]
-  k2 = [kk1[1],kk2[1],kk3[1],kk4[1],kk5[1],kk6[1]]
-  k3 = [kk1[2],kk2[2],kk3[2],kk4[2],kk5[2],kk6[2]]
-  k4 = [kk1[3],kk2[3],kk3[3],kk4[3],kk5[3],kk6[3]]
   '''
+  kk1 = sc.constraintsFromSurface(surf1)
+  kk2 = sc.constraintsFromSurface(surf2)
+  k1 = [kk1[0],kk2[0]]
+  k2 = [kk1[1],kk2[1]]
+  k3 = [kk1[2],kk2[2]]
+  k4 = [kk1[3],kk2[3]]
   fl = Flattener3C()
   fl.setIterations(0.01,100)
   fl.setSmoothings(6.0,6.0)
   fl.setWeight1(0.0)
   wp2 = pow(ep,12.0) 
-  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp2,wp2,k4,k1,k2,k3)
+  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp2,k4,k1,k2,k3)
   gc = fm.flatten(gx)
+  hv  = fm.x1  
+  rgt = fm.u1
   gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
   plot3(gc,cmin=gmin,cmax=gmax,cmap=gmap)
 
