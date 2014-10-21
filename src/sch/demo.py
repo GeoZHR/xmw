@@ -330,7 +330,7 @@ def goUnfoldc():
   lof = LocalOrientFilter(2.0,1.0)
   lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
   wp = copy(ep)
-  skins = readSkins(fskbase)
+  skins = readSkins(fslbase)
   cfs = ConstraintsFromFaults(skins,wp)
   wp = pow(wp,2.0)
   cs = cfs.getWeightsAndConstraints(wp,cp)
