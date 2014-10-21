@@ -34,6 +34,11 @@ ft2file = "ft2" # fault slip interpolated (2nd component)
 ft3file = "ft3" # fault slip interpolated (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skins after reskinning (basename only)
+r1file = "r1"
+r2file = "r2"
+r3file = "r3"
+hxfile = "hx"
+
 
 # These parameters control the scan over fault strikes and dips.
 sigmaPhi,sigmaTheta = 8,40
