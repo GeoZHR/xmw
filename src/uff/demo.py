@@ -81,11 +81,11 @@ def main(args):
   goSkin()
   goSlip()
   goUnfault()
-  '''
   goUnfaultc()
-  '''
   goUnfold()
+  '''
   goUnfoldc2()
+  '''
   goUnfoldc()
   goFlatten2()
   goTest()
@@ -342,7 +342,7 @@ def goUnfaultc():
     u2 = fillfloat(0.0,n1,n2,n3)
     u3 = fillfloat(0.0,n1,n2,n3)
     p = array(u1,u2,u3,wp)
-    flattener = FlattenerRTD(0.0,0.0)
+    flattener = FlattenerRTD(4.0,4.0)
     [r1,r2,r3] = flattener.computeShifts(True,fm,cs,p)
     flattener.applyShifts([r1,r2,r3],gx,ft)
     writeImage(r1tfile,r1)

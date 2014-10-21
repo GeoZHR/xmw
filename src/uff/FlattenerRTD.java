@@ -98,7 +98,7 @@ public class FlattenerRTD {
     _outer = 50;
     if(unfaultOnly) {
       _outer = 1;
-      _inner = 10;
+      _inner = 100;
     }
   }
 
