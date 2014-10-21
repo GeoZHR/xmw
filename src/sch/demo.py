@@ -37,7 +37,8 @@ fslbase = "fsl" # fault skins after reskinning (basename only)
 r1file = "r1"
 r2file = "r2"
 r3file = "r3"
-hxfile = "hxm"
+hxfile = "hx"
+hxmfile = "hxm"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -74,8 +75,8 @@ def main(args):
   #goSlip()
   #goUnfault()
   #goFlatten()
-  goUnfoldc()
-  #goDisplay()
+  #goUnfoldc()
+  goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -360,21 +361,25 @@ def goUnfoldc():
 def goDisplay():
   gx = readImage(gxfile)
   hx = readImage(hxfile)
+  hxm = readImage(hxmfile)
   gw = readImage(gwfile)
-  r1 = readImage(r1file)
+  #r1 = readImage(r1file)
   #r2 = readImage(r2file)
   #r3 = readImage(r3file)
-  fs1 = readImage(fs1file)
+  #ft1 = readImage(ft1file)
   #fs2 = readImage(fs1file)
   #fs3 = readImage(fs1file)
   hmin,hmax,hmap = -2.0,2.0,ColorMap.GRAY
-  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfold",png="hx")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="hx")
+  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfold",png="hx")
+  plot3(hxm,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfoldM",png="hx")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
+  '''
   plot3(gx,r1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfolding",png="gxs1i")
-  plot3(gx,fs1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+  plot3(gx,ft1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfaulting",png="gxs1i")
+  '''
 
 
 
