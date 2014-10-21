@@ -707,9 +707,6 @@ public class FlattenerRTD {
       r[0][hx3][hx2][hx1] = -fs1;
       r[1][hx3][hx2][hx1] = -fs2;
       r[2][hx3][hx2][hx1] = -fs3;
-      System.out.println("fx1="+fx1);
-      System.out.println("fs1="+fs1);
-
     }
   }
 
