@@ -37,7 +37,7 @@ fslbase = "fsl" # fault skins after reskinning (basename only)
 r1file = "r1"
 r2file = "r2"
 r3file = "r3"
-hxfile = "hx"
+hxfile = "hxm"
 
 
 # These parameters control the scan over fault strikes and dips.
