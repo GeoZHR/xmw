@@ -320,6 +320,7 @@ def goFlatten():
 
 def goUnfoldc():
   hx = zerofloat(n1,n2,n3)
+  cp = zerofloat(n1,n2,n3)
   gx = readImage(gxfile)
   gw = readImage(gwfile)
   u1 = zerofloat(n1,n2,n3)
