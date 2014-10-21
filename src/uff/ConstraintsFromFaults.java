@@ -20,15 +20,12 @@ import static edu.mines.jtk.util.ArrayMath.*;
 
 public class ConstraintsFromFaults {
 
-  public ConstraintsFromFaults(
-    FaultSkin[] fss,float[][][] p, float[][][] q, float[][][] w) {
-    _p = p;
-    _q = q;
+  public ConstraintsFromFaults(FaultSkin[] fss,float[][][] w) {
     _w = w;
     _fss = fss;
-    _n3 = p.length;
-    _n2 = p[0].length;
-    _n1 = p[0][0].length;
+    _n3 = w.length;
+    _n2 = w[0].length;
+    _n1 = w[0][0].length;
     _mk = new int[_n3][_n2][_n1];
     _fm = new int[_n3][_n2][_n1];
     faultMap(_fm);
@@ -308,8 +305,6 @@ public class ConstraintsFromFaults {
 
   private int _n1,_n2,_n3;
   private FaultSkin[] _fss;
-  private float[][][] _p = null;
-  private float[][][] _q = null;
   private float[][][] _w = null;
   private int[][][] _mk = null;
   private int[][][] _fm = null;

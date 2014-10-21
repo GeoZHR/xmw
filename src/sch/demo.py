@@ -312,6 +312,44 @@ def goFlatten():
   plot3(fi,clab="Amplitude",png="fi")
   plot3(fg,clab="Amplitude",png="fg")
 
+def goUnfoldc():
+  hx = zerofloat(n1,n2,n3)
+  gx = readImage(gxfile)
+  gw = readImage(gwfile)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(2.0,1.0)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  wp = copy(ep)
+  skins = readSkins(fskbase)
+  cfs = ConstraintsFromFaults(skins,wp)
+  wp = pow(wp,2.0)
+  cs = cfs.getWeightsAndConstraints(wp,cp)
+  fm = cfs.getFaultMap()
+  u1 = fillfloat(1.0,n1,n2,n3)
+  u2 = fillfloat(0.0,n1,n2,n3)
+  u3 = fillfloat(0.0,n1,n2,n3)
+  p = array(u1,u2,u3,wp)
+  flattener = FlattenerRTD(4.0,4.0)
+  r = flattener.computeShifts(fm,cs,p,cpm)
+  flattener.applyShifts(r,gx,hx)
+  writeImage(r1file,r[0])
+  writeImage(r2file,r[1])
+  writeImage(r3file,r[2])
+  writeImage(hxfile,hx)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
+  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
+  plot3(gx,r[0],cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,r[1],cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,r[2],cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+
+
 
 #############################################################################
 # graphics
