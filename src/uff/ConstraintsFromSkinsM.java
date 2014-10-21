@@ -152,7 +152,6 @@ public class ConstraintsFromSkinsM {
         if(valid) {
           if (onFault(ci,ws)) {continue;}
           if (onFault(ki,ws)) {continue;}
-          //cl.add(new float[][]{ci,ki,si});
           cl.add(new float[][]{ci,ki,si});
           addPoints(ci,ki,cp);
         }

@@ -701,9 +701,9 @@ public class FlattenerRTD {
       float fs1 = cu[0][is][2];
       float fs2 = cu[1][is][2];
       float fs3 = cu[2][is][2];
-      r[0][fx3][fx2][fx1] = fs1;
-      r[1][fx3][fx2][fx1] = fs2;
-      r[2][fx3][fx2][fx1] = fs3;
+      r[0][fx3][fx2][fx1] =  fs1;
+      r[1][fx3][fx2][fx1] =  fs2;
+      r[2][fx3][fx2][fx1] =  fs3;
       r[0][hx3][hx2][hx1] = -fs1;
       r[1][hx3][hx2][hx1] = -fs2;
       r[2][hx3][hx2][hx1] = -fs3;

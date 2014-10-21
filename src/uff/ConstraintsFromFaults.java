@@ -42,6 +42,7 @@ public class ConstraintsFromFaults {
         float[] cx = fc.getX();
         float[] cs = fc.getS();
         float[] cw = fc.getW();
+        if(badQuality(cx,cs)){continue;}
         cs[0] *= 0.50f;
         cs[1] *= 0.50f;
         cs[2] *= 0.50f;
@@ -77,6 +78,41 @@ public class ConstraintsFromFaults {
       }
     }
     return cs;
+  }
+
+  private boolean badQuality(float[] cx, float[] cs) {
+    float qx = 0.0f;
+    float qy = 0.0f;
+    float sc = 1.f/4.f;
+    int x1 = round(cx[0]);
+    int x2 = round(cx[1]);
+    int x3 = round(cx[2]);
+    int x2m = bound2(x2-2);
+    int x2p = bound2(x2+2);
+    int x3m = bound2(x3-2);
+    int x3p = bound2(x3+2);
+    qx += _w[x3m][x2 ][x1];
+    qx += _w[x3p][x2 ][x1];
+    qx += _w[x3 ][x2m][x1];
+    qx += _w[x3 ][x2p][x1];
+    if(qx*sc<.6f){return true;}
+    float[] cy = add(cx,cs);
+    cy[0] = bound1(round(cy[0]));
+    if(nearestFaultCell(cy)) {
+      int y1 = round(cy[0]);
+      int y2 = round(cy[1]);
+      int y3 = round(cy[2]);
+      int y2m = bound2(y2-2);
+      int y2p = bound2(y2+2);
+      int y3m = bound2(y3-2);
+      int y3p = bound2(y3+2);
+      qy += _w[y3m][y2 ][y1];
+      qy += _w[y3p][y2 ][y1];
+      qy += _w[y3 ][y2m][y1];
+      qy += _w[y3 ][y2p][y1];
+      if(qy*sc<.6f){return true;}
+    }
+    return false;
   }
 
   private boolean nearestFaultCell(float[] xi) {
@@ -163,10 +199,8 @@ public class ConstraintsFromFaults {
     cp[k3][k2][k1] = 1.0f;
   }
 
-
-
   private boolean shift2(float w2, float[] c, float[] k) {
-    float ep = 0.5f;
+    float ep = 0.8f;
     float sn2 = (w2<0.f)?-1.f:1.f;
     float ds2 = sn2*2.0f;
     c[1] -= ds2;
@@ -174,16 +208,20 @@ public class ConstraintsFromFaults {
     int c3 = round(c[2]);
     int c2 = round(c[1]);
     if(onBound(c1,c2,c3)){return false;}
+    /*
     float wi = _w[c3][c2][c1];
     if(wi<ep) {return false;}
+    */
 
     k[1] +=ds2;
     int k1 = round(k[0]);
     int k2 = round(k[1]);
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
+    /*
     wi = _w[c3][c2][c1];
     if(wi<ep) {return false;}
+    */
 
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}
@@ -194,7 +232,7 @@ public class ConstraintsFromFaults {
   }
 
   private boolean shift3(float w3, float[] c, float[] k) {
-    float ep = 0.5f;
+    float ep = 0.8f;
     float sn3 = (w3<0.f)?-1.f:1.f;
     float ds3 = sn3*2.0f;
 
@@ -203,16 +241,20 @@ public class ConstraintsFromFaults {
     int c2 = round(c[1]);
     int c3 = round(c[2]);
     if(onBound(c1,c2,c3)){return false;}
+    /*
     float wi = _w[c3][c2][c1];
     if(wi<ep) {return false;}
+    */
 
     k[2] += ds3;
     int k1 = round(k[0]);
     int k2 = round(k[1]);
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
+    /*
     wi = _w[c3][c2][c1];
     if(wi<ep) {return false;}
+    */
 
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}

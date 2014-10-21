@@ -61,6 +61,7 @@ pngDir = "../../../png/uff/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  '''
   goFakeData()
   goSlopes()
   goScan()
@@ -68,10 +69,10 @@ def main(args):
   goSmooth()
   goSkin()
   goSlip()
+  goUnfault()
   '''
-  goUnfold()
-  goFlatten1()
   goUnfoldc()
+  '''
   goFlatten2()
   goTest()
   '''
@@ -258,6 +259,29 @@ def goSlip():
   plot3(gx)
   plot3(gw,clab="Amplitude",png="gw")
 
+def goUnfault():
+  smark = -999.999
+  gx = readImage(gxfile)
+  gsx = readImage(gsxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  s1 = readImage(fs1file)
+  s2 = readImage(fs2file)
+  s3 = readImage(fs3file)
+  fsl = FaultSlipper(gsx,p2,p3)
+  s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+  gw = fsl.unfault([s1,s2,s3],gx)
+  plot3(gw,clab="Amplitude",png="gw")
+  plot3(gx,clab="Amplitude",png="gx")
+
+
+
 def goUnfold():
   hx = zerofloat(n1,n2,n3)
   gx = readImage(gwfile)
@@ -328,7 +352,7 @@ def goUnfoldc():
   u2 = fillfloat(0.0,n1,n2,n3)
   u3 = fillfloat(0.0,n1,n2,n3)
   p = array(u1,u2,u3,wp)
-  flattener = FlattenerRTD(6.0,6.0)
+  flattener = FlattenerRTD(4.0,4.0)
   r = flattener.computeShifts(fm,cs,p,cpm)
   flattener.applyShifts(r,gx,hx)
   writeImage(r1file,r[0])
@@ -336,11 +360,15 @@ def goUnfoldc():
   writeImage(r3file,r[2])
   writeImage(hxfile,hx)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
-  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")
-  plot3(cpm,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cpm")
+  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
   plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
-  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
-  plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gw")
+  plot3(gx,r[0],cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,r[1],cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,r[2],cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+
   #plot3(wp,cmin=hmin,cmax=hmax,cmap=hmap,clab="Weights",png="wp")
   #plot3(r[0],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift1",png="r1")
   #plot3(r[1],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift2",png="r2")
@@ -368,6 +396,7 @@ def goFlatten1():
 #  plot3(ws,clab="Weights",png="ws")
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gf,clab="Amplitude",png="gf")
+
 def goFlatten2():
   gx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,5.0
@@ -377,7 +406,7 @@ def goFlatten2():
   skins = readSkins(fskbase)
   wse,cse=1,1
   cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,pow(ep,1.0))
-  ws = pow(ep,8.0)
+  ws = pow(ep,2.0)
   sh = fillfloat(0.0,n1,n2,n3)
   cp = fillfloat(0.0,n1,n2,n3)
   cs = cfs.getWeightsAndConstraintsM(ws,cp)
@@ -386,13 +415,13 @@ def goFlatten2():
   flc.setSmoothings(12.0,12.0);
   flc.setIterations(0.01,200);
   flc.computeShifts(p2,p3,ws,fk,cs,sh);
+  vs = copy(sh)
   fm = flc.getMappingsFromShifts(s1,s2,s3,sh)
   gf = fm.flatten(gx)
-  plot3(ws,clab="Weights",png="ws")
-  plot3(gx,clab="Amplitude",png="gx")
+  plot3(cp,clab="ControlPoints",png="cp")
   plot3(gf,clab="Amplitude",png="gf")
-  plot3(sh,cmin=0,cmax=100,clab="Shifts",png="sh")
-
+  plot3(gx,vs,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxsh")
 
 
 def array(x1,x2,x3=None,x4=None):
@@ -549,7 +578,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(95,5,51)
+  ipg.setSlices(95,5,40)
   #ipg.setSlices(95,5,95)
   if cbar:
     sf.setSize(837,700)
