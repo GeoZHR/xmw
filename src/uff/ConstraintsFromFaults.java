@@ -92,7 +92,7 @@ public class ConstraintsFromFaults {
     qx += _w[x3p][x2 ][x1];
     qx += _w[x3 ][x2m][x1];
     qx += _w[x3 ][x2p][x1];
-    if(qx*sc<.45f){return true;}
+    if(qx*sc<.3f){return true;}
     float[] cy = add(cx,cs);
     cy[0] = bound1(round(cy[0]));
     if(nearestFaultCell(cy)) {
@@ -107,7 +107,7 @@ public class ConstraintsFromFaults {
       qy += _w[y3p][y2 ][y1];
       qy += _w[y3 ][y2m][y1];
       qy += _w[y3 ][y2p][y1];
-      if(qy*sc<.45f){return true;}
+      if(qy*sc<.3f){return true;}
     }
     return false;
   }
