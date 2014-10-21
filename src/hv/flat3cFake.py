@@ -66,9 +66,9 @@ pngDir = "../../../png/ipf/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
-  #goWeights()
-  #goSlopes(4.0,1.0,20.0)
+  goFakeData()
+  goWeights()
+  goSlopes(4.0,1.0,20.0)
   #goFlatten()
   goFlattenC()
 
@@ -107,19 +107,21 @@ def goFlattenC():
   fltc = readImage("fltClean")
   ep = mul(fltc,ep)
   wp = pow(ep,6.0) 
-  wp1 = pow(ep,6.0) 
+  #wp1 = pow(ep,6.0) 
   sc = SetupConstraints()
+  '''
   sc.setForExtension(4.0,4.0,0.0)
   kk1 = sc.extend(k11,k12,k13,n2,n3,p2,p3,wp,gx)
   kk2 = sc.extend(k21,k22,k23,n2,n3,p2,p3,wp,gx)
   kk3 = sc.extend(k31,k32,k33,n2,n3,p2,p3,wp,gx)
   kk4 = sc.extend(k41,k42,k43,n2,n3,p2,p3,wp,gx)
-  kk5 = sc.extend(k51,k52,k53,n2,n3,p2,p3,wp1,gx)
-  kk6 = sc.extend(k61,k62,k63,n2,n3,p2,p3,wp1,gx)
+  kk5 = sc.extend(k51,k52,k53,n2,n3,p2,p3,wp,gx)
+  kk6 = sc.extend(k61,k62,k63,n2,n3,p2,p3,wp,gx)
   k1 = [kk1[0],kk2[0],kk3[0],kk4[0],kk5[0],kk6[0]]
   k2 = [kk1[1],kk2[1],kk3[1],kk4[1],kk5[1],kk6[1]]
   k3 = [kk1[2],kk2[2],kk3[2],kk4[2],kk5[2],kk6[2]]
   k4 = [kk1[3],kk2[3],kk3[3],kk4[3],kk5[3],kk6[3]]
+  '''
   fl = Flattener3C()
   fl.setIterations(0.01,100)
   fl.setSmoothings(6.0,6.0)

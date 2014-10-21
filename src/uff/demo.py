@@ -67,7 +67,7 @@ maxThrow = 15.0
 #pngDir = None
 pngDir = "../../../png/uff/"
 
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -80,10 +80,10 @@ def main(args):
   goSmooth()
   goSkin()
   goSlip()
-  '''
   goUnfault()
   '''
   goUnfaultc()
+  '''
   goUnfold()
   goUnfoldc2()
   goUnfoldc()
@@ -336,7 +336,7 @@ def goUnfaultc():
     skins = readSkins(fskbase)
     cfs = ConstraintsFromFaults(skins,ep)
     wp = pow(ep,2.0)
-    cs = cfs.getWeightsAndConstraints(wp,cp)
+    cs = cfs.getWeightsAndConstraintsTest(wp,cp)
     fm = cfs.getFaultMap()
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)

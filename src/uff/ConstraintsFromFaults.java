@@ -31,6 +31,48 @@ public class ConstraintsFromFaults {
     faultMap(_fm);
   }
 
+  public float[][][] getWeightsAndConstraintsTest(float[][][] ws, float[][][] cp) {
+    setWeightsOnFault(ws);
+    ArrayList<float[][]> cl = new ArrayList<float[][]>();
+    for (FaultSkin fs:_fss) {
+      for (FaultCell fc:fs) {
+        float[] cx = fc.getX();
+        float[] cs = fc.getS();
+        float[] cw = fc.getW();
+        if(badQuality(cx,cs)){continue;}
+        cs[0] *= 0.50f;
+        cs[1] *= 0.50f;
+        cs[2] *= 0.50f;
+        float[] fx = copy(cx);
+        float[] hx = copy(cx);
+        float w2 = abs(cw[1]);
+        float w3 = abs(cw[2]);
+        boolean valid = false;
+        if (w2>w3) {valid = shift2(cw[1],fx,hx);} 
+        else       {valid = shift3(cw[2],fx,hx);}
+        if(valid) {
+          if (onFault(fx,ws)) {continue;}
+          if (onFault(hx,ws)) {continue;}
+          cl.add(new float[][]{fx,hx,cs});
+          addPoints(fx,hx,cp);
+        }
+      }
+    }
+    int ns = cl.size();
+    System.out.println("sets of control points:"+ns);
+    float[][][] cs = new float[3][ns][3];
+    for (int is=0; is<ns; ++is) {
+      float[][] ps = cl.get(is);
+      for (int ip=0; ip<3; ++ip) {
+        cs[0][is][ip] = ps[ip][0];
+        cs[1][is][ip] = ps[ip][1];
+        cs[2][is][ip] = ps[ip][2];
+      }
+    }
+    return cs;
+  }
+
+
   public float[][][] getWeightsAndConstraints(float[][][] ws, float[][][] cp) {
     setWeightsOnFault(ws);
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
@@ -143,11 +185,13 @@ public class ConstraintsFromFaults {
     if(x>=_n1){return _n1-1;}
     return x;
   }
+
   private int bound2(int x) {
     if(x<0)   {return 0;}
     if(x>=_n2){return _n2-1;}
     return x;
   }
+
   private int bound3(int x) {
     if(x<0)   {return 0;}
     if(x>=_n3){return _n3-1;}
@@ -197,7 +241,7 @@ public class ConstraintsFromFaults {
   }
 
   private boolean shift2(float w2, float[] c, float[] k) {
-    float ep = 0.8f;
+    //float ep = 0.8f;
     float sn2 = (w2<0.f)?-1.f:1.f;
     float ds2 = sn2*2.0f;
     c[1] -= ds2;

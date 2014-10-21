@@ -22,31 +22,44 @@ import static edu.mines.jtk.util.ArrayMath.*;
 
 public class SetupConstraints {
   
-  public void setConstraints(float[] k1, float[] k2, float[] k3) {
-    _k1 = k1;
-    _k2 = k2;
-    _k3 = k3;
-  }
- 
   public void setForExtension (float sigma1, float sigma2, float scale) {
     _scale  = scale ;
     _sigma1 = sigma1;
     _sigma2 = sigma2;
   } 
 
-  public float[][] rearrange() {
+  public float[][] constraintsFromSurface(float[][] surf) {
+    int n3 = surf.length;
+    int n2 = surf[0].length;
+    int np = n2*n3;
+    float[] k1 = new float[np];
+    float[] k2 = new float[np];
+    float[] k3 = new float[np];
+    int ip = 0;
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        k3[ip] = i3;
+        k2[ip] = i2;
+        k1[ip] = surf[i3][i2];
+        ip ++;
+      }
+    }
+    return rearrange(k1,k2,k3);
+  }
+
+  public float[][] rearrange(float[] k1, float[] k2, float[] k3) {
     int ai = 0;
-    int np = _k1.length;
+    int np = k1.length;
     float[][] k = zerofloat(np,4);
-    float k1a = sum(_k1)/(float)np;
+    float k1a = sum(k1)/(float)np;
     float min = Float.POSITIVE_INFINITY;
     for (int ip=0; ip<np; ip++) {
-      int k1i = round(_k1[ip]);
+      int k1i = round(k1[ip]);
       k[0][ip] = (float)k1i; 
-      k[1][ip] = _k2[ip];
-      k[2][ip] = _k3[ip];
-      k[3][ip] = _k1[ip]-k1i;
-      float dk = abs(_k1[ip]-k1a);
+      k[1][ip] = k2[ip];
+      k[2][ip] = k3[ip];
+      k[3][ip] = k1[ip]-k1i;
+      float dk = abs(k1[ip]-k1a);
       if (dk<min){min = dk; ai=ip;}
     }
     float t0 = k[0][0];
@@ -59,6 +72,7 @@ public class SetupConstraints {
     k[3][0] = k[3][ai];  k[3][ai] = t3;
     return k;
   }
+
   public float[][] firstExtend(float[] k1, float[] k2, float[] k3,
     int w2, int w3, float[][][] p2, float[][][] p3, float[][][] ep, 
     float[][][] u, float[][][] wp) {
@@ -156,29 +170,7 @@ public class SetupConstraints {
     k[3][0] = k[3][ai]; k[3][ai] = t3;
     return copy(ci,4,0,0,k);
   } 
-  private void removeFaults(float[][][] f) {
-    int n = _k1.length;
-    ArrayList<float[]> kk = new ArrayList<float[]>();
-    for (int i=0; i<n; ++i) {
-      int i1 = (int)_k1[i];
-      int i2 = (int)_k2[i];
-      int i3 = (int)_k3[i];
-      float fi = f[i3][i2][i1];
-      if (fi>0.0f) {
-        float[] kki = {_k1[i],_k2[i],_k3[i]};
-        kk.add(kki);
-      }
-    }
-    int np = kk.size();
-    _k1 = new float[np];
-    _k2 = new float[np];
-    _k3 = new float[np];
-    for (int ip=0; ip<np; ++ip) {
-      _k1[ip] = kk.get(ip)[0];
-      _k2[ip] = kk.get(ip)[1];
-      _k3[ip] = kk.get(ip)[2];
-    }
-  } 
+
   private float heightAvg(float lmt, float[][] x) {
     int n2=x.length;
     int n1=x[0].length;
@@ -192,9 +184,6 @@ public class SetupConstraints {
     }
     return sum/ci;
   }
-  private float[] _k1;
-  private float[] _k2;
-  private float[] _k3;
   private float _scale  = 0.0f;
   private float _sigma1 = 12.0f;
   private float _sigma2 = 12.0f;
