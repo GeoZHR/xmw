@@ -59,7 +59,7 @@ public class FlattenerRTD {
   }
 
   public float[][][][] computeShifts(
-    int[][][] fm, float[][][] cx, float[][][][] p, float[][][] cp) 
+    boolean unfaultOnly, int[][][] fm, float[][][] cx, float[][][][] p) 
   {
     int n3 = p[0].length;
     int n2 = p[0][0].length;
@@ -72,6 +72,7 @@ public class FlattenerRTD {
     float[][][][] r  = new float[3][n3][n2][n1];
     float[][][][] b  = new float[3][n3][n2][n1];
     //initializeShifts2(cn,cu,cx,r);
+    setIters(unfaultOnly);
     initializeShifts(cx,r);
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
@@ -89,8 +90,16 @@ public class FlattenerRTD {
     cleanShifts(fm,r);
     cleanShifts(fm,r);
     cleanShifts(fm,r);
-    //addPoints(cn,cu,cp);
     return r;
+  }
+
+  private void setIters(boolean unfaultOnly) {
+    _inner = 10; 
+    _outer = 50;
+    if(unfaultOnly) {
+      _outer = 1;
+      _inner = 10;
+    }
   }
 
   /**

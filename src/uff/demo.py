@@ -30,10 +30,19 @@ fskbase = "fsk" # fault skin (basename only)
 u1file = "u1" # normal vector (1st component)
 u2file = "u2" # normal vector (2nd component)
 u3file = "u3" # normal vector (3rd component)
-r1file = "r1" # unfolding shifts (1st component)
-r2file = "r2" # unfolding shifts (2nd component)
-r3file = "r3" # unfolding shifts (3rd component)
-hxfile = "hx" # unfolded image 
+gffile  = "gf" # unfolded image 
+
+
+r1tfile = "r1t" # unfaulting shifts (1st component)
+r2tfile = "r2t" # unfaulting shifts (2nd component)
+r3tfile = "r3t" # unfaulting shifts (3rd component)
+ftfile  = "ft" # unfaulted image 
+cpfile  = "cp" # unfaulted image 
+
+r1dfile = "r1d" # unfolding shifts (1st component)
+r2dfile = "r2d" # unfolding shifts (2nd component)
+r3dfile = "r3d" # unfolding shifts (3rd component)
+fdfile  = "fd" # unfolded image 
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -58,6 +67,8 @@ maxThrow = 15.0
 #pngDir = None
 pngDir = "../../../png/uff/"
 
+plotOnly = False
+
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
@@ -71,8 +82,11 @@ def main(args):
   goSlip()
   goUnfault()
   '''
-  goUnfoldc()
+  goUnfaultc()
   '''
+  goUnfold()
+  goUnfoldc2()
+  goUnfoldc()
   goFlatten2()
   goTest()
   '''
@@ -277,39 +291,30 @@ def goUnfault():
   plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
   gw = fsl.unfault([s1,s2,s3],gx)
-  plot3(gw,clab="Amplitude",png="gw")
+  plot3(gw,clab="Unfault",png="gw")
   plot3(gx,clab="Amplitude",png="gx")
 
 
 
 def goUnfold():
-  hx = zerofloat(n1,n2,n3)
-  gx = readImage(gwfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilter(2.0,2.0)
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  pow(ep,8.0,ep)
-  wse,cse=1,1
-  p2,p3,ep = FaultScanner.slopes(2.0,2.0,2.0,5.0,gx)
-  skins = readSkins(fskbase)
-  cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,ep)
-  cs = cfs.getWeightsAndConstraints(ep)
-  p = array(u1,u2,u3,ep)
-  flattener = FlattenerRT(12.0,12.0)
-  r = flattener.findShifts(p)
-  flattener.applyShifts(r,gx,hx)
-  writeImage(r1file,r[0])
-  writeImage(r2file,r[1])
-  writeImage(r3file,r[2])
-  writeImage(hxfile,hx)
+  if not plotOnly:
+    gx = readImage(gwfile)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    gf = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(2.0,1.0)
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    p = array(u1,u2,u3,pow(ep,8.0))
+    flattener = FlattenerRT(6.0,6.0)
+    r = flattener.findShifts(p)
+    flattener.applyShifts(r,gx,gf)
+    writeImage(gffile,gf)
+  else:
+    gf = readImage(gffile)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
-  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
-  plot3(r[0],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift1",png="r1")
-  plot3(r[1],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift2",png="r2")
-  plot3(r[2],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift3",png="r3")
+  plot3(gf,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfold",png="gf")
 
 def goTest():
   gx = readImage(gxfile)
@@ -322,58 +327,125 @@ def goTest():
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="gx")
 
-
-def goUnfoldc():
-  hx = zerofloat(n1,n2,n3)
-  gx = readImage(gxfile)
-  gw = readImage(gwfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilter(2.0,1.0)
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  wp = copy(ep)
-  #ep = fillfloat(1.0,n1,n2,n3)
-  wse,cse=1,1
-  cp  = zerofloat(n1,n2,n3)
-  cpm = zerofloat(n1,n2,n3)
-  p2,p3,ep = FaultScanner.slopes(2.0,1.0,1.0,5.0,gx)
-  skins = readSkins(fskbase)
-  #cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,wp)
-  p2 = fillfloat(0.0,n1,n2,n3)
-  p3 = fillfloat(0.0,n1,n2,n3)
-  cfs = ConstraintsFromFaults(skins,p2,p3,wp)
-  wp = pow(wp,2.0)
-  #cs = cfs.getWeightsAndConstraintsM(wp,cp)
-  cs = cfs.getWeightsAndConstraints(wp,cp)
-  fm = cfs.getFaultMap()
-  u1 = fillfloat(1.0,n1,n2,n3)
-  u2 = fillfloat(0.0,n1,n2,n3)
-  u3 = fillfloat(0.0,n1,n2,n3)
-  p = array(u1,u2,u3,wp)
-  flattener = FlattenerRTD(4.0,4.0)
-  r = flattener.computeShifts(fm,cs,p,cpm)
-  flattener.applyShifts(r,gx,hx)
-  writeImage(r1file,r[0])
-  writeImage(r2file,r[1])
-  writeImage(r3file,r[2])
-  writeImage(hxfile,hx)
+def goUnfaultc():
+  if not plotOnly:
+    ft = zerofloat(n1,n2,n3)
+    gx = readImage(gxfile)
+    cp  = zerofloat(n1,n2,n3)
+    p2,p3,ep = FaultScanner.slopes(2.0,1.0,1.0,5.0,gx)
+    skins = readSkins(fskbase)
+    cfs = ConstraintsFromFaults(skins,ep)
+    wp = pow(ep,2.0)
+    cs = cfs.getWeightsAndConstraints(wp,cp)
+    fm = cfs.getFaultMap()
+    u1 = fillfloat(1.0,n1,n2,n3)
+    u2 = fillfloat(0.0,n1,n2,n3)
+    u3 = fillfloat(0.0,n1,n2,n3)
+    p = array(u1,u2,u3,wp)
+    flattener = FlattenerRTD(0.0,0.0)
+    [r1,r2,r3] = flattener.computeShifts(True,fm,cs,p)
+    flattener.applyShifts([r1,r2,r3],gx,ft)
+    writeImage(r1tfile,r1)
+    writeImage(r2tfile,r2)
+    writeImage(r3tfile,r3)
+    writeImage(ftfile,ft)
+    writeImage(cpfile,cp)
+  else:
+    r1 = readImage(r1tfile)
+    r2 = readImage(r2tfile)
+    r3 = readImage(r3tfile)
+    ft = readImage(ftfile)
+    cp = readImage(cpfile)
+    gx = readImage(gxfile)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
-  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
-  plot3(gx,r[0],cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+  plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
+  plot3(gx,r1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,r[1],cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+  plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,r[2],cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+  plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
 
-  #plot3(wp,cmin=hmin,cmax=hmax,cmap=hmap,clab="Weights",png="wp")
-  #plot3(r[0],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift1",png="r1")
-  #plot3(r[1],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift2",png="r2")
-  #plot3(r[2],cmin=hmin,cmax=hmax,cmap=hmap,clab="Shift3",png="r3")
 
+def goUnfoldc():
+  if not plotOnly:
+    gx = readImage(gxfile)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    fd = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(2.0,1.0)
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    wp = copy(ep)
+    cp  = zerofloat(n1,n2,n3)
+    skins = readSkins(fskbase)
+    cfs = ConstraintsFromFaults(skins,wp)
+    wp = pow(wp,2.0)
+    cs = cfs.getWeightsAndConstraints(wp,cp)
+    fm = cfs.getFaultMap()
+    p = array(u1,u2,u3,wp)
+    flattener = FlattenerRTD(6.0,6.0)
+    [r1,r2,r3] = flattener.computeShifts(False,fm,cs,p)
+    flattener.applyShifts([r1,r2,r3],gx,fd)
+    writeImage(r1dfile,r1)
+    writeImage(r2dfile,r2)
+    writeImage(r3dfile,r3)
+    writeImage(fdfile,fd)
+  else:
+    fd = readImage(fdfile)
+    r1 = readImage(r1dfile)
+    r2 = readImage(r2dfile)
+    r3 = readImage(r3dfile)
+    gx = readImage(gxfile)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(fd,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="fd")
+  plot3(gx,r1,cmin=0.0,cmax=12.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,r2,cmin=-10,cmax=10,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,r3,cmin=-8,cmax=8,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+def goUnfoldc2():
+  if not plotOnly:
+    goUnfaultc()
+    gx = readImage(ftfile)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    fd = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(2.0,1.0)
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    p = array(u1,u2,u3,pow(ep,8.0))
+    flattener = FlattenerRT(6.0,6.0)
+    r = flattener.findShifts(p)
+    flattener.applyShifts(r,gx,fd)
+    r1 = readImage(r1tfile)
+    r2 = readImage(r2tfile)
+    r3 = readImage(r3tfile)
+    r1 = add(r1,r[0])
+    r2 = add(r2,r[1])
+    r3 = add(r3,r[2])
+    writeImage(r1dfile,r1)
+    writeImage(r2dfile,r2)
+    writeImage(r3dfile,r3)
+    writeImage(fdfile,fd)
+  else:
+    fd = readImage(fdfile)
+    r1 = readImage(r1dfile)
+    r2 = readImage(r2dfile)
+    r3 = readImage(r3dfile)
+    gx = readImage(gxfile)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(fd,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="fd")
+  plot3(gx,r1,cmin=0.0,cmax=12.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,r2,cmin=-10,cmax=10,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,r3,cmin=-8,cmax=8,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
 
 def goFlatten1():
   gx = readImage(gwfile)
@@ -578,7 +650,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(95,5,40)
+  ipg.setSlices(95,5,44)
   #ipg.setSlices(95,5,95)
   if cbar:
     sf.setSize(837,700)
