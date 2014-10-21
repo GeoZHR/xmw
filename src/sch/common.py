@@ -1,4 +1,5 @@
 import sys
+import jarray
 
 from java.awt import *
 from java.io import *
