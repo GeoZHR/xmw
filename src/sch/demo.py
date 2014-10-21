@@ -76,8 +76,8 @@ def main(args):
   #goSlip()
   #goUnfault()
   #goFlatten()
-  #goUnfoldc()
-  goDisplay()
+  goUnfoldc()
+  #goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
