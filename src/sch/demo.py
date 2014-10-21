@@ -340,7 +340,7 @@ def goUnfoldc():
   u3 = fillfloat(0.0,n1,n2,n3)
   p = array(u1,u2,u3,wp)
   flattener = FlattenerRTD(4.0,4.0)
-  r = flattener.computeShifts(fm,cs,p,cpm)
+  r = flattener.computeShifts(fm,cs,p,cp)
   flattener.applyShifts(r,gx,hx)
   writeImage(r1file,r[0])
   writeImage(r2file,r[1])
