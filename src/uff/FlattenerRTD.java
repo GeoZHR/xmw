@@ -191,7 +191,7 @@ public class FlattenerRTD {
   private float _epsilon = 0.000f; // damping for stability?
   private float _small = 0.010f; // stop CG iterations if residuals are small
   //private float _small = 0.001f; // stop CG iterations if residuals are small
-  private int _inner = 20; // maximum number of inner CG iterations
+  private int _inner = 10; // maximum number of inner CG iterations
   private int _outer = 20; // maximum number of outer iterations
 
   // for constraints
