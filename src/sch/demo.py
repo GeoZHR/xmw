@@ -60,7 +60,7 @@ maxThrow = 20.0
 pngDir = "../../../png/sch/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out other parts that have already written results to files.
