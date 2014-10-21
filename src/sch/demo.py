@@ -38,6 +38,7 @@ r1file = "r1"
 r2file = "r2"
 r3file = "r3"
 hxfile = "hx"
+uffile = "uf"
 hxmfile = "hxm"
 
 
@@ -321,7 +322,7 @@ def goFlatten():
   plot3(fg,clab="Amplitude",png="fg")
 
 def goUnfoldc():
-  hx = zerofloat(n1,n2,n3)
+  uf = zerofloat(n1,n2,n3)
   cp = zerofloat(n1,n2,n3)
   gx = readImage(gxfile)
   gw = readImage(gwfile)
@@ -343,14 +344,14 @@ def goUnfoldc():
   p = array(u1,u2,u3,wp)
   flattener = FlattenerRTD(4.0,4.0)
   r = flattener.computeShifts(fm,cs,p,cp)
-  flattener.applyShifts(r,gx,hx)
+  flattener.applyShifts(r,gx,uf)
   writeImage(r1file,r[0])
   writeImage(r2file,r[1])
   writeImage(r3file,r[2])
-  writeImage(hxfile,hx)
+  writeImage(uffile,uf)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
-  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
+  plot3(uf,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="uf")
   plot3(gx,r[0],cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,r[1],cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
