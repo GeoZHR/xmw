@@ -241,7 +241,7 @@ public class ConstraintsFromSkinsM {
     int k2 = round(k[1]);
     int k3 = round(k[2]+dp3);
     if(onBound(k1,k2,k3)){return false;}
-    wi = _w[c3][c2][c1];
+    wi = _w[k3][k2][k1];
     if(wi<ep) {return false;}
     float kp3 = _q[k3][k2][k1];
 

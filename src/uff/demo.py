@@ -336,7 +336,7 @@ def goUnfaultc():
     skins = readSkins(fskbase)
     cfs = ConstraintsFromFaults(skins,ep)
     wp = pow(ep,2.0)
-    cs = cfs.getWeightsAndConstraintsTest(wp,cp)
+    cs = cfs.getWeightsAndConstraints(wp,cp)
     fm = cfs.getFaultMap()
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)

@@ -718,7 +718,7 @@ public class FlattenerRTD {
       r[2][hx3][hx2][hx1] = -fs3;
     }
   }
-
+  /*
   public static void initializeShifts2(
     int[] cn, float[][][] cu, float[][][] cx, float[][][][] r) 
   {
@@ -814,6 +814,7 @@ public class FlattenerRTD {
       }
     }
   }
+  */
 
   private static void constrain(float[][][] cu, float[][][] x) {
     int ns = cu[0].length;
@@ -829,6 +830,7 @@ public class FlattenerRTD {
     }
   }
 
+  /*
   private static void removeAverage(float[][][][] x) {
     int n4 = x.length;
     for (int i4=0; i4<n4; ++i4) 
@@ -867,7 +869,6 @@ public class FlattenerRTD {
     System.out.println("sets of control points:"+cot);
   }
 
-  /*
   private void constraintTransform2(
     float[][][] fm, float[][][] cx, float[][][] cu, int[] cn)
   {
@@ -898,7 +899,6 @@ public class FlattenerRTD {
 
   }
 
-  */
 
   private void constraintTransform(
     float [][][] fm, float[][][] cx, float[][][] cu, int[] cn) 
@@ -1008,6 +1008,7 @@ public class FlattenerRTD {
     }
   }
 
+  */
   private static void updateParameters(
     float[][][] r, float[][][] p, float[][][] q)
   {

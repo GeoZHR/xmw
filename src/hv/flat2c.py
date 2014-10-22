@@ -121,7 +121,7 @@ def gain(x):
 gray = ColorMap.GRAY
 jet = ColorMap.JET
 pngDir = None
-pngDir = "../../png/hv/2d/slides/"
+pngDir = "../../../png/hv/2d/slides/"
 def horizonExtract():
   f = readImage(ffile)
   h = readImage("hv0")
