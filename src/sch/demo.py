@@ -38,7 +38,10 @@ r1file = "r1"
 r2file = "r2"
 r3file = "r3"
 hxfile = "hx"
-ftfile = "ft"
+ftcfile = "ftc"
+r1tfile = "r1t"
+r2tfile = "r2t"
+r3tfile = "r3t"
 cpfile = "cp"
 uffile = "uf"
 hxmfile = "hxm"
@@ -345,13 +348,13 @@ def goUnfaultc():
     writeImage(r1tfile,r1)
     writeImage(r2tfile,r2)
     writeImage(r3tfile,r3)
-    writeImage(ftfile,ft)
+    writeImage(ftcfile,ft)
     writeImage(cpfile,cp)
   else:
     r1 = readImage(r1tfile)
     r2 = readImage(r2tfile)
     r3 = readImage(r3tfile)
-    ft = readImage(ftfile)
+    ft = readImage(ftcfile)
     cp = readImage(cpfile)
     gx = readImage(gxfile)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
