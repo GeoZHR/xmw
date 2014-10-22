@@ -43,8 +43,8 @@ r1tfile = "r1t"
 r2tfile = "r2t"
 r3tfile = "r3t"
 cpfile = "cp"
-uffile = "uf"
 hxmfile = "hxm"
+uffile = "uf"
 
 
 # These parameters control the scan over fault strikes and dips.
