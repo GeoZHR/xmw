@@ -38,6 +38,8 @@ r1file = "r1"
 r2file = "r2"
 r3file = "r3"
 hxfile = "hx"
+ftfile = "ft"
+cpfile = "cp"
 uffile = "uf"
 hxmfile = "hxm"
 
