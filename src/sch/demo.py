@@ -76,7 +76,8 @@ def main(args):
   #goSlip()
   #goUnfault()
   #goFlatten()
-  goUnfoldc()
+  #goUnfoldc()
+  goUnfault()
   #goDisplay()
 
 def goDisplay():
@@ -320,6 +321,47 @@ def goFlatten():
   plot3(gx,clab="Amplitude",png="gx")
   plot3(fi,clab="Amplitude",png="fi")
   plot3(fg,clab="Amplitude",png="fg")
+
+def goUnfaultc():
+  if not plotOnly:
+    ft = zerofloat(n1,n2,n3)
+    gx = readImage(gxfile)
+    cp  = zerofloat(n1,n2,n3)
+    p2,p3,ep = FaultScanner.slopes(2.0,1.0,1.0,5.0,gx)
+    skins = readSkins(fslbase)
+    cfs = ConstraintsFromFaults(skins,ep)
+    wp = pow(ep,2.0)
+    cs = cfs.getWeightsAndConstraints(wp,cp)
+    fm = cfs.getFaultMap()
+    u1 = fillfloat(1.0,n1,n2,n3)
+    u2 = fillfloat(0.0,n1,n2,n3)
+    u3 = fillfloat(0.0,n1,n2,n3)
+    p = array(u1,u2,u3,wp)
+    flattener = FlattenerRTD(4.0,4.0)
+    [r1,r2,r3] = flattener.computeShifts(True,fm,cs,p)
+    flattener.applyShifts([r1,r2,r3],gx,ft)
+    writeImage(r1tfile,r1)
+    writeImage(r2tfile,r2)
+    writeImage(r3tfile,r3)
+    writeImage(ftfile,ft)
+    writeImage(cpfile,cp)
+  else:
+    r1 = readImage(r1tfile)
+    r2 = readImage(r2tfile)
+    r3 = readImage(r3tfile)
+    ft = readImage(ftfile)
+    cp = readImage(cpfile)
+    gx = readImage(gxfile)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
+  plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
+  plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+
 
 def goUnfoldc():
   uf = zerofloat(n1,n2,n3)
