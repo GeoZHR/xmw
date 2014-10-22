@@ -20,8 +20,11 @@ import static edu.mines.jtk.util.ArrayMath.*;
 
 public class ConstraintsFromFaults {
 
-  public ConstraintsFromFaults(FaultSkin[] fss,float[][][] w) {
+  public ConstraintsFromFaults(
+    FaultSkin[] fss,float[][][] w) {
     _w = w;
+    //_p2 = p2;
+    //_p3 = p3;
     _fss = fss;
     _n3 = w.length;
     _n2 = w[0].length;
@@ -30,6 +33,85 @@ public class ConstraintsFromFaults {
     _fm = new int[_n3][_n2][_n1];
     faultMap(_fm);
   }
+  /*
+  private boolean shift2m(float w2, float[] cx, float[] fx, float[] hx) {
+    float sn2 = (w2<0.f)?-1.f:1.f;
+    float dp2 = sn2*2.0f;
+    float ds2 = sn2*2.0f;
+    int cx1 = round(cx[0]);
+    int cx3 = round(cx[2]);
+    int cx2 = round(cx[1]-dp2);
+    if(onBound(cx1,cx2,cx3)){return false;}
+    float cp2 = _p2[cx3][cx2][cx1];
+    int fx1 = round(fx[0]);
+    int fx3 = round(fx[2]);
+    int fx2 = round(fx[1]+dp2);
+    if(onBound(fx1,fx2,fx3)){return false;}
+
+
+    int hx1 = round(hx[0]);
+    int hx3 = round(hx[2]);
+    int hx2 = round(hx[1]+dp2);
+    if(onBound(hx1,hx2,hx3)){return false;}
+    float hp2 = _p2[hx3][hx2][hx1];
+
+    fx[1] -= ds2;
+    hx[1] += ds2;
+    fx[0] -= ds2*cp2;
+    hx[0] += ds2*hp2;
+
+    fx1 = round(fx[0]); fx2 = round(fx[1]);
+    if(onBound(fx1,fx2,fx3)) {return false;}
+    _mk[fx3][fx2][fx1] += 1;
+    if(_mk[fx3][fx2][fx1]>1) {return false;}
+    k1 = round(hx[0]); k2 = round(k[1]);
+    if(onBound(k1,k2,k3)) {return false;}
+    _mk[k3][k2][k1] += 1;
+    if(_mk[k3][k2][k1]>1) {return false;}
+ 
+    return true;
+  }
+
+  private boolean shift3m(float w3, float[] c, float[] k) {
+    float ep = 0.5f;
+    float sn3 = (w3<0.f)?-1.f:1.f;
+    float dp3 = sn3*2.0f;
+    float ds3 = sn3*2.0f;
+
+    int c1 = round(c[0]);
+    int c2 = round(c[1]);
+    int c3 = round(c[2]-dp3);
+    if(onBound(c1,c2,c3)){return false;}
+    float wi = _w[c3][c2][c1];
+    if(wi<ep) {return false;}
+    float cp3 = _p3[c3][c2][c1];
+
+    int k1 = round(k[0]);
+    int k2 = round(k[1]);
+    int k3 = round(k[2]+dp3);
+    if(onBound(k1,k2,k3)){return false;}
+    wi = _w[k3][k2][k1];
+    if(wi<ep) {return false;}
+    float kp3 = _p3[k3][k2][k1];
+
+    c[2] -= ds3;    
+    k[2] += ds3;
+    c[0] -= ds3*cp3;
+    k[0] += ds3*kp3;
+
+    c1 = round(c[0]); c3 = round(c[2]);
+    if(onBound(c1,c2,c3)) {return false;}
+    _mk[c3][c2][c1] += 1;
+    if(_mk[c3][c2][c1]>1) {return false;}
+    k1 = round(k[0]); k3 = round(k[2]);
+    if(onBound(k1,k2,k3)) {return false;}
+    _mk[k3][k2][k1] += 1;
+    if(_mk[k3][k2][k1]>1) {return false;}
+
+    return true;
+  }
+
+  */
 
   public float[][][] getWeightsAndConstraints(float[][][] ws, float[][][] cp) {
     setWeightsOnFault(ws);
@@ -40,16 +122,13 @@ public class ConstraintsFromFaults {
         float[] cs = fc.getS();
         float[] cw = fc.getW();
         if(badQuality(cx,cs)){continue;}
-        cs[0] *= 0.50f;
-        cs[1] *= 0.50f;
-        cs[2] *= 0.50f;
         float[] fx = new float[3];
         float[] hx = new float[3];
-        fx[0] = bound1(round(cx[0]+cs[0]*0.8f));
-        fx[1] = bound2(round(cx[1]+cs[1]*0.8f));
-        fx[2] = bound3(round(cx[2]+cs[2]*0.8f));
-        if(!nearestFaultCell(fx)) {continue;}
-        hx = copy(fx);
+        hx[0] = bound1(round(cx[0]+cs[0]*1.0f));
+        hx[1] = bound2(round(cx[1]+cs[1]*1.0f));
+        hx[2] = bound3(round(cx[2]+cs[2]*1.0f));
+        if(!nearestFaultCell(hx)) {continue;}
+        fx = copy(hx);
         boolean valid = false;
         float w2 = abs(cw[1]);
         float w3 = abs(cw[2]);
@@ -58,7 +137,7 @@ public class ConstraintsFromFaults {
         if(valid) {
           if (onFault(fx,ws)) {continue;}
           if (onFault(hx,ws)) {continue;}
-          cl.add(new float[][]{fx,hx,cs});
+          cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
       }
@@ -306,6 +385,8 @@ public class ConstraintsFromFaults {
   private int _n1,_n2,_n3;
   private FaultSkin[] _fss;
   private float[][][] _w = null;
+  private float[][][] _p2 = null;
+  private float[][][] _p3 = null;
   private int[][][] _mk = null;
   private int[][][] _fm = null;
 }
