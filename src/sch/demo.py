@@ -77,7 +77,7 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  goUnfault()
+  goUnfaultc()
   #goDisplay()
 
 def goDisplay():
