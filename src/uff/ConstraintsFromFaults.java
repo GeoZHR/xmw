@@ -53,8 +53,8 @@ public class ConstraintsFromFaults {
         if (w2>w3) {valid = shift2(cw[1],fx,hx);} 
         else       {valid = shift3(cw[2],fx,hx);}
         if(valid) {
-          if (onFault(fx,ws)) {continue;}
-          if (onFault(hx,ws)) {continue;}
+          //if (onFault(fx,ws)) {continue;}
+          //if (onFault(hx,ws)) {continue;}
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
