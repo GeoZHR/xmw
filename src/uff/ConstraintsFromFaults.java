@@ -196,15 +196,16 @@ public class ConstraintsFromFaults {
   private boolean shift2(float w2, float[] c, float[] k) {
     float sn2 = (w2<0.f)?-1.f:1.f;
     float ds2 = sn2*2.0f;
+    float ds1 = sn2*1.0f;
     c[1] -= ds2;
-    c[2] -= ds2;
+    c[2] -= ds1;
     int c1 = round(c[0]);
     int c3 = round(c[2]);
     int c2 = round(c[1]);
     if(onBound(c1,c2,c3)){return false;}
 
     k[1] +=ds2;
-    k[2] +=ds2;
+    k[2] +=ds1;
     int k1 = round(k[0]);
     int k2 = round(k[1]);
     int k3 = round(k[2]);
@@ -222,15 +223,16 @@ public class ConstraintsFromFaults {
   private boolean shift3(float w3, float[] c, float[] k) {
     float sn3 = (w3<0.f)?-1.f:1.f;
     float ds3 = sn3*2.0f;
+    float ds1 = sn3*1.0f;
 
-    c[1] -= ds3;
+    c[1] -= ds1;
     c[2] -= ds3;
     int c1 = round(c[0]);
     int c2 = round(c[1]);
     int c3 = round(c[2]);
     if(onBound(c1,c2,c3)){return false;}
 
-    k[1] += ds3;
+    k[1] += ds1;
     k[2] += ds3;
     int k1 = round(k[0]);
     int k2 = round(k[1]);
