@@ -342,21 +342,30 @@ public class Flattener3 {
     private float _sigma1,_sigma2,_sigma3;
     private float[][][] _ep;
 
-    private void removeAverage(float[][][] x) {
-    int n3 = x.length;
-    int n2 = x[0].length;
-    int n1 = x[0][0].length;
-    float nh = (float)(n2*n3);
-    for (int i1=0; i1<n1; ++i1) {
+    private void removeAverage(final float[][][] x) {
+     final int n1 = x[0][0].length; 
+     Parallel.loop(1,n1,2,new Parallel.LoopInt() { // i1 = 1, 3, 5, ...
+     public void compute(int i1) {
+       removeAverage(i1,x);
+     }});
+     Parallel.loop(2,n1,2,new Parallel.LoopInt() { // i1 = 2, 4, 6, ...
+     public void compute(int i1) {
+       removeAverage(i1,x);
+     }});
+    }
+
+    private void removeAverage(int i1, float[][][] x) {
       float sumx = 0.0f;
+      int n3 = x.length;
+      int n2 = x[0].length;
+      float np = n2*n3;
       for (int i3=0; i3<n3; ++i3)  
         for (int i2=0; i2<n2; ++i2)  
           sumx += x[i3][i2][i1];
-      float avgx = sumx/nh;
+      float avgx = sumx/np;
       for (int i3=0; i3<n3; ++i3) 
         for (int i2=0; i2<n2; ++i2) 
           x[i3][i2][i1] -= avgx; 
-      }
     }
     private void zero1(float[][][] x) {
       int n1 = x[0][0].length;
