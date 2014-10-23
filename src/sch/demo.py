@@ -84,10 +84,10 @@ def main(args):
   #goSkin()
   #goSlip()
   #goUnfault()
-  #goFlatten()
   #goUnfoldc()
   #goUnfaultc()
-  goDisplay()
+  goFlatten()
+  #goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
