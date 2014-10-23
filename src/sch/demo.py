@@ -349,9 +349,8 @@ def goFlatten():
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   ws = pow(ep,8.0)
   fl = Flattener3()
-  fl.setIterations(50)
   fl.setSmoothings(8.0,8.0);
-  fl.setIterations(0.01,200);
+  fl.setIterations(0.01,50);
   fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
   gf = fm.flatten(gx)
   writeImage(gffile,gf)
