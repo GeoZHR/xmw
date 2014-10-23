@@ -44,7 +44,10 @@ r2tfile = "r2t"
 r3tfile = "r3t"
 cpfile = "cp"
 hxmfile = "hxm"
+ftcfile = "ftc"
+r1tfile = "r1t"
 uffile = "uf"
+cpfile = "cp"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -82,8 +85,8 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  goUnfaultc()
-  #goDisplay()
+  #goUnfaultc()
+  goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -337,6 +340,7 @@ def goUnfaultc():
     cfs = ConstraintsFromFaults(skins,ep)
     wp = pow(ep,2.0)
     cs = cfs.getWeightsAndConstraints(wp,cp)
+    '''
     fm = cfs.getFaultMap()
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
@@ -349,6 +353,7 @@ def goUnfaultc():
     writeImage(r2tfile,r2)
     writeImage(r3tfile,r3)
     writeImage(ftcfile,ft)
+    '''
     writeImage(cpfile,cp)
   else:
     r1 = readImage(r1tfile)
@@ -408,25 +413,23 @@ def goUnfoldc():
 
 def goDisplay():
   gx = readImage(gxfile)
-  hx = readImage(hxfile)
-  hxm = readImage(hxmfile)
+  cp = readImage(cpfile)
   gw = readImage(gwfile)
-  uf = readImage(uffile)
-  #r1 = readImage(r1file)
+  ftc = readImage(ftcfile)
+  r1 = readImage(r1tfile)
   #r2 = readImage(r2file)
   #r3 = readImage(r3file)
   #ft1 = readImage(ft1file)
   #fs2 = readImage(fs1file)
   #fs3 = readImage(fs1file)
   hmin,hmax,hmap = -2.0,2.0,ColorMap.GRAY
-  plot3(uf,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="uf")
-  plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="hx")
-  plot3(hx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfold",png="hx")
-  plot3(hxm,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfoldM",png="hx")
-  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="hx")
-  '''
-  plot3(gx,r1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+  plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
+  plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
+  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
+  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")
+  plot3(gx,r1,cmin=-6.0,cmax=6.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfolding",png="gxs1i")
+  '''
   plot3(gx,ft1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfaulting",png="gxs1i")
   '''
