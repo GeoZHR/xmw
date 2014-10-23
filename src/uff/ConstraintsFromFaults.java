@@ -53,6 +53,8 @@ public class ConstraintsFromFaults {
         if (w2>w3) {valid = shift2(cw[1],fx,hx);} 
         else       {valid = shift3(cw[2],fx,hx);}
         if(valid) {
+          onFault(fx,ws);
+          onFault(hx,ws);
           //if (onFault(fx,ws)) {continue;}
           //if (onFault(hx,ws)) {continue;}
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
@@ -272,6 +274,15 @@ public class ConstraintsFromFaults {
     }
   }
 
+  private void onFault(float[] p, float[][][] w) {
+    int i1 = round(p[0]);
+    int i2 = round(p[1]);
+    int i3 = round(p[2]);
+    float wi = w[i3][i2][i1];
+    if (wi==0.0f){w[i3][i2][i1]=0.1f;} 
+  }
+
+ /*
   private boolean onFault(float[] p, float[][][] w) {
     int i1 = round(p[0]);
     int i2 = round(p[1]);
@@ -280,6 +291,7 @@ public class ConstraintsFromFaults {
     if (wi==0.0f){return true;} 
     else {return false;}
   }
+ */
 
   private boolean onBound(int p1, int p2, int p3) {
     if(p1<0||p1>=_n1){return true;}
