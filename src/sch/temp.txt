@@ -1,0 +1,9 @@
+
+
+jar {
+  baseName 'unfold'
+  manifest {
+    attributes 'Implementation-Title': project.description
+  }
+}
+
