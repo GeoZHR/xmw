@@ -85,8 +85,8 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  goUnfaultc()
-  #goDisplay()
+  #goUnfaultc()
+  goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -363,6 +363,7 @@ def goUnfaultc():
     cp = readImage(cpfile)
     gx = readImage(gxfile)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
   '''
   plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
@@ -419,11 +420,15 @@ def goDisplay():
   gw = readImage(gwfile)
   ftc = readImage(ftcfile)
   r1 = readImage(r1tfile)
+  s1 = readImage(fs1file)
   #r2 = readImage(r2file)
   #r3 = readImage(r3file)
   #ft1 = readImage(ft1file)
   #fs2 = readImage(fs1file)
   #fs3 = readImage(fs1file)
+  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Fault throw (samples)",png="gxs1")
+
   hmin,hmax,hmap = -2.0,2.0,ColorMap.GRAY
   plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
