@@ -85,8 +85,8 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  #goUnfaultc()
-  goDisplay()
+  goUnfaultc()
+  #goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
