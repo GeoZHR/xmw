@@ -42,10 +42,13 @@ public class ConstraintsFromFaults {
         float[] cw = fc.getW();
         float[] fx = new float[3];
         float[] hx = new float[3];
-        hx[0] = bound1(round(cx[0]));//+cs[0]));
-        hx[1] = bound2(round(cx[1]));//+cs[1]));
-        hx[2] = bound3(round(cx[2]));//+cs[2]));
-        //if(!nearestFaultCell(hx)) {continue;}
+        float xs1 = cx[0]+cs[0];
+        float xs2 = cx[1]+cs[1];
+        float xs3 = cx[2]+cs[2];
+        hx[0] = bound1(round(xs1));
+        hx[1] = bound2(round(xs2));
+        hx[2] = bound3(round(xs3));
+        if(!nearestFaultCell(hx)) {continue;}
         fx = copy(hx);
         boolean valid = false;
         float w2 = abs(cw[1]);
@@ -55,8 +58,6 @@ public class ConstraintsFromFaults {
         if(valid) {
           onFault(fx,ws);
           onFault(hx,ws);
-          //if (onFault(fx,ws)) {continue;}
-          //if (onFault(hx,ws)) {continue;}
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
@@ -198,7 +199,7 @@ public class ConstraintsFromFaults {
   private boolean shift2(float w2, float[] c, float[] k) {
     float sn2 = (w2<0.f)?-1.f:1.f;
     float ds2 = sn2*2.0f;
-    float ds1 = sn2*1.0f;
+    float ds1 = sn2*0.0f;
 
     c[1] -= ds2;
     c[2] -= ds1;
@@ -226,7 +227,7 @@ public class ConstraintsFromFaults {
   private boolean shift3(float w3, float[] c, float[] k) {
     float sn3 = (w3<0.f)?-1.f:1.f;
     float ds3 = sn3*2.0f;
-    float ds1 = sn3*1.0f;
+    float ds1 = sn3*0.0f;
 
     c[1] -= ds1;
     c[2] -= ds3;
@@ -283,7 +284,7 @@ public class ConstraintsFromFaults {
     if (wi==0.0f){w[i3][i2][i1]=0.1f;} 
   }
 
- /*
+  /*
   private boolean onFault(float[] p, float[][][] w) {
     int i1 = round(p[0]);
     int i2 = round(p[1]);
@@ -292,8 +293,8 @@ public class ConstraintsFromFaults {
     if (wi==0.0f){return true;} 
     else {return false;}
   }
- */
 
+ */
   private boolean onBound(int p1, int p2, int p3) {
     if(p1<0||p1>=_n1){return true;}
     if(p2<0||p2>=_n2){return true;}

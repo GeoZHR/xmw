@@ -86,8 +86,8 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  goUnfaultc()
-  #goDisplay()
+  #goUnfaultc()
+  goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -415,7 +415,7 @@ def goDisplay():
   gx = readImage(gxfile)
   cp = readImage(cpfile)
   gw = readImage(gwfile)
-  ftcm = readImage(ftcmfile)
+  ftc = readImage(ftcmfile)
   r1 = readImage(r1tfile)
   #s1 = readImage(fs1file)
   #r2 = readImage(r2file)
@@ -428,11 +428,11 @@ def goDisplay():
         clab="Fault throw (samples)",png="gxs1")
   '''
   hmin,hmax,hmap = -2.0,2.0,ColorMap.GRAY
-  plot3(ftcm,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultCM",png="ftcm")
+  plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")
-  plot3(gx,r1,cmin=-10.0,cmax=10.0,cmap=jetFill(0.3),
+  plot3(gx,r1,cmin=-20.0,cmax=12.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfolding",png="gxs1i")
   plot3(gx,ft1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfaulting",png="gxs1i")

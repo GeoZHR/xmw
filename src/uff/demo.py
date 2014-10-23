@@ -81,13 +81,13 @@ def main(args):
   goSkin()
   goSlip()
   goUnfault()
+  '''
   goUnfaultc()
+  '''
   goUnfold()
   goUnfoldc2()
   goUnfoldc()
-  '''
   goFlatten2()
-  '''
   goTest()
   '''
 
@@ -334,7 +334,7 @@ def goUnfaultc():
     cp  = zerofloat(n1,n2,n3)
     p2,p3,ep = FaultScanner.slopes(4.0,1.0,1.0,5.0,gx)
     skins = readSkins(fskbase)
-    cfs = ConstraintsFromFaults(skins,p2,p3,ep)
+    cfs = ConstraintsFromFaults(skins,ep)
     wp = pow(ep,2.0)
     cs = cfs.getWeightsAndConstraints(wp,cp)
     fm = cfs.getFaultMap()
@@ -357,7 +357,11 @@ def goUnfaultc():
     ft = readImage(ftfile)
     cp = readImage(cpfile)
     gx = readImage(gxfile)
+
+  s1 = readImage(fs1file)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
   plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
