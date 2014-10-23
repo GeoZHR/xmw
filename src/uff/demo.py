@@ -67,7 +67,7 @@ maxThrow = 15.0
 #pngDir = None
 pngDir = "../../../png/uff/"
 
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -81,13 +81,13 @@ def main(args):
   goSkin()
   goSlip()
   goUnfault()
-  '''
   goUnfaultc()
-  '''
   goUnfold()
   goUnfoldc2()
   goUnfoldc()
+  '''
   goFlatten2()
+  '''
   goTest()
   '''
 
@@ -332,9 +332,9 @@ def goUnfaultc():
     ft = zerofloat(n1,n2,n3)
     gx = readImage(gxfile)
     cp  = zerofloat(n1,n2,n3)
-    p2,p3,ep = FaultScanner.slopes(2.0,1.0,1.0,5.0,gx)
+    p2,p3,ep = FaultScanner.slopes(4.0,1.0,1.0,5.0,gx)
     skins = readSkins(fskbase)
-    cfs = ConstraintsFromFaults(skins,ep)
+    cfs = ConstraintsFromFaults(skins,p2,p3,ep)
     wp = pow(ep,2.0)
     cs = cfs.getWeightsAndConstraints(wp,cp)
     fm = cfs.getFaultMap()
@@ -473,8 +473,6 @@ def goFlatten2():
   gx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
   skins = readSkins(fskbase)
   wse,cse=1,1
   cfs = ConstraintsFromSkinsM(skins,wse,cse,p2,p3,pow(ep,1.0))
@@ -483,6 +481,8 @@ def goFlatten2():
   cp = fillfloat(0.0,n1,n2,n3)
   cs = cfs.getWeightsAndConstraintsM(ws,cp)
   fk = cfs.getFaultMap()
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
   flc = Flattener3C()
   flc.setSmoothings(12.0,12.0);
   flc.setIterations(0.01,200);
