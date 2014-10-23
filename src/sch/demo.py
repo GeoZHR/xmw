@@ -364,6 +364,7 @@ def goUnfaultc():
     gx = readImage(gxfile)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
+  '''
   plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
@@ -371,6 +372,7 @@ def goUnfaultc():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+  '''
 
 
 def goUnfoldc():
