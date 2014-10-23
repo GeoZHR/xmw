@@ -328,19 +328,36 @@ public class Flattener3 {
       //testSpd();
     }
     public void apply(float[][][] x) {
+      removeAverage(x);
       smooth3(_sigma3,_ep,x);
       smooth2(_sigma2,_ep,x);
       smooth1(_sigma1,x);
-      zero1(x);
     }
     public void applyTranspose(float[][][] x) {
-      zero1(x);
       smooth1(_sigma1,x);
       smooth2(_sigma2,_ep,x);
       smooth3(_sigma3,_ep,x);
+      removeAverage(x);
     }
     private float _sigma1,_sigma2,_sigma3;
     private float[][][] _ep;
+
+    private void removeAverage(float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    float nh = (float)(n2*n3);
+    for (int i1=0; i1<n1; ++i1) {
+      float sumx = 0.0f;
+      for (int i3=0; i3<n3; ++i3)  
+        for (int i2=0; i2<n2; ++i2)  
+          sumx += x[i3][i2][i1];
+      float avgx = sumx/nh;
+      for (int i3=0; i3<n3; ++i3) 
+        for (int i2=0; i2<n2; ++i2) 
+          x[i3][i2][i1] -= avgx; 
+      }
+    }
     private void zero1(float[][][] x) {
       int n1 = x[0][0].length;
       int n2 = x[0].length;
