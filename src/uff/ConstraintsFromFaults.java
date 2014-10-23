@@ -53,8 +53,8 @@ public class ConstraintsFromFaults {
         if (w2>w3) {valid = shift2(cw[1],fx,hx);} 
         else       {valid = shift3(cw[2],fx,hx);}
         if(valid) {
-          //if (onFault(fx,ws)) {continue;}
-          //if (onFault(hx,ws)) {continue;}
+          if (onFault(fx,ws)) {continue;}
+          if (onFault(hx,ws)) {continue;}
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
@@ -197,24 +197,24 @@ public class ConstraintsFromFaults {
     float sn2 = (w2<0.f)?-1.f:1.f;
     float ds2 = sn2*2.0f;
     c[1] -= ds2;
+    c[2] -= ds2;
     int c1 = round(c[0]);
     int c3 = round(c[2]);
     int c2 = round(c[1]);
     if(onBound(c1,c2,c3)){return false;}
 
     k[1] +=ds2;
+    k[2] +=ds2;
     int k1 = round(k[0]);
     int k2 = round(k[1]);
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
 
-    /*
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}
 
     _mk[k3][k2][k1] += 1;
     if(_mk[k3][k2][k1]>1) {return false;}
-    */
  
     return true;
   }
@@ -223,24 +223,24 @@ public class ConstraintsFromFaults {
     float sn3 = (w3<0.f)?-1.f:1.f;
     float ds3 = sn3*2.0f;
 
+    c[1] -= ds3;
     c[2] -= ds3;
     int c1 = round(c[0]);
     int c2 = round(c[1]);
     int c3 = round(c[2]);
     if(onBound(c1,c2,c3)){return false;}
 
+    k[1] += ds3;
     k[2] += ds3;
     int k1 = round(k[0]);
     int k2 = round(k[1]);
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
 
-    /*
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}
     _mk[k3][k2][k1] += 1;
     if(_mk[k3][k2][k1]>1) {return false;}
-    */
 
     return true;
   }
