@@ -55,8 +55,8 @@ public class ConstraintsFromFaults {
         if(valid) {
           onFault(fx,ws);
           onFault(hx,ws);
-          if (onFault(fx,ws)) {continue;}
-          if (onFault(hx,ws)) {continue;}
+          //if (onFault(fx,ws)) {continue;}
+          //if (onFault(hx,ws)) {continue;}
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
