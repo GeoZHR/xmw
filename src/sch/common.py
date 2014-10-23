@@ -19,6 +19,7 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from hv import *
+from unfold import *
 from ipf import *
 
 #############################################################################

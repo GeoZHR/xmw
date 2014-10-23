@@ -43,6 +43,7 @@ r1tfile = "r1t"
 r2tfile = "r2t"
 r3tfile = "r3t"
 cpfile = "cp"
+hxfile = "hx"
 hxmfile = "hxm"
 ftcfile = "ftc"
 ftcmfile = "ftcm"
@@ -86,7 +87,8 @@ def main(args):
   #goUnfault()
   #goUnfoldc()
   #goUnfaultc()
-  goFlatten()
+  goUnfold()
+  #goFlatten()
   #goDisplay()
 
 def goDisplay():
@@ -342,6 +344,25 @@ def goUnfaultc():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+
+def goUnfold():
+  gx = readImage(ftcfile)
+  hx = zerofloat(n1, n2, n3)
+  u1 = zerofloat(n1, n2, n3)
+  u2 = zerofloat(n1, n2, n3)
+  u3 = zerofloat(n1, n2, n3)
+  ep = zerofloat(n1, n2, n3)
+  lof = LocalOrientFilter(4.0,1.0)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  pow(ep, 8.0, ep)
+  p = array(u1, u2, u3, ep)
+  flattener = FlattenerRT(6.0, 6.0)
+  r = flattener.findShifts(p)
+  flattener.applyShifts(r, gx, hx)
+  writeImage(hxfile, hx)
+  hmin, hmax, hmap = -1.0, 1.0, ColorMap.GRAY
+  plot3(gx, cmin=hmin, cmax=hmax, cmap=hmap, clab="Amplitude", png="gx")
+  plot3(hx, cmin=hmin, cmax=hmax, cmap=hmap, clab="Amplitude", png="hx")
 
 def goFlatten():
   gx = readImage(ftcfile)
