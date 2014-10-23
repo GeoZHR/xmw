@@ -45,6 +45,7 @@ r3tfile = "r3t"
 cpfile = "cp"
 hxmfile = "hxm"
 ftcfile = "ftc"
+ftcmfile = "ftcm"
 r1tfile = "r1t"
 uffile = "uf"
 cpfile = "cp"
@@ -85,8 +86,8 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  goUnfaultc()
-  #goDisplay()
+  #goUnfaultc()
+  goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -415,6 +416,7 @@ def goDisplay():
   cp = readImage(cpfile)
   gw = readImage(gwfile)
   ftc = readImage(ftcfile)
+  ftcm = readImage(ftcmfile)
   r1 = readImage(r1tfile)
   s1 = readImage(fs1file)
   #r2 = readImage(r2file)
@@ -427,6 +429,7 @@ def goDisplay():
 
   hmin,hmax,hmap = -2.0,2.0,ColorMap.GRAY
   plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
+  plot3(ftcm,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultCM",png="ftcm")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")

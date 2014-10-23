@@ -45,7 +45,7 @@ public class ConstraintsFromFaults {
         hx[0] = bound1(round(cx[0]+cs[0]));
         hx[1] = bound2(round(cx[1]+cs[1]));
         hx[2] = bound3(round(cx[2]+cs[2]));
-        if(!nearestFaultCell(hx)) {continue;}
+        if(!nearestFaultCell(hx)) {System.out.println("test!");continue;}
         fx = copy(hx);
         boolean valid = false;
         float w2 = abs(cw[1]);
