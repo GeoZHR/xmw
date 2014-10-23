@@ -21,10 +21,8 @@ import static edu.mines.jtk.util.ArrayMath.*;
 public class ConstraintsFromFaults {
 
   public ConstraintsFromFaults(
-    FaultSkin[] fss, float[][][] p2, float[][][] p3, float[][][] w) {
+    FaultSkin[] fss, float[][][] w) {
     _w = w;
-    _p2 = p2;
-    _p3 = p3;
     _fss = fss;
     _n3 = w.length;
     _n2 = w[0].length;
