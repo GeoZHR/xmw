@@ -7,7 +7,6 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package hv;
 
 import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.interp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -208,7 +207,7 @@ public class Flattener3C {
    */
   public Mappings getMappingsFromSlopes(
     Sampling s1, Sampling s2, Sampling s3,
-    float[][][] p2, float[][][] p3, float[][][] wp, float[][][] ws, 
+    float[][][] p2, float[][][] p3, float[][][] wp, 
     float[][] rd, float[][] k1, float[][] k2, float[][] k3) 
   {
     // Sampling parameters.
@@ -219,21 +218,6 @@ public class Flattener3C {
     float d2 = (float)s2.getDelta();
     float d3 = (float)s3.getDelta();
     float f1 = (float)s1.getFirst();
-    int nc = k1.length;
-    int[][] k1a = new int[nc][];
-    int[][] k2a = new int[nc][];
-    int[][] k3a = new int[nc][];
-    for (int ic=0; ic<nc; ++ic) {
-      int np = k1[ic].length;
-      k1a[ic] = new int[np];
-      k2a[ic] = new int[np];
-      k3a[ic] = new int[np];
-      for (int ip=0; ip<np; ++ip) {
-        k1a[ic][ip] = (int)k1[ic][ip];
-        k2a[ic][ip] = (int)k2[ic][ip];
-        k3a[ic][ip] = (int)k3[ic][ip];
-      }
-    }
     // If necessary, convert units for slopes to samples per sample.
     if (d1!=d2)
       p2 = mul(d2/d1,p2);
@@ -243,13 +227,12 @@ public class Flattener3C {
     // Compute shifts r(x1,x2,x3), in samples.
     float[][][] b = new float[n3][n2][n1]; // right-hand side
     float[][][] r = new float[n3][n2][n1]; // shifts, in samples
-    initializeShifts(rd,k1a,k2a,k3a,r); // initial shifts to satisfy constraints
+    initializeShifts(rd,k1,k2,k3,r); // initial shifts to satisfy constraints
     VecArrayFloat3 vb = new VecArrayFloat3(b);
     VecArrayFloat3 vr = new VecArrayFloat3(r);
     setWeightsForSmoothing(wp);
-    setWeightsForSmoothing(ws);
     A3 a3 = new A3(_scale,_weight1,wp,p2,p3);
-    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,ws,k1a,k2a,k3a);
+    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,k1,k2,k3);
     //testSpd("a2",n1,n2,a2);
     //testSpd("m2",n1,n2,m2);
     CgSolver cs = new CgSolver(_small,_niter);
@@ -374,7 +357,7 @@ public class Flattener3C {
   // Preconditioner; includes smoothers and (optional) constraints.
   private static class M3 implements CgSolver.A {
     M3(float sigma1, float sigma2, float sigma3, float[][][] wp, 
-       int[][] k1, int[][] k2, int[][] k3) 
+       float[][] k1, float[][] k2, float[][] k3) 
     {
       _sigma1 = sigma1;
       _sigma2 = sigma2;
@@ -404,12 +387,12 @@ public class Flattener3C {
     }
     private float _sigma1,_sigma2,_sigma3;
     private float[][][] _wp;
-    private int[][] _k1,_k2,_k3;
+    private float[][] _k1,_k2,_k3;
   }
 
   public static void initializeShifts
-    (float[][] rd, int[][] k1, int[][] k2, 
-     int[][] k3, float[][][] r) 
+    (float[][] rd, float [][] k1, float[][] k2, 
+     float[][] k3, float[][][] r) 
   {
     zero(r);
     if (k1!=null && k2!=null &&k3!=null) {
@@ -417,17 +400,17 @@ public class Flattener3C {
       for (int ic=0; ic<nc; ++ic) {
         int nk = k1[ic].length;
         int ik = 0;
-        int i1 = k1[ic][ik];
-        int i2 = k2[ic][ik];
-        int i3 = k3[ic][ik];
+        int i1 = round(k1[ic][ik]);
+        int i2 = round(k2[ic][ik]);
+        int i3 = round(k3[ic][ik]);
         float i1f = i1 + rd[ic][ik]; 
         r[i3][i2][i1] = i1-i1f;
         for (ik=1; ik<nk; ++ik) {
           float ip = i1f;
           float rp = r[i3][i2][i1];
-          i1  = k1[ic][ik];
-          i2  = k2[ic][ik];
-          i3  = k3[ic][ik];
+          i1  = round(k1[ic][ik]);
+          i2  = round(k2[ic][ik]);
+          i3  = round(k3[ic][ik]);
           i1f = i1+rd[ic][ik];
           r[i3][i2][i1] = rp+ip-i1f;
         }
@@ -452,23 +435,25 @@ public class Flattener3C {
     }
   }
 
-  public static void constrain(int[][] k1, int[][] k2, int[][] k3, float[][][] x) {
+  public static void constrain(
+    float[][] k1, float[][] k2, float[][] k3, float[][][] x) 
+  {
     if (k1!=null && k2!=null &&k3!=null) {
       int nc = k1.length;
       for (int ic=0; ic<nc; ++ic) {
         int nk = k1[ic].length;
         float sum = 0.0f;
         for (int ik=0; ik<nk; ++ik) {
-          int i1 = k1[ic][ik];
-          int i2 = k2[ic][ik];
-          int i3 = k3[ic][ik];
+          int i1 = round(k1[ic][ik]);
+          int i2 = round(k2[ic][ik]);
+          int i3 = round(k3[ic][ik]);
           sum += x[i3][i2][i1];
         }
         float avg = sum/(float)nk;
         for (int ik=0; ik<nk; ++ik) {
-          int i1 = k1[ic][ik];
-          int i2 = k2[ic][ik];
-          int i3 = k3[ic][ik];
+          int i1 = round(k1[ic][ik]);
+          int i2 = round(k2[ic][ik]);
+          int i3 = round(k3[ic][ik]);
           x[i3][i2][i1] = avg;
         }
       }
