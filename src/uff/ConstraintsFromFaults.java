@@ -208,10 +208,13 @@ public class ConstraintsFromFaults {
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
 
+    /*
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}
+
     _mk[k3][k2][k1] += 1;
     if(_mk[k3][k2][k1]>1) {return false;}
+    */
  
     return true;
   }
@@ -232,10 +235,12 @@ public class ConstraintsFromFaults {
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
 
+    /*
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}
     _mk[k3][k2][k1] += 1;
     if(_mk[k3][k2][k1]>1) {return false;}
+    */
 
     return true;
   }
