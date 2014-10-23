@@ -345,9 +345,9 @@ def goUnfaultc():
 
 def goFlatten():
   gx = readImage(ftcfile)
-  sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  ws = pow(ep,8.0)
+  ws = pow(ep,6.0)
   fl = Flattener3()
   fl.setSmoothings(8.0,8.0);
   fl.setIterations(0.01,50);
