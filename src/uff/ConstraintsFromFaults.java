@@ -31,81 +31,6 @@ public class ConstraintsFromFaults {
     _fm = new int[_n3][_n2][_n1];
     faultMap(_fm);
   }
-  private boolean shift2m(float w2, float[] cx, float[] fx, float[] hx) {
-    float sn2 = (w2<0.f)?-1.f:1.f;
-    float dp2 = sn2*2.0f;
-    float ds2 = sn2*2.0f;
-
-    int cx1 = bound1(round(cx[0]));
-    int cx3 = bound3(round(cx[2]));
-    int cx2 = bound2(round(cx[1]-dp2));
-    float cp2 = _p2[cx3][cx2][cx1];
-
-    int hx1 = bound1(round(hx[0]));
-    int hx3 = bound3(round(hx[2]));
-    int hx2 = bound2(round(hx[1]+dp2));
-    if(onBound(hx1,hx2,hx3)){return false;}
-    float hp2 = _p2[hx3][hx2][hx1];
-
-    fx[1] -= ds2;
-    hx[1] += ds2;
-
-    fx[0] -= ds2*cp2;
-    hx[0] += ds2*hp2;
-
-    int fx1 = round(fx[0]); 
-    int fx2 = round(fx[1]);
-    int fx3 = round(fx[2]);
-    if(onBound(fx1,fx2,fx3)) {return false;}
-    _mk[fx3][fx2][fx1] += 1;
-    if(_mk[fx3][fx2][fx1]>1) {return false;}
-
-    hx1 = round(hx[0]); 
-    hx2 = round(hx[1]);
-    if(onBound(hx1,hx2,hx3)) {return false;}
-    _mk[hx3][hx2][hx1] += 1;
-    if(_mk[hx3][hx2][hx1]>1) {return false;}
- 
-    return true;
-  }
-
-  private boolean shift3m(float w3, float[] cx, float[] fx, float[] hx) {
-    float sn3 = (w3<0.f)?-1.f:1.f;
-    float dp3 = sn3*2.0f;
-    float ds3 = sn3*2.0f;
-
-    int cx1 = bound1(round(cx[0]));
-    int cx2 = bound2(round(cx[1]));
-    int cx3 = bound3(round(cx[2]-dp3));
-    float cp3 = _p3[cx3][cx2][cx1];
-
-    int hx1 = bound1(round(hx[0]));
-    int hx2 = bound2(round(hx[1]));
-    int hx3 = bound3(round(hx[2]+dp3));
-    float hp3 = _p3[hx3][hx2][hx1];
-
-    fx[2] -= ds3;    
-    hx[2] += ds3;
-
-    fx[0] -= ds3*cp3;
-    hx[0] += ds3*hp3;
-
-    int fx1 = round(fx[0]); 
-    int fx2 = round(fx[1]); 
-    int fx3 = round(fx[2]); 
-    if(onBound(fx1,fx2,fx3)) {return false;}
-    _mk[fx3][fx2][fx1] += 1;
-    if(_mk[fx3][fx2][fx1]>1) {return false;}
-
-    hx1 = round(hx[0]); 
-    hx3 = round(hx[2]);
-    if(onBound(hx1,hx2,hx3)) {return false;}
-    _mk[hx3][hx2][hx1] += 1;
-    if(_mk[hx3][hx2][hx1]>1) {return false;}
-
-    return true;
-  }
-
 
   public float[][][] getWeightsAndConstraints(float[][][] ws, float[][][] cp) {
     setWeightsOnFault(ws);
@@ -128,8 +53,8 @@ public class ConstraintsFromFaults {
         if (w2>w3) {valid = shift2(cw[1],fx,hx);} 
         else       {valid = shift3(cw[2],fx,hx);}
         if(valid) {
-          if (onFault(fx,ws)) {continue;}
-          if (onFault(hx,ws)) {continue;}
+          //if (onFault(fx,ws)) {continue;}
+          //if (onFault(hx,ws)) {continue;}
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
