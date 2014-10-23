@@ -42,10 +42,10 @@ public class ConstraintsFromFaults {
         float[] cw = fc.getW();
         float[] fx = new float[3];
         float[] hx = new float[3];
-        hx[0] = bound1(round(cx[0]+cs[0]));
-        hx[1] = bound2(round(cx[1]+cs[1]));
-        hx[2] = bound3(round(cx[2]+cs[2]));
-        if(!nearestFaultCell(hx)) {System.out.println("test!");continue;}
+        hx[0] = bound1(round(cx[0]));//+cs[0]));
+        hx[1] = bound2(round(cx[1]));//+cs[1]));
+        hx[2] = bound3(round(cx[2]));//+cs[2]));
+        //if(!nearestFaultCell(hx)) {continue;}
         fx = copy(hx);
         boolean valid = false;
         float w2 = abs(cw[1]);
@@ -55,8 +55,8 @@ public class ConstraintsFromFaults {
         if(valid) {
           onFault(fx,ws);
           onFault(hx,ws);
-          //if (onFault(fx,ws)) {continue;}
-          //if (onFault(hx,ws)) {continue;}
+          if (onFault(fx,ws)) {continue;}
+          if (onFault(hx,ws)) {continue;}
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
@@ -199,6 +199,7 @@ public class ConstraintsFromFaults {
     float sn2 = (w2<0.f)?-1.f:1.f;
     float ds2 = sn2*2.0f;
     float ds1 = sn2*1.0f;
+
     c[1] -= ds2;
     c[2] -= ds1;
     int c1 = round(c[0]);

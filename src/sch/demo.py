@@ -65,7 +65,7 @@ minSkinSize = 10000
 minThrow =  0.0
 maxThrow = 20.0
 
-# Directory for saved png images. If None, png images will not be saved;
+# Directory for saved pn images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
 pngDir = "../../../png/sch/"
@@ -341,7 +341,6 @@ def goUnfaultc():
     cfs = ConstraintsFromFaults(skins,ep)
     wp = pow(ep,2.0)
     cs = cfs.getWeightsAndConstraints(wp,cp)
-    '''
     fm = cfs.getFaultMap()
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
@@ -362,11 +361,9 @@ def goUnfaultc():
     ft = readImage(ftcfile)
     cp = readImage(cpfile)
     gx = readImage(gxfile)
-  '''
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
 
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
-  '''
   plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
@@ -374,7 +371,6 @@ def goUnfaultc():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
-  '''
 
 
 def goUnfoldc():
@@ -419,30 +415,27 @@ def goDisplay():
   gx = readImage(gxfile)
   cp = readImage(cpfile)
   gw = readImage(gwfile)
-  ftc = readImage(ftcfile)
   ftcm = readImage(ftcmfile)
   r1 = readImage(r1tfile)
-  s1 = readImage(fs1file)
+  #s1 = readImage(fs1file)
   #r2 = readImage(r2file)
   #r3 = readImage(r3file)
-  #ft1 = readImage(ft1file)
+  ft1 = readImage(ft1file)
   #fs2 = readImage(fs1file)
   #fs3 = readImage(fs1file)
+  '''
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Fault throw (samples)",png="gxs1")
-
+  '''
   hmin,hmax,hmap = -2.0,2.0,ColorMap.GRAY
-  plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
   plot3(ftcm,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultCM",png="ftcm")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")
-  plot3(gx,r1,cmin=-6.0,cmax=6.0,cmap=jetFill(0.3),
+  plot3(gx,r1,cmin=-10.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfolding",png="gxs1i")
-  '''
   plot3(gx,ft1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfaulting",png="gxs1i")
-  '''
 
 
 
@@ -606,7 +599,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if slices:
     k1,k2,k3 = slices
   else:
-    k1,k2,k3 = (370,105,34) # most plots use these
+    #k1,k2,k3 = (370,105,34) # most plots use these
+    k1,k2,k3 = (370,150,0) # most plots use these
   ipg.setSlices(k1,k2,k3)
   if cbar:
     sf.setSize(985,700) # for sch data
