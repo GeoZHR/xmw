@@ -19,6 +19,7 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from ipf import *
+from idh import *
 
 #############################################################################
 # Run the function main on the Swing thread

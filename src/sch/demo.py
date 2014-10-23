@@ -19,7 +19,7 @@ p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 flfile  = "fl" # fault likelihood
 fifile  = "fic" # flattened image
-fgfile  = "fi1" # flattened image
+gffile  = "gf" # flattened image
 wsfile  = "ws" # weight image for flattening
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -86,8 +86,8 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  goUnfaultc()
-  #goDisplay()
+  #goUnfaultc()
+  goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -301,35 +301,6 @@ def goUnfault():
   ov = sf.getOrbitView()
   ov.setScale(2.5)
   """
-def goFlatten():
-  fi = readImage(fifile)
-  gx = readImage(gxfile)
-  '''
-  gsx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gsx)
-  skins = readSkins(fslbase)
-  wse,cse=1,1
-  cfs = ConstraintsFromSkins(skins,wse,cse,p2,p3,pow(ep,8.0))
-  #ws = fillfloat(1.0,n1,n2,n3)
-  ws = pow(ep,8.0)
-  sh = fillfloat(0.0,n1,n2,n3)
-  cs = cfs.getWeightsAndConstraints(ws)
-  flc = Flattener3C()
-  flc.setSmoothings(12.0,12.0);
-  flc.setIterations(0.01,200);
-  flc.computeShifts(p2,p3,ws,cs,sh);
-  fm = flc.getMappingsFromShifts(s1,s2,s3,sh)
-  fi = fm.flatten(gx)
-  writeImage(fifile,fi)
-  writeImage(wsfile,ws)
-  ws = readImage(wsfile)
-  '''
-  fg = readImage(fgfile)
-  #plot3(ws,clab="Weights",png="ws")
-  plot3(gx,clab="Amplitude",png="gx")
-  plot3(fi,clab="Amplitude",png="fi")
-  plot3(fg,clab="Amplitude",png="fg")
 
 def goUnfaultc():
   if not plotOnly:
@@ -372,6 +343,19 @@ def goUnfaultc():
   plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
 
+def goFlatten():
+  gx = readImage(ftcfile)
+  sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gsx)
+  ws = pow(ep,8.0)
+  fl = Flattener3()
+  fl.setSmoothings(8.0,8.0);
+  fl.setIterations(0.01,200);
+  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+  gf = fm.flatten(gx)
+  writeImage(gffile,gf)
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gf,clab="Amplitude",png="gf")
 
 def goUnfoldc():
   uf = zerofloat(n1,n2,n3)
@@ -411,11 +395,13 @@ def goUnfoldc():
   plot3(gx,r[2],cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
 
+  
+
 def goDisplay():
   gx = readImage(gxfile)
   cp = readImage(cpfile)
   gw = readImage(gwfile)
-  ftc = readImage(ftcmfile)
+  ftc = readImage(ftcfile)
   r1 = readImage(r1tfile)
   #s1 = readImage(fs1file)
   #r2 = readImage(r2file)
@@ -427,12 +413,12 @@ def goDisplay():
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Fault throw (samples)",png="gxs1")
   '''
-  hmin,hmax,hmap = -2.0,2.0,ColorMap.GRAY
+  hmin,hmax,hmap = -1.0,1.0,ColorMap.GRAY
   plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")
-  plot3(gx,r1,cmin=-20.0,cmax=12.0,cmap=jetFill(0.3),
+  plot3(gx,r1,cmin=-20.0,cmax=10.0,cmap=hueFill(0.3),
         clab="Vertical shift for unfolding",png="gxs1i")
   plot3(gx,ft1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfaulting",png="gxs1i")
