@@ -86,8 +86,8 @@ def main(args):
   #goUnfault()
   #goFlatten()
   #goUnfoldc()
-  #goUnfaultc()
-  goDisplay()
+  goUnfaultc()
+  #goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -341,6 +341,7 @@ def goUnfaultc():
     cfs = ConstraintsFromFaults(skins,ep)
     wp = pow(ep,2.0)
     cs = cfs.getWeightsAndConstraints(wp,cp)
+    '''
     fm = cfs.getFaultMap()
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
@@ -361,9 +362,11 @@ def goUnfaultc():
     ft = readImage(ftcfile)
     cp = readImage(cpfile)
     gx = readImage(gxfile)
+  '''
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
 
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
+  '''
   plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
@@ -371,6 +374,7 @@ def goUnfaultc():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+  '''
 
 
 def goUnfoldc():
