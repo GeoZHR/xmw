@@ -328,7 +328,7 @@ public class Flattener3 {
       //testSpd();
     }
     public void apply(float[][][] x) {
-      removeAverage(x);
+      //removeAverage(x);
       smooth3(_sigma3,_ep,x);
       smooth2(_sigma2,_ep,x);
       smooth1(_sigma1,x);
@@ -337,7 +337,7 @@ public class Flattener3 {
       smooth1(_sigma1,x);
       smooth2(_sigma2,_ep,x);
       smooth3(_sigma3,_ep,x);
-      removeAverage(x);
+      //removeAverage(x);
     }
     private float _sigma1,_sigma2,_sigma3;
     private float[][][] _ep;
