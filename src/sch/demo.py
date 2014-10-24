@@ -84,9 +84,9 @@ def main(args):
   #goSmooth()
   #goSkin()
   #goSlip()
-  #goUnfault()
+  goUnfault()
   #goUnfoldc()
-  goUnfaultc()
+  #goUnfaultc()
   #goUnfold()
   #goFlatten()
   #goDisplay()
@@ -423,6 +423,7 @@ def goDisplay():
   cp = readImage(cpfile)
   gw = readImage(gwfile)
   ftc = readImage(ftcfile)
+  ftcm = readImage(ftcmfile)
   r1 = readImage(r1tfile)
   s1 = readImage(fs1file)
   #r2 = readImage(r2file)
@@ -433,6 +434,7 @@ def goDisplay():
   hmin,hmax,hmap = -1.0,1.0,ColorMap.GRAY
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Fault throw (samples)",png="gxs1")
+  plot3(ftcm,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultCm",png="ftc")
   plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
