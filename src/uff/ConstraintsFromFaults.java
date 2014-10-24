@@ -48,8 +48,8 @@ public class ConstraintsFromFaults {
         hx[0] = bound1(round(xs1));
         hx[1] = bound2(round(xs2));
         hx[2] = bound3(round(xs3));
-        if(!nearestFaultCell(hx)) {continue;}
         fx = copy(hx);
+        if(!nearestFaultCell(hx)){hx=copy(fx);}
         boolean valid = false;
         float w2 = abs(cw[1]);
         float w3 = abs(cw[2]);
