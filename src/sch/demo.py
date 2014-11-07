@@ -38,16 +38,16 @@ r1file = "r1"
 r2file = "r2"
 r3file = "r3"
 hxfile = "hx"
-ftcfile = "ftc"
-r1tfile = "r1t"
+ftcfile = "ftcm"
+r1tfile = "r1c"
 r2tfile = "r2t"
 r3tfile = "r3t"
 cpfile = "cp"
 hxfile = "hx"
 hxmfile = "hxm"
-ftcfile = "ftc"
+ftcfile = "ftcm"
 ftcmfile = "ftcm"
-r1tfile = "r1t"
+r1tfile = "r1c"
 uffile = "uf"
 cpfile = "cp"
 
@@ -84,12 +84,12 @@ def main(args):
   #goSmooth()
   #goSkin()
   #goSlip()
-  goUnfault()
+  #goUnfault()
   #goUnfoldc()
   #goUnfaultc()
   #goUnfold()
   #goFlatten()
-  #goDisplay()
+  goDisplay()
 
 def goDisplay():
   print "goDisplay ..."
@@ -423,24 +423,27 @@ def goDisplay():
   cp = readImage(cpfile)
   gw = readImage(gwfile)
   ftc = readImage(ftcfile)
-  ftcm = readImage(ftcmfile)
   r1 = readImage(r1tfile)
-  s1 = readImage(fs1file)
-  #r2 = readImage(r2file)
-  #r3 = readImage(r3file)
+  '''
+  r2 = readImage(r2tfile)
+  r3 = readImage(r3tfile)
+  '''
   ft1 = readImage(ft1file)
   #fs2 = readImage(fs1file)
   #fs3 = readImage(fs1file)
   hmin,hmax,hmap = -1.0,1.0,ColorMap.GRAY
-  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
-        clab="Fault throw (samples)",png="gxs1")
-  plot3(ftcm,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultCm",png="ftc")
   plot3(ftc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ftc")
   plot3(gw,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfault",png="gw")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="cp")
   plot3(gx,r1,cmin=-20.0,cmax=10.0,cmap=hueFill(0.3),
         clab="Vertical shift for unfaulting with constraints",png="gxs1i")
+  '''
+  plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="r2",png="gxs1i")
+  plot3(gx,r3,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="r3",png="gxs1i")
+  '''
   plot3(gx,ft1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift for unfaulting",png="gxs1i")
 
