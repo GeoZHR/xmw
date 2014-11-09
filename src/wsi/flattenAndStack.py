@@ -48,7 +48,7 @@ def main(args):
   imgC = goStack(fC)
   gL = copy(fL)
   ws = WarpAndStack()
-  ws.setForWarp(25,2,1.0,0.25,0.9)
+  ws.setForWarp(15,2,1.0,0.25,0.9)
   ws.applyWarp2(gL)
   fmgL = goStack(gL)
   writeImage("fmgL",fmgL)
