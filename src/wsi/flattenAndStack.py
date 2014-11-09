@@ -22,6 +22,7 @@ pngDir = "../../../png/wsi/"
 seismicDir = "../../../data/sigsbee/"
 #n1,n2,n3=90,420,335
 n1,n2,n3=1100,1024,100
+#n1,n2,n3=1100,800,100
 f1,f2,f3=1.85928,3.048,0
 d1,d2,d3=0.00762,0.02286,1
 s1 = Sampling(n1,d1,f1)
@@ -39,12 +40,17 @@ gmin,gmax,gint,glab = -2.0,2.0,0.5,"Amplitude"
 background = Color.WHITE
 
 def main(args):
-  #slopes()
-  fL = readImage("junkL")
+  fL = readImage("junkH")
   fC = readImage("junkC")
+  fL = copy(n1,n2,n3,0,0,0,fL)
+  fC = copy(n1,n2,n3,0,0,0,fC)
   imgL = goStack(fL)
   imgC = goStack(fC)
-  fmgL = goFlattenAndStack(fL)
+  gL = copy(fL)
+  ws = WarpAndStack()
+  ws.setForWarp(55,2,1.0,0.25,0.25)
+  ws.applyWarp2(gL)
+  fmgL = goStack(gL)
   writeImage("fmgL",fmgL)
   fmgL = readImage2("fmgL")
   imgL = mul(gain(imgL),1)
@@ -52,46 +58,76 @@ def main(args):
   fmgL = mul(gain(fmgL),1)
   fMin = min(min(imgL),min(imgC),min(fmgL))
   fMax = max(max(imgL),max(imgC),max(fmgL))
+  print fMin
+  print fMax
   plot(s1,s2,imgL,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
        cmin=fMin, cmax=fMax,png="image")
   plot(s1,s2,imgC,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
        cmin=fMin, cmax=fMax,png="image")
   plot(s1,s2,fmgL,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
        cmin=fMin, cmax=fMax,png="image")
-def goFlattenAndStack(f):
-  sg = zerofloat(n1,n2)
-  fg = zerofloat(n1,n3)
-  for i2 in range(n2):
-    print i2
-    for i3 in range(n3):
-      fg[i3] = f[i3][i2]
-    gg = goFlatten(fg)
-    sg[i2] = goStack2(gg)
-    '''
-    plot(s1,s3,fg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
-       cmin=min(fg), cmax=max(fg),png="image")
-    plot(s1,s3,gg,clab="Flatten",vlabel="z (km)",hlabel="x (km)", 
-       cmin=min(gg), cmax=max(gg),png="image")
-    '''
-  return sg
 
-def goFlatten(f):
-  sigma1,sigma2=4.0,1.0 
-  pmax = 4.0
-  lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
-  p2 = zerofloat(n1,n3)
-  wp = zerofloat(n1,n3)
-  lsf.findSlopes(f,p2,wp)
-  p2 = mul(d1/d3,p2)
-  wp = pow(wp,8)
-  fl = Flattener2C()
-  fl.setWeight1(0.02)
-  fl.setIterations(0.01,200)
-  fl.setSmoothings(4.0,8.0)
-  c = fl.referenceTrace(f)
-  fm = fl.getMappingsFromSlopes(s1,s3,p2,wp,c)
-  g = fm.flatten(f)
+def goFirstLook(f):
+  imgL = goStack(f)
+  f3 = zerofloat(n1,n3) 
+  for i2 in range(0,n2,50):
+    imgLi = imgL[i2]
+    Min = 5000000000000.0
+    i3m = 0
+    for i3 in range(n3):
+      f3[i3] = f[i3][i2] 
+      sumi = sum(abs(sub(imgLi,f3[i3])))
+      if Min>sumi:
+        i3m = i3
+        Min = sumi
+    print i3m
+    plot(s1,s3,f3,i3=i3m,clab=str(i2),vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(f3), cmax=max(f3),png="image")
+
+def goWarp(f):
+  g = copy(f)
+  imgL = goStack(f)
+  ws = WarpAndStack()
+  ws.applyWarp(g)
+  f3 = zerofloat(n1,n3) 
+  g3 = zerofloat(n1,n3) 
+  for i2 in range(0,n2,100):
+    for i3 in range(n3):
+      f3[i3] = f[i3][i2] 
+      g3[i3] = g[i3][i2] 
+    plot(s1,s3,f3,clab=str(i2),vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(f3), cmax=max(f3),png="image")
+    plot(s1,s3,g3,clab=str(i2),vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(g3), cmax=max(g3),png="image")
+def goFlattenAndStack(f):
+  s1 = Sampling(n1,1.0,0.0)
+  s2 = Sampling(n2,1.0,0.0)
+  s3 = Sampling(n3,1.0,0.0)
+  fas = FlattenAndStack()
+  g = fas.apply(s1,s2,s3,f)
   return g
+
+def goFlattenAndStack1(f):
+  s1 = Sampling(n1,1.0,0.0)
+  s2 = Sampling(n2,1.0,0.0)
+  s3 = Sampling(n3,1.0,0.0)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  u1 = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(4.0,1.0,2.0,8.0)
+  lsf.findSlopes(f,p2,p3,ep,u1)
+  p2 = fillfloat(-0.3,n1,n2,n3)
+  ep = pow(ep,4.0)
+  #fl3 = Flattener3C()
+  fl3 = Flattener3()
+  fl3.setSmoothings(6.0,6.0,6.0)
+  fl3.setWeight1(0.6)
+  fl3.setIterations(0.01,200)
+  #mp = fl3.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep,u1)
+  mp = fl3.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+  g = mp.flatten(f)
+  return goStack(g)
 
 def goStack2(f):
   img = zerofloat(n1)
@@ -102,8 +138,9 @@ def goStack2(f):
 
 def goStack(f):
   img = zerofloat(n1,n2)
+  n2b,n2e,n2d=0,n2,1
   for i3 in range(n3):
-    for i2 in range(n2):
+    for i2 in range(n2b,n2e,n2d):
       add(f[i3][i2],img[i2],img[i2])
   return img
 
@@ -135,7 +172,7 @@ def readImage2(name):
 def readImage(name):
   fileName = seismicDir+name+".bin"
   n1,n2,n3 = s1.count,s2.count,s3.count
-  #n1,n2,n3 = 120,480,430
+  n1,n2,n3=1100,1024,100
   image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
@@ -181,16 +218,9 @@ def gain(x):
   ref = RecursiveExponentialFilter(100.0)
   ref.apply1(g,g)
   y = zerofloat(n1,n2)
-  div(x,sqrt(g),y)
+  for i2 in range(n2):
+    div(x[i2],sqrt(g[i2]),y[i2])
   return y
-def setWeights(kk,wp,ws):
-  np = len(kk[0])
-  for ip in range(np):
-    i1 = int(kk[0][ip])
-    i2 = int(kk[1][ip])
-    i3 = int(kk[2][ip])
-    wp[i3][i2][i1]=0.1*wp[i3][i2][i1]
-    ws[i3][i2][i1]=0.1*ws[i3][i2][i1]
 def setBounds(kk,wp,w1):
   wpt = zerofloat(n1,n2,n3)
   wpt = copy(wp)
@@ -214,7 +244,7 @@ def setBounds(kk,wp,w1):
 gray = ColorMap.GRAY
 jet = ColorMap.JET
 
-def plot(s1,s2,x,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=None,
+def plot(s1,s2,x,i3=None,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=None,
   cmin=0,cmax=0,title=None,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   #if title:
@@ -223,12 +253,23 @@ def plot(s1,s2,x,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=N
   pv = sp.addPixels(s1,s2,x)
   pv.setColorModel(cmap)
   pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  if i3:
+    print i3
+    x = zerofloat(n1)
+    y = zerofloat(n1)
+    for i1 in range(n1):
+      x[i1] = i3*d3+f3
+      y[i1] = i1*d1+f1
+    ps = sp.addPoints(y,x)
+    ps.setLineWidth(2.0)
+    ps.setMarkColor(Color.red)
+
   if cmin<cmax:
     pv.setClips(cmin,cmax)
   sp.setVLabel(vlabel)
   sp.setHLabel(hlabel)
-  #sp.setSize(1200,600)
-  sp.setSize(600,1200)
+  sp.setSize(1200,1000)
+  #sp.setSize(600,1200)
   sp.setFontSizeForPrint(8.0,200)
   #sp.setFontSizeForSlide(0.5,0.9,16.0/9.0)
   sp.plotPanel.setColorBarWidthMinimum(120)

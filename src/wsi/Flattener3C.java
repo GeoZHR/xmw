@@ -207,8 +207,7 @@ public class Flattener3C {
    */
   public Mappings getMappingsFromSlopes(
     Sampling s1, Sampling s2, Sampling s3,
-    float[][][] p2, float[][][] p3, float[][][] wp, 
-    float[][] rd, float[][] k1, float[][] k2, float[][] k3) 
+    float[][][] p2, float[][][] p3, float[][][] wp, float[][][] u) 
   {
     // Sampling parameters.
     final int n1 = s1.getCount();
@@ -223,24 +222,21 @@ public class Flattener3C {
       p2 = mul(d2/d1,p2);
     if (d1!=d3)
       p3 = mul(d3/d1,p3);
-
     // Compute shifts r(x1,x2,x3), in samples.
     float[][][] b = new float[n3][n2][n1]; // right-hand side
     float[][][] r = new float[n3][n2][n1]; // shifts, in samples
-    initializeShifts(rd,k1,k2,k3,r); // initial shifts to satisfy constraints
     VecArrayFloat3 vb = new VecArrayFloat3(b);
     VecArrayFloat3 vr = new VecArrayFloat3(r);
-    setWeightsForSmoothing(wp);
+    //setWeightsForSmoothing(wp);
+    //int[][] c = referenceTrace(mul(u,wp));
+    int c = 0;
+    //int c = referenceTrace1(mul(u,wp));
     A3 a3 = new A3(_scale,_weight1,wp,p2,p3);
-    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,k1,k2,k3);
-    //testSpd("a2",n1,n2,a2);
-    //testSpd("m2",n1,n2,m2);
+    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,c);
     CgSolver cs = new CgSolver(_small,_niter);
     makeRhs(wp,p2,p3,b);
     cs.solve(a3,m3,vb,vr);
-    //checkShifts(k1a,k2a,k3a,r);
     cleanShifts(r);
-    // Compute u1(x1,x2,x3).
     final float[][][] u1 = r;
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
@@ -264,6 +260,33 @@ public class Flattener3C {
 
     return new Mappings(s1,s2,s3,u1,x1,r);
   }
+
+  private int[][] referenceTrace(float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    int[][] c = new int[2][n2];
+    for (int i2=0; i2<n2; ++ i2) {
+      float[][] x2 = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3) 
+        x2[i3] = x[i3][i2];
+      c[1][i2] = i2;
+      c[0][i2] = referenceTrace(x2);
+    }
+    return c;
+  }
+
+  private int referenceTrace(float[][] x) {
+    int c = 0;
+    int n3 = x.length;
+    float sum = 0.0f;
+    for (int i3=0; i3<n3; ++i3) {
+      float smi = sum(abs(x[i3]));
+      if (smi>sum) {c = i3;sum = smi;}
+    }
+    return c;
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private
@@ -357,17 +380,13 @@ public class Flattener3C {
   // Preconditioner; includes smoothers and (optional) constraints.
   private static class M3 implements CgSolver.A {
     M3(float sigma1, float sigma2, float sigma3, float[][][] wp, 
-       float[][] k1, float[][] k2, float[][] k3) 
+       int c) 
     {
       _sigma1 = sigma1;
       _sigma2 = sigma2;
       _sigma3 = sigma3;
       _wp = wp;
-      if (k1!=null && k2!=null && k3!=null) {
-        _k1 = copy(k1);
-        _k2 = copy(k2);
-        _k3 = copy(k3);
-      }
+      _c = c;
     }
     public void apply(Vec vx, Vec vy) {
       VecArrayFloat3 v3x = (VecArrayFloat3)vx;
@@ -375,90 +394,44 @@ public class Flattener3C {
       float[][][] x = v3x.getArray();
       float[][][] y = v3y.getArray();
       copy(x,y);
-      constrain(_k1,_k2,_k3,y);
-      removeAverage(y);
+      constrain(_c,y);
+      //removeAverage(y);
       smooth3(_sigma3,_wp,y);
       smooth2(_sigma2,_wp,y);
-      smooth1(2.0f*_sigma1,_wp,y);
+      //smooth1(2.0f*_sigma1,_wp,y);
+      smooth1(2.0f*_sigma1,y);
       smooth2(_sigma2,_wp,y);
       smooth3(_sigma3,_wp,y);
-      removeAverage(y);
-      constrain(_k1,_k2,_k3,y);
+      //removeAverage(y);
+      constrain(_c,y);
     }
     private float _sigma1,_sigma2,_sigma3;
     private float[][][] _wp;
-    private float[][] _k1,_k2,_k3;
+    private int _c;
   }
 
-  public static void initializeShifts
-    (float[][] rd, float [][] k1, float[][] k2, 
-     float[][] k3, float[][][] r) 
-  {
-    zero(r);
-    if (k1!=null && k2!=null &&k3!=null) {
-      int nc = k1.length;
-      for (int ic=0; ic<nc; ++ic) {
-        int nk = k1[ic].length;
-        int ik = 0;
-        int i1 = round(k1[ic][ik]);
-        int i2 = round(k2[ic][ik]);
-        int i3 = round(k3[ic][ik]);
-        float i1f = i1 + rd[ic][ik]; 
-        r[i3][i2][i1] = i1-i1f;
-        for (ik=1; ik<nk; ++ik) {
-          float ip = i1f;
-          float rp = r[i3][i2][i1];
-          i1  = round(k1[ic][ik]);
-          i2  = round(k2[ic][ik]);
-          i3  = round(k3[ic][ik]);
-          i1f = i1+rd[ic][ik];
-          r[i3][i2][i1] = rp+ip-i1f;
-        }
+  public static void constrain(int[][] c, float[][][] x) {
+    int nc = c[0].length;
+    int n1 = x[0][0].length;
+    for (int ic=0; ic<nc; ++ic) {
+      int i3 = c[0][ic];
+      int i2 = c[1][ic];
+      for (int i1=0; i1<n1; ++i1) {
+        x[i3][i2][i1] = 0.0f;
       }
     }
   }
 
-  public static void checkShifts(int[][] k1, int[][] k2, int[][] k3, float[][][] r) {
-    if (k1!=null && k2!=null &&k3!=null) {
-      int nc = k1.length;
-      for (int ic=0; ic<nc; ++ic) {
-        trace("ic="+ic);
-        int nk = k1[ic].length;
-        for (int ik=0; ik<nk; ++ik) {
-          int i1 = k1[ic][ik];
-          int i2 = k2[ic][ik];
-          int i3 = k3[ic][ik];
-          trace("  i1="+i1+" i2="+i2+" i3="+i3+" r="+r[i3][i2][i1]+" u="+(i1+r[i3][i2][i1]));
-          //assert r[i2][i1]==rp+ip-i1:"shifts r satisfy constraints";
-        }
+  public static void constrain(int c, float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        x[i3][i2][c] = 0.0f;
       }
     }
   }
 
-  public static void constrain(
-    float[][] k1, float[][] k2, float[][] k3, float[][][] x) 
-  {
-    if (k1!=null && k2!=null &&k3!=null) {
-      int nc = k1.length;
-      for (int ic=0; ic<nc; ++ic) {
-        int nk = k1[ic].length;
-        float sum = 0.0f;
-        for (int ik=0; ik<nk; ++ik) {
-          int i1 = round(k1[ic][ik]);
-          int i2 = round(k2[ic][ik]);
-          int i3 = round(k3[ic][ik]);
-          sum += x[i3][i2][i1];
-        }
-        float avg = sum/(float)nk;
-        for (int ik=0; ik<nk; ++ik) {
-          int i1 = round(k1[ic][ik]);
-          int i2 = round(k2[ic][ik]);
-          int i3 = round(k3[ic][ik]);
-          x[i3][i2][i1] = avg;
-        }
-      }
-    }
-  }
 
   // Smoothing for dimension 1.
   private static void smooth1(float sigma, float[][][] x) {

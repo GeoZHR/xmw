@@ -183,9 +183,9 @@ public class LocalSlopeFinder {
     int n3 = f.length;
 
     // Normal vectors and linearities.
-    float[][][] u1 = new float[n3][n2][n1];
     float[][][] u2 = p2;
     float[][][] u3 = p3;
+    float[][][] u1 = new float[n3][n2][n1];
     LocalOrientFilter lof = new LocalOrientFilter(_sigma1,_sigma2,_sigma3);
     lof.applyForNormalPlanar(f,u1,u2,u3,ep);
 
@@ -196,10 +196,10 @@ public class LocalSlopeFinder {
           float u1i = u1[i3][i2][i1];
           float u2i = u2[i3][i2][i1];
           float u3i = u3[i3][i2][i1];
-          if (-u2i<_p2min*u1i) u2i = -_p2min*u1i;
-          if (-u2i>_p2max*u1i) u2i = -_p2max*u1i;
-          if (-u3i<_p3min*u1i) u3i = -_p3min*u1i;
-          if (-u3i>_p3max*u1i) u3i = -_p3max*u1i;
+          if (-u2i<_p2min*u1i) {u2i = -_p2min*u1i;}
+          if (-u2i>_p2max*u1i) {u2i = -_p2max*u1i;}
+          if (-u3i<_p3min*u1i) {u3i = -_p3min*u1i;}
+          if (-u3i>_p3max*u1i) {u3i = -_p3max*u1i;}
           if (u1i==0.0f) {
             p2[i3][i2][i1] = (u2i<0.0f)?_p2max:_p2min;
             p3[i3][i2][i1] = (u3i<0.0f)?_p3max:_p3min;
@@ -207,6 +207,18 @@ public class LocalSlopeFinder {
             p2[i3][i2][i1] = -u2i/u1i;
             p3[i3][i2][i1] = -u3i/u1i;
           }
+          if (Float.isNaN(p2[i3][i2][i1])) {
+            p2[i3][i2][i1]=0.f;
+            ep[i3][i2][i1]=0.f;
+          }
+          if (Float.isNaN(p3[i3][i2][i1])) {
+            p3[i3][i2][i1]=0.f;
+            ep[i3][i2][i1]=0.f;
+          }
+          if (Float.isNaN(ep[i3][i2][i1])) {
+            ep[i3][i2][i1]=0.f;
+          }
+
         }
       }
     }

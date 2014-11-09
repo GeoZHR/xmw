@@ -7,6 +7,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package wsi;
 
 import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 
@@ -163,27 +164,8 @@ public class Flattener2C {
     _niter = niter;
   }
 
-  /**
-   * Gets mappings computed from specified slopes and constraints.
-   * @param s1 sampling of 1st dimension.
-   * @param s2 sampling of 2nd dimension.
-   * @param p2 array of slopes of image features.
-   * @param el array of linearities of image features.
-   * @param cs constraints, arrays of (x1,x2) for which u1 is constant.
-   *  Contents of the array cs are as follows:
-   *  <pre>
-   *  {{{x1_00,x1_01,x1_02,...},{x1_10,x1_11,...},...},
-   *   {{x2_00,x2_01,x2_02,...},{x2_10,x2_11,...},...}}
-   *  </pre>
-   *  Each constraint point has coordinates (x1,x2). In the array cs, the
-   *  arrays of arrays of x1 coordinates precede the arrays of arrays of x2
-   *  coordinates. Each array of x1 coordinates has a corresponding array of
-   *  x2 coordinates, and together this pair of arrays of (x1,x2) represents
-   *  one constraint. All points in a constraint will be constrained to have
-   *  the same u1; in other words, they will all lie on the same horizon.
-   */
   public Mappings getMappingsFromSlopes(
-    Sampling s1, Sampling s2, float[][] p2, float[][] el, int c)
+    Sampling s1, Sampling s2, float[][] p2, float[][] el, int[] c)
   {
     // Sampling parameters.
     int n1 = s1.getCount();
@@ -229,19 +211,6 @@ public class Flattener2C {
     return new Mappings(s1,s2,u1,x1);
   }
 
-  public int referenceTrace(float[][] f) {
-    int n2 = f.length;
-    float sum = 0.0f;
-    int c = 0;
-    for (int i2=0; i2<n2; ++i2) {
-      float smi = sum(abs(f[i2]));
-      if (smi>sum) {
-        c = i2;
-        sum = smi;
-      }
-    }
-    return c;
-  }
 
   ///////////////////////////////////////////////////////////////////////////
   // private
@@ -273,11 +242,11 @@ public class Flattener2C {
 
   // Preconditioner; includes smoothers and (optional) constraints.
   private static class M2 implements CgSolver.A {
-    M2(float sigma1, float sigma2, float[][] wp, int c) {
+    M2(float sigma1, float sigma2, float[][] wp, int[] c) {
       _sigma1 = sigma1;
       _sigma2 = sigma2;
       _wp = wp;
-      _c  = c;
+      _c = c;
     }
     public void apply(Vec vx, Vec vy) {
       VecArrayFloat2 v2x = (VecArrayFloat2)vx;
@@ -296,7 +265,7 @@ public class Flattener2C {
     }
     private float _sigma1,_sigma2;
     private float[][] _wp;
-    private int _c;
+    private int[] _c;
   }
 
   // Initializes shifts r to satisfy constraints that u = i1+r is constant.
@@ -367,16 +336,12 @@ public class Flattener2C {
     }
   }
 
-  public static void constrain(int k2, float[][] x) {
+  public static void constrain(int[] c,float[][] x) {
+    int nc = c.length;
     int n1 = x[0].length;
-    for (int i1=0; i1<n1; ++i1) {
-      x[k2][i1] = 0.f;
-      /*
-      x[k2+1][i1] = 0.f;
-      x[k2+2][i1] = 0.f;
-      x[k2+3][i1] = 0.f;
-      */
-    }
+    for (int ic=0; ic<nc; ++ic) 
+      for (int i1=0; i1<n1; ++i1) 
+        x[c[ic]][i1] = 0.f;
   }
 
 
