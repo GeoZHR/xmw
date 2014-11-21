@@ -39,10 +39,7 @@ public class ConstraintsFromFaults {
       for (FaultCell fc:fs) {
         float[] cx = fc.getX();
         float[] cw = fc.getW();
-        float[] cs = new float[3];
-        cs[0] = fc.getS1();
-        cs[1] = fc.getS2();
-        cs[2] = fc.getS3();
+        float[] cs = fc.getS();
         float[] fx = new float[3];
         float[] hx = new float[3];
         float xs1 = cx[0]+cs[0];
