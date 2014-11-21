@@ -206,8 +206,8 @@ public class Flattener2C {
     InverseInterpolator ii = new InverseInterpolator(s1,s1);
     for (int i2=0; i2<n2; ++i2) 
       ii.invert(u1[i2],x1[i2]);
-    printStats("u1",u1);
-    printStats("x1",x1);
+    //printStats("u1",u1);
+   // printStats("x1",x1);
     return new Mappings(s1,s2,u1,x1);
   }
 
@@ -255,13 +255,13 @@ public class Flattener2C {
       float[][] y = v2y.getArray();
       copy(x,y);
       //constrain(_k1,_k2,y);
-      constrain(_c,y);
+      //constrain(_c,y);
       //removeAverage(y);
       smooth2(_sigma2,_wp,y);
       smooth1(2.0f*_sigma1,y);
       smooth2(_sigma2,_wp,y);
       //removeAverage(y);
-      constrain(_c,y);
+      //constrain(_c,y);
     }
     private float _sigma1,_sigma2;
     private float[][] _wp;

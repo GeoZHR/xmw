@@ -21,10 +21,12 @@ from wsi import *
 pngDir = "../../../png/wsi/"
 seismicDir = "../../../data/sigsbee/"
 #n1,n2,n3=90,420,335
-n1,n2,n3=1100,1024,100
+n1,n2,n3=1100,1024,20
 #n1,n2,n3=1100,800,100
 f1,f2,f3=1.85928,3.048,0
 d1,d2,d3=0.00762,0.02286,1
+#f1,f2,f3=0,0,0
+#d1,d2,d3=1,1,1
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
@@ -39,66 +41,221 @@ k1f,k2f,k3f = 48,406,0
 gmin,gmax,gint,glab = -2.0,2.0,0.5,"Amplitude"
 background = Color.WHITE
 
+fcfile = "sigImgCS"
+flfile = "sigImgLS"
+fhfile = "sigImgHS"
+wcfile = "sigImgCW"
+wlfile = "sigImgLW"
+whfile = "sigImgHW"
+fgcfile = "imgCS"
+fglfile = "imgLS"
+fghfile = "imgHS"
+wgcfile = "imgCW"
+wglfile = "imgLW"
+wghfile = "imgHW"
+
+plotOnly = True
+
 def main(args):
-  fL = readImage("junkH")
-  fC = readImage("junkC")
-  fL = copy(n1,n2,n3,0,0,0,fL)
-  fC = copy(n1,n2,n3,0,0,0,fC)
-  imgL = goStack(fL)
-  imgC = goStack(fC)
-  gL = copy(fL)
+  goLowVel()
+  #goHighVel()
+  #goCorrectVel()
+def goSmooth():
+  f = readImage(flfile,dat=True)
+  f2 = zerofloat(n1,n3) 
+  w2 = zerofloat(n1,n3) 
+  for i3 in range(n3):
+    f2[i3] = f[i3][920] 
   ws = WarpAndStack()
-  ws.setForWarp(15,2,1.0,0.25,0.9)
-  ws.applyWarp2(gL)
-  fmgL = goStack(gL)
-  writeImage("fmgL",fmgL)
-  fmgL = readImage2("fmgL")
-  imgL = mul(gain(imgL),1)
-  imgC = mul(gain(imgC),1)
-  fmgL = mul(gain(fmgL),1)
-  fMin = min(min(imgL),min(imgC),min(fmgL))
-  fMax = max(max(imgL),max(imgC),max(fmgL))
-  print fMin
-  print fMax
-  plot(s1,s2,imgL,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
-       cmin=fMin, cmax=fMax,png="image")
-  plot(s1,s2,imgC,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
-       cmin=fMin, cmax=fMax,png="image")
-  plot(s1,s2,fmgL,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
-       cmin=fMin, cmax=fMax,png="image")
+  w2 = ws.smooth(8.0,f2)
+  plot(s1,s3,f2,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(f2), cmax=max(f2),wide=False,png="gather")
+  plot(s1,s3,w2,clab="Warped",vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(w2), cmax=max(w2),wide=False,png="gatherS")
 
-def goFirstLook(f):
-  imgL = goStack(f)
-  f3 = zerofloat(n1,n3) 
-  for i2 in range(0,n2,50):
-    imgLi = imgL[i2]
-    Min = 5000000000000.0
-    i3m = 0
+def goLowVel():
+  '''
+  goWarp(low=True)
+  goStack(low=True)
+  goImageShow(low=True)
+  goGatherShow(low=True)
+  '''
+  goImageShowSub()
+
+def goHighVel():
+  goWarp(high=True)
+  goStack(high=True)
+  goImageShow(high=True)
+  goGatherShow(high=True)
+
+def goCorrectVel():
+  goWarp(correct=True)
+  goStack(correct=True)
+  goImageShow(correct=True)
+  goGatherShow(correct=True)
+
+def goWarp(low=False,correct=False,high=False):
+  if not plotOnly:
+    if low:
+      ffile,wfile = flfile,wlfile
+      minlagSc,maxlagSc = 15,6
+    if high:
+      ffile,wfile = fhfile,whfile
+      minlagSc,maxlagSc = 10,20
+    if correct:
+      ffile,wfile = fcfile,wcfile
+      minlagSc,maxlagSc = 8,8
+    esmooth,usmooth=2,1.0
+    strainMax1,strainMax2=0.5,1.0
+    #strainMax1,strainMax2=0.5,0.5
+    f = readImage(ffile,dat=True)
+    ws = WarpAndStack()
+    ws.setForWarp(minlagSc,maxlagSc,esmooth,usmooth,strainMax1,strainMax2)
+    ws.applyWarp(f)
+    writeImage(wfile,f)
+
+def goStack(low=False,correct=False,high=False):
+  if not plotOnly:
+    if low:
+      ffile,wfile = flfile,wlfile
+      fgfile,wgfile = fglfile,wglfile
+    if high:
+      ffile,wfile = fhfile,whfile
+      fgfile,wgfile = fghfile,wghfile
+    if correct:
+      ffile,wfile = fcfile,wcfile
+      fgfile,wgfile = fgcfile,wgcfile
+    f  = readImage(ffile,dat=True)
+    w  = readImage(wfile,dat=True)
+    fg = zerofloat(n1,n2)
+    wg = zerofloat(n1,n2)
     for i3 in range(n3):
-      f3[i3] = f[i3][i2] 
-      sumi = sum(abs(sub(imgLi,f3[i3])))
-      if Min>sumi:
-        i3m = i3
-        Min = sumi
-    print i3m
-    plot(s1,s3,f3,i3=i3m,clab=str(i2),vlabel="z (km)",hlabel="x (km)", 
-       cmin=min(f3), cmax=max(f3),png="image")
+      for i2 in range(n2):
+        add(f[i3][i2],fg[i2],fg[i2])
+        add(w[i3][i2],wg[i2],wg[i2])
+    writeImage(fgfile,fg)
+    writeImage(wgfile,wg)
 
-def goWarp(f):
-  g = copy(f)
-  imgL = goStack(f)
-  ws = WarpAndStack()
-  ws.applyWarp(g)
+def goImageShow(low=False,correct=False,high=False):
+  if low:
+    pngS = "L"
+    fgfile,wgfile = fglfile,wglfile
+  if high:
+    pngS = "H"
+    fgfile,wgfile = fghfile,wghfile
+  if correct:
+    pngS = "C"
+    fgfile,wgfile = fgcfile,wgcfile
+  fg = readImage2(fgfile)
+  wg = readImage2(wgfile)
+  fg = gain(fg,100)
+  wg = gain(wg,100)
+  fMin = max(min(fg),min(wg))
+  fMax = min(max(fg),max(wg))
+  plot(s1,s2,fg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=fMin, cmax=fMax,wide=True,png="image"+pngS)
+  plot(s1,s2,wg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=fMin, cmax=fMax,wide=True,png="fmage"+pngS)
+  lines=[10,110,210,310,410,510,610,710,810,910,1010]
+  plot(s1,s2,fg,i2s=lines,lineColor=Color.blue,clab="Amplitude",vlabel="z (km)",
+       hlabel="x (km)",cmin=fMin, cmax=fMax,wide=True,png="image"+pngS+"marked")
+  lines=[136,200,267]
+  plot(s1,s2,fg,i2s=lines,lineColor=Color.blue,clab="Amplitude",vlabel="z (km)",
+       hlabel="x (km)",cmin=fMin, cmax=fMax,wide=True,png="image"+pngS+"defractors")
+
+def goImageShowSub():
+  fg = readImage2(fglfile)
+  wg = readImage2(wglfile)
+  fg = gain(fg,100)
+  wg = gain(wg,100)
+  nm1,nm2 = 400,420
+  nf1,nf2 = 0,600
+  fm1,fm2 = nf1*d1+f1,nf2*d2+f2
+  sm1 = Sampling(nm1,d1,fm1)
+  sm2 = Sampling(nm2,d2,fm2)
+  fg = copy(nm1,nm2,nf1,nf2,fg)
+  wg = copy(nm1,nm2,nf1,nf2,wg)
+  fMin = max(min(fg),min(wg))
+  fMax = min(max(fg),max(wg))
+  plot(sm1,sm2,fg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=fMin, cmax=fMax,wide=True,png="imageLSub")
+  plot(sm1,sm2,wg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=fMin, cmax=fMax,wide=True,png="fmageLSub")
+
+def goGatherShow(low=False,correct=False,high=False):
+  if low:
+    pngS = "L"
+    ffile,wfile = flfile,wlfile
+  if high:
+    pngS = "H"
+    ffile,wfile = fhfile,whfile
+  if correct:
+    pngS = "C"
+    ffile,wfile = fcfile,wcfile
+  f = readImage(ffile,dat=True)
+  w = readImage(wfile,dat=True)
+  f2 = zerofloat(n1,n3) 
+  w2 = zerofloat(n1,n3) 
+  for i2 in range(10,n2,100):
+    for i3 in range(n3):
+      f2[i3] = f[i3][i2] 
+      w2[i3] = w[i3][i2] 
+    plot(s1,s3,f2,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+         cmin=min(f2), cmax=max(f2),wide=False,png="gather"+pngS+str(i2))
+    plot(s1,s3,w2,clab="Warped",vlabel="z (km)",hlabel="x (km)", 
+         cmin=min(w2), cmax=max(w2),wide=False,png="gatherW"+pngS+str(i2))
+  defractors=[136,200,267]
+  for i2 in defractors:
+    for i3 in range(n3):
+      f2[i3] = f[i3][i2] 
+      w2[i3] = w[i3][i2] 
+    plot(s1,s3,f2,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(f2), cmax=max(f2),wide=False,png="gather"+pngS+str(i2))
+    plot(s1,s3,w2,clab="Warped",vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(w2), cmax=max(w2),wide=False,png="gatherW"+pngS+str(i2))
+
+def goFlattenTest():
+  x = readImage(flfile,dat=True)
+  x2 = zerofloat(n1,n3)
+  for i3 in range(n3):
+    x2[i3] = x[i3][350]
+  p2 = zerofloat(n1,n3)
+  el = zerofloat(n1,n3)
+  lsf = LocalSlopeFinder(20.0,1.0,40.0)
+  lsf.findSlopes(x2,p2,el)
+  fl2 = Flattener2C()
+  fl2.setWeight1(0.5)
+  c = zeroint(1)
+  fmp = fl2.getMappingsFromSlopes(s1,s3,p2,pow(el,20),c)
+  gx = fmp.flatten(x2)
+  plot(s1,s3,x2,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+     cmin=min(x2), cmax=max(x2),wide=False,png=None)#"gather"+str(i2))
+  plot(s1,s3,gx,clab="Flatten",vlabel="z (km)",hlabel="x (km)", 
+     cmin=min(gx), cmax=max(gx),wide=False,png=None)
+
+def goWarpTest(x):
+  for i2 in range(n2-1):
+    dw = DynamicWarping(-1,1)
+    dw.setStrainMax(0.5)
+    dw.setErrorSmoothing(2)
+    dw.setShiftSmoothing(1.0)
+    u = dw.findShifts(x[i2],x[i2+1])
+    y = dw.applyShifts(u,x[i2+1])
+    copy(y,x[i2+1])
+
+
+def goFirstLook(f,g):
   f3 = zerofloat(n1,n3) 
   g3 = zerofloat(n1,n3) 
-  for i2 in range(0,n2,100):
+  for i2 in range(10,n2,100):
     for i3 in range(n3):
       f3[i3] = f[i3][i2] 
       g3[i3] = g[i3][i2] 
-    plot(s1,s3,f3,clab=str(i2),vlabel="z (km)",hlabel="x (km)", 
-       cmin=min(f3), cmax=max(f3),png="image")
-    plot(s1,s3,g3,clab=str(i2),vlabel="z (km)",hlabel="x (km)", 
-       cmin=min(g3), cmax=max(g3),png="image")
+    plot(s1,s3,f3,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(f3), cmax=max(f3),wide=False,png=None)#"gather"+str(i2))
+    plot(s1,s3,g3,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+       cmin=min(g3), cmax=max(g3),wide=False,png=None)
+
 def goFlattenAndStack(f):
   s1 = Sampling(n1,1.0,0.0)
   s2 = Sampling(n2,1.0,0.0)
@@ -136,13 +293,6 @@ def goStack2(f):
   return img
 
 
-def goStack(f):
-  img = zerofloat(n1,n2)
-  n2b,n2e,n2d=0,n2,1
-  for i3 in range(n3):
-    for i2 in range(n2b,n2e,n2d):
-      add(f[i3][i2],img[i2],img[i2])
-  return img
 
 def slopes():
   f = readImage("gm")
@@ -169,14 +319,52 @@ def readImage2(name):
   ais.close()
   return image
   
-def readImage(name):
-  fileName = seismicDir+name+".bin"
+def readImage(name,dat=False):
   n1,n2,n3 = s1.count,s2.count,s3.count
-  n1,n2,n3=1100,1024,100
+  n1,n2,n3=1100,1024,20
   image = zerofloat(n1,n2,n3)
-  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  if dat:
+    fileName = seismicDir+name+".dat"
+    ais = ArrayInputStream(fileName,ByteOrder.BIG_ENDIAN)
+  else:
+    fileName = seismicDir+name+".bin"
+    byteType = "ByteOrder.LITTLE_ENDIAN"
+    ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
+  return image
+
+def readImageT(name1,name2):
+  n1,n2,n3=1100,1024,100
+  imageT = zerofloat(n2,n1,n3)
+  fileName = seismicDir+name1+".bin"
+  byteType = "ByteOrder.LITTLE_ENDIAN"
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(imageT)
+  ais.close()
+  image = zerofloat(n1,n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        image[i3][i2][i1] = imageT[i3][i1][i2]
+  writeImage(name2,image)
+  return image
+
+def readImageS(name1,name2):
+  n1,n2,n3=1100,1024,100
+  image = zerofloat(n1,n2,n3)
+  fileName = seismicDir+name1+".dat"
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  imageS = zerofloat(n1,n2,20)
+  k3 = 0
+  for i3 in range(0,n3,5):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        imageS[k3][i2][i1] = image[i3][i2][i1]
+    k3 += 1
+  writeImage(name2,imageS)
   return image
 
 def writeImage(name,image):
@@ -213,10 +401,12 @@ def slice23(k1,f):
   SimpleFloat3(f).get23(n2,n3,k1,0,0,s)
   return s
 
-def gain(x):
+def gain(x,e):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(100.0)
+  ref = RecursiveExponentialFilter(e)
   ref.apply1(g,g)
+  n2 = len(x)
+  n1 = len(x[0])
   y = zerofloat(n1,n2)
   for i2 in range(n2):
     div(x[i2],sqrt(g[i2]),y[i2])
@@ -244,8 +434,9 @@ def setBounds(kk,wp,w1):
 gray = ColorMap.GRAY
 jet = ColorMap.JET
 
-def plot(s1,s2,x,i3=None,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=None,
-  cmin=0,cmax=0,title=None,png=None):
+def plot(s1,s2,x,i2s=None,i3=None,lineColor=Color.red,
+        cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=None,
+        cmin=0,cmax=0,wide=False,title=None,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   #if title:
   #  sp.setTitle(title)
@@ -253,13 +444,23 @@ def plot(s1,s2,x,i3=None,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,
   pv = sp.addPixels(s1,s2,x)
   pv.setColorModel(cmap)
   pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  if i2s:
+    for i2 in i2s:
+      x = zerofloat(n1-20)
+      y = zerofloat(n1-20)
+      for i1 in range(10,n1-10,1):
+        x[i1-10] = i2*d2+f2
+        y[i1-10] = i1*d1+f1
+      ps = sp.addPoints(y,x)
+      ps.setLineWidth(2.0)
+      ps.setLineColor(lineColor)
   if i3:
     print i3
-    x = zerofloat(n1)
-    y = zerofloat(n1)
-    for i1 in range(n1):
-      x[i1] = i3*d3+f3
-      y[i1] = i1*d1+f1
+    x = zerofloat(n1-4)
+    y = zerofloat(n1-4)
+    for i1 in range(2,n1-2,1):
+      x[i1-2] = i3*d3+f3
+      y[i1-2] = i1*d1+f1
     ps = sp.addPoints(y,x)
     ps.setLineWidth(2.0)
     ps.setMarkColor(Color.red)
@@ -268,11 +469,16 @@ def plot(s1,s2,x,i3=None,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,
     pv.setClips(cmin,cmax)
   sp.setVLabel(vlabel)
   sp.setHLabel(hlabel)
-  sp.setSize(1200,1000)
-  #sp.setSize(600,1200)
-  sp.setFontSizeForPrint(8.0,200)
+  if wide:
+    sp.setSize(1400,750)
+    sp.setFontSizeForPrint(6.0,200)
+    sp.plotPanel.setColorBarWidthMinimum(140)
+  else:
+    sp.setSize(500,1200)
+    sp.setFontSizeForPrint(8.0,200)
+    sp.plotPanel.setColorBarWidthMinimum(140)
   #sp.setFontSizeForSlide(0.5,0.9,16.0/9.0)
-  sp.plotPanel.setColorBarWidthMinimum(120)
+  #sp.plotPanel.setColorBarWidthMinimum(120)
   if pngDir and png:
     sp.paintToPng(720,2.2222,pngDir+png+".png")
 

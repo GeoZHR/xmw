@@ -32,12 +32,14 @@ public class Smoother3 {
   public void apply(float[][][][] x) {
     int n4 = x.length;
     for (int i4=0; i4<n4; ++i4) {
-      smooth1(_sigma1,_wh,x[i4]);
+      //smooth1(_sigma1,_wh,x[i4]);
+      smooth1(_sigma1,x[i4]);
       smooth2(_sigma2,_wh,x[i4]);
       smooth3(_sigma3,_wh,x[i4]);
       smooth3(_sigma3,_wh,x[i4]);
       smooth2(_sigma2,_wh,x[i4]);
-      smooth1(_sigma1,_wh,x[i4]);
+      smooth1(_sigma1,x[i4]);
+      //smooth1(_sigma1,_wh,x[i4]);
     }
   }
 

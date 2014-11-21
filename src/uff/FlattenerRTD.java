@@ -64,25 +64,21 @@ public class FlattenerRTD {
     int n3 = p[0].length;
     int n2 = p[0][0].length;
     int n1 = p[0][0][0].length;
-    //int ns = cx[0].length;
-    //int[] cn = new int[ns];
-    //float[][][] cu = copy(cx);
     float[][][][] p0 =  scopy(p);
-    //constraintTransform(p0[3],cx,cu,cn);
     float[][][][] r  = new float[3][n3][n2][n1];
     float[][][][] b  = new float[3][n3][n2][n1];
-    //initializeShifts2(cn,cu,cx,r);
     setIters(unfaultOnly);
     initializeShifts(cx,r);
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
     CgSolver cg = new CgSolver(_small,_inner);
     Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p0[3]);
-    //M3 m3 = new M3(cn,cu,s3);
     M3 m3 = new M3(cx,s3);
     A3 a3 = new A3(_epsilon,p);
     for (int iter=0; iter<_outer; ++iter) {
-      if(iter>0){updateParameters(r,p0,p);}
+      if(iter>0){
+        updateParameters(r,p0,p);
+      }
       vb.zero();
       makeRhs(p,b);
       cg.solve(a3,m3,vb,vr);
@@ -95,26 +91,26 @@ public class FlattenerRTD {
 
   private void setIters(boolean unfaultOnly) {
     _inner = 10; 
-    _outer = 50;
+    _outer = 20;
     if(unfaultOnly) {
       _outer = 1;
-      _inner = 100;
+      _inner = 50;
     }
   }
 
-  /**
+    /**
    * Estimates shift vectors for a 3D image.
    * @param p array of parameters {u1,u2,u3,ep,a}.
    * @return array of shifts {r1,r2,r3}.
    */
   /*
   public float[][][][] findShifts(float[][][][] p) {
-    int n3 = p[0].length;
-    int n2 = p[0][0].length;
     int n1 = p[0][0][0].length;
+    int n2 = p[0][0].length;
+    int n3 = p[0].length;
     float[][][][] p0 = scopy(p);
-    float[][][][] b  = new float[3][n3][n2][n1];
-    float[][][][] r  = new float[3][n3][n2][n1];
+    float[][][][] b = new float[3][n3][n2][n1];
+    float[][][][] r = new float[3][n3][n2][n1];
     float[][][][] rc = new float[3][n3][n2][n1];
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
@@ -269,7 +265,6 @@ public class FlattenerRTD {
       constrain(_cu,y[2]);
     }
     private Smoother3 _s3;
-    private int[] _cn = null;
     private float[][][] _cu=null;
   }
 
@@ -663,6 +658,7 @@ public class FlattenerRTD {
   }
 
   private void cleanShifts(int[][][] fm, float[][][][] r) {
+    if(fm==null) {return;}
     int n4 = r.length;
     for (int i4=0; i4<n4; ++i4) {
       cleanShifts(fm,r[i4]);
@@ -699,6 +695,7 @@ public class FlattenerRTD {
   }
 
   public static void initializeShifts(float[][][] cu, float[][][][] r) {
+    if(cu==null) {return;}
     int ns = cu[0].length;
     for (int is=0; is<ns; ++is) {
       int fx1 = round(cu[0][is][0]);
@@ -817,6 +814,7 @@ public class FlattenerRTD {
   */
 
   private static void constrain(float[][][] cu, float[][][] x) {
+    if(cu==null) {return;}
     int ns = cu[0].length;
     for (int is=0; is<ns; ++is) {
         int ua1 = round(cu[0][is][0]);

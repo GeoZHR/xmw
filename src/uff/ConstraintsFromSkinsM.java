@@ -72,8 +72,11 @@ public class ConstraintsFromSkinsM {
     for (FaultSkin fs:_fss) {
       for (FaultCell fc:fs) {
         float[] pi = fc.getX();
-        float[] si = fc.getS();
         float[] wi = fc.getW();
+        float[] si = new float[3];
+        si[0] = fc.getS1();
+        si[1] = fc.getS2();
+        si[2] = fc.getS3();
         float[] pp = add(pi,si);
         int pi1 = round(pi[0]);
         int pi2 = round(pi[1]);

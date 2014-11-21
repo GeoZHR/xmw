@@ -28,13 +28,15 @@ public class FlattenAndStack {
 
   }
 
-  public float[][] apply(
-    final Sampling s1, final Sampling s2, final Sampling s3, final float[][][] x) {
+  public float[][] apply(final float[][][] x) {
     final int n3 = x.length;
     final int n2 = x[0].length;
     final int n1 = x[0][0].length;
+    final Sampling s1 = new Sampling(n1,1.0,0.0);
+    final Sampling s3 = new Sampling(n3,1.0,0.0);
     final float[][] g = zerofloat(n1,n2);
-    final float[][] s = stack(x);
+    final int[] sid = new int[n2];
+    final float[][] rf = nearestShot(sid,x);
     Parallel.loop(n2,new Parallel.LoopInt() {
     public void compute(int i2) {
       float[][] f = zerofloat(n1,n3);
@@ -43,19 +45,23 @@ public class FlattenAndStack {
         f[i3] = x[i3][i2];
       float[][] p2 = new float[n3][n1];
       float[][] wp = new float[n3][n1];
-      float[][] u1 = new float[n3][n1];
       LocalSlopeFinder lsf = new LocalSlopeFinder(_pSigma1,_pSigma2,_pmax);
       Flattener2C flc = new Flattener2C();
       flc.setWeight1(_weight1);
       flc.setSmoothings(_fSigma1,_fSigma2);
       flc.setIterations(_small,_niter);
       lsf.findSlopes(f,p2,wp); 
-      cleanImage(p2,f);
+      //cleanImage(p2,f);
       //int[] c = referenceTrace(mul(wp,u1));
-      int[] c = referenceTrace(s[i2],f);
-      wp = pow(wp,20.0f);
+      //int[] c = referenceTrace(s[i2],f);
+      wp = pow(wp,10.0f);
+      int[] c = new int[1];
+      c[0] = sid[i2];
       Flattener2C.Mappings mp = flc.getMappingsFromSlopes(s1,s3,p2,wp,c);
-      stack(g[i2],mp.flatten(f));
+      float[][] g2 = mp.flatten(f);
+      for (int i3=0; i3<n3; ++i3)
+        copy(g2[i3],x[i3][i2]);
+      stack(g[i2],g2);
     }});
     return g;
   }
@@ -68,7 +74,7 @@ public class FlattenAndStack {
   private float _small = 0.01f;
   private float _fSigma1 = 4.0f;
   private float _fSigma2 = 8.0f;
-  private float _weight1 = 0.5f;
+  private float _weight1 = 0.05f;
 
   private void cleanImage(float[][] p2, float[][] x) {
     int n3 = x.length;
@@ -131,4 +137,30 @@ public class FlattenAndStack {
     return c;
   }
 
+  private float[][] nearestShot(int[] sid, float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    float[][][] y = zerofloat(n1,n2,n3);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(3.0f);
+    ref.apply3(x,y);
+    float[][] r = new float[n2][n1];
+    float os = 3.33756f;
+    float ox = 3.04800f;
+    float dx = 0.02286f;
+    float ds = 0.04572f*5.0f*5.0f;
+    float[] xs = new float[n3];
+    for (int i3=0; i3<n3; ++i3)
+      xs[i3] = os+i3*ds;
+    for (int i2=0; i2<n2; ++i2) {
+      float xi = ox+dx*i2;
+      int[] id = new int[1];
+      float min = min(abs(sub(xs,xi)),id);
+      int i3 = id[0];
+      sid[i2] = i3;
+      System.out.println("i3="+i3);
+      r[i2] = y[i3][i2];
+    }
+    return r;
+  }
 }

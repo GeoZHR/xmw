@@ -31,12 +31,13 @@ u1file = "u1" # normal vector (1st component)
 u2file = "u2" # normal vector (2nd component)
 u3file = "u3" # normal vector (3rd component)
 gffile  = "gf" # unfolded image 
+gfcfile  = "gfc" # unfolded image 
 
 
-r1tfile = "r1t" # unfaulting shifts (1st component)
-r2tfile = "r2t" # unfaulting shifts (2nd component)
-r3tfile = "r3t" # unfaulting shifts (3rd component)
-ftfile  = "ft" # unfaulted image 
+r1cfile = "r1t" # unfaulting shifts (1st component)
+r2cfile = "r2t" # unfaulting shifts (2nd component)
+r3cfile = "r3t" # unfaulting shifts (3rd component)
+fcfile  = "ft" # unfaulted image 
 cpfile  = "cp" # unfaulted image 
 
 r1dfile = "r1d" # unfolding shifts (1st component)
@@ -81,10 +82,10 @@ def main(args):
   goSkin()
   goSlip()
   goUnfault()
-  '''
-  goUnfaultc()
-  '''
   goUnfold()
+  '''
+  goUnfaultAndUnfoldc(False)
+  '''
   goUnfoldc2()
   goUnfoldc()
   goFlatten2()
@@ -101,7 +102,7 @@ def goFakeData():
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.0 # (rms noise)/(rms signal) ratio
+  noise = 0.5 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
@@ -294,8 +295,6 @@ def goUnfault():
   plot3(gw,clab="Unfault",png="gw")
   plot3(gx,clab="Amplitude",png="gx")
 
-
-
 def goUnfold():
   if not plotOnly:
     gx = readImage(gwfile)
@@ -316,21 +315,11 @@ def goUnfold():
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
   plot3(gf,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfold",png="gf")
 
-def goTest():
-  gx = readImage(gxfile)
-  p2,p3,ep = FaultScanner.slopes(2.0,1.0,1.0,5.0,gx)
-  skins = readSkins(fskbase)
-  cfs = ConstraintsFromFaults(skins,p2,p3,ep)
-  cp  = zerofloat(n1,n2,n3)
-  cs = cfs.getWeightsAndConstraints(ep,cp)
-  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
-  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
-  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPoints",png="gx")
 
-def goUnfaultc():
+def goUnfaultAndUnfoldc(unfaultOnly):
   if not plotOnly:
-    ft = zerofloat(n1,n2,n3)
     gx = readImage(gxfile)
+    fc = zerofloat(n1,n2,n3)
     cp  = zerofloat(n1,n2,n3)
     p2,p3,ep = FaultScanner.slopes(4.0,1.0,1.0,5.0,gx)
     skins = readSkins(fskbase)
@@ -342,28 +331,51 @@ def goUnfaultc():
     u2 = fillfloat(0.0,n1,n2,n3)
     u3 = fillfloat(0.0,n1,n2,n3)
     p = array(u1,u2,u3,wp)
-    flattener = FlattenerRTD(4.0,4.0)
+    flattener = FlattenerRTD(6.0,6.0)
     [r1,r2,r3] = flattener.computeShifts(True,fm,cs,p)
-    flattener.applyShifts([r1,r2,r3],gx,ft)
-    writeImage(r1tfile,r1)
-    writeImage(r2tfile,r2)
-    writeImage(r3tfile,r3)
-    writeImage(ftfile,ft)
+    flattener.applyShifts([r1,r2,r3],gx,fc)
+    writeImage(r1cfile,r1)
+    writeImage(r2cfile,r2)
+    writeImage(r3cfile,r3)
+    writeImage(fcfile,fc)
     writeImage(cpfile,cp)
+    if not unfaultOnly:
+      gx = readImage(fcfile)
+      u1 = zerofloat(n1,n2,n3)
+      u2 = zerofloat(n1,n2,n3)
+      u3 = zerofloat(n1,n2,n3)
+      ep = zerofloat(n1,n2,n3)
+      fd = zerofloat(n1,n2,n3)
+      lof = LocalOrientFilter(2.0,1.0)
+      lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+      p = array(u1,u2,u3,pow(ep,8.0))
+      flattener = FlattenerRT(6.0,6.0)
+      r = flattener.findShifts(p)
+      flattener.applyShifts(r,gx,fd)
+      '''
+      lof = LocalOrientFilter(2.0,1.0)
+      lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+      p = array(u1,u2,u3,pow(ep,8.0))
+      r = flattener.computeShifts(False,None,None,p)
+      flattener.applyShifts(r,gx,fd)
+      '''
+      writeImage(gfcfile,fd)
   else:
-    r1 = readImage(r1tfile)
-    r2 = readImage(r2tfile)
-    r3 = readImage(r3tfile)
-    ft = readImage(ftfile)
+    r1 = readImage(r1cfile)
+    r2 = readImage(r2cfile)
+    r3 = readImage(r3cfile)
+    fc = readImage(fcfile)
     cp = readImage(cpfile)
     gx = readImage(gxfile)
-
+    fd = readImage(gfcfile)
   s1 = readImage(fs1file)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
   plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
-  plot3(ft,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="ft")
+  plot3(fc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="fc")
+  plot3(fd,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfoldC",png="fdc")
+  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
@@ -379,7 +391,6 @@ def goUnfoldc():
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    fd = zerofloat(n1,n2,n3)
     lof = LocalOrientFilter(2.0,1.0)
     lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
     wp = copy(ep)
