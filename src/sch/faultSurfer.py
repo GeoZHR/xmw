@@ -103,8 +103,7 @@ def goPSS():
   plot3(gx,cells=fc,png="cells")
   plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
         clab="PointSetSurface",png="pss")
-
-
+  plot3(gx,skins=[sk[0]],png="skins")
 def goDisplay():
   print "goDisplay ..."
   gx = readImage(gxfile)
@@ -514,15 +513,13 @@ def convertDips(ft):
 
 def convertStrikes(fp):
   return FaultScanner.convertStrikes(True,-90.0,fp)
-
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,smax=0.0,slices=None,
+          xyz=None,cells=None,skins=None,fbs=None,fss=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
   n3 = len(f)
-  #sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YIN_ZDOWN)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)
@@ -531,13 +528,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-1.0,1.0)
+      ipg.setClips(-3.0,3.0)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-1.0,1.0)
+    ipg.setClips1(-3.0,3.0)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -574,10 +571,45 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     cmap = ColorMap(0.0,1.0,ColorMap.JET)
-    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.5,cmap,cells,True)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.5,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if fss:
+    tg = TriangleGroup(True,fss)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+
   if skins:
     sg = Group()
     ss = StateSet()
@@ -598,10 +630,10 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     for skin in skins:
       if smax>0.0: # show fault throws
         cmap = ColorMap(0.0,smax,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,True)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
       else: # show fault likelihood
         cmap = ColorMap(0.0,1.0,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,True)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
       qg = QuadGroup(xyz,uvw,rgb)
       qg.setStates(None)
       sg.addChild(qg)
@@ -620,34 +652,28 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  if slices:
-    k1,k2,k3 = slices
-  else:
-    k1,k2,k3 = (370,105,34) # most plots use these
-    #k1,k2,k3 = (370,150,0) # most plots use these
-  ipg.setSlices(k1,k2,k3)
+  #ipg.setSlices(95,5,51)
+  #ipg.setSlices(95,5,95)
+  ipg.setSlices(100,90,0)
   if cbar:
-    sf.setSize(985,700) # for sch data
-    #sf.setSize(837,700) # for fake data
+    sf.setSize(837,700)
   else:
-    sf.setSize(848,700) # for sch data
-    #sf.setSize(700,700) # for fake data
+    sf.setSize(700,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  ov.setEyeToScreenDistance(3018.87) # for consistency with brooks
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  #ov.setAzimuthAndElevation(25.0,20.0)
-  ov.setAzimuthAndElevation(150.0,15.0)
-  ov.setScale(1.5)
-  #ov.setTranslate(Vector3(-0.182,-0.238,-0.012))
-  ov.setTranslate(Vector3(-0.190,-0.168,-0.006))
+  
+  #ov.setAzimuthAndElevation(-55.0,25.0)
+  #ov.setAzimuthAndElevation(-85.0,25.0)
+  ov.setAzimuthAndElevation(135.0,25.0)
+  ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
+  ov.setScale(1.2)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(137,1,pngDir+png+"cbar.png")
-
 #############################################################################
 run(main)

@@ -297,7 +297,7 @@ public class MarchingCubes {
           if (c5>c) {caseIndex +=  32;}
           if (c6>c) {caseIndex +=  64;}
           if (c7>c) {caseIndex += 128;}
-          float v = -1.f;
+          float v = -30.f;
           if (c0==v||c1==v||c2==v||c3==v||c4==v||c5==v||c6==v||c7==v) {caseIndex=256;}
           //if (dc0>d&&dc1>d&&dc2>d&&dc3>d&&dc4>d&&dc5>d&&dc6>d&&dc7>d) {caseIndex=256;}
           // If at least one triangle for this case, ...

@@ -55,9 +55,9 @@ def main(args):
   goThin()
   goCleanCells()
   goSPS()
-  goPSS()
   '''
-  goFSS()
+  goPSS()
+  #goFSS()
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -149,7 +149,7 @@ def goPSS():
   #fc = goNoiseCells()
   #sk = goCleanCells()
   sk = readSkins(fskclean)
-  fc = FaultSkin.getCells(sk[3])
+  fc = FaultSkin.getCells(sk[2])
   pss = PointSetSurface()
   bs = pss.findScalarField(n1,n2,n3,fc)
   plot3(gx,cells=fc,png="cells")
