@@ -1,5 +1,4 @@
 from fakeutils import *
-from fmm import *
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -21,6 +20,7 @@ fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
+fskclean = "fskc" # fault skin (basename only)
 bsfile  = "bs"  # fault block volume
 
 # These parameters control the scan over fault strikes and dips.
@@ -53,9 +53,11 @@ def main(args):
   goSlopes()
   goScan()
   goThin()
+  goCleanCells()
+  goSPS()
+  goPSS()
   '''
-  #goBlockerFromSkins()
-  goBlockerFromCells()
+  goFSS()
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -63,8 +65,8 @@ def goFakeData():
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults
-  conjugate = False # if True, two large planar faults will intersect
-  conical = False # if True, may want to set nplanar to 0 (or not!)
+  conjugate = True # if True, two large planar faults will intersect
+  conical = True # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
@@ -141,19 +143,60 @@ def goThin():
   plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
 
-def goBlockerFromCells():
+def goPSS():
   print "goBlocker ..."
   gx = readImage(gxfile)
   #fc = goNoiseCells()
-  fc = goCleanCells()
-  fb = ScreenFaultSurferClose()
-  bs = fb.findBlocks(n1,n2,n3,fc)
-  writeImage(bsfile,bs)
+  #sk = goCleanCells()
+  sk = readSkins(fskclean)
+  fc = FaultSkin.getCells(sk[3])
+  pss = PointSetSurface()
+  bs = pss.findScalarField(n1,n2,n3,fc)
+  plot3(gx,cells=fc,png="cells")
+  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
+        clab="PointSetSurface",png="pss")
+
+def goFSS():
+  print "goBlocker ..."
+  gx = readImage(gxfile)
+  #fc = goNoiseCells()
+  #sk = goCleanCells()
+  sk = readSkins(fskclean)
+  fc = FaultSkin.getCells(sk[0])
+  fss = FloatScaleSurface()
+  bs = fss.findScalarField(n1,n2,n3,fc)
   plot3(gx,cells=fc,png="cells")
   plot3(gx,bs,cmin=min(bs),cmax=max(bs),cmap=jetRamp(1.0),
-        clab="Fault blockers",png="fbs")
-  plot3(gx,bs,cmin=min(bs),cmax=max(bs),fbs=bs,cmap=jetRamp(1.0),
-        clab="Fault blockers",png="fbsc")
+        clab="PointSetSurface",png="pss")
+  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
+        clab="PointSetSurface",png="pss")
+
+def goSPS():
+  print "goBlocker ..."
+  gx = readImage(gxfile)
+  #fc = goNoiseCells()
+  #sk = goCleanCells()
+  sk = readSkins(fskclean)
+  fc = FaultSkin.getCells(sk)
+  #fc = FaultSkin.getCells(sk)
+  fb = FaultIsosurfer()
+  #us = fb.normalsFromCellsOpen(n1,n2,n3,fc)
+  us = fb.normalsFromCellsClose(n1,n2,n3,fc)
+  bs = fb.faultIndicator(us)
+  plot3(gx,cells=fc,png="cells")
+  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
+        clab="ScreenedPoissonSurface",png="sps")
+
+
+def goFaultSurfer():
+  gx = readImage(gxfile)
+  sk = goCleanCells()
+  fs = FaultSurfer()
+  sf = fs.surfer(n1,n2,n3,sk)
+  fc = FaultSkin.getCells(sk)
+  ts = fs.applyTransform(fc,gx)
+  plot3T(ts[0],g=ts[1],cmin=min(ts[1]),cmax=max(ts[1]),cmap=jetRamp(1.0))
+  plot3T(ts[0],cmin=min(ts[0]),cmax=max(ts[0]),fss=sf)
 
 def goNoiseCells():
   fl = readImage(flfile)
@@ -171,13 +214,22 @@ def goCleanCells():
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
+  gx = readImage(gxfile)
   fs = FaultSkinner()
   fb = ScreenFaultSurferClose()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
-  cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
-  cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
+  #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
+  skins = fs.findSkins(cells)
+  cells = FaultSkin.getCells(skins[0])
+  for skin in skins:
+    skin.smoothCellNormals(4)
+  for iskin,skin in enumerate(skins):
+    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+  #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
+  #return skins
+  writeSkins(fskclean,skins)
   return cells
 
 def goBlockerFromSkins():
@@ -190,6 +242,7 @@ def goBlockerFromSkins():
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
+  plot3(gx,cells=cells,png="cells")
   skins = fs.findSkins(cells)
   for skin in skins:
     skin.smoothCellNormals(4)
@@ -198,7 +251,9 @@ def goBlockerFromSkins():
   #fb = ScreenFaultSurferOpen()
   fb = ScreenFaultSurferClose()
   bs = fb.findBlocks(n1,n2,n3,cells)
+  mk = fb.removeSmallContours(bs)
   writeImage(bsfile,bs)
+  plot3(mk,cmap=ColorMap.JET,png="cells")
   plot3(gx,cells=cells,png="cells")
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
@@ -351,8 +406,83 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
+def plot3T(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          fss=None,smax=0.0,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1 = Sampling(n1,1.0,0.0)
+  s2 = Sampling(n2,1.0,0.0)
+  s3 = Sampling(n3,1.0,0.0)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      ipg.setClips(-3.0,3.0)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-3.0,3.0)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120)
+  if fss:
+    tg  = TriangleGroup(True,s3,s2,fss)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  #ipg.setSlices(95,5,51)
+  #ipg.setSlices(95,5,95)
+  ipg.setSlices(95,5,76)
+  if cbar:
+    sf.setSize(837,700)
+  else:
+    sf.setSize(700,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
+  ov = sf.getOrbitView()
+  ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
+  
+  #ov.setAzimuthAndElevation(-55.0,25.0)
+  ov.setAzimuthAndElevation(-85.0,25.0)
+  ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
+  ov.setScale(1.2)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(137,1,pngDir+png+"cbar.png")
+
+
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,fbs=None,smax=0.0,
+          xyz=None,cells=None,skins=None,fbs=None,fss=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
@@ -431,6 +561,23 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     states.add(ms)
     tg.setStates(states);
     sf.world.addChild(tg)
+  if fss:
+    tg = TriangleGroup(True,fss)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+
   if skins:
     sg = Group()
     ss = StateSet()
@@ -475,7 +622,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(sg)
   #ipg.setSlices(95,5,51)
   #ipg.setSlices(95,5,95)
-  ipg.setSlices(95,5,76)
+  ipg.setSlices(100,90,0)
   if cbar:
     sf.setSize(837,700)
   else:
@@ -487,7 +634,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
   
   #ov.setAzimuthAndElevation(-55.0,25.0)
-  ov.setAzimuthAndElevation(-85.0,25.0)
+  #ov.setAzimuthAndElevation(-85.0,25.0)
+  ov.setAzimuthAndElevation(135.0,25.0)
   ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
   ov.setScale(1.2)
   sf.setVisible(True)

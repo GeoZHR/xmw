@@ -10,7 +10,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-
+import warp.*;
 /**
  * Migrated shot gather image flattening before stacking.
  * @author Xinming Wu, Colorado School of Mines
@@ -30,7 +30,7 @@ public class WarpAndStack {
     _strainMax2 = strainMax2;
   }
 
-  public void applyWarp(final float[][][] x) {
+  public float[][] applyWarp(final float[][][] x) {
     final int n3 = x.length;
     final int n2 = x[0].length;
     final int[] sid = new int[n2];
@@ -45,39 +45,17 @@ public class WarpAndStack {
         warp(d3,f[i2],x[i3][i2]);
        }
     }});
+    return stack(sid,x);
   }
-
-  public void applyWarp2(final float[][][] x) {
-    smooth3(32.0f,x);
-    final int n3 = x.length;
-    final int n2 = x[0].length;
-    final int[] sid = new int[n2];
-    final float[][] f = nearestShot(sid,x);
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      System.out.println("i3="+i3);
-      warp2(f,x[i3]);
-    }});
-  }
-  private void warp2(float[][] f, float[][] x) {
-    DynamicWarping dw  = new DynamicWarping(-55,20);
-    dw.setErrorSmoothing(_esmooth);
-    dw.setShiftSmoothing(_usmooth);
-    dw.setStrainMax(_strainMax1,_strainMax2);
-    float[][] u = dw.findShifts(f,x);
-    float[][] y = dw.applyShifts(u,x);
-    copy(y,x);
-  }
-
 
   public void smooth3(float sigma, float[][][] x) {
     int n3 = x.length;
     int n2 = x[0].length;
     int n1 = x[0][0].length;
     float[][][] y = new float[n3][n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(8.0,1.0,1.0);
+    LocalOrientFilter lof = new LocalOrientFilter(10.0,1.0,2.0);
     EigenTensors3 et = lof.applyForTensors(x);
-    et.setEigenvalues(0.001f,0.001f,1.0f);
+    et.setEigenvalues(0.001f,0.01f,1.0f);
     float c = 0.5f*sigma*sigma;
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     lsf.apply(et,c,x,y);
@@ -104,7 +82,7 @@ public class WarpAndStack {
     int n2 = x.length;
     int n1 = x[0].length;
     float[][] y = new float[n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(8.0,1.0);
+    LocalOrientFilter lof = new LocalOrientFilter(4.0,1.0);
     EigenTensors2 et = lof.applyForTensors(x);
     et.setEigenvalues(0.001f,1.0f);
     float c = 0.5f*sigma*sigma;
@@ -130,50 +108,10 @@ public class WarpAndStack {
   */
 
 
-  private void cleanImage(float[][][] x) {
-    int n3 = x.length;
-    int n2 = x[0].length;
-    int n1 = x[0][0].length;
-    float[][][] x3 = new float[n3][n2][n1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(3.0f);
-    rgf.apply001(x,x3);
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float x3i = x3[i3][i2][i1];
-          if (abs(x3i)>0.05f) {
-            x[i3][i2][i1]  = 0.0f;
-          }
-        }
-      }
-    }
-  }
-
-
-  private int maxSlope(float[] p, float[] w) {
-    int n1 = p.length;
-    float maxP = 0.0f;
-    for (int i1=0; i1<n1; ++i1) {
-      float wi = w[i1];
-      if (wi>0.2f) {
-        float pi = abs(p[i1]);
-        if (pi>maxP) {maxP=pi;}
-      }
-    }
-    return round(maxP*10.0f);
-  }
-
   private void warp(int offset, float[] f, float[] x) {
     if(offset==0){return;}
-    int minlag=-10;
-    int maxlag= 10;
-    if(offset<0){
-      minlag =  offset*_minlagSc; 
-      maxlag = -offset*_maxlagSc;
-    } else {
-      minlag = -offset*_minlagSc; 
-      maxlag = offset*_maxlagSc;
-    }
+    int maxlag = 35;
+    int minlag = -35;
     DynamicWarping dw  = new DynamicWarping(minlag,maxlag);
     dw.setStrainMax(_strainMax1);
     dw.setErrorSmoothing(_esmooth);
@@ -182,6 +120,21 @@ public class WarpAndStack {
     float[] y = dw.applyShifts(u,x);
     copy(y,x);
   }
+
+  private void warpR(int offset, float[] f, float[] x) {
+    if(offset==0){return;}
+    int maxlag = 50;
+    int minlag = -50;
+    int n1 = x.length;
+    Sampling s1 = new Sampling(n1,1,0);
+    DynamicWarpingR dw  = new DynamicWarpingR(-30,30,s1);
+    dw.setStrainLimits(0.0,0.1);
+    dw.setSmoothness(40);
+    float[] u = dw.findShifts(s1,f,s1,x);
+    float[] y = dw.applyShifts(s1,x,u);
+    copy(y,x);
+  }
+
 
   /*
   private void warp2(float[][] f, float[][] x) {
@@ -227,10 +180,24 @@ public class WarpAndStack {
 
   private int   _maxlagSc =  10;
   private int   _minlagSc = -10;
-  private int   _esmooth = 4;
-  private float _usmooth = 2.0f;
-  private float _strainMax1 = 0.25f;
+  private int   _esmooth = 2;
+  private float _usmooth = 1.0f;
+  private float _strainMax1 = 0.5f;
   private float _strainMax2 = 0.25f;
+
+  private float[][] stack(int[] id, float[][][] x) {
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    float[][] xs = new float[n2][n1];
+    float[][][] y = copy(x);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(10.0f);
+    rgf.applyXX0(x,y);
+    for (int i2=0; i2<n2; ++i2) {
+      int i3 = id[i2];
+      xs[i2] = y[i3][i2];
+    }
+    return xs;
+  }
 
   private float[][] stack(float[][][] x) {
     int n3 = x.length;
@@ -242,14 +209,13 @@ public class WarpAndStack {
     return div(xs,n3);
   }
 
-  private float[][] nearestShot(int[] sid, float[][][] x) {
+  public float[][] nearestShot(int[] sid, float[][][] x) {
     int n3 = x.length;
     int n2 = x[0].length;
     int n1 = x[0][0].length;
     float[][][] y = zerofloat(n1,n2,n3);
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(3.0f);
     ref.apply3(x,y);
-    //float[][][] y = copy(x);
     float[][] r = new float[n2][n1];
     float os = 3.33756f;
     float ox = 3.04800f;
@@ -261,11 +227,39 @@ public class WarpAndStack {
     for (int i2=0; i2<n2; ++i2) {
       float xi = ox+dx*i2;
       int[] id = new int[1];
-      float min = min(abs(sub(xs,xi)),id);
+      min(abs(sub(xs,xi)),id);
       int i3 = id[0];
       sid[i2] = i3;
       System.out.println("i3="+i3);
       r[i2] = y[i3][i2];
+    }
+    return r;
+  }
+
+  public float[][][] nearestShot(float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    float[][][] y = copy(x);
+    float[][][] r = new float[20][n2][n1];
+    float os = 3.33756f;
+    float ox = 3.04800f;
+    float dx = 0.02286f;
+    float ds = 0.04572f*5.0f*5.0f;
+    int[] id = new int[n3];
+    float[] xs = new float[n3];
+    for (int i3=0; i3<n3; ++i3) {
+      id[i3] = i3;
+      xs[i3] = os+i3*ds;
+    }
+    for (int i2=0; i2<n2; ++i2) {
+      float xi = ox+dx*i2;
+      float[] dd = abs(sub(xs,xi));
+      quickIndexSort(dd,id);
+      for(int k=0; k<20; ++k) {
+       int i3 = id[k];
+       r[k][i2] = y[i3][i2];
+      }
     }
     return r;
   }
