@@ -294,7 +294,7 @@ public class SurfaceExtractorC {
             cMark[i3][i2] = k1i;
             continue;
           }
-          if(wpi<wh){continue;}
+          if(wpi<wh && dsi>8.0f){continue;}
           if(cfi==-1.f) {
             cot++;
             cConf[i3][i2] = dsi;
