@@ -54,8 +54,8 @@ def main(args):
   goScan()
   goThin()
   goCleanCells()
-  goSPS()
   '''
+  goSPS()
   goPSS()
   #goFSS()
 
@@ -149,7 +149,7 @@ def goPSS():
   #fc = goNoiseCells()
   #sk = goCleanCells()
   sk = readSkins(fskclean)
-  fc = FaultSkin.getCells(sk[2])
+  fc = FaultSkin.getCells(sk[0])
   pss = PointSetSurface()
   bs = pss.findScalarField(n1,n2,n3,fc)
   plot3(gx,cells=fc,png="cells")
@@ -177,11 +177,11 @@ def goSPS():
   #fc = goNoiseCells()
   #sk = goCleanCells()
   sk = readSkins(fskclean)
-  fc = FaultSkin.getCells(sk)
+  fc = FaultSkin.getCells(sk[0])
   #fc = FaultSkin.getCells(sk)
   fb = FaultIsosurfer()
-  #us = fb.normalsFromCellsOpen(n1,n2,n3,fc)
-  us = fb.normalsFromCellsClose(n1,n2,n3,fc)
+  us = fb.normalsFromCellsOpen(n1,n2,n3,fc)
+  #us = fb.normalsFromCellsClose(n1,n2,n3,fc)
   bs = fb.faultIndicator(us)
   plot3(gx,cells=fc,png="cells")
   plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),

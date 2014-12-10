@@ -84,7 +84,6 @@ def horizonExtraction(f,p2,p3,wp,k11,k12,k13,filename):
   lmt = n1-1
   se = SurfaceExtractorC()
   #k11=se.refineConstraints(k11,k12,k13,f)
-  se.setCG(0.01,200)
   se.setWeights(0.0)
   se.setSmoothings(4.0,4.0)
   se.setCG(0.01,100)

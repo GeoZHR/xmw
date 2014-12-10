@@ -6,6 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package ipf;
 
+import java.util.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -44,6 +45,7 @@ public class PointSetSurface {
     }
     return xu;
   }
+
 
   public float[][][] scalarField(
     final int n1, final int n2, final int n3, FaultCell[] fc) 

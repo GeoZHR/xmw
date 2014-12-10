@@ -22,7 +22,7 @@ pngDir = "../../../png/wsi/"
 seismicDir = "../../../data/sigsbee/"
 #n1,n2,n3=90,420,335
 #n1,n2,n3=1100,1024,20
-n1,n2,n3=1100,1024,20
+n1,n2,n3=1100,1024,50
 #n1,n2,n3=1100,800,100
 f1,f2,f3=1.85928,3.048,0
 d1,d2,d3=0.00762,0.02286,1
@@ -44,7 +44,7 @@ gmin,gmax,gint,glab = -2.0,2.0,0.5,"Amplitude"
 background = Color.WHITE
 
 fcfile = "sigImgCS"
-flfile = "sigImgLS"
+flfile = "sigImgL50"
 fhfile = "sigImgHS"
 wcfile = "sigImgCW"
 wlfile = "sigImgLW"
@@ -56,7 +56,7 @@ wgcfile = "imgCW"
 wglfile = "imgLW"
 wghfile = "imgHW"
 
-plotOnly = True
+plotOnly = False
 
 nm1,nm2 = 410,420
 nf1,nf2 = 500,100
@@ -72,13 +72,13 @@ def main(args):
   #goDisplay()
 
 def goLowVel():
+  #goStack(low=True)
+  goStack(low=True)
+  goSmooth()
   #goWarp(low=True)
-  #goStack(low=True)
-  #goSmooth()
-  #goStack(low=True)
-  #goImageShow(low=True)
+  goImageShow(low=True)
   #goStackTraces()
-  goGatherShow(low=True)
+  #goGatherShow(low=True)
   #goImageShowSub()
 
 def goHighVel():
@@ -96,13 +96,15 @@ def goCorrectVel():
 def goSmooth():
   f = readImage(flfile,dat=True)
   ws = WarpAndStack()
-  ws.smooth3(32.0,f)
+  ws.smooth3(64.0,f)
   sid = zeroint(n2)
   g = ws.nearestShot(sid,f)
+  '''
   i2s=[180,330,480,630,780,940]
   print "nearest shots"
   for i2 in i2s:
     print sid[i2]
+  '''
   writeImage("sigImgLSS",f)
   writeImage("imgLSS",g)
 def goStackTraces():
@@ -223,9 +225,9 @@ def goImageShow(low=False,correct=False,high=False):
   fMax = min(max(fg),max(wg),max(sg))
   plot(s1,s2,fg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
        cmin=fMin, cmax=fMax,wide=True,png="image"+pngS)
-  plot(s1,s2,wg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+  plot(s1,s2,wg,clab="Warped",vlabel="z (km)",hlabel="x (km)", 
        cmin=fMin, cmax=fMax,wide=True,png="fmage"+pngS)
-  plot(s1,s2,sg,clab="Amplitude",vlabel="z (km)",hlabel="x (km)", 
+  plot(s1,s2,sg,clab="Smoothed",vlabel="z (km)",hlabel="x (km)", 
        cmin=fMin, cmax=fMax,wide=True,png="smage"+pngS)
   #lines=[10,110,210,310,410,510,610,710,810,910,1010]
   lines=[180,330,480,630,780,940]
@@ -421,7 +423,7 @@ def readImage2(name):
   
 def readImage(name,dat=False):
   n1,n2,n3 = s1.count,s2.count,s3.count
-  n1,n2,n3=1100,1024,20
+  n1,n2,n3=1100,1024,50
   image = zerofloat(n1,n2,n3)
   if dat:
     fileName = seismicDir+name+".dat"

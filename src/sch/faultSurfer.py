@@ -97,13 +97,13 @@ def goPSS():
   print "goBlocker ..."
   gx = readImage(gxfile)
   sk = readSkins(fskbase)
-  fc = FaultSkin.getCells(sk[0])
+  fc = FaultSkin.getCells(sk[3])
   pss = PointSetSurface()
   bs = pss.findScalarField(n1,n2,n3,fc)
   plot3(gx,cells=fc,png="cells")
   plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
         clab="PointSetSurface",png="pss")
-  plot3(gx,skins=[sk[0]],png="skins")
+  plot3(gx,skins=[sk[3]],png="skins")
 def goDisplay():
   print "goDisplay ..."
   gx = readImage(gxfile)

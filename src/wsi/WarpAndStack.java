@@ -53,7 +53,8 @@ public class WarpAndStack {
     int n2 = x[0].length;
     int n1 = x[0][0].length;
     float[][][] y = new float[n3][n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(10.0,1.0,2.0);
+    //LocalOrientFilter lof = new LocalOrientFilter(10.0,1.0,2.0);
+    LocalOrientFilter lof = new LocalOrientFilter(16.0,1.0,2.0);
     EigenTensors3 et = lof.applyForTensors(x);
     et.setEigenvalues(0.001f,0.01f,1.0f);
     float c = 0.5f*sigma*sigma;
@@ -220,7 +221,7 @@ public class WarpAndStack {
     float os = 3.33756f;
     float ox = 3.04800f;
     float dx = 0.02286f;
-    float ds = 0.04572f*5.0f*5.0f;
+    float ds = 0.04572f*5.0f*2.0f;
     float[] xs = new float[n3];
     for (int i3=0; i3<n3; ++i3)
       xs[i3] = os+i3*ds;
@@ -245,7 +246,7 @@ public class WarpAndStack {
     float os = 3.33756f;
     float ox = 3.04800f;
     float dx = 0.02286f;
-    float ds = 0.04572f*5.0f*5.0f;
+    float ds = 0.04572f*5.0f*2.0f;
     int[] id = new int[n3];
     float[] xs = new float[n3];
     for (int i3=0; i3<n3; ++i3) {
