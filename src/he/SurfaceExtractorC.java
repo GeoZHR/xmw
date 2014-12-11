@@ -97,16 +97,16 @@ public class SurfaceExtractorC {
     float[][] ks = updateConstraints(k1,k2,k3,p,q,ep,surf);
     //int np = k1.length;
     //float[] cf = new float[np]; // force of constraints
+    int niter = 50;
     for (int n=1; n<=_exniter; n++){
       System.out.println(" Iteration "+n+"......");
       VecArrayFloat2 vb    = new VecArrayFloat2(b);
       VecArrayFloat2 vsurf = new VecArrayFloat2(surf);
-      System.out.println(" test1 ");
       updateSlopesAndWeights(p,q,ep,surf,pi1,qi1,wi1);
-      System.out.println(" test2 ");
       A2 a2 = new A2(wi1,_weight);
       M2 m2 = new M2(_sigma1,_sigma2,wi1,ks[1],ks[2]);
-      CgSolver cs = new CgSolver(_small, _niter);
+      if(n>5) {niter=_niter;}
+      CgSolver cs = new CgSolver(_small,niter);
       vb.zero();
       makeRhs(wi1,pi1,qi1,b);
       cs.solve(a2,m2,vb,vsurf);
