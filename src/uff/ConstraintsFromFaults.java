@@ -53,8 +53,8 @@ public class ConstraintsFromFaults {
         boolean valid = false;
         float w2 = abs(cw[1]);
         float w3 = abs(cw[2]);
-        if (w2>w3) {valid = shift2(cw[1],fx,hx);} 
-        else       {valid = shift3(cw[2],fx,hx);}
+        if (w2>w3) {valid = shift2(2.0f,cw[1],fx,hx);} 
+        else       {valid = shift3(2.0f,cw[2],fx,hx);}
         if(valid) {
           onFault(fx,ws);
           onFault(hx,ws);
@@ -76,6 +76,86 @@ public class ConstraintsFromFaults {
     }
     return cs;
   }
+
+  public float[][][] getScreenPoints(float[][][] ws, float[][][] cp) {
+    setWeightsOnFault(ws);
+    float[][] fl = normalizeFl();
+    ArrayList<float[][]> cl = new ArrayList<float[][]>();
+    int nk = _fss.length;
+    for (int ik=0; ik<nk; ++ik) {
+      FaultCell[] fcs = FaultSkin.getCells(new FaultSkin[]{_fss[ik]});
+      int nc = fcs.length;
+      for (int ic=0; ic<nc; ++ic) {
+      FaultCell fc = fcs[ic];
+      float[] cx = fc.getX();
+      float[] cw = fc.getW();
+      float[] cs = fc.getS();
+      float[] fx = new float[3];
+      float[] hx = new float[3];
+      float[] xf = new float[3];
+      xf[0] = fl[ik][ic];
+      xf[1] = fl[ik][ic];
+      xf[2] = fl[ik][ic];
+      float xs1 = cx[0]+cs[0];
+      float xs2 = cx[1]+cs[1];
+      float xs3 = cx[2]+cs[2];
+      hx[0] = bound1(round(xs1));
+      hx[1] = bound2(round(xs2));
+      hx[2] = bound3(round(xs3));
+      fx = copy(hx);
+      if(!nearestFaultCell(hx)){hx=copy(fx);}
+      boolean valid = false;
+      float w2 = abs(cw[1]);
+      float w3 = abs(cw[2]);
+      if (w2>w3) {valid = shift2(2.0f,cw[1],fx,hx);} 
+      else       {valid = shift3(2.0f,cw[2],fx,hx);}
+      if(valid) {
+        onFault(fx,ws);
+        onFault(hx,ws);
+        cl.add(new float[][]{fx,hx,cs,xf});
+        addPoints(fx,hx,cp);
+      }
+      }
+    }
+    int ns = cl.size();
+    System.out.println("sets of control points:"+ns);
+    float[][][] cs = new float[4][3][ns];
+    for (int is=0; is<ns; ++is) {
+      float[][] ps = cl.get(is);
+      cs[0][0][is] = ps[0][0];
+      cs[0][1][is] = ps[0][1];
+      cs[0][2][is] = ps[0][2];
+
+      cs[1][0][is] = ps[1][0];
+      cs[1][1][is] = ps[1][1];
+      cs[1][2][is] = ps[1][2];
+
+      cs[2][0][is] = ps[2][0];
+      cs[2][1][is] = ps[2][1];
+      cs[2][2][is] = ps[2][2];
+
+      cs[3][0][is] = ps[3][0];
+      cs[3][1][is] = ps[3][1];
+      cs[3][2][is] = ps[3][2];
+    }
+    return cs;
+  }
+
+  private float[][] normalizeFl() {
+    int ns = _fss.length;
+    float[][] fl = new float[ns][];
+    for (int is=0; is<ns; ++is) {
+      FaultCell[] fc = FaultSkin.getCells(new FaultSkin[]{_fss[is]});
+      int nc = fc.length;
+      fl[is] = new float[nc];
+      for (int ic=0; ic<nc; ++ic) {
+        fl[is][ic] = fc[ic].getFl();
+      }
+      div(fl[is],max(fl[is]),fl[is]);
+    }
+    return fl;
+  }
+
 
   private boolean badQuality(float[] cx, float[] cs) {
     float qx = 0.0f;
@@ -196,9 +276,9 @@ public class ConstraintsFromFaults {
     cp[k3][k2][k1] = 1.0f;
   }
 
-  private boolean shift2(float w2, float[] c, float[] k) {
+  private boolean shift2(float sc, float w2, float[] c, float[] k) {
     float sn2 = (w2<0.f)?-1.f:1.f;
-    float ds2 = sn2*2.0f;
+    float ds2 = sn2*sc;
     float ds1 = sn2*0.0f;
 
     c[1] -= ds2;
@@ -214,19 +294,17 @@ public class ConstraintsFromFaults {
     int k2 = round(k[1]);
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
-
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}
 
     _mk[k3][k2][k1] += 1;
     if(_mk[k3][k2][k1]>1) {return false;}
- 
     return true;
   }
 
-  private boolean shift3(float w3, float[] c, float[] k) {
+  private boolean shift3(float sc, float w3, float[] c, float[] k) {
     float sn3 = (w3<0.f)?-1.f:1.f;
-    float ds3 = sn3*2.0f;
+    float ds3 = sn3*sc;
     float ds1 = sn3*0.0f;
 
     c[1] -= ds1;
@@ -242,12 +320,10 @@ public class ConstraintsFromFaults {
     int k2 = round(k[1]);
     int k3 = round(k[2]);
     if(onBound(k1,k2,k3)){return false;}
-
     _mk[c3][c2][c1] += 1;
     if(_mk[c3][c2][c1]>1) {return false;}
     _mk[k3][k2][k1] += 1;
     if(_mk[k3][k2][k1]>1) {return false;}
-
     return true;
   }
 
@@ -284,17 +360,6 @@ public class ConstraintsFromFaults {
     if (wi==0.0f){w[i3][i2][i1]=0.1f;} 
   }
 
-  /*
-  private boolean onFault(float[] p, float[][][] w) {
-    int i1 = round(p[0]);
-    int i2 = round(p[1]);
-    int i3 = round(p[2]);
-    float wi = w[i3][i2][i1];
-    if (wi==0.0f){return true;} 
-    else {return false;}
-  }
-
- */
   private boolean onBound(int p1, int p2, int p3) {
     if(p1<0||p1>=_n1){return true;}
     if(p2<0||p2>=_n2){return true;}
@@ -306,8 +371,6 @@ public class ConstraintsFromFaults {
   private int _n1,_n2,_n3;
   private FaultSkin[] _fss;
   private float[][][] _w = null;
-  private float[][][] _p2 = null;
-  private float[][][] _p3 = null;
   private int[][][] _mk = null;
   private int[][][] _fm = null;
 }

@@ -68,7 +68,7 @@ maxThrow = 15.0
 #pngDir = None
 pngDir = "../../../png/uff/"
 
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -81,11 +81,12 @@ def main(args):
   goSmooth()
   goSkin()
   goSlip()
+  '''
   goUnfault()
   goUnfold()
   '''
   goUnfaultAndUnfoldc(False)
-  '''
+  goUnfaultAndUnfold()
   goUnfoldc2()
   goUnfoldc()
   goFlatten2()
@@ -314,6 +315,70 @@ def goUnfold():
     gf = readImage(gffile)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
   plot3(gf,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfold",png="gf")
+def goUnfaultAndUnfold():
+  if not plotOnly:
+    gx = readImage(gxfile)
+    fc = zerofloat(n1,n2,n3)
+    cp = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(8.0,1.0,1.0)
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+
+    '''
+    u1 = fillfloat(1.0,n1,n2,n3)
+    u2 = fillfloat(0.0,n1,n2,n3)
+    u3 = fillfloat(0.0,n1,n2,n3)
+    '''
+
+    skins = readSkins(fskbase)
+
+    #spf = ScreenPointsFromFaults()
+    csf = ConstraintsFromFaults(skins,ep)
+    fm = csf.getFaultMap()
+
+    wp = pow(ep,8.0)
+    #wp = fillfloat(1.0,n1,n2,n3)
+    #cs = spf.getScreenPoints(skins,wp)
+    cs = csf.getScreenPoints(wp,cp)
+
+    #fm = cfs.getFaultMap()
+    p = array(u1,u2,u3,wp)
+    flattener = FlattenerRTS(6.0,6.0)
+    flattener.setIters(10,50)
+    fl = mul(pow(cs[3][0],2.0),2.0)
+    [r1,r2,r3] = flattener.findShifts(cs[0],cs[1],cs[2],fm,fl,p)
+    flattener.applyShifts([r1,r2,r3],gx,fc)
+    '''
+    writeImage(r1cfile,r1)
+    writeImage(r2cfile,r2)
+    writeImage(r3cfile,r3)
+    writeImage(fcfile,fc)
+    writeImage(cpfile,cp)
+    '''
+  else:
+    r1 = readImage(r1cfile)
+    r2 = readImage(r2cfile)
+    r3 = readImage(r3cfile)
+    fc = readImage(fcfile)
+    cp = readImage(cpfile)
+    gx = readImage(gxfile)
+    fd = readImage(gfcfile)
+  s1 = readImage(fs1file)
+  hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
+  plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
+  plot3(fc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="fc")
+  plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
+  plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
 
 
 def goUnfaultAndUnfoldc(unfaultOnly):
@@ -668,9 +733,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ipg.setSlices(95,5,44)
   #ipg.setSlices(95,5,95)
   if cbar:
-    sf.setSize(837,700)
+    sf.setSize(1037,900)
   else:
-    sf.setSize(700,700)
+    sf.setSize(900,900)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)

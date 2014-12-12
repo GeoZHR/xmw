@@ -56,7 +56,7 @@ def main(args):
   goCleanCells()
   '''
   goSPS()
-  goPSS()
+  #goPSS()
   #goFSS()
 
 def goFakeData():
@@ -149,11 +149,12 @@ def goPSS():
   #fc = goNoiseCells()
   #sk = goCleanCells()
   sk = readSkins(fskclean)
-  fc = FaultSkin.getCells(sk[0])
-  pss = PointSetSurface()
-  bs = pss.findScalarField(n1,n2,n3,fc)
-  plot3(gx,cells=fc,png="cells")
-  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
+  for i in range(3):
+    fc = FaultSkin.getCells(sk[i])
+    pss = PointSetSurface()
+    bs = pss.findScalarField(n1,n2,n3,fc)
+    plot3(gx,cells=fc,png="cells")
+    plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
         clab="PointSetSurface",png="pss")
 
 def goFSS():
@@ -162,7 +163,7 @@ def goFSS():
   #fc = goNoiseCells()
   #sk = goCleanCells()
   sk = readSkins(fskclean)
-  fc = FaultSkin.getCells(sk[0])
+  fc = FaultSkin.getCells(sk[2])
   fss = FloatScaleSurface()
   bs = fss.findScalarField(n1,n2,n3,fc)
   plot3(gx,cells=fc,png="cells")
@@ -177,14 +178,15 @@ def goSPS():
   #fc = goNoiseCells()
   #sk = goCleanCells()
   sk = readSkins(fskclean)
-  fc = FaultSkin.getCells(sk[0])
-  #fc = FaultSkin.getCells(sk)
-  fb = FaultIsosurfer()
-  us = fb.normalsFromCellsOpen(n1,n2,n3,fc)
-  #us = fb.normalsFromCellsClose(n1,n2,n3,fc)
-  bs = fb.faultIndicator(us)
-  plot3(gx,cells=fc,png="cells")
-  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
+  for i in range(3):
+    fc = FaultSkin.getCells(sk[i])
+    #fc = FaultSkin.getCells(sk)
+    fb = FaultIsosurfer()
+    us = fb.normalsFromCellsOpen(n1,n2,n3,fc)
+    #us = fb.normalsFromCellsClose(n1,n2,n3,fc)
+    bs = fb.faultIndicator(us)
+    plot3(gx,cells=fc,png="cells")
+    plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
         clab="ScreenedPoissonSurface",png="sps")
 
 
@@ -220,16 +222,19 @@ def goCleanCells():
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
-  #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
-  skins = fs.findSkins(cells)
-  cells = FaultSkin.getCells(skins[0])
-  for skin in skins:
+  skins1 = fs.findSkins(cells)
+  cells = fs.findCells([fl,fp,ft])
+  cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
+  skins2 = fs.findSkins(cells)
+  skins1[2] = skins2[2]
+  cells = FaultSkin.getCells(skins1[0])
+  for skin in skins1:
     skin.smoothCellNormals(4)
-  for iskin,skin in enumerate(skins):
+  for iskin,skin in enumerate(skins1):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
   #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
   #return skins
-  writeSkins(fskclean,skins)
+  writeSkins(fskclean,skins1)
   return cells
 
 def goBlockerFromSkins():
@@ -624,9 +629,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   #ipg.setSlices(95,5,95)
   ipg.setSlices(100,90,0)
   if cbar:
-    sf.setSize(837,700)
+    sf.setSize(1037,900)
   else:
-    sf.setSize(700,700)
+    sf.setSize(900,900)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)

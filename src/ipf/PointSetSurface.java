@@ -46,6 +46,58 @@ public class PointSetSurface {
     return xu;
   }
 
+  public void alignNormals(int n1, int n2, int n3, FaultCell[] fc) {
+    int nc = fc.length;
+    int ib = startCell(fc);
+    int[] mk = new int[nc];
+    float[][][] xu = setKdTreePoints(fc);
+    HashSet<Integer> idh = new HashSet<Integer>();
+    idh.add(ib);
+    int d1 = 5;
+    int d2 = 5;
+    int d3 = 5;
+    float[] xmin = new float[3];
+    float[] xmax = new float[3];
+    KdTree kt = new KdTree(xu[0]);
+    while (idh.size()>0) {
+      for (int ic:idh) {
+        mk[ic] = 1;
+        idh.remove(ic);
+        int i1 = fc[ic].i1;
+        int i2 = fc[ic].i2;
+        int i3 = fc[ic].i3;
+        float u1 = fc[ic].w1;
+        float u2 = fc[ic].w2;
+        float u3 = fc[ic].w3;
+        getRange(d1,d2,d3,i1,i2,i3,n1,n2,n3,xmin,xmax);
+        int[] ids = kt.findInRange(xmin,xmax);
+        int nd = ids.length;
+        if (nd<0) {continue;}
+        for (int ik=0; ik<nd; ++ik) {
+          int id = ids[ik];
+          if(mk[id]==0) {
+            idh.add(id);
+            float w1 = fc[id].w1;
+            float w2 = fc[id].w2;
+            float w3 = fc[id].w3;
+            //float[] ur = reflection(i1,i2,)
+          }
+        }
+      }
+    }
+  }
+
+  private int startCell(FaultCell[] fc) {
+    int id = 0;
+    float flMax = 0.0f;
+    int nc = fc.length;
+    for (int ic=0; ic<nc; ++ic) {
+      float fl = fc[ic].fl;
+      if(fl>flMax) {id = ic; flMax = fl;}
+    }
+    return id;
+  }
+
 
   public float[][][] scalarField(
     final int n1, final int n2, final int n3, FaultCell[] fc) 

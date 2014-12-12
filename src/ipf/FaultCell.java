@@ -42,12 +42,31 @@ import static ipf.FaultGeometry.*;
 public class FaultCell implements Serializable {
   private static final long serialVersionUID = 1L;
 
+  public void setNormals(float w1, float w2, float w3) {
+    this.w1 = w1;
+    this.w2 = w2;
+    this.w3 = w3;
+  }
+
+
   /**
    * Gets the fault likelihood for this cell.
    * @return the fault likelihood.
    */
   public float getFl() {
     return fl;
+  }
+
+  public int[] getI() {
+    return new int[]{i1,i2,i3};
+  }
+
+  public float[] getIm() {
+    return new float[]{i1,i2m,i3m};
+  }
+
+  public float[] getIp() {
+    return new float[]{i1,i2p,i3p};
   }
 
 
