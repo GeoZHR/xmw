@@ -68,7 +68,7 @@ maxThrow = 15.0
 #pngDir = None
 pngDir = "../../../png/uff/"
 
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -82,11 +82,11 @@ def main(args):
   goSkin()
   goSlip()
   '''
+  goUnfaultAndUnfold()
+  '''
   goUnfault()
   goUnfold()
-  '''
   goUnfaultAndUnfoldc(False)
-  goUnfaultAndUnfold()
   goUnfoldc2()
   goUnfoldc()
   goFlatten2()
@@ -99,11 +99,11 @@ def goFakeData():
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults
-  conjugate = False # if True, two large planar faults will intersect
+  conjugate = True # if True, two large planar faults will intersect
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.5 # (rms noise)/(rms signal) ratio
+  noise = 0.0 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
@@ -327,11 +327,9 @@ def goUnfaultAndUnfold():
     lof = LocalOrientFilter(8.0,1.0,1.0)
     lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
 
-    '''
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
     u3 = fillfloat(0.0,n1,n2,n3)
-    '''
 
     skins = readSkins(fskbase)
 
@@ -347,7 +345,7 @@ def goUnfaultAndUnfold():
     #fm = cfs.getFaultMap()
     p = array(u1,u2,u3,wp)
     flattener = FlattenerRTS(6.0,6.0)
-    flattener.setIters(10,50)
+    flattener.setIters(50,1)
     fl = mul(pow(cs[3][0],2.0),2.0)
     [r1,r2,r3] = flattener.findShifts(cs[0],cs[1],cs[2],fm,fl,p)
     flattener.applyShifts([r1,r2,r3],gx,fc)
