@@ -8,7 +8,6 @@ package ifs;
 
 import edu.mines.jtk.dsp.Sampling;
 import static edu.mines.jtk.util.MathPlus.sqrt;
-import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
  * The marching cubes algorithm for contour surfaces of f(x1,x2,x3).

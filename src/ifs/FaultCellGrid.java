@@ -6,15 +6,6 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package ifs;
 
-import java.util.*;
-
-import edu.mines.jtk.awt.*;
-import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.util.*;
-
-import static edu.mines.jtk.util.ArrayMath.*;
-import static ifs.FaultGeometry.*;
-
 /**
  * Fault cells in a 3D sampling grid. Each grid sample indexed by (i1,i2,i3)
  * contains either one fault cell or null. The grid facilitates searches for

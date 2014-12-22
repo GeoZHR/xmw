@@ -151,8 +151,8 @@ public class SurfaceExtractor {
     int n3 = p.length;
     int n2 = p[0].length;
     int n1 = p[0][0].length;
-    SincInterp si = new SincInterp();
-    si.setExtrapolation(SincInterp.Extrapolation.CONSTANT);
+    SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     for (int i3=0; i3<n3; i3++){
       for (int i2=0; i2<n2; i2++){
         float x2i = (float) i2;

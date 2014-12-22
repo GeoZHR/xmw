@@ -7,8 +7,6 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 
 package ifs;
 
-import java.util.*;
-
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;

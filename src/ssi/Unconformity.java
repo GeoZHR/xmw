@@ -152,8 +152,8 @@ public class Unconformity {
     int n2y = y[0].length;
     int n1x = x[0][0].length;
     int n1y = y[0][0].length;
-    SincInterp xi = new SincInterp();
-    xi.setExtrapolation(SincInterp.Extrapolation.CONSTANT);
+    SincInterpolator xi = new SincInterpolator();
+    xi.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     for (int i3=0; i3<n3y; ++i3) {
       for (int i2=0; i2<n2y; ++i2) {
         for (int i1=0; i1<n1y; ++i1) {
@@ -427,8 +427,8 @@ public class Unconformity {
           }
         }
       }
-      SincInterp sfsi =  new SincInterp();
-      sfsi.setExtrapolation(SincInterp.Extrapolation.CONSTANT);
+      SincInterpolator sfsi =  new SincInterpolator();
+      sfsi.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
       for (int i3r=0; i3r<n3r; i3r++) {
         for (int i2r=0; i2r<n2r; i2r++) {
           if(mki[i3r][i2r]) {

@@ -21,6 +21,12 @@ sourceSets {
   }
 }
 
+allprojects {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
+    }
+}
+
 repositories.mavenCentral() // for Scala jars
 dependencies {
   compile fileTree('../jtk/build/libs') // for edu_mines_jtk.jar

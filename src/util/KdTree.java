@@ -1,9 +1,6 @@
 package util;
 
 import java.util.ArrayList;
-import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.mosaic.*;
-import static edu.mines.jtk.util.ArrayMath.*;
 
 // Xinming Wu
 // 2013.11.24

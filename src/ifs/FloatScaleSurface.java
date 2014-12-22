@@ -10,9 +10,6 @@ import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
- * Computes fault blocks. 
- * <em>EXPERIMENTAL</em>
- *
  * @author Xinming Wu, Colorado School of Mines
  * @version 2014.09.16
  */

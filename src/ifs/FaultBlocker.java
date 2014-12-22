@@ -9,14 +9,10 @@ package ifs;
 import vec.*;
 import util.*;
 
-import java.util.*;
-
-import edu.mines.jtk.awt.*;
 import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.util.*;
 
 import static edu.mines.jtk.util.ArrayMath.*;
-import static ipf.FaultGeometry.*;
+import static ifs.FaultGeometry.*;
 
 /**
  * Computes fault blocks. 

@@ -2,7 +2,7 @@ package ssi;
 
 import edu.mines.jtk.util.*;
 import edu.mines.jtk.dsp.Sampling;
-import edu.mines.jtk.dsp.SincInterp;
+import edu.mines.jtk.dsp.SincInterpolator;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 public final class FlattenHelper {
@@ -66,7 +66,7 @@ public final class FlattenHelper {
     final int nz = u[0][0].length;
     final float[][][] g = new float[nx][ny][nz];
     final float[][][] x = rgtToHorizonVolume(u);
-    final SincInterp si = new SincInterp();
+    final SincInterpolator si = new SincInterpolator();
     Parallel.loop(nx,new Parallel.LoopInt() {
     public void compute(int ix) {
       for (int iy=0; iy<ny; ++iy)
@@ -120,7 +120,7 @@ public final class FlattenHelper {
     int sx = (int)seed[2][0];
     float[][] sf = fillfloat(sz,ny,nx);
     float[][][] h = rgtToHorizonVolume(r);
-    final SincInterp si = new SincInterp();
+    final SincInterpolator si = new SincInterpolator();
     float sr = si.interpolate(nz,1.0,0.0,r[sx][sy],sz);
     for (int ix=0; ix<nx; ++ix) {
       for (int iy=0; iy<ny; ++iy) {
