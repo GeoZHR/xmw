@@ -33,7 +33,7 @@ sigmaPhi,sigmaTheta = 4,20
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.2
 upperLikelihood = 0.5
-minSkinSize = 3000
+minSkinSize = 2000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -52,12 +52,18 @@ def main(args):
   goFakeData()
   goSlopes()
   goScan()
-  goThin()
-  goCleanCells()
+  goSkin()
   '''
-  goSPS()
+  #goThin()
+  #goSmooth()
+  #goSlip()
+  #goCleanCells()
+  
+  #goTV()
+  #goSPS()
   #goPSS()
   #goFSS()
+  goFS()
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -143,6 +149,60 @@ def goThin():
   plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
 
+def goTV():
+  print "goTensorVoting ..."
+  gx = readImage(gxfile)
+  sk = readSkins(fskclean)
+  sk = [sk[0]]
+  fc = FaultSkin.getCells(sk)
+  tv = TensorVoting(n1,n2,n3,fc)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  ss = tv.tensorVote(fl,fp,ft)
+
+  #ss[0] = gain(ss[0])
+  div(ss[0],max(ss[0]),ss[0])
+  div(ss[1],max(ss[1]),ss[1])
+  div(ss[2],max(ss[2]),ss[2])
+
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  sm = ss[0]
+  sm = add(sm,ss[1])
+  sm = add(sm,ss[2])
+  cells = fs.findCells([sm,fp,ft])
+  sks = fs.findSkins(cells)
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+
+  plot3(gx,ss[0],cmin=min(ss[0]),cmax=max(ss[0]),cells=cells,cmap=jetRamp(1.0),
+    clab="sm",png="sm")
+  plot3(gx,ss[1],cmin=min(ss[1]),cmax=max(ss[1]),cells=cells,cmap=jetRamp(1.0),
+    clab="cm",png="sm")
+  plot3(gx,ss[2],cmin=min(ss[2]),cmax=max(ss[2]),cells=cells,cmap=jetRamp(1.0),
+    clab="jm",png="sm")
+
+
+  '''
+  plot3(gx,ss[1],cmin=min(ss[1]),cmax=max(ss[1]),cells=fc,cmap=jetRamp(1.0),
+    clab="cm",png="cm")
+  plot3(gx,ss[2],cmin=min(ss[2]),cmax=max(ss[2]),cells=fc,cmap=jetRamp(1.0),
+    clab="jm",png="jm")
+  '''
+def gain(x):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(20.0)
+  ref.apply2(g,g)
+  ref.apply3(g,g)
+  y = zerofloat(n1,n2,n3)
+  div(x,sqrt(g),y)
+  return y
+
 def goPSS():
   print "goBlocker ..."
   gx = readImage(gxfile)
@@ -157,19 +217,63 @@ def goPSS():
     plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
         clab="PointSetSurface",png="pss")
 
+def goFS():
+  print "goFaultSurfer ..."
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fb = ScreenFaultSurferClose()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  fs.setMaxPlanarDistance(0.5)
+  cells = fs.findCells([fl,fp,ft])
+  #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
+  sk = fs.findSkins(cells)
+  cells = FaultSkin.getCells(sk)
+  fs = FaultSurfer(n1,n2,n3,cells)
+  sks = fs.applySurfer()
+
+  plot3(gx,skins=sks,png="newSkins")
+  plot3(gx,skins=sk,png="oldSkins")
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,png="newSkin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
+
 def goFSS():
   print "goBlocker ..."
   gx = readImage(gxfile)
   #fc = goNoiseCells()
   #sk = goCleanCells()
   sk = readSkins(fskclean)
-  fc = FaultSkin.getCells(sk[2])
+  sk = [sk[2]]
+  fc = FaultSkin.getCells(sk)
   fss = FloatScaleSurface()
-  bs = fss.findScalarField(n1,n2,n3,fc)
-  plot3(gx,cells=fc,png="cells")
+  #bs = fss.findScalarFieldM(n1,n2,n3,fc)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+
+  bs = fss.scalarFieldM(n1,n2,n3,fc,fp,ft)
+  div(bs,max(bs),bs)
+
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([bs,fp,ft])
+  sks = fs.findSkins(cells)
+
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+
   plot3(gx,bs,cmin=min(bs),cmax=max(bs),cmap=jetRamp(1.0),
         clab="PointSetSurface",png="pss")
-  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
+  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=cells,cmap=jetRamp(1.0),
         clab="PointSetSurface",png="pss")
 
 def goSPS():
@@ -597,7 +701,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     sg.setStates(ss)
-    size = 2.0
+    size = 1.5
     if links:
       size = 0.5 
     for skin in skins:
@@ -627,7 +731,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(sg)
   #ipg.setSlices(95,5,51)
   #ipg.setSlices(95,5,95)
-  ipg.setSlices(100,90,0)
+  #ipg.setSlices(100,90,0)
+  ipg.setSlices(100,0,102)
   if cbar:
     sf.setSize(1037,900)
   else:
@@ -640,7 +745,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   
   #ov.setAzimuthAndElevation(-55.0,25.0)
   #ov.setAzimuthAndElevation(-85.0,25.0)
-  ov.setAzimuthAndElevation(135.0,25.0)
+  #ov.setAzimuthAndElevation(135.0,25.0)
+  ov.setAzimuthAndElevation(-80.0,25.0)
   ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
   ov.setScale(1.2)
   sf.setVisible(True)

@@ -30,6 +30,190 @@ public class FloatScaleSurface {
     return FaultSkin.getCells(fs);
   }
 
+  private void setKdTreePointsM(FaultCell[] fc,
+    float[][] xf, float[][] xs, float[][] ws, float[][] us, float[][] vs, float[] w) {
+    int nc = fc.length;
+    for (int ic=0; ic<nc; ic++) {
+      w[ic] = fc[ic].fl;
+      float x1 = fc[ic].x1;
+      float x2 = fc[ic].x2;
+      float x3 = fc[ic].x3;
+
+      float w1 = fc[ic].w1;
+      float w2 = fc[ic].w2;
+      float w3 = fc[ic].w3;
+
+      float u1 = fc[ic].u1;
+      float u2 = fc[ic].u2;
+      float u3 = fc[ic].u3;
+
+      float v1 = fc[ic].v1;
+      float v2 = fc[ic].v2;
+      float v3 = fc[ic].v3;
+
+      xf[0][ic] = x1;
+      xf[1][ic] = x2;
+      xf[2][ic] = x3;
+    
+
+      xs[ic][0] = x1;
+      xs[ic][1] = x2;
+      xs[ic][2] = x3;
+
+      ws[ic][0] = w1*w1;
+      ws[ic][1] = w2*w2;
+      ws[ic][2] = w3*w3;
+      ws[ic][3] = w1*w2;
+      ws[ic][4] = w1*w3;
+      ws[ic][5] = w2*w3;
+
+      us[ic][0] = u1*u1;
+      us[ic][1] = u2*u2;
+      us[ic][2] = u3*u3;
+      us[ic][3] = u1*u2;
+      us[ic][4] = u1*u3;
+      us[ic][5] = u2*u3;
+
+      vs[ic][0] = v1*v1;
+      vs[ic][1] = v2*v2;
+      vs[ic][2] = v3*v3;
+      vs[ic][3] = v1*v2;
+      vs[ic][4] = v1*v3;
+      vs[ic][5] = v2*v3;
+    }
+  }
+
+  public float[][][] scalarFieldM(final int n1, final int n2, final int n3, 
+    final FaultCell[] fc, final float[][][] fp, final float[][][] ft) {
+    final int d2=10;
+    final int d3=10;
+    final int d1=10;
+    //final float v = -1.f;
+    final float v = 0.0f;
+    float sigmaNor = 4.0f;
+    float sigmaPhi = 10.0f;
+    float sigmaTheta = 20.0f;
+    final float sw = 1.0f/(sigmaNor*sigmaNor); 
+    final float sv = 1.0f/(sigmaPhi*sigmaPhi); 
+    final float su = 1.0f/(sigmaTheta*sigmaTheta); 
+    int nc = fc.length;
+    final float[] wp = new float[nc];
+    final float[][] xf = new float[3][nc];
+    final float[][] xs = new float[nc][3];
+    final float[][] ws = new float[nc][6];
+    final float[][] us = new float[nc][6];
+    final float[][] vs = new float[nc][6];
+    setKdTreePointsM(fc,xf,xs,ws,us,vs,wp);
+    final int[] bs1 = setBounds(n1,xf[0]);
+    final int[] bs2 = setBounds(n2,xf[1]);
+    final int[] bs3 = setBounds(n3,xf[2]);
+    final KdTree kt = new KdTree(xf);
+    final float[][][] sf = fillfloat(v,n1,n2,n3);
+    final float[][][] fpp = copy(fp);
+    final float[][][] ftp = copy(ft);
+    Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      float[] xmin = new float[3];
+      float[] xmax = new float[3];
+      System.out.println("i3="+i3);
+      for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
+        for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
+          float[] y = new float[]{i1,i2,i3};
+          int ne = kt.findNearest(y);
+          float x1 = xf[0][ne];
+          float x2 = xf[1][ne];
+          float x3 = xf[2][ne];
+          float dd = distance(new float[]{x1,x2,x3},y);
+          if(dd>50.0f){continue;}
+          getRange(d1,d2,d3,i1,i2,i3,n1,n2,n3,xmin,xmax);
+          int[] id = kt.findInRange(xmin,xmax);
+          int nd = id.length;
+          if(nd<1){continue;}
+          sf[i3][i2][i1] = 0.0f;
+          float wps = 0.0f;
+          float fpa = 0.0f;
+          float fta = 0.0f;
+          float fps = 0.0f;
+          float fts = 0.0f;
+          for (int ik=0; ik<nd; ++ik) {
+            int ip = id[ik];
+            float wpi = pow(wp[ip],8.0f);
+            float w1s = ws[ip][0];
+            float w2s = ws[ip][1];
+            float w3s = ws[ip][2];
+            float w12 = ws[ip][3];
+            float w13 = ws[ip][4];
+            float w23 = ws[ip][5];
+
+            float u1s = us[ip][0];
+            float u2s = us[ip][1];
+            float u3s = us[ip][2];
+            float u12 = us[ip][3];
+            float u13 = us[ip][4];
+            float u23 = us[ip][5];
+
+            float v1s = vs[ip][0];
+            float v2s = vs[ip][1];
+            float v3s = vs[ip][2];
+            float v12 = vs[ip][3];
+            float v13 = vs[ip][4];
+            float v23 = vs[ip][5];
+
+            float dx1 = i1-xs[ip][0];
+            float dx2 = i2-xs[ip][1];
+            float dx3 = i3-xs[ip][2];
+
+            float d11 = dx1*dx1;
+            float d12 = dx1*dx2;
+            float d13 = dx1*dx3;
+            float d22 = dx2*dx2;
+            float d23 = dx2*dx3;
+            float d33 = dx3*dx3;
+
+            float g11 = w1s*d11+w12*d12+w13*d13;
+            float g12 = u1s*d11+u12*d12+u13*d13;
+            float g13 = v1s*d11+v12*d12+v13*d13;
+            float g21 = w12*d12+w2s*d22+w23*d23;
+            float g22 = u12*d12+u2s*d22+u23*d23;
+            float g23 = v12*d12+v2s*d22+v23*d23;
+            float g31 = w13*d13+w23*d23+w3s*d33;
+            float g32 = u13*d13+u23*d23+u3s*d33;
+            float g33 = v13*d13+v23*d23+v3s*d33;
+            float gss = 0.0f;
+            gss += (g11+g21+g31)*sw;
+            gss += (g12+g22+g32)*su;
+            gss += (g13+g23+g33)*sv;
+            float sfi = exp(-gss)*wpi;
+            sf[i3][i2][i1] += sfi;
+
+            int j1 = fc[ip].i1;
+            int j2 = fc[ip].i2;
+            int j3 = fc[ip].i3;
+
+            int k1 = fc[ne].i1;
+            int k2 = fc[ne].i2;
+            int k3 = fc[ne].i3;
+            float fpr = fpp[k3][k2][k1];
+            float fpi = fpp[j3][j2][j1];
+            if(abs(fpr-fpi)<=30) {
+              fps += sfi;
+              fpa += fpp[j3][j2][j1]*sfi;
+            }
+            fts += sfi;
+            fta += ftp[j3][j2][j1]*sfi;
+            wps += wpi;
+          }
+          ft[i3][i2][i1] = fta/fts;
+          fp[i3][i2][i1] = fpa/fps;
+          sf[i3][i2][i1] /= wps;
+        }
+      }
+    }});
+    return sf;
+  }
+
+
+
   private void setKdTreePoints(FaultCell[] fc,
     float[][] xf, float[][] xs, float[][] ws, float[][] us, float[][] vs, float[] w) {
     int nc = fc.length;
