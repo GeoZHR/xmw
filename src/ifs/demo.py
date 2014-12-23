@@ -1,4 +1,5 @@
 from fakeutils import *
+import random
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -48,6 +49,7 @@ pngDir = "../../../png/ifs/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  '''
   goFakeData()
   goSlopes()
   goScan()
@@ -55,6 +57,7 @@ def main(args):
   goSmooth()
   goSkin()
   goSlip()
+  '''
   #goCleanCells()
   
   #goTV()
@@ -62,6 +65,22 @@ def main(args):
   #goPSS()
   #goFSS()
   goFS()
+  #smoothTest()
+  #goInterp()
+def goInterp():
+  print "imageGuidedInterp ..."
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  sk = readSkins(fskbase)
+  fc = FaultSkin.getCells(sk[0])
+  fs = FaultSurfer(n1,n2,n3,fc)
+  fi = fs.interp(fl)
+
+  plot3(gx,fl,cmin=min(fl),cmax=max(fl),cmap=jetRamp(1.0),
+        clab="fl",png="fl")
+  plot3(gx,fi,cmin=min(fi),cmax=max(fi),cmap=jetRamp(1.0),
+        clab="fi",png="fi")
+
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -231,7 +250,7 @@ def goFS():
   sk = fs.findSkins(cells)
   cells = FaultSkin.getCells(sk)
   fs = FaultSurfer(n1,n2,n3,cells)
-  sks = fs.applySurfer()
+  sks = fs.applySurferM()
 
   plot3(gx,skins=sks,png="newSkins")
   plot3(gx,skins=sk,png="oldSkins")

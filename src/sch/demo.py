@@ -89,7 +89,29 @@ def main(args):
   #goUnfaultc()
   #goUnfold()
   #goFlatten()
-  goDisplay()
+  #goDisplay()
+  goFS()
+
+def goFS():
+  print "goFaultSurfer ..."
+  gx = readImage(gxfile)
+
+  sk = readSkins(fskbase)
+  cells = FaultSkin.getCells(sk)
+  fs = FaultSurfer(n1,n2,n3,cells)
+  sks = fs.applySurferM()
+
+  plot3(gx,skins=sk,png="oldSkins")
+  plot3(gx,skins=sks,png="newSkins")
+
+  ''' 
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],png="newSkin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
+  ''' 
+
 
 def goDisplay():
   print "goDisplay ..."

@@ -582,7 +582,7 @@ public class FaultCell implements Serializable {
     float[] qd = {0.0f,-size, size};
     if (lhc) {
       float[] qt = qb; qb = qc; qc = qt;
-              qt = qd; qa = qd; qd = qt;
+              qt = qa; qa = qd; qd = qt;
     }
     for (FaultCell cell:cells) {
       float x1 = cell.x1;

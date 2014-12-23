@@ -52,7 +52,7 @@ public class FaultSkinner {
     _fllo = 0.2f;
     _flhi = 0.8f;
     _dflmax = 0.2f;
-    _dfpmax = 30.0f;
+    _dfpmax = 10.0f;
     _dftmax = 10.0f;
     _dnpmax = 0.5f;
     _ds1max = 1.0f;

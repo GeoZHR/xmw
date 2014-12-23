@@ -21,11 +21,13 @@ sourceSets {
   }
 }
 
+/*
 allprojects {
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
     }
 }
+*/
 
 repositories.mavenCentral() // for Scala jars
 dependencies {
