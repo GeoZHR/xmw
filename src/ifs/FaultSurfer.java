@@ -530,9 +530,11 @@ public class FaultSurfer {
         }
       }
     }});
-    float c = 12*12*0.5f;
+    //float c = 12*12*0.5f;
+    float sigma = 40f;
+    float c = sigma*sigma*0.5f;
     d.setEigenvalues(0.001f,1.0f,1.0f);
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter(0.1,10);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter(0.1,20);
     lsf.apply(d,c,sc,sf,sf);
     div(sf,max(sf),sf);
   }
