@@ -92,8 +92,8 @@ def main(args):
   #goUnfold()
   #goFlatten()
   #goDisplay()
-  #goFS()
-  goShow()
+  goFS()
+  #goShow()
 
 def goFS():
   print "goFaultSurfer ..."

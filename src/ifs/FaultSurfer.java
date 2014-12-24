@@ -188,7 +188,7 @@ public class FaultSurfer {
     fl = reconstructFaultImagesFromCells(fc,fp,ft);
     //fl = recomputeFaultImagesFromCells(fc,fp,ft);
     FaultSkinner fs = new FaultSkinner();
-    fs.setGrowLikelihoods(0.3f,0.6f);
+    fs.setGrowLikelihoods(0.1f,0.3f);
     fs.setMinSkinSize(4000);
     //fs.setMaxDeltaLikelihood(0.2);
     FaultCell[] cells = fs.findCells(new float[][][][] {fl,fp,ft});
@@ -530,7 +530,7 @@ public class FaultSurfer {
         }
       }
     }});
-    float sigma = 12f;
+    float sigma = 80f;
     float c = sigma*sigma*0.5f;
     d.setEigenvalues(0.001f,1.0f,1.0f);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter(0.1,20);
