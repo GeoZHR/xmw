@@ -41,7 +41,7 @@ public class FaultSurfer {
       hsc.add(ic);
     }
     int k=0;
-    while(hsc.size()>5000&&k<1) {
+    while(hsc.size()>5000) {
       FaultCell[] fc = findStrike(hsc);
       System.out.println("cells="+fc.length);
       if(fc.length<4000){break;}
@@ -54,7 +54,6 @@ public class FaultSurfer {
       removeUsedCells(sks,hsc);
       k++;
     }
-    /*
     System.out.println("Skin with remaining cells...");
     int nc = hsc.size();
     System.out.println("nc="+nc);
@@ -71,7 +70,6 @@ public class FaultSurfer {
     for (ik=0; ik<nk; ++ik) {
       hss.add(sks[ik]);
     }
-    */
     return getSkins(hss);
   }
 
