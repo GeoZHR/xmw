@@ -530,8 +530,7 @@ public class FaultSurfer {
         }
       }
     }});
-    //float c = 12*12*0.5f;
-    float sigma = 40f;
+    float sigma = 12f;
     float c = sigma*sigma*0.5f;
     d.setEigenvalues(0.001f,1.0f,1.0f);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter(0.1,20);
