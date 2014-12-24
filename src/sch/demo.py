@@ -35,7 +35,7 @@ ft3file = "ft3" # fault slip interpolated (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skins after reskinning (basename only)
 fsibase = "fsi" # fault skins after reskinning (basename only)
-fskintp = "fsi"
+fsi1base = "fsi1"
 r1file = "r1"
 r2file = "r2"
 r3file = "r3"
@@ -98,13 +98,12 @@ def main(args):
 def goFS():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
-
   sk = readSkins(fskbase)
   cells = FaultSkin.getCells(sk)
   fs = FaultSurfer(n1,n2,n3,cells)
   sks = fs.applySurferM()
-  writeSkins(fskintp,sks)
-  sks = readSkins(fskintp)
+  writeSkins(fski1base,sks)
+  sks = readSkins(fski1base)
 
   for i in range(len(sks)):
     skin=sks[i]
