@@ -34,6 +34,7 @@ ft2file = "ft2" # fault slip interpolated (2nd component)
 ft3file = "ft3" # fault slip interpolated (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skins after reskinning (basename only)
+fskintp = "fsi"
 r1file = "r1"
 r2file = "r2"
 r3file = "r3"
@@ -100,6 +101,8 @@ def goFS():
   cells = FaultSkin.getCells(sk)
   fs = FaultSurfer(n1,n2,n3,cells)
   sks = fs.applySurferM()
+  writeSkins(fskintp,sks)
+  sks = readSkins(fskintp)
 
   plot3(gx,skins=sk,png="oldSkins")
   plot3(gx,skins=sks,png="newSkins")
