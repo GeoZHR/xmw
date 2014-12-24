@@ -98,6 +98,23 @@ def goFS():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
 
+  sk = readSkins(fskbase)
+  cells = FaultSkin.getCells(sk)
+  fs = FaultSurfer(n1,n2,n3,cells)
+  sks = fs.applySurferM()
+  writeSkins(fskintp,sks)
+  sks = readSkins(fskintp)
+
+  for i in range(len(sks)):
+    skin=sks[i]
+    cells=FaultSkin.getCells(skin)
+    if(len(cells)>40000):
+      plot3(gx,skins=[skin],clab=str(i))
+
+def goShow():
+  print "goFaultSurfer ..."
+  gx = readImage(gxfile)
+
   sks = readSkins(fsibase)
 
   '''
