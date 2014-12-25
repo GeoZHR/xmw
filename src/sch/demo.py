@@ -108,7 +108,8 @@ def goFS():
   for i in range(len(sks)):
     skin=sks[i]
     cells=FaultSkin.getCells(skin)
-    if(len(cells)>20000000):
+    print len(cells)
+    if(len(cells)>200000000):
       plot3(gx,skins=[skin],clab=str(i))
 
 def goShow():
