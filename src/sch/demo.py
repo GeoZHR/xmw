@@ -92,8 +92,8 @@ def main(args):
   #goUnfold()
   #goFlatten()
   #goDisplay()
-  goFS()
-  #goShow()
+  #goFS()
+  goShow()
 
 def goFS():
   print "goFaultSurfer ..."
@@ -115,7 +115,7 @@ def goShow():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
 
-  sks = readSkins(fsibase)
+  sks = readSkins(fsgbase)
 
   '''
   sk = readSkins(fskbase)

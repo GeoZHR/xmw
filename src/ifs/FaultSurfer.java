@@ -66,9 +66,8 @@ public class FaultSurfer {
     FaultSkin[] sks = reskin(fcr);
     int nk = sks.length;
     if(nk<1) {return getSkins(hss);}
-    for (ik=0; ik<nk; ++ik) {
+    for (ik=0; ik<nk; ++ik) 
       hss.add(sks[ik]);
-    }
     return getSkins(hss);
   }
 
