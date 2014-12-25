@@ -38,22 +38,20 @@ public class FaultSurfer {
   public FaultSkin[] applySurferM() {
     HashSet<Integer> hsc = new HashSet<Integer>();
     HashSet<FaultSkin> hss = new HashSet<FaultSkin>();
-    for (int ic=0; ic<_nc; ++ic) {
-      hsc.add(ic);
-    }
-    int k=0;
-    while(hsc.size()>5000) {
+    for (int ic=0; ic<_nc; ++ic) hsc.add(ic);
+    int nct = hsc.size();
+    while(nct>5000) {
       FaultCell[] fc = findStrike(hsc);
       System.out.println("cells="+fc.length);
       if(fc.length<4000){break;}
       FaultSkin[] sks = reskin(fc);
       int nk = sks.length;
       if(nk<1) {break;}
-      for (int ik=0; ik<nk; ++ik) {
+      for (int ik=0; ik<nk; ++ik)
         hss.add(sks[ik]);
-      }
       removeUsedCells(sks,hsc);
-      k++;
+      if(nct-hsc.size()==0){break;}
+      nct = hsc.size();
     }
     System.out.println("Skin with remaining cells...");
     int nc = hsc.size();
@@ -82,7 +80,9 @@ public class FaultSurfer {
     FaultCell[] fck = FaultSkin.getCells(sk);
     float[][] xc = setKdTreeCoords(fck);
     KdTree kt = new KdTree(xc);
-    for (int ic=0; ic<_nc; ++ic) {
+    HashSet<Integer> hst = new HashSet<Integer>();
+    for (int ic:hsc) hst.add(ic);
+    for (int ic:hst) {
       int i1 = _fc[ic].i1;
       int i2 = _fc[ic].i2;
       int i3 = _fc[ic].i3;
