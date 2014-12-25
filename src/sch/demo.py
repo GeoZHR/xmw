@@ -108,8 +108,7 @@ def goFS():
   for i in range(len(sks)):
     skin=sks[i]
     cells=FaultSkin.getCells(skin)
-    print len(cells)
-    if(len(cells)>200000000):
+    if(len(cells)>40000):
       plot3(gx,skins=[skin],clab=str(i))
 
 def goShow():
@@ -133,7 +132,7 @@ def goShow():
   for i in range(411):
     skin=sks[i]
     cells=FaultSkin.getCells(skin)
-    if(len(cells)>40000):
+    if(len(cells)>100000):
       plot3(gx,skins=[skin],clab=str(i))
   ''' 
 
