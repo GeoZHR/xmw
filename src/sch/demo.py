@@ -102,8 +102,8 @@ def goFS():
   cells = FaultSkin.getCells(sk)
   fs = FaultSurfer(n1,n2,n3,cells)
   sks = fs.applySurferM()
-  writeSkins(fski1base,sks)
-  sks = readSkins(fski1base)
+  writeSkins(fsi1base,sks)
+  sks = readSkins(fsi1base)
 
   for i in range(len(sks)):
     skin=sks[i]
