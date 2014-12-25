@@ -396,11 +396,11 @@ public class FaultSurfer {
           int nd = 0;
           int[] id = null;
           while(nd<20) {
-          int[] ds = new int[] {di,di,di};
-          getRange(ds,is,ns,xmin,xmax);
-          id = kt.findInRange(xmin,xmax);
-          nd = id.length;
-          di += 2;
+            int[] ds = new int[] {di,di,di};
+            getRange(ds,is,ns,xmin,xmax);
+            id = kt.findInRange(xmin,xmax);
+            nd = id.length;
+            di += 5;
           }
           float sv = 1.0f/(di*di*4f); 
           float su = 1.0f/(di*di*4f); 
