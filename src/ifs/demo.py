@@ -339,12 +339,12 @@ def goCleanCells():
   ft = readImage(ftfile)
   gx = readImage(gxfile)
   fs = FaultSkinner()
-  fb = ScreenFaultSurferClose()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   skins1 = fs.findSkins(cells)
   cells = fs.findCells([fl,fp,ft])
+  fb = ScreenFaultSurferClose()
   cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
   skins2 = fs.findSkins(cells)
   skins1[2] = skins2[2]

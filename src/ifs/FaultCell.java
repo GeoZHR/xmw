@@ -42,10 +42,8 @@ import static ifs.FaultGeometry.*;
 public class FaultCell implements Serializable {
   private static final long serialVersionUID = 1L;
 
-  public void setW(float w1, float w2, float w3) {
-    this.w1 = w1;
-    this.w2 = w2;
-    this.w3 = w3;
+  public void setNormal(float w1, float w2, float w3) {
+    setNormalVector(w1,w2,w3);
   }
 
 

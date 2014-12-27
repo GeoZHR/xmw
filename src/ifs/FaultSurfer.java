@@ -9,10 +9,8 @@ package ifs;
 import java.util.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
-import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import kdt.*;
 import static ifs.FaultGeometry.*;
 
 /**
@@ -33,6 +31,46 @@ public class FaultSurfer {
 
   public void setStrikePartitions(int ds) {
     _ds = ds;
+  }
+
+  public void faultImageSmooth(float sigma,
+    float[][][] fl, float[][][] fp, float[][][] ft) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] sl = new float[n3][n2][n1];
+    EigenTensors3 d = new EigenTensors3(n1,n2,n3,false);
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float fpi = fp[i3][i2][i1];
+          float fti = ft[i3][i2][i1];
+          float[] u = faultNormalVectorFromStrikeAndDip(fpi,fti);
+          float u1i = u[0];
+          float u2i = u[1];
+          float u3i = u[2];
+          float usi = 1.0f/sqrt(u1i*u1i+u2i*u2i);
+          float w1i = -u2i*usi;
+          float w2i =  u1i*usi;
+          d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
+          d.setEigenvectorW(i1,i2,i3,w1i,w2i,0.f);
+        }
+      }
+    }
+    float c = sigma*sigma*0.5f;
+    d.setEigenvalues(0.25f,1.0f,1.0f);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter(0.01,50);
+    lsf.apply(d,c,fl,fl);
+
+  }
+
+  public float getStrike(FaultSkin sk) {
+    float fpa = 0.0f;
+    FaultCell[] fc = FaultSkin.getCells(new FaultSkin[] {sk});
+    int nc = fc.length;
+    for (int ic=0; ic<nc; ++ic)
+      fpa += fc[ic].fp;
+    return fpa/nc;
   }
 
   public FaultSkin[] applySurferM() {
@@ -98,25 +136,58 @@ public class FaultSurfer {
     int maxN = 0;
     int nc = hsc.size();
     int[] dc = new int[nc];
-    float[] pm = new float[1];
-    float[] pp = new float[1];
+    float[] pm1 = new float[1];
+    float[] pp1 = new float[1];
+    float[] pm2 = new float[1];
+    float[] pp2 = new float[1];
+    float[] pm3 = new float[1];
+    float[] pp3 = new float[1];
     float[][] xc = setKdTreeStrike(hsc,dc);
     KdTree kt = new KdTree(xc);
     HashSet<Integer> hst = new HashSet<Integer>();
     for (int pt=0; pt<=360; ++pt) {
-      pm[0] = pt-dp; if(pm[0]<0.0f){pm[0]=0.0f;}
-      pp[0] = pt+dp; if(pp[0]>360f){pp[0]=360f;}
-      int[] id = kt.findInRange(pm,pp);
-      int nd = id.length;
+      float pmi = pt-dp;
+      float ppi = pt+dp;
+      int nd1=0, nd2=0, nd3=0;
+      pm3[0] = pmi; pp3[0] = ppi;
+      int[] id1=null, id2=null, id3=null;
+      if (pmi<0.0f) {
+        pm3[0] = 0.0f;
+        pp1[0] = 360f;
+        pm1[0] = 360f+pmi;
+        id1 = kt.findInRange(pm1,pp1);
+      }
+      if(ppi>360f) {
+        pp3[0] = 360f;
+        pm2[0] = 0.0f;
+        pp2[0] = ppi-360f;
+        id2 = kt.findInRange(pm2,pp2);
+      }
+      id3 = kt.findInRange(pm3,pp3);
+      if(id1!=null){nd1=id1.length;}
+      if(id2!=null){nd2=id2.length;}
+      if(id3!=null){nd3=id3.length;}
+      int nd = nd1+nd2+nd3;
       if(nd>maxN) {
         maxN = nd;
         hst.clear();
-        for (int ik=0; ik<nd; ++ik){
-          int ip = id[ik];
-          int ic = dc[ip];
-          hst.add(ic);
-          float dpt = abs(_fc[ic].fp-pt);
-          if(dpt>dp){System.out.println("dpt="+dpt);}
+        if(id1!=null) {
+          for (int ik=0; ik<nd1; ++ik){
+            int ip = id1[ik];
+            hst.add(dc[ip]);
+          }
+        }
+        if(id2!=null) {
+          for (int ik=0; ik<nd2; ++ik){
+            int ip = id2[ik];
+            hst.add(dc[ip]);
+          }
+        }
+        if(id3!=null) {
+          for (int ik=0; ik<nd3; ++ik){
+            int ip = id3[ik];
+            hst.add(dc[ip]);
+          }
         }
       }
     }
@@ -391,21 +462,20 @@ public class FaultSurfer {
         for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
           if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
           if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
-          int[] is = new int[]{i1,i2,i3};
-          int di = 10;
-          int nd = 0;
           int[] id = null;
-          while(nd<20) {
+          int di = 10,nd = 0;
+          int[] is = new int[]{i1,i2,i3};
+          while(nd<20 && di<40) {
             int[] ds = new int[] {di,di,di};
             getRange(ds,is,ns,xmin,xmax);
             id = kt.findInRange(xmin,xmax);
             nd = id.length;
-            di += 5;
+            di += 2;
           }
+          if(nd<20){continue;}
+          float wps = 0.0f;
           float sv = 1.0f/(di*di*4f); 
           float su = 1.0f/(di*di*4f); 
-
-          float wps = 0.0f;
           for (int ik=0; ik<nd; ++ik) {
             int ip = id[ik];
             float fli = fc[ip].fl;
@@ -455,6 +525,7 @@ public class FaultSurfer {
             float vd2 = v13*d13*2.0f;
             float vd3 = v23*d23*2.0f;
             float vds = v11*d11+v22*d22+v33*d33;
+
             float gss = 0.0f;
             gss += (wd1+wd2+wd3+wds)*sw;
             gss += (ud1+ud2+ud3+uds)*su;
@@ -649,8 +720,10 @@ public class FaultSurfer {
           float w2i =  u1i*usi;
           d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
           d.setEigenvectorW(i1,i2,i3,w1i,w2i,0.f);
-          ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
-          fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+          if(u2i!=0.0f && u3i!=0.0f) {
+            ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+            fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+          }
           if(i1<db){sc[i3][i2][i1]=i1*sci;}
           if(i2<db){sc[i3][i2][i1]=i2*sci;}
           if(i3<db){sc[i3][i2][i1]=i3*sci;}
@@ -738,10 +811,10 @@ public class FaultSurfer {
     }
 
     for (int i1=0; i1<_n1; ++i1) {
-      bb2[i1][0] -= 2;
-      bb3[i1][0] -= 2;
-      bb2[i1][1] += 2;
-      bb3[i1][1] += 2;
+      bb2[i1][0] -= 3;
+      bb3[i1][0] -= 3;
+      bb2[i1][1] += 3;
+      bb3[i1][1] += 3;
     }
 
   }

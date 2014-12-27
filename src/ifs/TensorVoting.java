@@ -241,8 +241,6 @@ public class TensorVoting {
               a[2][0] += sc*sr[2][0]; 
               a[2][1] += sc*sr[2][1];
               a[2][2] += sc*sr[2][2];
-
-
             }
             int k1 = _fc[ne].i1;
             int k2 = _fc[ne].i2;

@@ -81,7 +81,7 @@ public class PointSetSurface {
             float[] xs = new float[]{x1/sx,x2/sx,x3/sx};
             float[] ur = reflectionVector(xs,us);
             if(sum(mul(vs,ur))<0.0f) {
-              fc[id].setW(-vs[0],-vs[1],-vs[2]);
+              fc[id].setNormal(-vs[0],-vs[1],-vs[2]);
             }
           }
         }

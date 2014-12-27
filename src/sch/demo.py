@@ -5,7 +5,7 @@ Version: 2014.06.17
 """
 from uff import *
 from schutils import *
-setupForSubset("s2a")
+setupForSubset("s2s")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -62,7 +62,8 @@ minTheta,maxTheta = 65,85
 # These parameters control the construction of fault skins.
 lowerLikelihood = 0.01
 upperLikelihood = 0.20
-minSkinSize = 10000
+#minSkinSize = 10000
+minSkinSize = 4000
 
 # These parameters control the computation of fault dip slips.
 minThrow =  0.0
@@ -92,32 +93,80 @@ def main(args):
   #goUnfold()
   #goFlatten()
   #goDisplay()
-  goFS()
+  #goFS()
   #goShow()
+  goCleanCells()
+def goCleanCells():
+  gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  plot3(gx,cells=cells,clab="oldCells")
+  roc = RemoveOutlierCells(n1,n2,n3,cells)
+  fcs = roc.apply(5,0.4)
+  sks = fs.findSkins(fcs)
+  plot3(gx,cells=fcs,png="cells")
+  plot3(gx,skins=sk,clab="oldSkins")
+  plot3(gx,skins=sks,clab="newSkins")
+
 
 def goFS():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
   sk = readSkins(fskbase)
+  #cells = FaultSkin.getCells(sk)
+  '''
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
   cells = FaultSkin.getCells(sk)
+
+  ff = FaultSurfer(n1,n2,n3,cells)
+  ff.faultImageSmooth(4.0,fl,fp,ft)
+
+  div(fl,max(fl),fl)
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  sks = fs.findSkins(cells)
+  cells = FaultSkin.getCells(sks)
   fs = FaultSurfer(n1,n2,n3,cells)
   sks = fs.applySurferM()
+  removeAllSkinFiles(fsgbase)
   writeSkins(fsgbase,sks)
+  '''
   sks = readSkins(fsgbase)
-
+  plot3(gx,skins=sk,png="oldSkins")
+  plot3(gx,skins=sks,png="newSkins")
+  skk=[sks[12],sks[17],sks[29],sks[63],sks[42],
+       sks[106],sks[117],sks[127],sks[76],sks[43]]
+  plot3(gx,skins=skk,png="newSkins")
+  '''
   for i in range(len(sks)):
     skin=sks[i]
     cells=FaultSkin.getCells(skin)
-    if(len(cells)>100000):
+    if(len(cells)>15000):
       plot3(gx,skins=[skin],clab=str(i))
+  '''
 
 def goShow():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
-
-  sks = readSkins(fsgbase)
+  plot3(gx)
 
   '''
+  sks = readSkins(fsgbase)
+  #sks = [sks[132],sks[115],sks[107],sks[97],sks[58],sks[35],sks[18],sks[289],sks[171]]
+  plot3(gx,skins=sks,png="newSkins")
+
   sk = readSkins(fskbase)
   cells = FaultSkin.getCells(sk)
   fs = FaultSurfer(n1,n2,n3,cells)
@@ -127,14 +176,12 @@ def goShow():
 
   plot3(gx,skins=sk,png="oldSkins")
   plot3(gx,skins=sks,png="newSkins")
-  '''
   #for iskin,skin in enumerate(skss):
   for i in range(411):
     skin=sks[i]
     cells=FaultSkin.getCells(skin)
-    if(len(cells)>100000):
+    if(len(cells)>40000):
       plot3(gx,skins=[skin],clab=str(i))
-  ''' 
 
   for iskin,skin in enumerate(sk):
     plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
@@ -659,7 +706,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if slices:
     k1,k2,k3 = slices
   else:
-    k1,k2,k3 = (370,105,34) # most plots use these
+    #k1,k2,k3 = (370,105,34) # most plots use these
+    k1,k2,k3 = (370,0,0) # most plots use these
     #k1,k2,k3 = (370,150,0) # most plots use these
   ipg.setSlices(k1,k2,k3)
   if cbar:
@@ -675,7 +723,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setEyeToScreenDistance(3018.87) # for consistency with brooks
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
   #ov.setAzimuthAndElevation(25.0,20.0)
-  ov.setAzimuthAndElevation(150.0,15.0)
+  #ov.setAzimuthAndElevation(150.0,15.0)
+  ov.setAzimuthAndElevation(160.0,65.0)
   ov.setScale(1.5)
   #ov.setTranslate(Vector3(-0.182,-0.238,-0.012))
   ov.setTranslate(Vector3(-0.190,-0.168,-0.006))
