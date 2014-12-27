@@ -108,9 +108,9 @@ def goCleanCells():
   cells = fs.findCells([fl,fp,ft])
   plot3(gx,cells=cells,clab="oldCells")
   roc = RemoveOutlierCells(n1,n2,n3,cells)
-  fcs = roc.apply(5,0.4)
+  fcs = roc.apply(8,0.6)
   sks = fs.findSkins(fcs)
-  plot3(gx,cells=fcs,png="cells")
+  plot3(gx,cells=fcs,clab="newCells")
   plot3(gx,skins=sk,clab="oldSkins")
   plot3(gx,skins=sks,clab="newSkins")
 
