@@ -67,6 +67,24 @@ def main(args):
   goFS()
   #smoothTest()
   #goInterp()
+  #goRemoveOutliers()
+def goRemoveOutliers():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  plot3(gx,cells=cells,clab="oldCells")
+  roc = RemoveOutlierCells(n1,n2,n3,cells)
+  fcs = roc.apply(5,0.8)
+  fs = FaultSurfer(n1,n2,n3,fcs)
+  sks = fs.applySurferM()
+  plot3(gx,cells=fcs,clab="newCells")
+  plot3(gx,skins=sks,clab="newSkins")
+
 def goInterp():
   print "imageGuidedInterp ..."
   gx = readImage(gxfile)

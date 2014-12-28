@@ -93,22 +93,22 @@ def main(args):
   #goUnfold()
   #goFlatten()
   #goDisplay()
-  #goFS()
+  goFS()
   #goShow()
-  goCleanCells()
+  #goCleanCells()
 def goCleanCells():
   gx = readImage(gxfile)
-  sk = readSkins(fskbase)
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
+  sk = readSkins(fskbase)
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   plot3(gx,cells=cells,clab="oldCells")
   roc = RemoveOutlierCells(n1,n2,n3,cells)
-  fcs = roc.apply(8,0.6)
+  fcs = roc.apply(5,0.5)
   sks = fs.findSkins(fcs)
   plot3(gx,cells=fcs,clab="newCells")
   plot3(gx,skins=sk,clab="oldSkins")
@@ -118,9 +118,8 @@ def goCleanCells():
 def goFS():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  #cells = FaultSkin.getCells(sk)
   '''
+  sk = readSkins(fskbase)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
   fl = readImage(flfile)
@@ -128,10 +127,8 @@ def goFS():
   ft = readImage(ftfile)
   fs = FaultSkinner()
   cells = FaultSkin.getCells(sk)
-
   ff = FaultSurfer(n1,n2,n3,cells)
   ff.faultImageSmooth(4.0,fl,fp,ft)
-
   div(fl,max(fl),fl)
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
@@ -144,18 +141,18 @@ def goFS():
   writeSkins(fsgbase,sks)
   '''
   sks = readSkins(fsgbase)
-  plot3(gx,skins=sk,png="oldSkins")
-  plot3(gx,skins=sks,png="newSkins")
+  #plot3(gx,skins=sk,png="oldSkins")
+  #plot3(gx,skins=sks,png="newSkins")
+  '''
   skk=[sks[12],sks[17],sks[29],sks[63],sks[42],
        sks[106],sks[117],sks[127],sks[76],sks[43]]
-  plot3(gx,skins=skk,png="newSkins")
   '''
+  plot3(gx,skins=sks,png="newSkins")
   for i in range(len(sks)):
     skin=sks[i]
     cells=FaultSkin.getCells(skin)
-    if(len(cells)>15000):
+    if(len(cells)>20000):
       plot3(gx,skins=[skin],clab=str(i))
-  '''
 
 def goShow():
   print "goFaultSurfer ..."

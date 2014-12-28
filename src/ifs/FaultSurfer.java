@@ -38,7 +38,6 @@ public class FaultSurfer {
     int n3 = fl.length;
     int n2 = fl[0].length;
     int n1 = fl[0][0].length;
-    float[][][] sl = new float[n3][n2][n1];
     EigenTensors3 d = new EigenTensors3(n1,n2,n3,false);
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
@@ -253,15 +252,17 @@ public class FaultSurfer {
   }
 
   private FaultSkin[] reskin(FaultCell[] fc) {
+    int d = 40;
     float[][][] fl = new float[_n3][_n2][_n1];
     float[][][] fp = new float[_n3][_n2][_n1];
     float[][][] ft = new float[_n3][_n2][_n1];
-    fl = faultImagesFromCells(fc,fp,ft);
+    fl = faultImagesFromCells(d,fc,fp,ft);
+    //fl = cellVoteForFaultImage(fc,fp,ft);
     //fl = reconstructFaultImagesFromCells(fc,fp,ft);
     //fl = recomputeFaultImagesFromCells(fc,fp,ft);
     FaultSkinner fs = new FaultSkinner();
     fs.setGrowLikelihoods(0.1f,0.3f);
-    fs.setMinSkinSize(4000);
+    fs.setMinSkinSize(round(d*d*4));
     //fs.setMaxDeltaLikelihood(0.2);
     FaultCell[] cells = fs.findCells(new float[][][][] {fl,fp,ft});
     return fs.findSkins(cells);
@@ -433,13 +434,11 @@ public class FaultSurfer {
     return div(sf,max(sf));
   }
 
-  private float[][][] faultImagesFromCells(
+  private float[][][] faultImagesFromCells(final int dt,
     final FaultCell[] fc, final float[][][] fp, final float[][][] ft) 
   {
     int nc = fc.length;
     float sigmaNor = 2.0f;
-    final int[] ns = new int[]{_n1,_n2,_n3};
-    final float sw = 1.0f/(sigmaNor*sigmaNor); 
     final int[][] bb2 = new int[_n1][2];
     final int[][] bb3 = new int[_n1][2];
     final float[][] xc = new float[3][nc];
@@ -447,11 +446,13 @@ public class FaultSurfer {
     final float[][] us = new float[nc][6];
     final float[][] vs = new float[nc][6];
     setKdTreeNodes(fc,xc,ws,us,vs,bb2,bb3);
-    
     final int[] bs1 = setBounds(_n1,xc[0]);
     final int[] bs2 = setBounds(_n2,xc[1]);
     final int[] bs3 = setBounds(_n3,xc[2]);
     final KdTree kt = new KdTree(xc);
+    final int[] ns = new int[]{_n1,_n2,_n3};
+    final float st = (float)sin(Math.PI/8.0);
+    final float sw = 1.0f/(sigmaNor*sigmaNor); 
     final float[][][] sf = zerofloat(_n1,_n2,_n3);
     Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
     public void compute(int i3) {
@@ -465,23 +466,38 @@ public class FaultSurfer {
           int[] id = null;
           int di = 10,nd = 0;
           int[] is = new int[]{i1,i2,i3};
-          while(nd<20 && di<40) {
-            int[] ds = new int[] {di,di,di};
+          while(nd<20 && di<dt) {
+            int[] ds=new int[]{di,di,di};
             getRange(ds,is,ns,xmin,xmax);
             id = kt.findInRange(xmin,xmax);
             nd = id.length;
             di += 2;
           }
-          if(nd<20){continue;}
+          if(nd<10){continue;}
           float wps = 0.0f;
-          float sv = 1.0f/(di*di*4f); 
-          float su = 1.0f/(di*di*4f); 
+          float sv = 0.25f/(di*di); 
+          float su = 0.25f/(di*di); 
           for (int ik=0; ik<nd; ++ik) {
             int ip = id[ik];
-            float fli = fc[ip].fl;
-            float dx1 = i1-fc[ip].x1;
-            float dx2 = i2-fc[ip].x2;
-            float dx3 = i3-fc[ip].x3;
+            float w1i = fc[ip].w1;
+            float w2i = fc[ip].w2;
+            float w3i = fc[ip].w3;
+            float x1i = fc[ip].i1;
+            float x2i = fc[ip].i2;
+            float x3i = fc[ip].i3;
+
+            float dx1 = x1i-i1;
+            float dx2 = x2i-i2;
+            float dx3 = x3i-i3;
+            float d11 = dx1*dx1;
+            float d22 = dx2*dx2;
+            float d33 = dx3*dx3;
+            float dsi = d11+d22+d33;
+            float wdi = w1i*dx1+w2i*dx2+w3i*dx3;
+            if(dsi!=0.0f&&abs(wdi/sqrt(dsi))>st){continue;}
+            float d12 = dx1*dx2;
+            float d13 = dx1*dx3;
+            float d23 = dx2*dx3;
 
             float w11 = ws[ip][0];
             float w22 = ws[ip][1];
@@ -504,39 +520,33 @@ public class FaultSurfer {
             float v13 = vs[ip][4];
             float v23 = vs[ip][5];
 
-            float d11 = dx1*dx1;
-            float d12 = dx1*dx2;
-            float d13 = dx1*dx3;
-            float d22 = dx2*dx2;
-            float d23 = dx2*dx3;
-            float d33 = dx3*dx3;
-
             float wd1 = w12*d12*2.0f;
             float wd2 = w13*d13*2.0f;
             float wd3 = w23*d23*2.0f;
-            float wds = w11*d11+w22*d22+w33*d33;
 
             float ud1 = u12*d12*2.0f;
             float ud2 = u13*d13*2.0f;
             float ud3 = u23*d23*2.0f;
-            float uds = u11*d11+u22*d22+u33*d33;
 
             float vd1 = v12*d12*2.0f;
             float vd2 = v13*d13*2.0f;
             float vd3 = v23*d23*2.0f;
+
+            float wds = w11*d11+w22*d22+w33*d33;
+            float uds = u11*d11+u22*d22+u33*d33;
             float vds = v11*d11+v22*d22+v33*d33;
 
             float gss = 0.0f;
+            float fli = fc[ip].fl;
+            float wpi = pow(fli,10.f);
             gss += (wd1+wd2+wd3+wds)*sw;
             gss += (ud1+ud2+ud3+uds)*su;
             gss += (vd1+vd2+vd3+vds)*sv;
-
-            float wpi = pow(fli,10.0f);
             float sfi = exp(-gss)*wpi;
             sf[i3][i2][i1] += sfi;
             wps += wpi;
           }
-          sf[i3][i2][i1] /= wps;
+          if(wps!=0f) sf[i3][i2][i1] /= wps;
         }
       }
     }});

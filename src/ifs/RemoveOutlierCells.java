@@ -35,35 +35,28 @@ public class RemoveOutlierCells {
     final KdTree kd = setKDTree();
     final int[] ns = new int[]{_n1,_n2,_n3};
     for (int ic=0; ic<_nc; ++ic) {
-      System.out.println("ic="+ic);
       float x1 = _fc[ic].x1;
       float x2 = _fc[ic].x2;
       float x3 = _fc[ic].x3;
+      float w1 = _fc[ic].w1;
+      float w2 = _fc[ic].w2;
+      float w3 = _fc[ic].w3;
+      float d1 = d*(1f-w1); if(d1<2f) d1=2f;
+      float d2 = d*(1f-w2); if(d2<2f) d2=2f;
+      float d3 = d*(1f-w3); if(d3<2f) d3=2f;
+
       float[] xmin = new float[3];
       float[] xmax = new float[3];
-      float[] ds = new float[]{d,d,d};
+      float[] ds = new float[]{d1,d2,d3};
       float[] xs = new float[]{x1,x2,x3};
       getRange(ds,xs,ns,xmin,xmax);
       int[] id = kd.findInRange(xmin,xmax);
       int nd = id.length;
-      if(nd<10){hsc.remove(ic);}
+      if(nd<1){continue;}
       else {
         float[] u = new float[3];
-        //float ep = tensorVote(xs,id,u);
         float ep = tensorVoteS(d,xs,id,u);
-        float u1 = u[0],u2 = u[1],u3 = u[2];
-        if(ep<ept||(u2==0.0f&&u3==0.0f))
-          hsc.remove(ic);
-        else {
-          float w1 = _fc[ic].w1;
-          float w2 = _fc[ic].w2;
-          float w3 = _fc[ic].w3;
-          float dt = w1*u1+w2*u2+w3*u3;
-          if(dt>0.0f) 
-            _fc[ic].setNormal(u1,u2,u3);
-          else 
-            _fc[ic].setNormal(-u1,-u2,-u3);
-        }
+        if(ep<ept) hsc.remove(ic);
       }
     }
     int ik = -1;
@@ -87,9 +80,9 @@ public class RemoveOutlierCells {
   }
 
   private float tensorVoteS(float d, float[] x, int[] id, float[] u) {
-    float ss = d*d;
     float ck = 3.5f;
     int nd = id.length;
+    float ss = 0.5f/(d*d);
     float tm = (float)Math.PI/6.0f;
     double[][] a = new double[3][3];
     for (int ik=0; ik<nd; ++ik) {
@@ -99,36 +92,35 @@ public class RemoveOutlierCells {
       float d3 = _fc[ic].x3-x[2];
       float ds = d1*d1+d2*d2+d3*d3;
       float dl = sqrt(ds);
+      float fl = pow(_fc[ic].fl,4.0f);
       if(ds==0.0f) {
-        a[0][0] += _st[ic][0]; //s11
-        a[0][1] += _st[ic][1]; //s12
-        a[0][2] += _st[ic][2]; //s13
-        a[1][0] += _st[ic][1]; //s12
-        a[1][1] += _st[ic][3]; //s22
-        a[1][2] += _st[ic][4]; //s23
-        a[2][0] += _st[ic][2]; //s13
-        a[2][1] += _st[ic][4]; //s23
-        a[2][2] += _st[ic][5]; //s33
+        a[0][0] += fl*_st[ic][0]; //s11
+        a[0][1] += fl*_st[ic][1]; //s12
+        a[0][2] += fl*_st[ic][2]; //s13
+        a[1][0] += fl*_st[ic][1]; //s12
+        a[1][1] += fl*_st[ic][3]; //s22
+        a[1][2] += fl*_st[ic][4]; //s23
+        a[2][0] += fl*_st[ic][2]; //s13
+        a[2][1] += fl*_st[ic][4]; //s23
+        a[2][2] += fl*_st[ic][5]; //s33
       } else {
-        float ci = 2.0f/ds;
         float w1 = _fc[ic].w1;
         float w2 = _fc[ic].w2;
         float w3 = _fc[ic].w3;
         float wd = w1*d1+w2*d2+w3*d3;
-        if(wd<0.0f) ci *=  wd;
-        else        ci *= -wd;
+        float ci = -2.0f*wd/ds;
         float v1 = w1+ci*d1;
         float v2 = w2+ci*d2;
         float v3 = w3+ci*d3;
-        float vs = 1.0f/sqrt(v1*v1+v2*v2+v3*v3);
+        float vs = sqrt(v1*v1+v2*v2+v3*v3);
+        if(vs==0.0f){continue;}
+        vs = 1.0f/vs;
+        float st = wd/dl;
+        if(st>sin(tm)){continue;}
         v1 *= vs;v2 *= vs;v3 *= vs;
-        float wv = w1*v1+w2*v2+w3*v3;
-        float th = 0.5f*acos(wv);
-        if(th>tm){continue;}
-        float st = sin(th);
-        float si = dl*th/st;
         float ki = 2.0f*st/dl;
-        float sc = exp(-(si*si+ck*ki*ki)*ss);
+        float si = dl*asin(st)/st;
+        float sc = fl*exp(-(si*si+ck*ki*ki)*ss);
         float s11 = sc*v1*v1;
         float s12 = sc*v1*v2;
         float s13 = sc*v1*v3;
@@ -153,7 +145,8 @@ public class RemoveOutlierCells {
     float eu = ue[1][0];
     float ev = ue[1][1];
     float es = (eu>0.0f)?1.0f/eu:1.0f;
-    return (eu-ev)*es;
+    float ep = (eu-ev)*es;
+    return ep;
   }
 
   private float tensorVote(float[] x, int[] id, float[] u) {
