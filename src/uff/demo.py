@@ -56,7 +56,7 @@ sigmaPhi,sigmaTheta = 4,20
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.2
 upperLikelihood = 0.5
-minSkinSize = 3000
+minSkinSize = 2000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -79,14 +79,15 @@ def main(args):
   goScan()
   goThin()
   goSmooth()
-  goSkin()
+  goBetterSkin()
   goSlip()
   '''
-  goUnfaultAndUnfold()
+  goSlipOneByOne()
+  #goUnfaultAndUnfold()
+  #goUnfault()
+  #goUnfold()
+  #goUnfaultAndUnfoldc(True)
   '''
-  goUnfault()
-  goUnfold()
-  goUnfaultAndUnfoldc(False)
   goUnfoldc2()
   goUnfoldc()
   goFlatten2()
@@ -100,10 +101,10 @@ def goFakeData():
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults
   conjugate = True # if True, two large planar faults will intersect
-  conical = False # if True, may want to set nplanar to 0 (or not!)
+  conical = True # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.0 # (rms noise)/(rms signal) ratio
+  noise = 0.5 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
@@ -233,6 +234,31 @@ def goSkin():
   plot3(gx,skins=skins,png="skins")
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+def goBetterSkin():
+  print "goFaultSurfer ..."
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  sk = fs.findSkins(cells)
+  cells = FaultSkin.getCells(sk)
+  fs = FaultSurfer(n1,n2,n3,cells)
+  sks = fs.applySurferM(4000)
+  removeAllSkinFiles(fskbase)
+  writeSkins(fskbase,sks)
+
+  plot3(gx,skins=sks,png="newSkins")
+  plot3(gx,skins=sk,png="oldSkins")
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,png="newSkin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
+
 
 def goSlip():
   print "goSlip ..."
@@ -275,6 +301,37 @@ def goSlip():
   plot3(gx)
   plot3(gw,clab="Amplitude",png="gw")
 
+def goSlipOneByOne():
+  print "goSlip ..."
+  gx = readImage(gxfile)
+  gsx = readImage(gsxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  skins = readSkins(fskbase)
+  fsl = FaultSlipper(gsx,p2,p3)
+  fsl.setOffset(2.0) # the default is 2.0 samples
+  fsl.setZeroSlope(False) # True only if we want to show the error
+  fsl.computeDipSlips(skins,minThrow,maxThrow)
+  print "  dip slips computed, now reskinning ..."
+  print "  number of skins before =",len(skins),
+  fsk = FaultSkinner() # as in goSkin
+  fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fsk.setMinSkinSize(minSkinSize)
+  fsk.setMinMaxThrow(minThrow,maxThrow)
+  skins = fsk.reskin(skins)
+  print ", after =",len(skins)
+  removeAllSkinFiles(fskbase)
+  writeSkins(fskbase,skins)
+  smark = -999.999
+  gw = copy(gx)
+  for skin in skins:
+    s1,s2,s3 = fsl.getDipSlips([skin],smark)
+    s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+    gw = fsl.unfault([s1,s2,s3],gx)
+    plot3(gw,clab="Amplitude")
+  plot3(gx)
+
+
 def goUnfault():
   smark = -999.999
   gx = readImage(gxfile)
@@ -315,6 +372,7 @@ def goUnfold():
     gf = readImage(gffile)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
   plot3(gf,cmin=hmin,cmax=hmax,cmap=hmap,clab="Unfold",png="gf")
+
 def goUnfaultAndUnfold():
   if not plotOnly:
     gx = readImage(gxfile)
@@ -332,6 +390,7 @@ def goUnfaultAndUnfold():
     u3 = fillfloat(0.0,n1,n2,n3)
 
     skins = readSkins(fskbase)
+    #skins = [skins[0]]
 
     #spf = ScreenPointsFromFaults()
     csf = ConstraintsFromFaults(skins,ep)
@@ -345,7 +404,7 @@ def goUnfaultAndUnfold():
     #fm = cfs.getFaultMap()
     p = array(u1,u2,u3,wp)
     flattener = FlattenerRTS(6.0,6.0)
-    flattener.setIters(50,1)
+    flattener.setIters(20,1)
     fl = mul(pow(cs[3][0],2.0),2.0)
     [r1,r2,r3] = flattener.findShifts(cs[0],cs[1],cs[2],fm,fl,p)
     flattener.applyShifts([r1,r2,r3],gx,fc)
@@ -437,7 +496,7 @@ def goUnfaultAndUnfoldc(unfaultOnly):
         clab="Fault throw (samples)",png="gxs1")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")
   plot3(fc,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfaultC",png="fc")
-  plot3(fd,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfoldC",png="fdc")
+  #plot3(fd,cmin=hmin,cmax=hmax,cmap=hmap,clab="UnfoldC",png="fdc")
   plot3(gx,cmin=hmin,cmax=hmax,cmap=hmap,clab="Amplitude",png="gx")
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")

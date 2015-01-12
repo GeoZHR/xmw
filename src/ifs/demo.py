@@ -1,4 +1,5 @@
 from fakeutils import *
+import math
 import random
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -35,6 +36,7 @@ sigmaPhi,sigmaTheta = 4,20
 lowerLikelihood = 0.2
 upperLikelihood = 0.5
 minSkinSize = 2000
+#minSkinSize = round(max(n2,n3)*n1*0.2)
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -56,15 +58,20 @@ def main(args):
   goThin()
   goSmooth()
   goSkin()
-  goSlip()
   '''
+  #goFS()
+  goFSSPS()
+  #goFSPSS()
+  #goSkin()
+  #goSlip()
   #goCleanCells()
   
   #goTV()
   #goSPS()
   #goPSS()
   #goFSS()
-  goFS()
+  #goIFS()
+  #goFS()
   #smoothTest()
   #goInterp()
   #goRemoveOutliers()
@@ -129,6 +136,7 @@ def goFakeData():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
+  #gx = FaultScanner.taper(10,0,0,gx)
   sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
@@ -252,6 +260,19 @@ def goPSS():
     plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
         clab="PointSetSurface",png="pss")
 
+def goIFS():
+  gx = readImage(gxfile)
+  fp = FaultProcessor()
+  sks = fp.computeFaultSkins(1,1,gx)
+  sk = readSkins(fskbase)
+  plot3(gx,skins=sks,png="newSkins")
+  plot3(gx,skins=sk,png="oldSkins")
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,png="newSkin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
+
 def goFS():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
@@ -259,16 +280,22 @@ def goFS():
   fp = readImage(fpfile)
   ft = readImage(ftfile)
   fs = FaultSkinner()
-  fb = ScreenFaultSurferClose()
+  #fb = ScreenFaultSurferClose()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
-  fs.setMaxPlanarDistance(0.5)
   cells = fs.findCells([fl,fp,ft])
   #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
   sk = fs.findSkins(cells)
   cells = FaultSkin.getCells(sk)
+  #fs = FaultSurferSPS(n1,n2,n3,cells)
   fs = FaultSurfer(n1,n2,n3,cells)
-  sks = fs.applySurferM()
+  '''
+  bs = fs.test()
+  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cmap=jetRamp(1.0),
+        clab="PointSetSurface")
+  '''
+
+  sks = fs.applySurferM(4000)
 
   plot3(gx,skins=sks,png="newSkins")
   plot3(gx,skins=sk,png="oldSkins")
@@ -277,6 +304,71 @@ def goFS():
 
   for iskin,skin in enumerate(sk):
     plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
+
+def goFSSPS():
+  print "goFaultSurfer ..."
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  #fb = ScreenFaultSurferClose()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
+  sk = fs.findSkins(cells)
+  cells = FaultSkin.getCells(sk)
+  #fs = FaultSurferSPS(n1,n2,n3,cells)
+  fs = FaultSurferSPS(n1,n2,n3,cells)
+  '''
+  bs = fs.test()
+  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cmap=jetRamp(1.0),
+        clab="PointSetSurface")
+  '''
+
+  sks = fs.applySurferM(4000)
+
+  plot3(gx,skins=sks,png="newSkins")
+  plot3(gx,skins=sk,png="oldSkins")
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,png="newSkin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
+def goFSPSS():
+  print "goFaultSurfer ..."
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  #fb = ScreenFaultSurferClose()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  #cells = fb.removeOutliers(n1,n2,n3,0.95,0.13,cells)
+  sk = fs.findSkins(cells)
+  cells = FaultSkin.getCells(sk)
+  #fs = FaultSurferSPS(n1,n2,n3,cells)
+  fs = FaultSurferPSS(n1,n2,n3,cells)
+  '''
+  bs = fs.test()
+  plot3(gx,bs,cmin=min(bs),cmax=max(bs),cmap=jetRamp(1.0),
+        clab="PointSetSurface")
+  '''
+
+  sks = fs.applySurferM(4000)
+
+  plot3(gx,skins=sks,png="newSkins")
+  plot3(gx,skins=sk,png="oldSkins")
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,png="newSkin"+str(iskin))
+
+  for iskin,skin in enumerate(sk):
+    plot3(gx,skins=[skin],links=True,png="oldSkin"+str(iskin))
+
+
 
 def goFSS():
   print "goBlocker ..."
@@ -316,7 +408,7 @@ def goSPS():
   gx = readImage(gxfile)
   #fc = goNoiseCells()
   #sk = goCleanCells()
-  sk = readSkins(fskclean)
+  sk = readSkins(fskbase)
   for i in range(3):
     fc = FaultSkin.getCells(sk[i])
     #fc = FaultSkin.getCells(sk)
@@ -326,6 +418,10 @@ def goSPS():
     bs = fb.faultIndicator(us)
     plot3(gx,cells=fc,png="cells")
     plot3(gx,bs,cmin=min(bs),cmax=max(bs),cells=fc,fbs=bs,cmap=jetRamp(1.0),
+        clab="ScreenedPoissonSurface",png="sps")
+    bs = mul(div(bs,180),Math.PI)
+    bs = cos(bs)
+    plot3(gx,bs,cmin=min(bs),cmax=max(bs),cmap=jetRamp(1.0),
         clab="ScreenedPoissonSurface",png="sps")
 
 

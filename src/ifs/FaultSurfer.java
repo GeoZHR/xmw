@@ -33,35 +33,6 @@ public class FaultSurfer {
     _ds = ds;
   }
 
-  public void faultImageSmooth(float sigma,
-    float[][][] fl, float[][][] fp, float[][][] ft) {
-    int n3 = fl.length;
-    int n2 = fl[0].length;
-    int n1 = fl[0][0].length;
-    EigenTensors3 d = new EigenTensors3(n1,n2,n3,false);
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float fpi = fp[i3][i2][i1];
-          float fti = ft[i3][i2][i1];
-          float[] u = faultNormalVectorFromStrikeAndDip(fpi,fti);
-          float u1i = u[0];
-          float u2i = u[1];
-          float u3i = u[2];
-          float usi = 1.0f/sqrt(u1i*u1i+u2i*u2i);
-          float w1i = -u2i*usi;
-          float w2i =  u1i*usi;
-          d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
-          d.setEigenvectorW(i1,i2,i3,w1i,w2i,0.f);
-        }
-      }
-    }
-    float c = sigma*sigma*0.5f;
-    d.setEigenvalues(0.25f,1.0f,1.0f);
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter(0.01,50);
-    lsf.apply(d,c,fl,fl);
-
-  }
 
   public float getStrike(FaultSkin sk) {
     float fpa = 0.0f;
@@ -72,16 +43,18 @@ public class FaultSurfer {
     return fpa/nc;
   }
 
-  public FaultSkin[] applySurferM() {
+  public FaultSkin[] applySurferM(int minSkinSize) {
     HashSet<Integer> hsc = new HashSet<Integer>();
     HashSet<FaultSkin> hss = new HashSet<FaultSkin>();
     for (int ic=0; ic<_nc; ++ic) hsc.add(ic);
     int nct = hsc.size();
-    while(nct>5000) {
+    //int minCellSize = round(max(_n2,_n3)*_n1*0.5f);
+    //int minSkinSize = round(max(_n2,_n3)*_n1*0.4f);
+    while(nct>minSkinSize) {
       FaultCell[] fc = findStrike(hsc);
       System.out.println("cells="+fc.length);
-      if(fc.length<4000){break;}
-      FaultSkin[] sks = reskin(fc);
+      if(fc.length<minSkinSize){break;}
+      FaultSkin[] sks = reskin(minSkinSize,fc);
       int nk = sks.length;
       if(nk<1) {break;}
       for (int ik=0; ik<nk; ++ik)
@@ -93,14 +66,14 @@ public class FaultSurfer {
     System.out.println("Skin with remaining cells...");
     int nc = hsc.size();
     System.out.println("nc="+nc);
-    if(nc<4000){return getSkins(hss);}
+    if(nc<minSkinSize){return getSkins(hss);}
     FaultCell[] fcr = new FaultCell[nc];
     int ik=-1;
     for (int ic:hsc) {
       ik++;
       fcr[ik] = _fc[ic];
     }
-    FaultSkin[] sks = reskin(fcr);
+    FaultSkin[] sks = reskin(minSkinSize,fcr);
     int nk = sks.length;
     if(nk<1) {return getSkins(hss);}
     for (ik=0; ik<nk; ++ik) 
@@ -210,7 +183,7 @@ public class FaultSurfer {
     }
     return xc;
   }
-
+  /*
   public FaultSkin[] applySurfer() {
     HashSet<FaultSkin> hfs = new HashSet<FaultSkin>();
     FaultCell[][] fcs = strikePartition();
@@ -240,6 +213,7 @@ public class FaultSurfer {
     return getSkins(hfs);
   }
 
+  */
   private FaultSkin[] getSkins(HashSet<FaultSkin> sk) {
     int nk = sk.size();
     FaultSkin[] sks = new FaultSkin[nk];
@@ -251,18 +225,20 @@ public class FaultSurfer {
     return sks;
   }
 
-  private FaultSkin[] reskin(FaultCell[] fc) {
+  private FaultSkin[] reskin(int minSkinSize,FaultCell[] fc) {
     int d = 40;
     float[][][] fl = new float[_n3][_n2][_n1];
     float[][][] fp = new float[_n3][_n2][_n1];
     float[][][] ft = new float[_n3][_n2][_n1];
+    //int minSkinSize = round(max(_n2,_n3)*_n1*0.4f);
     fl = faultImagesFromCells(d,fc,fp,ft);
     //fl = cellVoteForFaultImage(fc,fp,ft);
     //fl = reconstructFaultImagesFromCells(fc,fp,ft);
     //fl = recomputeFaultImagesFromCells(fc,fp,ft);
     FaultSkinner fs = new FaultSkinner();
     fs.setGrowLikelihoods(0.1f,0.3f);
-    fs.setMinSkinSize(round(d*d*4));
+    //fs.setMinSkinSize(round(d*d*4));
+    fs.setMinSkinSize(minSkinSize);
     //fs.setMaxDeltaLikelihood(0.2);
     FaultCell[] cells = fs.findCells(new float[][][][] {fl,fp,ft});
     return fs.findSkins(cells);
@@ -914,12 +890,8 @@ public class FaultSurfer {
     int i1p = is[0]+ds[0]; if(i1p>=ns[0]){i1p=ns[0]-1;}
     int i2p = is[1]+ds[1]; if(i2p>=ns[1]){i2p=ns[1]-1;}
     int i3p = is[2]+ds[2]; if(i3p>=ns[2]){i3p=ns[2]-1;}
-    xmin[0] = i1m;
-    xmin[1] = i2m;
-    xmin[2] = i3m;
-    xmax[0] = i1p;
-    xmax[1] = i2p;
-    xmax[2] = i3p;
+    xmin[0] = i1m; xmin[1] = i2m; xmin[2] = i3m;
+    xmax[0] = i1p; xmax[1] = i2p; xmax[2] = i3p;
   }
 
   private FaultCell[][] strikePartition() {

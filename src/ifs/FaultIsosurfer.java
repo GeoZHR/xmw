@@ -75,7 +75,7 @@ public class FaultIsosurfer {
       uf[1][ic] = u2;
       uf[2][ic] = u3;
     }
-    nearestInterp(xf,uf,wf,us);
+    //nearestInterp(xf,uf,wf,us);
     return us;
   }
 

@@ -531,7 +531,7 @@ public class FlattenerRTS {
     }
   }
 
-    private static void applyLhsSlice3(
+  private static void applyLhsSlice3(
     int i3, float[][][] wp, float[][][][] x, float[][][][] y) 
   {
     int n2 = x[0][0].length;
@@ -848,9 +848,6 @@ public class FlattenerRTS {
   private static void updateParameters(
     float[][][] r, float[][][] p, float[][][] q)
   {
-    int n1 = p[0][0].length;
-    int n2 = p[0].length;
-    int np = p.length;
     for (int i=0; i<3; ++i) // shift normal vectors and ep
       applyShiftsLinear(r,p[i],q[i]);
     normalize(q[0],q[1]);
@@ -858,10 +855,6 @@ public class FlattenerRTS {
 
   private static void updateParameters(
     float[][][][] r, float[][][][] p, float[][][][] q) {
-    int n1 = p[0][0][0].length;
-    int n2 = p[0][0].length;
-    int n3 = p[0].length;
-    int np = p.length;
     for (int i=0; i<4; ++i) // shift normal vectors and ep
       applyShiftsLinear(r,p[i],q[i]);
     normalize(q[0],q[1],q[2]);
@@ -869,8 +862,8 @@ public class FlattenerRTS {
 
   // Normalize vectors
   private static void normalize(float[][] a1, float[][] a2) {
-    int n1 = a1[0].length;
     int n2 = a1.length;
+    int n1 = a1[0].length;
     for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
         float a1i = a1[i2][i1];

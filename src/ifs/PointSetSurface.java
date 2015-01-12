@@ -23,12 +23,6 @@ public class PointSetSurface {
     return scalarField(n1,n2,n3,fc);
   }
 
-  public FaultCell[] getCells(FaultSkin[] fs) {
-    FaultSkin[] fsi = new FaultSkin[2];
-    fsi[0] = fs[2];
-    fsi[1] = fs[3];
-    return FaultSkin.getCells(fs);
-  }
 
   private float[][][] setKdTreePoints(FaultCell[] fc) {
     int nc = fc.length;
@@ -45,6 +39,50 @@ public class PointSetSurface {
     }
     return xu;
   }
+
+  private float[][][] setKdTreeNodes(
+    int n1, int n2, int n3, 
+    FaultCell[] fc, int[][] bb2, int[][] bb3)
+  {
+    int nc = fc.length;
+    float[][][] xu = new float[2][3][nc];
+    for (int i1=0; i1<n1; ++i1) {
+      bb2[i1][0] = n2; bb2[i1][1] = -n2;
+      bb3[i1][0] = n3; bb3[i1][1] = -n3;
+    }
+    for (int ic=0; ic<nc; ic++) {
+      int i1 = fc[ic].i1;
+      int i2 = fc[ic].i2;
+      int i3 = fc[ic].i3;
+
+      float w1 = fc[ic].w1;
+      float w2 = fc[ic].w2;
+      float w3 = fc[ic].w3;
+
+      xu[0][0][ic] = i1;
+      xu[0][1][ic] = i2;
+      xu[0][2][ic] = i3;
+      xu[1][0][ic] = w1;
+      xu[1][1][ic] = w2;
+      xu[1][2][ic] = w3;
+
+      int b2l = bb2[i1][0];
+      int b2r = bb2[i1][1];
+      if(i2<b2l) bb2[i1][0] = i2;
+      if(i2>b2r) bb2[i1][1] = i2;
+      int b3l = bb3[i1][0];
+      int b3r = bb3[i1][1];
+      if(i3<b3l) bb3[i1][0] = i3;
+      if(i3>b3r) bb3[i1][1] = i3;
+    }
+
+    for (int i1=0; i1<n1; ++i1) {
+      bb2[i1][0] -= 5; bb3[i1][0] -= 5;
+      bb2[i1][1] += 5; bb3[i1][1] += 5;
+    }
+    return xu;
+  }
+
 
   public void alignNormals(int n1, int n2, int n3, FaultCell[] fc) {
     int nc = fc.length;
@@ -125,51 +163,82 @@ public class PointSetSurface {
   public float[][][] scalarField(
     final int n1, final int n2, final int n3, FaultCell[] fc) 
   {
-    final int d2=10;
-    final int d3=10;
-    final int d1=15;
+    final int dt=20;
     final float v = -30.f;
-    final float[][][] xu = setKdTreePoints(fc);
+    final int[][] bb2 = new int[n1][2];
+    final int[][] bb3 = new int[n1][2];
+    final int[] ns = new int[]{n1,n2,n3};
+    final float[][][] xu = setKdTreeNodes(n1,n2,n3,fc,bb2,bb3);
     final int[] bs1 = setBounds(n1,xu[0][0]);
     final int[] bs2 = setBounds(n2,xu[0][1]);
     final int[] bs3 = setBounds(n3,xu[0][2]);
     final KdTree kt = new KdTree(xu[0]);
+    final float st = (float)sin(Math.PI/8);
     final float[][][] sf = fillfloat(v,n1,n2,n3);
     Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
     public void compute(int i3) {
+      //for (int i3=bs3[0]; i3<bs3[1]; ++i3) {
       float[] xmin = new float[3];
       float[] xmax = new float[3];
       System.out.println("i3="+i3);
       for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
         for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
-          float[] y = new float[]{i1,i2,i3};
-          int ne = kt.findNearest(y);
-          float x1 = xu[0][0][ne];
-          float x2 = xu[0][1][ne];
-          float x3 = xu[0][2][ne];
-          float dd = distance(new float[]{x1,x2,x3},y);
-          if(dd>10.0f){continue;}
-          getRange(d1,d2,d3,i1,i2,i3,n1,n2,n3,xmin,xmax);
-          int[] id = kt.findInRange(xmin,xmax);
-          int nd = id.length;
-          if(nd<d2*d1/2){continue;}
-          float[][] xf = new float[3][nd];
-          float[][] uf = new float[3][nd];
+          if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
+          if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
+          int[] id = null;
+          int di = 10,nd = 0;
+          int[] is = new int[]{i1,i2,i3};
+          while(nd<20 && di<=dt) {
+            int[] ds=new int[]{di,di,di};
+            getRange(ds,is,ns,xmin,xmax);
+            id = kt.findInRange(xmin,xmax);
+            nd = id.length;
+            di += 2;
+          }
+          if(nd<10){continue;}
+          ArrayList<Float> dxl = new ArrayList<Float>();
+          ArrayList<float[]> xpl = new ArrayList<float[]>();
+          ArrayList<float[]> upl = new ArrayList<float[]>();
           for (int ik=0; ik<nd; ++ik) {
             int ip = id[ik];
-            xf[0][ik] = xu[0][0][ip];
-            xf[1][ik] = xu[0][1][ip];
-            xf[2][ik] = xu[0][2][ip];
-            uf[0][ik] = xu[1][0][ip];
-            uf[1][ik] = xu[1][1][ip];
-            uf[2][ik] = xu[1][2][ip];
+            float x1 = xu[0][0][ip];
+            float x2 = xu[0][1][ip];
+            float x3 = xu[0][2][ip];
+            float w1 = xu[1][0][ip];
+            float w2 = xu[1][1][ip];
+            float w3 = xu[1][2][ip];
+            float d1 = x1-i1;
+            float d2 = x2-i2;
+            float d3 = x3-i3;
+            float d11 = d1*d1;
+            float d22 = d2*d2;
+            float d33 = d3*d3;
+            float dsi = d11+d22+d33;
+            float wdi = w1*d1+w2*d2+w3*d3;
+            if(dsi!=0.0f&&abs(wdi/sqrt(dsi))>st){continue;}
+            xpl.add(new float[]{x1,x2,x3});
+            upl.add(new float[]{w1,w2,w3});
+            dxl.add(sqrt(0.5f*dsi/(di*di)));
           }
-          float[] r = scalarField(1.0f,y,xf,uf);
+          int np = dxl.size();
+          if(np<10){continue;}
+          float[] dx = new float[np];
+          float[][] xp = new float[3][np];
+          float[][] up = new float[3][np];
+          for (int ip=0; ip<np; ++ip) {
+            dx[ip] = dxl.get(ip);
+            float[] xi = xpl.get(ip);
+            float[] ui = upl.get(ip);
+            xp[0][ip] = xi[0]; up[0][ip] = ui[0];
+            xp[1][ip] = xi[1]; up[1][ip] = ui[1];
+            xp[2][ip] = xi[2]; up[2][ip] = ui[2];
+          }
+          float[] r = scalarField(dx,is,xp,up);
           sf[i3][i2][i1] = r[0];
         }
       }
+      //}
     }});
-    //cleanScalarField(sf,mk);
     return sf;
   }
 
@@ -182,45 +251,6 @@ public class PointSetSurface {
     bs[0] = n1m;
     bs[1] = n1p;
     return bs;
-  }
-
-
-  private void cleanScalarFieldM(float[][][] sf, float[][][] mk) {
-    int n3 = sf.length;
-    int n2 = sf[0].length;
-    int n1 = sf[0][0].length;
-    int nk = round(sum(mk));
-    float[][] xf = new float[3][n3*n2*n1-nk];
-    int ik = 0;
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float mki = mk[i3][i2][i1];
-          if(mki==0.0f) {
-            xf[0][ik] = i1;
-            xf[1][ik] = i2;
-            xf[2][ik] = i3;
-            ik++;
-          }
-        }
-      }
-    }
-    KdTree kt = new KdTree(xf);
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float mki = mk[i3][i2][i1];
-          if(mki==1.0f) {
-            int id = kt.findNearest(new float[]{i1,i2,i3});
-            int x1 = round(xf[0][id]);
-            int x2 = round(xf[1][id]);
-            int x3 = round(xf[2][id]);
-            sf[i3][i2][i1] = sf[x3][x2][x1];
-          }
-        }
-      }
-    }
-
   }
 
   private float scalarFieldS(float h, float[] y,float[][] xp, float[][] up) {
@@ -245,63 +275,22 @@ public class PointSetSurface {
     return c/sum(wp);
   }
 
-  private void cleanScalarField(float[][][] sf, float[][][] mk) {
-    int n3 = sf.length;
-    int n2 = sf[0].length;
-    int n1 = sf[0][0].length;
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          if(mk[i3][i2][i1]==0.0f)
-            continue;
-          int cot = 0;
-          float sfv = 0.0f;
-          for(int d=1; d<5; ++d) {
-            for(int d3=0; d3<d; ++d3) {
-              for(int d2=0; d2<d; ++d2) {
-                for(int d1=0; d1<d; ++d1) {
-                  int i1p = i1+d1; if(i1p>=n1){i1p=n1-1;}
-                  int i2p = i2+d2; if(i2p>=n2){i2p=n2-1;}
-                  int i3p = i3+d3; if(i3p>=n3){i3p=n3-1;}
-                  int i1m = i1-d1; if(i1m<0){i1m=0;}
-                  int i2m = i2-d2; if(i2m<0){i2m=0;}
-                  int i3m = i3-d3; if(i3m<0){i3m=0;}
-                  if(mk[i3m][i2m][i1m]==0.0f) {
-                    cot++;
-                    sfv += sf[i3m][i2m][i1m];
-                  }
-                  if(mk[i3p][i2p][i1p]==0.0f) {
-                    cot++;
-                    sfv += sf[i3p][i2p][i1p];
-                  }
-                }
-                if(cot>2) {
-                  sf[i3][i2][i1] = sfv/cot;
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  private static float[] scalarField(float h, float[] xp, float[][] xf, float[][] uf) {
+  private static float[] scalarField(
+    float[] dx, int[] xp, float[][] xf, float[][] uf) {
     int np = xf[0].length;
     float[] r = new float[2];
-    float[] wp = fillfloat(1.0f,np);
-    //float[] wp = computeWeights(h,dx,xp,xf);
-    float[] wn = normalizeWeights(wp);
+    //float[] wp = fillfloat(1f,np);
+    float[] wp = weightFunc(dx);
+    float[] wn = div(wp,sum(wp));
     float x0 = 1.0f;
     float x1 = xp[0];
     float x2 = xp[1];
     float x3 = xp[2];
     float x4 = x1*x1+x2*x2+x3*x3;
-    float beta = 1.0f;
     float c1 = 0.0f;
     float d1 = 0.0f;
     float b1 = 0.0f;
+    float bt = 1.0f;
     float[] wpu = new float[3];
     float[] wnu = new float[3];
     float[] wpx = new float[3];
@@ -337,7 +326,7 @@ public class PointSetSurface {
     }
     float c2 = wnx[0]*wpu[0]+wnx[1]*wpu[1]+wnx[2]*wpu[2];
     float d2 = wnx[0]*wpx[0]+wnx[1]*wpx[1]+wnx[2]*wpx[2];
-    float u4 = beta*(c1-c2)/(d1-d2);
+    float u4 = bt*(c1-c2)/(d1-d2);
     if(np==1){u4=0.0f;}
     if(d1-d2==0.0f||abs(u4)>1.0f){
       r[1] = 1.0f;
@@ -351,66 +340,15 @@ public class PointSetSurface {
     return r;
   }
 
-
-  private static float[] normalizeWeights(float[] wp) {
-    int np = wp.length;
-    float sum = 1.0f/sum(wp);
-    float[] wn = new float[np];
-    for (int ip=0; ip<np; ++ip) {
-      wn[ip] = wp[ip]*sum;
-    }
-    return wn;
-  }
-
-  private static float[] computeWeights(float h, float[] dx, float[] xp, float[][] xf) {
-    int np = xf[0].length;
+  private static float[] weightFunc(float[] dx) {
+    int np = dx.length;
     float[] wp = new float[np];
-    MedianFinder mf = new MedianFinder(np);
-    float md = mf.findMedian(abs(dx));
-    md *= h;
     for (int ip=0; ip<np; ++ip) {
-      float x = abs(dx[ip])/md;
-      if(x<1.0f) {
-        float wi = pow(x,2.f);
-        wp[ip] = pow((1.0f-wi),4.0f);
-      } else {
-        wp[ip] = 0.0f;
-      }
+      float x = dx[ip];
+      if(x<1.0f){wp[ip]=pow((1.0f-x*x),4);}
+      else {wp[ip]=0.0001f;}
     }
     return wp;
-  }
-
-  private static float distance(float[] x, float[] y) {
-    float d1 = y[0]-x[0];
-    float d2 = y[1]-x[1];
-    float d3 = y[2]-x[2];
-    return sqrt(d1*d1+d2*d2+d3*d3);
-  }
-
-  private static float distance(float[] x, float[] u, float[] y) {
-    float d1 = y[0]-x[0];
-    float d2 = y[1]-x[1];
-    float d3 = y[2]-x[2];
-    float du = d1*u[0]+d2*u[1]+d3*u[2];
-    return du;
-  }
-
-
-  private static void getRange(int d1, int d2, int d3, int i1, int i2, int i3, 
-    int n1, int n2, int n3, float[] xmin, float[] xmax) 
-  {
-    int i1m = i1-d1; if(i1m<0){i1m=0;}
-    int i2m = i2-d2; if(i2m<0){i2m=0;}
-    int i3m = i3-d3; if(i3m<0){i3m=0;}
-    int i1p = i1+d1; if(i1p>=n1){i1p=n1-1;}
-    int i2p = i2+d2; if(i2p>=n2){i2p=n2-1;}
-    int i3p = i3+d3; if(i3p>=n3){i3p=n3-1;}
-    xmin[0] = i1m;
-    xmin[1] = i2m;
-    xmin[2] = i3m;
-    xmax[0] = i1p;
-    xmax[1] = i2p;
-    xmax[2] = i3p;
   }
 
   private static void getRange(int[] ds, int[] is, int[] ns, 
@@ -421,12 +359,8 @@ public class PointSetSurface {
     int i1p = is[0]+ds[0]; if(i1p>=ns[0]){i1p=ns[0]-1;}
     int i2p = is[1]+ds[1]; if(i2p>=ns[1]){i2p=ns[1]-1;}
     int i3p = is[2]+ds[2]; if(i3p>=ns[2]){i3p=ns[2]-1;}
-    xmin[0] = i1m;
-    xmin[1] = i2m;
-    xmin[2] = i3m;
-    xmax[0] = i1p;
-    xmax[1] = i2p;
-    xmax[2] = i3p;
+    xmin[0] = i1m; xmin[1] = i2m; xmin[2] = i3m;
+    xmax[0] = i1p; xmax[1] = i2p; xmax[2] = i3p;
   }
 
 

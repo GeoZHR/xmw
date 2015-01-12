@@ -6,7 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package uff;
 
-import ipf.*;
+import ifs.*;
 import java.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -32,7 +32,9 @@ public class ConstraintsFromFaults {
     faultMap(_fm);
   }
 
-  public float[][][] getWeightsAndConstraints(float[][][] ws, float[][][] cp) {
+  public float[][][] getWeightsAndConstraints(
+    float[][][] ws, float[][][] cp) 
+  {
     setWeightsOnFault(ws);
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
     for (FaultSkin fs:_fss) {
@@ -45,19 +47,16 @@ public class ConstraintsFromFaults {
         float xs1 = cx[0]+cs[0];
         float xs2 = cx[1]+cs[1];
         float xs3 = cx[2]+cs[2];
-        hx[0] = bound1(round(xs1));
-        hx[1] = bound2(round(xs2));
-        hx[2] = bound3(round(xs3));
-        fx = copy(hx);
+        fx[0]=hx[0]=bound1(round(xs1));
+        fx[1]=hx[1]=bound2(round(xs2));
+        fx[2]=hx[2]=bound3(round(xs3));
         if(!nearestFaultCell(hx)){hx=copy(fx);}
         boolean valid = false;
-        float w2 = abs(cw[1]);
-        float w3 = abs(cw[2]);
+        float w2 = abs(cw[1]), w3 = abs(cw[2]);
         if (w2>w3) {valid = shift2(2.0f,cw[1],fx,hx);} 
         else       {valid = shift3(2.0f,cw[2],fx,hx);}
         if(valid) {
-          onFault(fx,ws);
-          onFault(hx,ws);
+          onFault(fx,ws); onFault(hx,ws);
           cl.add(new float[][]{fx,hx,mul(cs,0.5f)});
           addPoints(fx,hx,cp);
         }
@@ -99,10 +98,9 @@ public class ConstraintsFromFaults {
       float xs1 = cx[0]+cs[0];
       float xs2 = cx[1]+cs[1];
       float xs3 = cx[2]+cs[2];
-      hx[0] = bound1(round(xs1));
-      hx[1] = bound2(round(xs2));
-      hx[2] = bound3(round(xs3));
-      fx = copy(hx);
+      fx[0]=hx[0]=bound1(round(xs1));
+      fx[1]=hx[1]=bound2(round(xs2));
+      fx[2]=hx[2]=bound3(round(xs3));
       if(!nearestFaultCell(hx)){hx=copy(fx);}
       boolean valid = false;
       float w2 = abs(cw[1]);
@@ -156,40 +154,40 @@ public class ConstraintsFromFaults {
     return fl;
   }
 
+  private boolean moveToNearestCell(float[] x) {
+    float x1 = x[0];
+    float x2 = x[1];
+    float x3 = x[2];
+    float[][] xp = setKdTreePoints(x1);
+    if(xp==null) return false;
+    KdTree kt = new KdTree(xp);
+    int id = kt.findNearest(new float[]{x2,x3});
+    float p2 = xp[0][id]; 
+    float p3 = xp[1][id];
+    float d2 = x2-p2; 
+    float d3 = x3-p3;
+    float ds = sqrt(d2*d2+d3*d3);
+    if(ds>5f){return false;}
+    else     {x[1]=p2;x[2]=p3;return true;}
+  }
 
-  private boolean badQuality(float[] cx, float[] cs) {
-    float qx = 0.0f;
-    float qy = 0.0f;
-    float sc = 1.f/4.f;
-    int x1 = round(cx[0]);
-    int x2 = round(cx[1]);
-    int x3 = round(cx[2]);
-    int x2m = bound2(x2-2);
-    int x2p = bound2(x2+2);
-    int x3m = bound2(x3-2);
-    int x3p = bound2(x3+2);
-    qx += _w[x3m][x2 ][x1];
-    qx += _w[x3p][x2 ][x1];
-    qx += _w[x3 ][x2m][x1];
-    qx += _w[x3 ][x2p][x1];
-    if(qx*sc<.3f){return true;}
-    float[] cy = add(cx,cs);
-    cy[0] = bound1(round(cy[0]));
-    if(nearestFaultCell(cy)) {
-      int y1 = round(cy[0]);
-      int y2 = round(cy[1]);
-      int y3 = round(cy[2]);
-      int y2m = bound2(y2-2);
-      int y2p = bound2(y2+2);
-      int y3m = bound2(y3-2);
-      int y3p = bound2(y3+2);
-      qy += _w[y3m][y2 ][y1];
-      qy += _w[y3p][y2 ][y1];
-      qy += _w[y3 ][y2m][y1];
-      qy += _w[y3 ][y2p][y1];
-      if(qy*sc<.3f){return true;}
-    }
-    return false;
+  private float[][] setKdTreePoints(float x1) {
+    int i1 = round(x1);
+    HashSet<Integer> x2 = new HashSet<Integer>();
+    HashSet<Integer> x3 = new HashSet<Integer>();
+    for (int i3=0; i3<_n3; ++i3) 
+    for (int i2=0; i2<_n2; ++i2) 
+      if(_fm[i3][i2][i1]==1) {
+        x2.add(i2); x3.add(i3);
+      }
+    int np = x2.size();
+    if(np==0) return null;
+    float[][] xp = new float[2][np];
+    int k2 = 0;
+    for (int i2:x2) {xp[0][k2]=i2;k2++;}
+    int k3 = 0;
+    for (int i3:x3) {xp[1][k3]=i3;k3++;}
+    return xp;
   }
 
   private boolean nearestFaultCell(float[] xi) {
@@ -284,8 +282,8 @@ public class ConstraintsFromFaults {
     c[1] -= ds2;
     c[2] -= ds1;
     int c1 = round(c[0]);
-    int c3 = round(c[2]);
     int c2 = round(c[1]);
+    int c3 = round(c[2]);
     if(onBound(c1,c2,c3)){return false;}
 
     k[1] +=ds2;
