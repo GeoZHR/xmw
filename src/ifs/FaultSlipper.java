@@ -226,7 +226,8 @@ public class FaultSlipper {
           }
         }
       }
-      bg.gridBlended(st,sp,sq[is]);
+      sq[is] = copy(sp);
+      //bg.gridBlended(st,sp,sq[is]);
     }
     return sq;
   }

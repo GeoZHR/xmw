@@ -117,13 +117,14 @@ public class FaultSurferSPS {
     int n3 = fb.length;
     int n2 = fb[0].length;
     int n1 = fb[0][0].length;
+    float hpi = (float)Math.PI*0.5f;
     float[][][] fl = new float[n3][n2][n1];
-    float sc = (float)Math.PI/180f;
     for (int i3=0; i3<n3; ++i3) 
     for (int i2=0; i2<n2; ++i2) 
       for (int i1=0; i1<n1; ++i1) {
-        float fbi = fb[i3][i2][i1]*sc;
-        fl[i3][i2][i1] = pow(cos(fbi),2000f);
+        float fbi = fb[i3][i2][i1];
+        if(abs(fbi)>hpi){continue;}
+        fl[i3][i2][i1] = cos(fbi);
       }
     return fl;
   }

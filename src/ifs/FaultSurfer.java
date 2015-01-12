@@ -214,16 +214,28 @@ public class FaultSurfer {
   }
 
   */
-  private FaultSkin[] getSkins(HashSet<FaultSkin> sk) {
-    int nk = sk.size();
-    FaultSkin[] sks = new FaultSkin[nk];
+
+  private FaultSkin[] getSkins(HashSet<FaultSkin> hsk) {
     int ik = 0;
-    for (FaultSkin ski:sk) {
-      sks[ik] = ski;
+    int nk = hsk.size();
+    int[] np = new int[nk];
+    int[] ip = new int[nk];
+    FaultSkin[] sk  = new FaultSkin[nk];
+    FaultSkin[] sks = new FaultSkin[nk];
+    for (FaultSkin ski:hsk) {
+      ip[ik] = ik;
+      sk[ik] = ski;
+      np[ik] = ski.size();
       ik++;
+    }
+    quickIndexSort(np,ip);
+    for (ik=0; ik<nk; ++ik) {
+      int id = ip[nk-ik-1];
+      sks[ik] = sk[id];
     }
     return sks;
   }
+
 
   private FaultSkin[] reskin(int minSkinSize,FaultCell[] fc) {
     int d = 40;

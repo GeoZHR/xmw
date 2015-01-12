@@ -34,6 +34,7 @@ ft2file = "ft2" # fault slip interpolated (2nd component)
 ft3file = "ft3" # fault slip interpolated (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skins after reskinning (basename only)
+fskmbase = "fskm" # fault skin (basename only)
 r1file = "r1"
 r2file = "r2"
 r3file = "r3"
@@ -90,8 +91,25 @@ def main(args):
   #goUnfold()
   #goFlatten()
   #goDisplay()
-  goPSS()
+  #goPSS()
+  goFS()
 
+def goFS():
+  print "goFaultSurfer ..."
+  gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  cells = FaultSkin.getCells(sk)
+  #fs = FaultSurferSPS(n1,n2,n3,cells)
+  fs = FaultSurfer(n1,n2,n3,cells)
+
+  sks = fs.applySurferM(4000)
+  removeAllSkinFiles(fskmbase)
+  writeSkins(fskmbase,sks)
+
+  plot3(gx,skins=sks,png="newSkins")
+  plot3(gx,skins=sk,png="oldSkins")
+  for ik in range(10):
+    plot3(gx,skins=[sks[ik]],links=True)
 
 def goPSS():
   print "goBlocker ..."

@@ -81,7 +81,6 @@ public class ScreenPoissonSurfer {
     final float sth = (float)sin(Math.PI/18.0);
     Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
     public void compute(int i3) {
-      //for (int i3=bs3[0]; i3<bs3[1]; ++i3) {
       float[] xmin = new float[3];
       float[] xmax = new float[3];
       System.out.println("i3="+i3);
@@ -125,7 +124,6 @@ public class ScreenPoissonSurfer {
           us[0][i3][i2][i1] = fc[ic].fl*(1.f-st);
         }
       }
-      //}
     }});
 
   }

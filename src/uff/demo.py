@@ -80,14 +80,15 @@ def main(args):
   goThin()
   goSmooth()
   goBetterSkin()
-  goSlip()
   '''
-  goSlipOneByOne()
+  goSlip()
+  #goCPT()
+  #goSlipOneByOne()
   #goUnfaultAndUnfold()
   #goUnfault()
   #goUnfold()
-  #goUnfaultAndUnfoldc(True)
   '''
+  goUnfaultAndUnfoldc(True)
   goUnfoldc2()
   goUnfoldc()
   goFlatten2()
@@ -301,6 +302,33 @@ def goSlip():
   plot3(gx)
   plot3(gw,clab="Amplitude",png="gw")
 
+def goCPT():
+  print "goCPT ..."
+  smark = -999.999
+  gx = readImage(gxfile)
+  s1 = readImage(fs1file)
+  s2 = readImage(fs2file)
+  s3 = readImage(fs3file)
+  cpt = ClosestPointTransform()
+  ds = zerofloat(n1,n2,n3)
+  k1 = zeroshort(n1,n2,n3)
+  k2 = zeroshort(n1,n2,n3)
+  k3 = zeroshort(n1,n2,n3)
+  cpt.apply(smark,s1,ds,k1,k2,k3)
+  plot3(gx,ds,cmin=0.0,cmax=40.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  '''
+  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+  gw = fsl.unfault([s1,s2,s3],gx)
+  writeImage(gwfile,gw)
+  plot3(gx)
+  plot3(gw,clab="Amplitude",png="gw")
+  '''
+
+
 def goSlipOneByOne():
   print "goSlip ..."
   gx = readImage(gxfile)
@@ -404,7 +432,7 @@ def goUnfaultAndUnfold():
     #fm = cfs.getFaultMap()
     p = array(u1,u2,u3,wp)
     flattener = FlattenerRTS(6.0,6.0)
-    flattener.setIters(20,1)
+    flattener.setIters(40,1)
     fl = mul(pow(cs[3][0],2.0),2.0)
     [r1,r2,r3] = flattener.findShifts(cs[0],cs[1],cs[2],fm,fl,p)
     flattener.applyShifts([r1,r2,r3],gx,fc)
