@@ -148,8 +148,8 @@ def goFS():
     sksOld.append(skinsOld[ik])
     sksNew.append(skinsNew[ik])
     if(ik<6):
-      plot3(gx,skins=skinsOld[ik])
-      plot3(gx,skins=skinsNeW[ik])
+      plot3(gx,skins=[skinsOld[ik]])
+      plot3(gx,skins=[skinsNeW[ik]])
   plot3(gx,skins=sks)
 
 
