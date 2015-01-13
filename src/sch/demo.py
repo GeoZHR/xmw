@@ -76,7 +76,7 @@ maxThrow = 20.0
 pngDir = "../../../png/sch/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out other parts that have already written results to files.
@@ -142,9 +142,14 @@ def goFS():
     skinsNew = readSkins(fsmbase)
   plot3(gx,skins=skinsNew,png="newSkins")
   plot3(gx,skins=skinsOld,png="oldSkins")
-  sks = []
+  sksOld = []
+  sksNew = []
   for ik in range(20):
-    sks.append(skinsNew[ik])
+    sksOld.append(skinsOld[ik])
+    sksNew.append(skinsNew[ik])
+    if(ik<6):
+      plot3(gx,skins=skinsOld[ik])
+      plot3(gx,skins=skinsNeW[ik])
   plot3(gx,skins=sks)
 
 
