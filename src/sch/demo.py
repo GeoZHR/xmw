@@ -134,9 +134,12 @@ def goFS():
     skinSort = fs.sortSkins(skinsOld)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skinSort)
+    skinsNew = readSkins(fsmbase)
+    '''
     skinsNew = fs.applySurferM(8000)
     removeAllSkinFiles(fsmbase)
     writeSkins(fsmbase,skinsNew)
+    '''
   else :
     skinsOld = readSkins(fskbase)
     skinsNew = readSkins(fsmbase)
@@ -150,7 +153,8 @@ def goFS():
     if(ik<6):
       plot3(gx,skins=[skinsOld[ik]])
       plot3(gx,skins=[skinsNew[ik]])
-  plot3(gx,skins=sks)
+  plot3(gx,skins=sksNew)
+  plot3(gx,skins=sksOld)
 
 
 def goShow():
