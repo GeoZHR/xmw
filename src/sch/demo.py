@@ -35,7 +35,7 @@ ft3file = "ft3" # fault slip interpolated (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skins after reskinning (basename only)
 fsibase = "fsi" # fault skins after reskinning (basename only)
-fskmbase = "fskm" # fault skins after reskinning (basename only)
+fsmbase = "fsm" # fault skins after reskinning (basename only)
 fsgbase = "fsg"
 r1file = "r1"
 r2file = "r2"
@@ -129,20 +129,23 @@ def goFS():
     fs.setMinSkinSize(minSkinSize)
     cells = fs.findCells([fl,fp,ft])
     skinsOld = fs.findSkins(cells)
-    removeAllSkinFiles(fskbase)
-    writeSkins(fskbase,skinsOld)
     cells = FaultSkin.getCells(skinsOld)
     fs = FaultSurfer(n1,n2,n3,cells)
+    skinSort = fs.sortSkins(skinsOld)
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skinSort)
     skinsNew = fs.applySurferM(8000)
-    removeAllSkinFiles(fskmbase)
-    writeSkins(fskmbase,skinsNew)
+    removeAllSkinFiles(fsmbase)
+    writeSkins(fsmbase,skinsNew)
   else :
     skinsOld = readSkins(fskbase)
-    skinsNew = readSkins(fskmbase)
+    skinsNew = readSkins(fsmbase)
   plot3(gx,skins=skinsNew,png="newSkins")
   plot3(gx,skins=skinsOld,png="oldSkins")
-  for ik in range(10):
-    plot3(gx,skins=[skinsNew[ik]])
+  sks = []
+  for ik in range(20):
+    sks.append(skinsNew[ik])
+  plot3(gx,skins=sks)
 
 
 def goShow():

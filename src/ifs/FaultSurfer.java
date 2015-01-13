@@ -33,6 +33,28 @@ public class FaultSurfer {
     _ds = ds;
   }
 
+  public FaultSkin[] sortSkins(FaultSkin[] fsk) {
+    int ik = 0;
+    int nk = fsk.length;
+    int[] np = new int[nk];
+    int[] ip = new int[nk];
+    FaultSkin[] sk  = new FaultSkin[nk];
+    FaultSkin[] sks = new FaultSkin[nk];
+    for (FaultSkin ski:fsk) {
+      ip[ik] = ik;
+      sk[ik] = ski;
+      np[ik] = ski.size();
+      ik++;
+    }
+    quickIndexSort(np,ip);
+    for (ik=0; ik<nk; ++ik) {
+      int id = ip[nk-ik-1];
+      sks[ik] = sk[id];
+    }
+    return sks;
+  }
+
+
 
   public float getStrike(FaultSkin sk) {
     float fpa = 0.0f;
@@ -238,7 +260,7 @@ public class FaultSurfer {
 
 
   private FaultSkin[] reskin(int minSkinSize,FaultCell[] fc) {
-    int d = 20;
+    int d = 30;
     float[][][] fl = new float[_n3][_n2][_n1];
     float[][][] fp = new float[_n3][_n2][_n1];
     float[][][] ft = new float[_n3][_n2][_n1];
