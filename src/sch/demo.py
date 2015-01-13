@@ -35,6 +35,7 @@ ft3file = "ft3" # fault slip interpolated (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skins after reskinning (basename only)
 fsibase = "fsi" # fault skins after reskinning (basename only)
+fskmbase = "fskm" # fault skins after reskinning (basename only)
 fsgbase = "fsg"
 r1file = "r1"
 r2file = "r2"
@@ -114,45 +115,35 @@ def goCleanCells():
   plot3(gx,skins=sk,clab="oldSkins")
   plot3(gx,skins=sks,clab="newSkins")
 
-
 def goFS():
   print "goFaultSurfer ..."
   gx = readImage(gxfile)
-  '''
-  sk = readSkins(fskbase)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  cells = FaultSkin.getCells(sk)
-  ff = FaultSurfer(n1,n2,n3,cells)
-  ff.faultImageSmooth(4.0,fl,fp,ft)
-  div(fl,max(fl),fl)
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMinSkinSize(minSkinSize)
-  cells = fs.findCells([fl,fp,ft])
-  sks = fs.findSkins(cells)
-  cells = FaultSkin.getCells(sks)
-  fs = FaultSurfer(n1,n2,n3,cells)
-  sks = fs.applySurferM()
-  removeAllSkinFiles(fsgbase)
-  writeSkins(fsgbase,sks)
-  '''
-  sks = readSkins(fsgbase)
-  #plot3(gx,skins=sk,png="oldSkins")
-  #plot3(gx,skins=sks,png="newSkins")
-  '''
-  skk=[sks[12],sks[17],sks[29],sks[63],sks[42],
-       sks[106],sks[117],sks[127],sks[76],sks[43]]
-  '''
-  plot3(gx,skins=sks,png="newSkins")
-  for i in range(len(sks)):
-    skin=sks[i]
-    cells=FaultSkin.getCells(skin)
-    if(len(cells)>20000):
-      plot3(gx,skins=[skin],clab=str(i))
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMinSkinSize(minSkinSize)
+    cells = fs.findCells([fl,fp,ft])
+    skinsOld = fs.findSkins(cells)
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skinsOld)
+    cells = FaultSkin.getCells(skinsOld)
+    fs = FaultSurfer(n1,n2,n3,cells)
+    skinsNew = fs.applySurferM(8000)
+    removeAllSkinFiles(fskmbase)
+    writeSkins(fskmbase,skinsNew)
+  else :
+    skinsOld = readSkins(fskbase)
+    skinsNew = readSkins(fskmbase)
+  plot3(gx,skins=skinsNew,png="newSkins")
+  plot3(gx,skins=skinsOld,png="oldSkins")
+  for ik in range(10):
+    plot3(gx,skins=[skinsNew[ik]])
+
 
 def goShow():
   print "goFaultSurfer ..."

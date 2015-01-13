@@ -238,7 +238,7 @@ public class FaultSurfer {
 
 
   private FaultSkin[] reskin(int minSkinSize,FaultCell[] fc) {
-    int d = 40;
+    int d = 20;
     float[][][] fl = new float[_n3][_n2][_n1];
     float[][][] fp = new float[_n3][_n2][_n1];
     float[][][] ft = new float[_n3][_n2][_n1];
@@ -439,7 +439,7 @@ public class FaultSurfer {
     final int[] bs3 = setBounds(_n3,xc[2]);
     final KdTree kt = new KdTree(xc);
     final int[] ns = new int[]{_n1,_n2,_n3};
-    final float st = (float)sin(Math.PI/8.0);
+    final float st = (float)sin(Math.PI/10.0);
     final float sw = 1.0f/(sigmaNor*sigmaNor); 
     final float[][][] sf = zerofloat(_n1,_n2,_n3);
     Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
