@@ -76,7 +76,7 @@ maxThrow = 20.0
 pngDir = "../../../png/sch/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out other parts that have already written results to files.
@@ -135,26 +135,23 @@ def goFS():
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skinSort)
     skinsNew = readSkins(fsmbase)
-    '''
-    skinsNew = fs.applySurferM(8000)
+    skinsNew = fs.applySurferM(20000)
     removeAllSkinFiles(fsmbase)
     writeSkins(fsmbase,skinsNew)
-    '''
   else :
     skinsOld = readSkins(fskbase)
     skinsNew = readSkins(fsmbase)
   plot3(gx,skins=skinsNew,png="newSkins")
   plot3(gx,skins=skinsOld,png="oldSkins")
-  sksOld = []
-  sksNew = []
+  sksOld,sksNew =[],[]
   for ik in range(20):
     sksOld.append(skinsOld[ik])
     sksNew.append(skinsNew[ik])
-    if(ik<6):
-      plot3(gx,skins=[skinsOld[ik]])
-      plot3(gx,skins=[skinsNew[ik]])
   plot3(gx,skins=sksNew)
   plot3(gx,skins=sksOld)
+  for ik in range(15):
+    plot3(gx,skins=[skinsOld[ik]])
+    plot3(gx,skins=[skinsNew[ik]])
 
 
 def goShow():
@@ -714,7 +711,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.setSize(985,700) # for sch data
     #sf.setSize(837,700) # for fake data
   else:
-    sf.setSize(848,700) # for sch data
+    #sf.setSize(848,700) # for sch data
+    sf.setSize(1048,900) # for sch data
     #sf.setSize(700,700) # for fake data
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
