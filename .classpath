@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/jtk"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/idh"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/ipf"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/unfold"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
