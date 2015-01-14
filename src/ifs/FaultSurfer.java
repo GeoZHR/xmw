@@ -507,6 +507,7 @@ public class FaultSurfer {
             float d12 = dx1*dx2;
             float d13 = dx1*dx3;
             float d23 = dx2*dx3;
+            /*
 
             float w11 = ws[ip][0];
             float w22 = ws[ip][1];
@@ -554,6 +555,7 @@ public class FaultSurfer {
             float sfi = exp(-gss)*wpi;
             sf[i3][i2][i1] += sfi;
             wps += wpi;
+            */
           }
           if(wps!=0f) sf[i3][i2][i1] /= wps;
         }
@@ -580,6 +582,14 @@ public class FaultSurfer {
         }
     return sf;
   }
+
+  /*
+  private float[][][] faultImagesFromCells(final int dt,
+    final FaultCell[] fc, final float[][][] fp, final float[][][] ft) 
+  {
+
+  }
+  */
 
 
   private float[][][] reconstructFaultImagesFromCells(
