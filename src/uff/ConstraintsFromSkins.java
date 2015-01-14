@@ -6,7 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package uff;
 
-import ipf.*;
+import ifs.*;
 import java.util.*;
 import edu.mines.jtk.dsp.Sampling;
 import edu.mines.jtk.dsp.SincInterpolator;
