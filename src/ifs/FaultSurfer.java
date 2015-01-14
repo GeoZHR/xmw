@@ -258,7 +258,6 @@ public class FaultSurfer {
     return sks;
   }
 
-
   private FaultSkin[] reskin(int minSkinSize,FaultCell[] fc) {
     int d = 30;
     float[][][] fl = new float[_n3][_n2][_n1];
@@ -448,7 +447,7 @@ public class FaultSurfer {
     final FaultCell[] fc, final float[][][] fp, final float[][][] ft) 
   {
     int nc = fc.length;
-    float sigmaNor = 2.0f;
+    float sigmaNor = 1.0f;
     final int[][] bb2 = new int[_n1][2];
     final int[][] bb3 = new int[_n1][2];
     final float[][] xc = new float[3][nc];
