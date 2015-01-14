@@ -71,11 +71,11 @@ def main(args):
   #goPSS()
   #goFSS()
   #goIFS()
-  #goFS()
+  goFS()
   #smoothTest()
   #goInterp()
   #goRemoveOutliers()
-  computeGaussian()
+  #computeGaussian()
 def computeGaussian():
   g = zerofloat(n1,n2,n3)
   g[50][50][50] = 1
