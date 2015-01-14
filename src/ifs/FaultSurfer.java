@@ -586,8 +586,8 @@ public class FaultSurfer {
   {
     int nc = fc.length;
     float sigma1 = 2.0f;
-    float sigma2 = 20.0f;//strike
-    float sigma3 = 20.0f;//dip
+    float sigma2 = 30.0f;//strike
+    float sigma3 = 30.0f;//dip
     final int[][] bb2 = new int[_n1][2];
     final int[][] bb3 = new int[_n1][2];
     final float[][] xc = new float[3][nc];
