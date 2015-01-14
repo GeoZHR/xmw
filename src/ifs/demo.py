@@ -60,7 +60,7 @@ def main(args):
   goSkin()
   '''
   #goFS()
-  goFSSPS()
+  #goFSSPS()
   #goFSPSS()
   #goSkin()
   #goSlip()
@@ -75,6 +75,18 @@ def main(args):
   #smoothTest()
   #goInterp()
   #goRemoveOutliers()
+  computeGaussian()
+def computeGaussian():
+  g = zerofloat(n1,n2,n3)
+  g[50][50][50] = 1
+  plot3(g)
+  rgf1 = RecursiveGaussianFilter(2)
+  rgf2 = RecursiveGaussianFilter(20)
+  rgf3 = RecursiveGaussianFilter(20)
+  rgf1.apply0XX(g,g)
+  rgf2.applyX0X(g,g)
+  rgf3.applyXX0(g,g)
+  plot3(g,cmin=min(g),cmax=max(g))
 def goRemoveOutliers():
   gx = readImage(gxfile)
   fl = readImage(flfile)

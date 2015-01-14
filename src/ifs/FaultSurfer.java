@@ -264,7 +264,7 @@ public class FaultSurfer {
     float[][][] fp = new float[_n3][_n2][_n1];
     float[][][] ft = new float[_n3][_n2][_n1];
     //int minSkinSize = round(max(_n2,_n3)*_n1*0.4f);
-    fl = faultImagesFromCells(d,fc,fp,ft);
+    fl = faultImagesFromCellsM(d,fc,fp,ft);
     //fl = cellVoteForFaultImage(fc,fp,ft);
     //fl = reconstructFaultImagesFromCells(fc,fp,ft);
     //fl = recomputeFaultImagesFromCells(fc,fp,ft);
@@ -507,7 +507,6 @@ public class FaultSurfer {
             float d12 = dx1*dx2;
             float d13 = dx1*dx3;
             float d23 = dx2*dx3;
-            /*
 
             float w11 = ws[ip][0];
             float w22 = ws[ip][1];
@@ -555,7 +554,6 @@ public class FaultSurfer {
             float sfi = exp(-gss)*wpi;
             sf[i3][i2][i1] += sfi;
             wps += wpi;
-            */
           }
           if(wps!=0f) sf[i3][i2][i1] /= wps;
         }
@@ -583,13 +581,133 @@ public class FaultSurfer {
     return sf;
   }
 
-  /*
-  private float[][][] faultImagesFromCells(final int dt,
+  private float[][][] faultImagesFromCellsM(final int dt,
     final FaultCell[] fc, final float[][][] fp, final float[][][] ft) 
   {
+    int nc = fc.length;
+    float sigma1 = 2.0f;
+    float sigma2 = 20.0f;//strike
+    float sigma3 = 20.0f;//dip
+    final int[][] bb2 = new int[_n1][2];
+    final int[][] bb3 = new int[_n1][2];
+    final float[][] xc = new float[3][nc];
+    setKdTreeNodes(fc,xc,bb2,bb3);
+    final KdTree kt = new KdTree(xc);
+    final int[] bs1 = setBounds(_n1,xc[0]);
+    final int[] bs2 = setBounds(_n2,xc[1]);
+    final int[] bs3 = setBounds(_n3,xc[2]);
+    final int[] ns = new int[]{_n1,_n2,_n3};
+    final float st = (float)sin(Math.PI/10.0);
+    final float[][][] sf = zerofloat(_n1,_n2,_n3);
+    final float[][][] g = precomputeGaussian(sigma1,sigma2,sigma3);
+    int n3 = g.length; 
+    int n2 = g[0].length; 
+    int n1 = g[0][0].length;
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    final SincInterpolator sp = new SincInterpolator();
+    Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      float[] xmin = new float[3];
+      float[] xmax = new float[3];
+      System.out.println("i3="+i3);
+      for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
+        for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
+          if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
+          if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
+          int[] id = null;
+          int di = 10,nd = 0;
+          int[] is = new int[]{i1,i2,i3};
+          while(nd<20 && di<dt) {
+            int[] ds=new int[]{di,di,di};
+            getRange(ds,is,ns,xmin,xmax);
+            id = kt.findInRange(xmin,xmax);
+            nd = id.length;
+            di += 2;
+          }
+          if(nd<10){continue;}
+          float wps = 0.0f;
+          for (int ik=0; ik<nd; ++ik) {
+            int ip = id[ik];
+            float w1i = fc[ip].w1;
+            float w2i = fc[ip].w2;
+            float w3i = fc[ip].w3;
+            float x1i = fc[ip].i1;
+            float x2i = fc[ip].i2;
+            float x3i = fc[ip].i3;
 
+            float dx1 = x1i-i1;
+            float dx2 = x2i-i2;
+            float dx3 = x3i-i3;
+            float d11 = dx1*dx1;
+            float d22 = dx2*dx2;
+            float d33 = dx3*dx3;
+            float dsi = d11+d22+d33;
+            float wdi = abs(w1i*dx1+w2i*dx2+w3i*dx3);
+            if(dsi!=0.0f&&(wdi/sqrt(dsi))>st){continue;}
+            float u1i = fc[ip].u1;
+            float u2i = fc[ip].u2;
+            float u3i = fc[ip].u3;
+            float v1i = fc[ip].v1;
+            float v2i = fc[ip].v2;
+            float v3i = fc[ip].v3;
+            float vdi = abs(v1i*dx1+v2i*dx2+v3i*dx3);
+            float udi = abs(u1i*dx1+u2i*dx2+u3i*dx3);
+            float gii = sp.interpolate(s1,s2,s3,g,wdi,vdi,udi);
+            float fli = fc[ip].fl;
+            float wpi = pow(fli,10.f);
+            float sfi = gii*wpi;//multiply gi
+            sf[i3][i2][i1] += sfi;
+            wps += wpi;
+          }
+          if(wps!=0f) sf[i3][i2][i1] /= wps;
+        }
+      }
+    }});
+    int i1b = bs1[0], i1e = bs1[1];
+    int i2b = bs2[0], i2e = bs2[1];
+    int i3b = bs3[0], i3e = bs3[1];
+    int n1s = i1e-i1b,n2s=i2e-i2b,n3s=i3e-i3b;
+    float[][][] sfs = new float[n3s][n2s][n1s];
+    float[][][] fps = new float[n3s][n2s][n1s];
+    float[][][] fts = new float[n3s][n2s][n1s];
+    for (int i3s=0,i3=i3b; i3s<n3s; ++i3,++i3s) 
+      for (int i2s=0,i2=i2b; i2s<n2s; ++i2,++i2s) 
+        for (int i1s=0,i1=i1b; i1s<n1s; ++i1,++i1s) 
+          sfs[i3s][i2s][i1s] = sf[i3][i2][i1];
+    smooth(sfs,fps,fts);
+    for (int i3s=0,i3=i3b; i3s<n3s; ++i3,++i3s) 
+      for (int i2s=0,i2=i2b; i2s<n2s; ++i2,++i2s) 
+        for (int i1s=0,i1=i1b; i1s<n1s; ++i1,++i1s){ 
+          sf[i3][i2][i1] = sfs[i3s][i2s][i1s];
+          fp[i3][i2][i1] = fps[i3s][i2s][i1s];
+          ft[i3][i2][i1] = fts[i3s][i2s][i1s];
+        }
+    return sf;
   }
-  */
+
+  private float[][][] precomputeGaussian(
+    float sigma1, float sigma2, float sigma3) 
+  {
+    int c1 = round(sigma1*2), n1 = c1*2+1;
+    int c2 = round(sigma2*2), n2 = c2*2+1;
+    int c3 = round(sigma3*2), n3 = c3*2+1;
+    float[][][] g = new float[n3][n2][n1];
+    g[c3][c2][c1] = 1.0f;
+    RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(sigma1);
+    RecursiveGaussianFilter rgf2 = new RecursiveGaussianFilter(sigma2);
+    RecursiveGaussianFilter rgf3 = new RecursiveGaussianFilter(sigma3);
+    rgf1.apply0XX(g,g);
+    rgf2.applyX0X(g,g);
+    rgf3.applyXX0(g,g);
+    float[][][] gq = new float[c3+1][c2+1][c1+1];
+    for (int i3=c3; i3<n3; ++i3) 
+    for (int i2=c2; i2<n2; ++i2)
+    for (int i1=c1; i1<n1; ++i1)
+      gq[i3-c3][i2-c2][i1-c1] = g[i3][i2][i1];
+    return gq;
+  }
 
 
   private float[][][] reconstructFaultImagesFromCells(
@@ -847,6 +965,43 @@ public class FaultSurfer {
     }
 
   }
+
+  private void setKdTreeNodes(FaultCell[] fc, float[][] xc, 
+    int[][] bb2, int[][] bb3) 
+  {
+    int nc = fc.length;
+    for (int i1=0; i1<_n1; ++i1) {
+      bb2[i1][0] = _n2; bb2[i1][1] = -_n2;
+      bb3[i1][0] = _n3; bb3[i1][1] = -_n3;
+    }
+    for (int ic=0; ic<nc; ic++) {
+      int i1 = fc[ic].i1;
+      int i2 = fc[ic].i2;
+      int i3 = fc[ic].i3;
+
+      xc[0][ic] = i1;
+      xc[1][ic] = i2;
+      xc[2][ic] = i3;
+
+      int b2l = bb2[i1][0];
+      int b2r = bb2[i1][1];
+      if(i2<b2l) bb2[i1][0] = i2;
+      if(i2>b2r) bb2[i1][1] = i2;
+      int b3l = bb3[i1][0];
+      int b3r = bb3[i1][1];
+      if(i3<b3l) bb3[i1][0] = i3;
+      if(i3>b3r) bb3[i1][1] = i3;
+    }
+
+    for (int i1=0; i1<_n1; ++i1) {
+      bb2[i1][0] -= 3;
+      bb3[i1][0] -= 3;
+      bb2[i1][1] += 3;
+      bb3[i1][1] += 3;
+    }
+
+  }
+
 
 
   private void setKdTreePoints(FaultCell[] fc, 
