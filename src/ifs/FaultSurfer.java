@@ -264,7 +264,7 @@ public class FaultSurfer {
     float[][][] fp = new float[_n3][_n2][_n1];
     float[][][] ft = new float[_n3][_n2][_n1];
     //int minSkinSize = round(max(_n2,_n3)*_n1*0.4f);
-    fl = faultImagesFromCellsM(d,fc,fp,ft);
+    fl = faultImagesFromCells(d,fc,fp,ft);
     //fl = cellVoteForFaultImage(fc,fp,ft);
     //fl = reconstructFaultImagesFromCells(fc,fp,ft);
     //fl = recomputeFaultImagesFromCells(fc,fp,ft);
@@ -447,7 +447,7 @@ public class FaultSurfer {
     final FaultCell[] fc, final float[][][] fp, final float[][][] ft) 
   {
     int nc = fc.length;
-    float sigmaNor = 1.0f;
+    float sigmaNor = 2.0f;
     final int[][] bb2 = new int[_n1][2];
     final int[][] bb3 = new int[_n1][2];
     final float[][] xc = new float[3][nc];
@@ -586,8 +586,8 @@ public class FaultSurfer {
   {
     int nc = fc.length;
     float sigma1 = 2.0f;
-    float sigma2 = 30.0f;//strike
-    float sigma3 = 30.0f;//dip
+    float sigma2 = 10.0f;//strike
+    float sigma3 = 20.0f;//dip
     final int[][] bb2 = new int[_n1][2];
     final int[][] bb3 = new int[_n1][2];
     final float[][] xc = new float[3][nc];
