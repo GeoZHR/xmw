@@ -1,7 +1,7 @@
 from fakeutils import *
 import math
 import random
-from util import *
+#from util import *
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -13,9 +13,12 @@ p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
 p3kfile = "p3k" # crossline slopes (known)
-flfile  = "fl" # fault likelihood
-fpfile  = "fp" # fault strike (phi)
-ftfile  = "ft" # fault dip (theta)
+flfile1  = "fl1" # first largest fault likelihood
+flfile2  = "fl2" # second largest fault likelihood
+fpfile1  = "fp1" # fault strike (phi)
+fpfile2  = "fp2" # fault strike (phi)
+ftfile1  = "ft1" # fault dip (theta)
+ftfile2  = "ft2" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
 fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
@@ -52,15 +55,15 @@ pngDir = "../../../png/ifs/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  '''
-  goFakeData()
-  goSlopes()
+  #goFakeData()
+  #goSlopes()
   goScan()
+  '''
   goThin()
   goSmooth()
   goSkin()
   '''
-  goFS()
+  #goFS()
   #goFSSPS()
   #goFSPSS()
   #goSkin()
@@ -143,7 +146,7 @@ def goFakeData():
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults
   conjugate = True # if True, two large planar faults will intersect
-  conical = True # if True, may want to set nplanar to 0 (or not!)
+  conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
@@ -188,20 +191,33 @@ def goScan():
   gx = readImage(gxfile)
   gx = FaultScanner.taper(10,0,0,gx)
   fs = FaultScanner(sigmaPhi,sigmaTheta)
-  fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
-  print "fl min =",min(fl)," max =",max(fl)
-  print "fp min =",min(fp)," max =",max(fp)
-  print "ft min =",min(ft)," max =",max(ft)
-  writeImage(flfile,fl)
-  writeImage(fpfile,fp)
-  writeImage(ftfile,ft)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
+  fl1,fp1,ft1 = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx,None)
+  fl2,fp2,ft2 = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx,fp1)
+  print "fl1 min =",min(fl1)," max1 =",max(fl1)
+  print "fl2 min =",min(fl2)," max2 =",max(fl2)
+  print "fp1 min =",min(fp1)," max1 =",max(fp1)
+  print "fp2 min =",min(fp2)," max2 =",max(fp2)
+  print "ft1 min =",min(ft1)," max1 =",max(ft1)
+  print "ft2 min =",min(ft2)," max2 =",max(ft2)
+  writeImage(flfile1,fl1)
+  writeImage(fpfile1,fp1)
+  writeImage(ftfile1,ft1)
+  writeImage(flfile2,fl2)
+  writeImage(fpfile2,fp2)
+  writeImage(ftfile2,ft2)
+
+  plot3(gx,fl1,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="First Fault likelihood",png="fl1")
+  plot3(gx,fl2,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Second Fault likelihood",png="fl2")
+  plot3(gx,fp1,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="First Fault strike (degrees)",cint=45,png="fp1")
+  plot3(gx,fp2,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="Second Fault strike (degrees)",cint=45,png="fp2")
+  plot3(gx,convertDips(ft1),cmin=25,cmax=65,cmap=jetFill(1.0),
+        clab="First Fault dip (degrees)",png="ft1")
+  plot3(gx,convertDips(ft2),cmin=25,cmax=65,cmap=jetFill(1.0),
+        clab="Second Fault dip (degrees)",png="ft2")
 
 def goThin():
   print "goThin ..."
@@ -892,7 +908,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   #ipg.setSlices(95,5,51)
   #ipg.setSlices(95,5,95)
   #ipg.setSlices(100,90,0)
-  ipg.setSlices(100,0,102)
+  ipg.setSlices(100,0,81)
   if cbar:
     sf.setSize(1037,900)
   else:

@@ -220,10 +220,10 @@ public class FaultScanner {
   public float[][][][] scan(
       double phiMin, double phiMax,
       double thetaMin, double thetaMax,
-      float[][][] p2, float[][][] p3, float[][][] g) {
+      float[][][] p2, float[][][] p3, float[][][] g, float[][][] fl) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
-    return scan(sp,st,p2,p3,g);
+    return scan(sp,st,p2,p3,g,fl);
   }
 
   /**
@@ -237,9 +237,9 @@ public class FaultScanner {
    */
   public float[][][][] scan(
       Sampling phiSampling, Sampling thetaSampling,
-      float[][][] p2, float[][][] p3, float[][][] g) {
+      float[][][] p2, float[][][] p3, float[][][] g, float[][][] fp) {
     float[][][][] snd = semblanceNumDen(p2,p3,g);
-    return scan(phiSampling,thetaSampling,snd);
+    return scan(phiSampling,thetaSampling,snd,fp);
   }
 
   /**
@@ -427,7 +427,7 @@ public class FaultScanner {
   // fast recursive axis-aligned smoothing filters.
   private float[][][][] scan(
       Sampling phiSampling, Sampling thetaSampling,
-      float[][][][] snd) {
+      float[][][][] snd, final float[][][] fs) {
     // Algorithm: given snum,sden (semblance numerators and denominators)
     // initialize f,p,t (fault likelihood, phi, and theta)
     // for all phi:
@@ -439,6 +439,8 @@ public class FaultScanner {
     final int n1 = snd[0][0][0].length;
     final int n2 = snd[0][0].length;
     final int n3 = snd[0].length;
+    final float dp = 6f*(float)phiSampling.getDelta();
+    System.out.println("dp="+dp);
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
@@ -471,14 +473,18 @@ public class FaultScanner {
           float[] t32 = t[i3][i2];
           float[] fp32 = fp[i3][i2];
           float[] tp32 = tp[i3][i2];
+          float[] fs32 = (fs!=null)?fs[i3][i2]:null;
           for (int i1=0; i1<n1; ++i1) {
             float fpi = fp32[i1];
             float tpi = tp32[i1];
+            float fsi = (fs32!=null)?fs32[i1]:-dp;
+            float dphi = abs(phi-fsi);
+            if(dphi>(360-dp)){dphi=abs(360-dphi);}
             if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
             if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
             if (tpi<tmin) tpi = tmin; // for both fault likelihood
             if (tpi>tmax) tpi = tmax; // and fault dip theta
-            if (fpi>f32[i1]) {
+            if (fpi>f32[i1] && dphi>dp) {
               f32[i1] = fpi;
               p32[i1] = phi;
               t32[i1] = tpi;
