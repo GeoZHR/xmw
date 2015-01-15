@@ -60,7 +60,7 @@ def main(args):
   goSmooth()
   goSkin()
   '''
-  goFS()
+  #goFS()
   #goFSSPS()
   #goFSPSS()
   #goSkin()
@@ -77,7 +77,7 @@ def main(args):
   #goInterp()
   #goRemoveOutliers()
   #computeGaussian()
-  #rosePlot()
+  rosePlot()
 def rosePlot():
   gx = readImage(gxfile)
   fl = readImage(flfile)
