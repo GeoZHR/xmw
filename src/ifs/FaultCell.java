@@ -47,6 +47,10 @@ public class FaultCell implements Serializable {
   }
 
 
+  public void setFl(float fl) {
+    this.fl = fl;
+  }
+
   /**
    * Gets the fault likelihood for this cell.
    * @return the fault likelihood.

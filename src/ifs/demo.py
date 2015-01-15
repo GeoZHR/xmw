@@ -60,7 +60,7 @@ def main(args):
   goSmooth()
   goSkin()
   '''
-  #goFS()
+  goFS()
   #goFSSPS()
   #goFSPSS()
   #goSkin()
@@ -77,7 +77,7 @@ def main(args):
   #goInterp()
   #goRemoveOutliers()
   #computeGaussian()
-  rosePlot()
+  #rosePlot()
 def rosePlot():
   gx = readImage(gxfile)
   fl = readImage(flfile)
@@ -324,7 +324,7 @@ def goFS():
         clab="PointSetSurface")
   '''
 
-  sks = fs.applySurferM(4000)
+  sks = fs.applySurfer(4000,fl)
 
   plot3(gx,skins=sks,png="newSkins")
   plot3(gx,skins=sk,png="oldSkins")
