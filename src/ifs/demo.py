@@ -1,6 +1,7 @@
 from fakeutils import *
 import math
 import random
+from util import *
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -71,11 +72,27 @@ def main(args):
   #goPSS()
   #goFSS()
   #goIFS()
-  goFS()
+  #goFS()
   #smoothTest()
   #goInterp()
   #goRemoveOutliers()
   #computeGaussian()
+  rosePlot()
+def rosePlot():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  sk = fs.findSkins(cells)
+  cells = FaultSkin.getCells(sk)
+  fsurf = FaultSurfer(n1,n2,n3,cells)
+  fps = fsurf.getStrikes()
+  rp = RosePlot()
+  rp.rose(fps,20)
 def computeGaussian():
   g = zerofloat(n1,n2,n3)
   g[50][50][50] = 1

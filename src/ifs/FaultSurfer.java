@@ -29,6 +29,13 @@ public class FaultSurfer {
     _nc = fc.length;
   }
 
+  public float[] getStrikes() {
+    float[] ps = new float[_nc];
+    for (int ic=0; ic<_nc; ++ic) {
+      ps[ic] = _fc[ic].fp;
+    }
+    return ps;
+  }
   public void setStrikePartitions(int ds) {
     _ds = ds;
   }
