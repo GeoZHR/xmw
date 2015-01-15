@@ -10,6 +10,12 @@ import java.awt.*;
 import edu.mines.jtk.mosaic.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+/**
+ * Make a rosette-strike plot for faults/fault cells.
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2015.01.14
+ */
+
 public class RosePlot {
 
   public void rose(float[] phi, int nbin) {
