@@ -61,8 +61,6 @@ public class FaultSurfer {
     return sks;
   }
 
-
-
   public float getStrike(FaultSkin sk) {
     float fpa = 0.0f;
     FaultCell[] fc = FaultSkin.getCells(new FaultSkin[] {sk});
@@ -71,6 +69,55 @@ public class FaultSurfer {
       fpa += fc[ic].fp;
     return fpa/nc;
   }
+
+  public FaultSkin[] applySurfer(int minSkinSize, float[][][] fl) {
+    HashSet<Integer> hsc = new HashSet<Integer>();
+    HashSet<FaultSkin> hss = new HashSet<FaultSkin>();
+    for (int ic=0; ic<_nc; ++ic) hsc.add(ic);
+    int nct = hsc.size();
+    //int minCellSize = round(max(_n2,_n3)*_n1*0.5f);
+    //int minSkinSize = round(max(_n2,_n3)*_n1*0.4f);
+    while(nct>minSkinSize) {
+      FaultCell[] fc = findStrike(hsc);
+      System.out.println("cells="+fc.length);
+      if(fc.length<minSkinSize){break;}
+      FaultSkin[] sks = reskin(minSkinSize,fc);
+      int nk = sks.length;
+      if(nk<1) {break;}
+      for (int ik=0; ik<nk; ++ik)
+        hss.add(sks[ik]);
+      removeUsedCells(sks,hsc);
+      if(nct-hsc.size()==0){break;}
+      nct = hsc.size();
+    }
+    System.out.println("Skin with remaining cells...");
+    int nc = hsc.size();
+    System.out.println("nc="+nc);
+    if(nc<minSkinSize){
+      FaultSkin[] skins = getSkins(hss);
+      setFaultLike(skins,fl);
+      return skins;
+    }
+    FaultCell[] fcr = new FaultCell[nc];
+    int ik=-1;
+    for (int ic:hsc) {
+      ik++;
+      fcr[ik] = _fc[ic];
+    }
+    FaultSkin[] sks = reskin(minSkinSize,fcr);
+    int nk = sks.length;
+    if(nk<1) {
+      FaultSkin[] skins = getSkins(hss);
+      setFaultLike(skins,fl);
+      return skins;
+    }
+    for (ik=0; ik<nk; ++ik) 
+      hss.add(sks[ik]);
+    FaultSkin[] skins = getSkins(hss);
+    setFaultLike(skins,fl);
+    return skins;
+  }
+
 
   public FaultSkin[] applySurferM(int minSkinSize) {
     HashSet<Integer> hsc = new HashSet<Integer>();
@@ -263,6 +310,23 @@ public class FaultSurfer {
       sks[ik] = sk[id];
     }
     return sks;
+  }
+
+  private void setFaultLike (FaultSkin[] sks, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    Sampling s3 = new Sampling(n3);
+    FaultCell[] fcs = FaultSkin.getCells(sks);
+    SincInterpolator si = new SincInterpolator();
+    for (FaultCell fc:fcs) {
+      float x1 = fc.x1;
+      float x2 = fc.x2;
+      float x3 = fc.x3;
+      fc.setFl(si.interpolate(s1,s2,s3,fl,x1,x2,x3));
+    }
   }
 
   private FaultSkin[] reskin(int minSkinSize,FaultCell[] fc) {
