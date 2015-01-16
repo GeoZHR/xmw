@@ -61,7 +61,7 @@ public class FaultProcessor {
     FaultScanner fsc = new FaultScanner(sigmaP,sigmaT);
     float[][][] ft = taper(10,0,0,f);
     float[][][][] ps = computeSlopes(ft);
-    float[][][][] flpt = fsc.scan(minP,maxP,minT,maxT,ps[0],ps[1],ft,null);
+    float[][][][] flpt = fsc.scan(minP,maxP,minT,maxT,ps[0],ps[1],ft);
     int n3 = flpt[0].length;
     int n2 = flpt[0][0].length;
     int n1 = flpt[0][0][0].length;
