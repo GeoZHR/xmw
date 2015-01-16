@@ -92,23 +92,16 @@ def goFR():
   cells = FaultSkin.getCells(sk)
   print len(cells)
   fr  = FaultReconstructor(n1,n2,n3,cells)
-  flpts = fr.applyForFaultImages(500)
-  fl1,fp1,ft1= flpts[0][0],flpts[0][1],flpts[0][2] 
-  fl2,fp2,ft2= flpts[1][0],flpts[1][1],flpts[1][2] 
+  flpt = fr.applyForFaultImages()
+  fl1,fp1,ft1= flpts[0],flpts[1],flpts[2] 
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fl1,cmin=min(fl1),cmax=max(fl1),cmap=jetRamp(1.0),
         clab="First Fault likelihood",png="fl1")
-  plot3(gx,fl2,cmin=min(fl2),cmax=max(fl2),cmap=jetRamp(1.0),
-        clab="Second Fault likelihood",png="fl2")
   plot3(gx,fp1,cmin=min(fp1),cmax=max(fp1),cmap=jetRamp(1.0),
         clab="First Strike",png="fp1")
-  plot3(gx,fp2,cmin=min(fp2),cmax=max(fp2),cmap=jetRamp(1.0),
-        clab="Second Strike",png="fp2")
   plot3(gx,ft1,cmin=min(ft1),cmax=max(ft1),cmap=jetRamp(1.0),
         clab="First Dip",png="ft1")
-  plot3(gx,ft2,cmin=min(ft2),cmax=max(ft2),cmap=jetRamp(1.0),
-        clab="Second Dip",png="ft2")
 
 
 def rosePlot():
@@ -130,13 +123,13 @@ def computeGaussian():
   g = zerofloat(n1,n2,n3)
   g[50][50][50] = 1
   plot3(g)
-  rgf1 = RecursiveGaussianFilter(2)
-  rgf2 = RecursiveGaussianFilter(20)
-  rgf3 = RecursiveGaussianFilter(20)
-  rgf1.apply0XX(g,g)
-  rgf2.applyX0X(g,g)
-  rgf3.applyXX0(g,g)
-  plot3(g,cmin=min(g),cmax=max(g))
+  rgf = RecursiveGaussianFilter(1)
+  rgf.apply0XX(g,g)
+  rgf.applyX0X(g,g)
+  rgf.applyXX0(g,g)
+  print max(g)
+  print sum(g)
+  plot3(g,cmin=min(g),cmax=max(g),clab="gaussian")
 def goRemoveOutliers():
   gx = readImage(gxfile)
   fl = readImage(flfile)
