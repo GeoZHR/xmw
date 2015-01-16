@@ -93,7 +93,10 @@ def goFR():
   print len(cells)
   fr  = FaultReconstructor(n1,n2,n3,cells)
   flpt = fr.applyForFaultImages()
-  fl1,fp1,ft1= flpts[0],flpts[1],flpts[2] 
+  fl1,fp1,ft1= flpt[0],flpt[1],flpt[2] 
+  cells = fs.findCells([fl1,fp1,ft1])
+  skins = fs.findSkins(cells)
+  plot3(gx,skins=skins,png="skins")
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fl1,cmin=min(fl1),cmax=max(fl1),cmap=jetRamp(1.0),

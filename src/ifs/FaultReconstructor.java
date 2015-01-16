@@ -61,13 +61,14 @@ public class FaultReconstructor {
         int i1 = _fcs[ic].i1-bs[0][0];
         int i2 = _fcs[ic].i2-bs[0][1];
         int i3 = _fcs[ic].i3-bs[0][2];
-        g[i3][i2][i1] = fli*ow.getWeight(p1,round(fpi-p1));
+        //g[i3][i2][i1] = fli*ow.getWeight(p1,round(fpi-p1));
+        g[i3][i2][i1] = 1f;
       }
-      RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+      RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2.0);
       rgf.apply0XX(g,g);
       rgf.applyX0X(g,g);
       rgf.applyXX0(g,g);
-      div(g,max(g),g);
+      //div(g,max(g),g);
       float[][][][] flpt = smooth(g);
       for (int j3=0; j3<n3s; ++j3) {
         for (int j2=0; j2<n2s; ++j2) {
@@ -88,6 +89,7 @@ public class FaultReconstructor {
         }
       }
     }
+    div(fl,max(fl),fl);
     return new float[][][][]{fl,fp,ft}; 
   }
 
@@ -136,7 +138,7 @@ public class FaultReconstructor {
     int n1 = fl[0][0].length;
     float sigma1 = 8.0f;
     float sigma2 = 2.0f;
-    float sigma  = 20.f;
+    float sigma  = 40.f;
     float c = sigma*sigma*0.5f;
     float[][][] u1  = new float[n3][n2][n1];
     float[][][] u2  = new float[n3][n2][n1];
