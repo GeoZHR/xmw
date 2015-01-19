@@ -637,8 +637,8 @@ public class FaultSkinner {
     float dx1 = ax1-bx1;
     float dx2 = ax2-bx2;
     float dx3 = ax3-bx3;
-    float dab = aw1*dx1+aw2*dx2+aw3*dx3;
-    float dba = bw1*dx1+bw2*dx2+bw3*dx3;
+    float dab = abs(aw1*dx1+aw2*dx2+aw3*dx3);
+    float dba = abs(bw1*dx1+bw2*dx2+bw3*dx3);
     return max(dab,dba);
   }
 

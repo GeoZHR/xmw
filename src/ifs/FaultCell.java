@@ -42,6 +42,10 @@ import static ifs.FaultGeometry.*;
 public class FaultCell implements Serializable {
   private static final long serialVersionUID = 1L;
 
+  public void setRegrid(boolean regrid) {
+    _regrid = regrid;
+  }
+
   public void setNormal(float w1, float w2, float w3) {
     setNormalVector(w1,w2,w3);
   }
@@ -304,6 +308,9 @@ public class FaultCell implements Serializable {
   float u1,u2,u3,us; // dip vector and scale factor = 1/sin(theta)
   float v1,v2,v3; // strike vector
   float w1,w2,w3; // normal vector
+  float w11,w12,w13,w22,w23,w33;
+  float u11,u12,u13,u22,u23,u33;
+  float v11,v12,v13,v22,v23,v33;
   FaultCell ca,cb,cl,cr; // nabors above, below, left and right
   FaultSkin skin; // if not null, the skin to which this cell belongs
   int i2m,i2p; // sample indices i2 for minus and plus sides of cell
@@ -311,6 +318,7 @@ public class FaultCell implements Serializable {
   float[] emp; // array of minus-plus alignment errors
   float smp; // shift from minus side to plus side of cell
   float s1,s2,s3; // fault dip-slip vector
+  boolean _regrid = false;
 
   interface Get1 { public float get(FaultCell cell); }
   interface GetN { public float[] get(FaultCell cell); }
@@ -494,6 +502,16 @@ public class FaultCell implements Serializable {
     u1 = u[0]; u2 = u[1]; u3 = u[2]; us = 1.0f/u1;
     v1 = v[0]; v2 = v[1]; v3 = v[2];
     w1 = w[0]; w2 = w[1]; w3 = w[2];
+
+    w11 = w1*w1; w22 = w2*w2; w33 = w3*w3;
+    w12 = w1*w2; w13 = w1*w3; w23 = w2*w3;
+
+    u11 = u1*u1; u22 = u2*u2; u33 = u3*u3;
+    u12 = u1*u2; u13 = u1*u3; u23 = u2*u3;
+
+    v11 = v1*v1; v22 = v2*v2; v33 = v3*v3;
+    v12 = v1*v2; v13 = v1*v3; v23 = v2*v3;
+
 
     // Indices (i2m,i2p) and (i3m,i3p) for minus-plus pairs of samples.
     // Cell normal vector w points from the minus side to the plus side.
