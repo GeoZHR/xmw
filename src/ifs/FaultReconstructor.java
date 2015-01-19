@@ -50,7 +50,7 @@ public class FaultReconstructor {
     int np = 360;
     int owl = 20;
     double owf = 0.5;
-    final int dt = 30;
+    final int dt = 20;
     final float sigmaNor = 2.0f;
     KdTree kt1 = setStrikeKdTree();
     final int[] ns = new int[]{_n1,_n2,_n3};
@@ -59,16 +59,20 @@ public class FaultReconstructor {
     final int l1 = ow.getL1(), m1 = ow.getM1();
     final FaultCell[][][] fcg = new FaultCell[_n3][_n2][_n1];
     final float[][][] fl  = new float[_n3][_n2][_n1];
+    final float[][][] fp  = new float[_n3][_n2][_n1];
     final float[][][] g11 = new float[_n3][_n2][_n1];
     final float[][][] g12 = new float[_n3][_n2][_n1];
     final float[][][] g13 = new float[_n3][_n2][_n1];
     final float[][][] g22 = new float[_n3][_n2][_n1];
     final float[][][] g23 = new float[_n3][_n2][_n1];
     final float[][][] g33 = new float[_n3][_n2][_n1];
+    //final float[][][][] fls  = new float[8][_n3][_n2][_n1];
     float fpt = -1f;
     for (int k1=0; k1<m1; ++k1) {
+      final int ki = k1;
       System.out.println("k1="+k1);
       final int p1 = ow.getI1(k1);
+      //if(k1>0){fls[k1]=copy(fls[k1-1]);}
       if(k1>2){fpt=ow.getI1(k1-3);}
       float[] pmin = new float[]{p1};
       float[] pmax = new float[]{p1+l1-1};
@@ -92,8 +96,8 @@ public class FaultReconstructor {
         float[] xmax = new float[3];
         for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
           for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
-            if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
-            if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
+            //if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
+            //if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
             int[] id = null;
             int di = 10,nd = 0;
             int[] is = new int[]{i1,i2,i3};
@@ -104,7 +108,7 @@ public class FaultReconstructor {
               nd = id.length;
               di += 2;
             }
-            if(nd<10){continue;}
+            if(nd<20){continue;}
             float fss = 0.0f;
             float g11s = 0.0f;
             float g12s = 0.0f;
@@ -171,12 +175,12 @@ public class FaultReconstructor {
               float gss = 0.0f;
               int fpi = round(fc[ip].fp);
               int fli = round(fc[ip].fl);
-              float wpi = 1.0f;//fli*ow.getWeight(p1,fpi-p1);
+              float wpi = fli*ow.getWeight(p1,fpi-p1);
               gss += (wd1+wd2+wd3+wds)*sw;
               gss += (ud1+ud2+ud3+uds)*su;
               gss += (vd1+vd2+vd3+vds)*sv;
               float sfi = exp(-gss)*wpi;
-              scs  += wpi;
+              scs  += fli;
               fss  += sfi;
               g11s += sfi*w11;
               g12s += sfi*w12;
@@ -185,24 +189,42 @@ public class FaultReconstructor {
               g23s += sfi*w23;
               g33s += sfi*w33;
             }
+            fl[i3][i2][i1]  += fss/scs;
             g11[i3][i2][i1] += g11s;
             g12[i3][i2][i1] += g12s;
             g13[i3][i2][i1] += g13s;
             g22[i3][i2][i1] += g22s;
             g23[i3][i2][i1] += g23s;
             g33[i3][i2][i1] += g33s;
-            fl[i3][i2][i1]  += fss/scs;
+
+            /*
+            float fpc = computeStrike(g11s,g12s,g13s,g22s,g23s,g33s);
+            float sci = gaussian(fpc-fp[i3][i2][i1]);
+            fl[i3][i2][i1]  = fss+fl[i3][i2][i1]*sci;
+            g11[i3][i2][i1] = g11s+g11[i3][i2][i1]*sci;
+            g12[i3][i2][i1] = g12s+g12[i3][i2][i1]*sci;
+            g13[i3][i2][i1] = g13s+g13[i3][i2][i1]*sci;
+            g22[i3][i2][i1] = g22s+g22[i3][i2][i1]*sci;
+            g23[i3][i2][i1] = g23s+g23[i3][i2][i1]*sci;
+            g33[i3][i2][i1] = g33s+g33[i3][i2][i1]*sci;
+            */
           }
         }
       }});
-      findCells(fpt,fcg,fl,g11,g12,g13,g22,g23,g33);
+      findCells(fpt,fcg,fl,fp,g11,g12,g13,g22,g23,g33);
     }
-    findCells(361,fcg,fl,g11,g12,g13,g22,g23,g33);
+    findCells(361,fcg,fl,fp,g11,g12,g13,g22,g23,g33);
     return getCells(fcg);
   }
 
+  private static float gaussian(float x) {
+    float sigma = 20f;
+    float num = exp(-0.5f*x*x/(sigma*sigma));
+    return num;
+  }
+
   private void findCells(
-    float fpt, FaultCell[][][] fcg, float[][][] fl,
+    float fpt, FaultCell[][][] fcg, float[][][] fl, float[][][] fp,
     float[][][] g11, float[][][] g12, float[][][] g13,
     float[][][] g22, float[][][] g23, float[][][] g33) 
   {
@@ -210,7 +232,6 @@ public class FaultReconstructor {
     float[][][] u1 = new float[_n3][_n2][_n1];
     float[][][] u2 = new float[_n3][_n2][_n1];
     float[][][] u3 = new float[_n3][_n2][_n1];
-    float[][][] fp = new float[_n3][_n2][_n1];
     float[][][] ft = new float[_n3][_n2][_n1];
     solveEigenproblems(g11,g12,g13,g22,g23,g33,u1,u2,u3);
     smooth(flt,fp,ft,u1,u2,u3);
@@ -238,10 +259,11 @@ public class FaultReconstructor {
         if(fcg[i3][i2][i1p]==null) {fcg[i3][i2][i1p]=fci; continue;}
       }
     }
+    /*
     for (int i3=0; i3<_n3; ++i3) {
     for (int i2=0; i2<_n2; ++i2) {
     for (int i1=0; i1<_n1; ++i1) {
-      if(fp[i3][i2][i1]<fpt-5) {
+      if(fp[i3][i2][i1]<fpt-20) {
         fl[i3][i2][i1]  = 0f;
         g11[i3][i2][i1] = 0f;
         g12[i3][i2][i1] = 0f;
@@ -251,15 +273,16 @@ public class FaultReconstructor {
         g33[i3][i2][i1] = 0f;
       }
     }}}
+    */
   }
 
   private float computeStrike(
     float g11, float g12, float g13,
     float g22, float g23, float g33) 
   {
-    double[][] a = new double[3][3];
-    double[][] z = new double[3][3];
     double[] e = new double[3];
+    double[][] z = new double[3][3];
+    double[][] a = new double[3][3];
     a[0][0] = g11;
     a[0][1] = g12;
     a[0][2] = g13;
@@ -454,10 +477,10 @@ public class FaultReconstructor {
       if(i3>b3r) bb3[i1][1] = i3;
     }
     for (int i1=0; i1<_n1; ++i1) {
-      bb2[i1][0] -= 3;
-      bb3[i1][0] -= 3;
-      bb2[i1][1] += 3;
-      bb3[i1][1] += 3;
+      bb2[i1][0] -= 5;
+      bb3[i1][0] -= 5;
+      bb2[i1][1] += 5;
+      bb3[i1][1] += 5;
     }
 
     return fc;

@@ -94,6 +94,13 @@ def goFR():
   plot3(gx,skins=sk,png="newSkins")
   fr  = FaultReconstructor(n1,n2,n3,cells)
   fcs = fr.applyForFaultImages()
+  '''
+  fls = fr.applyForFaultImages()
+  for i in range(8):
+    plot3(gx,fls[i],cmin=min(fls[i]),cmax=max(fls[i]),cmap=jetRamp(1.0),
+     clab="Fault likelihood "+str(i),png="fl")
+
+  '''
   fs.setGrowLikelihoods(0.1,0.3)
   sks = fs.findSkins(fcs)
   plot3(gx,cells=fcs,png="newSkins")
