@@ -89,22 +89,17 @@ def goFR():
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   sk = fs.findSkins(cells)
+  #plot3(gx,skins=sk,png="oldSkins")
   cells = FaultSkin.getCells(sk)
-  print len(cells)
+  plot3(gx,skins=sk,png="newSkins")
   fr  = FaultReconstructor(n1,n2,n3,cells)
-  flpt = fr.applyForFaultImages()
-  fl1,fp1,ft1= flpt[0],flpt[1],flpt[2] 
-  cells = fs.findCells([fl1,fp1,ft1])
-  skins = fs.findSkins(cells)
-  plot3(gx,skins=skins,png="skins")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,fl1,cmin=min(fl1),cmax=max(fl1),cmap=jetRamp(1.0),
-        clab="First Fault likelihood",png="fl1")
-  plot3(gx,fp1,cmin=min(fp1),cmax=max(fp1),cmap=jetRamp(1.0),
-        clab="First Strike",png="fp1")
-  plot3(gx,ft1,cmin=min(ft1),cmax=max(ft1),cmap=jetRamp(1.0),
-        clab="First Dip",png="ft1")
+  fcs = fr.applyForFaultImages()
+  fs.setGrowLikelihoods(0.1,0.3)
+  sks = fs.findSkins(fcs)
+  plot3(gx,cells=fcs,png="newSkins")
+  plot3(gx,skins=sks,png="newSkins")
+
+
 
 
 def rosePlot():
@@ -172,7 +167,7 @@ def goFakeData():
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults
   conjugate = True # if True, two large planar faults will intersect
-  conical = False # if True, may want to set nplanar to 0 (or not!)
+  conical = True # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
