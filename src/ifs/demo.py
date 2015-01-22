@@ -65,12 +65,12 @@ def main(args):
   goThin()
   goSmooth()
   goSkin()
-  '''
   goFR()
+  '''
   #goFault()
   #goFS()
   #goFSSPS()
-  #goFSPSS()
+  goFSPSS()
   #goSkin()
   #goSlip()
   #goCleanCells()
