@@ -4,6 +4,12 @@ import random
 #from util import *
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
+gray = ColorMap.GRAY
+jet = ColorMap.JET
+bwr = ColorMap.BLUE_WHITE_RED
+rwb = ColorMap.RED_WHITE_BLUE
+k1,k2,k3 = 100,101,102; azimuth=240; elevation=25 # for 3D view of strips
+
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
@@ -61,6 +67,7 @@ def main(args):
   goSkin()
   '''
   goFR()
+  #goFault()
   #goFS()
   #goFSSPS()
   #goFSPSS()
@@ -79,6 +86,116 @@ def main(args):
   #goRemoveOutliers()
   #computeGaussian()
   #rosePlot()
+def goFault():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  sk = fs.findSkins(cells)
+  #sk = readSkins(fskbase)
+  plot3(gx,skins=sk)
+  fcs = FaultSkin.getCells(sk)
+  fcs = [fcs[50],fcs[10000]]
+  tg2,tg3=None,None
+  for cell in fcs:
+    pg1 = setPointGroup([cell.x1],[cell.x2],[cell.x3],4.0)
+    pg2 = setPointGroup([cell.x1],[cell.x2],[cell.x3],4.0)
+    fe = FaultExtractor(n1,n2,n3,cells)
+    sf = fe.faultExtract(cell)
+    if(abs(cell.w2)>abs(cell.w3)):
+      print "test2"
+      r = zerofloat(n1,n3)
+      g = zerofloat(n1,n3)
+      b = zerofloat(n1,n3)
+      rgbFromAmplitude2(fl,sf,r,g,b)
+      xyz = fe.makeVertices2(s3,s1,sf)
+      rgb = fe.makeColors(r,g,b)
+      tg2 = TriangleGroup(True,xyz,rgb)
+    else:
+      print "test3"
+      r = zerofloat(n1,n2)
+      g = zerofloat(n1,n2)
+      b = zerofloat(n1,n2)
+      rgbFromAmplitude3(fl,sf,r,g,b)
+      xyz = fe.makeVertices3(s2,s1,sf)
+      rgb = fe.makeColors(r,g,b)
+      tg3 = TriangleGroup(True,xyz,rgb)
+  plot3(gx,cells=cells,tgs=[tg2,tg3])
+
+def rgbFromAmplitude3(f,h,r,g,b):
+  amp = zerofloat(n1*n2)
+  si = SincInterpolator()
+  #si.setUniform(n1,1,0,n2,1,0,n3,1,0,f)
+  i = 0
+  for i2 in range(n2):
+    for i1 in range(n1):
+      amp[i] = si.interpolate(n1,1,0,n2,1,0,n3,1,0,f,i1,i2,h[i2][i1])
+      i = i+1
+  aMin,aMax = 0,1.0
+  #mp = ColorMap(aMin,aMax,ColorMap.RED_WHITE_BLUE)
+  mp = ColorMap(aMin,aMax,ColorMap.JET)
+  ampRGB = mp.getRgbFloats(amp)
+  i = 0
+  for i2 in range(n2):
+    for i1 in range(n1):
+      r[i2][i1] = ampRGB[i  ] 
+      g[i2][i1] = ampRGB[i+1] 
+      b[i2][i1] = ampRGB[i+2] 
+      i = i+3
+
+def rgbFromAmplitude2(f,h,r,g,b):
+  amp = zerofloat(n1*n3)
+  si = SincInterpolator()
+  #si.setUniform(n1,1,0,n2,1,0,n3,1,0,f)
+  i = 0
+  for i3 in range(n3):
+    for i1 in range(n1):
+      amp[i] = si.interpolate(n1,1,0,n2,1,0,n3,1,0,f,i1,h[i3][i1],i3)
+      i = i+1
+  aMin,aMax = 0,1.0
+  #mp = ColorMap(aMin,aMax,ColorMap.RED_WHITE_BLUE)
+  mp = ColorMap(aMin,aMax,ColorMap.JET)
+  ampRGB = mp.getRgbFloats(amp)
+  i = 0
+  for i3 in range(n3):
+    for i1 in range(n1):
+      r[i3][i1] = ampRGB[i  ] 
+      g[i3][i1] = ampRGB[i+1] 
+      b[i3][i1] = ampRGB[i+2] 
+      i = i+3
+ 
+def setPointGroup(k1,k2,k3,size):
+  np  = len(k1)
+  xyz = zerofloat(np*3)
+  rgb = zerofloat(np*3)
+  ki = 0
+  for i in range(np):
+    xyz[ki  ] = k3[i]
+    xyz[ki+1] = k2[i]
+    xyz[ki+2] = k1[i]
+    rgb[ki  ]  = 0#1/225 
+    rgb[ki+1]  = 1#225/225 
+    rgb[ki+2]  = 0#1/225 
+    ki = ki+3
+  pg = PointGroup(size,xyz,rgb);
+  states = StateSet();
+  cs = ColorState();
+  cs.setColor(Color.GREEN);
+  states.add(cs);
+  lms = LightModelState();
+  lms.setTwoSide(True);
+  states.add(lms);
+  ms = MaterialState();
+  ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE);
+  ms.setShininess(100.0);
+  states.add(ms);
+  pg.setStates(states);
+  return pg;
+
 def goFR():
   gx = readImage(gxfile)
   fl = readImage(flfile)
@@ -88,28 +205,23 @@ def goFR():
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
-  plot3(gx,cells=cells,png="oldSkins")
+  #plot3(gx,cells=cells)
   sk = fs.findSkins(cells)
-  #plot3(gx,skins=sk,png="oldSkins")
-  cells = FaultSkin.getCells(sk)
-  plot3(gx,skins=sk,png="newSkins")
-  fcr  = FaultCellRegrid(n1,n2,n3,cells)
-  fcs = fcr.regridding()
-  plot3(gx,cells=fcs,png="oldSkins")
-  '''
-  fls = fr.applyForFaultImages()
-  for i in range(8):
-    plot3(gx,fls[i],cmin=min(fls[i]),cmax=max(fls[i]),cmap=jetRamp(1.0),
-     clab="Fault likelihood "+str(i),png="fl")
-
+  sk = [sk[0],sk[1],sk[2]]
+  plot3(gx,skins=sk,clab="oldSkins")
+  fcs = FaultSkin.getCells(sk)
+  plot3(gx,cells=fcs,clab="oldCells")
+  fcr = FaultCellRegrid(n1,n2,n3,fcs)
+  #fcs = fcr.smoothCells(fl)
+  #fcr.setCells(fcs)
+  for i in range(100):
+    print i
+    fcs = fcr.addNabors(fcs,fl)
+  fcr.resetCells(fcs)
   fs.setGrowLikelihoods(0.1,0.3)
-  sks = fs.findSkins(fcs)
-  plot3(gx,cells=fcs,png="newSkins")
-  plot3(gx,skins=sks,png="newSkins")
-  '''
-
-
-
+  skins = fs.findSkins(fcs)
+  plot3(gx,skins=skins)
+  plot3(gx,cells=fcs,clab="newCells")
 
 def rosePlot():
   gx = readImage(gxfile)
@@ -785,7 +897,7 @@ def plot3T(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,fbs=None,fss=None,smax=0.0,
-          links=False,curve=False,trace=False,png=None):
+          links=False,curve=False,trace=False,tgs=None,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
   n3 = len(f)
@@ -829,6 +941,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     #ss.add(ps)
     #pg.setStates(ss)
     sf.world.addChild(pg)
+  if tgs:
+    for tg in tgs:
+      sf.world.addChild(tg)
   if cells:
     ss = StateSet()
     lms = LightModelState()
