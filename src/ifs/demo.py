@@ -67,10 +67,10 @@ def main(args):
   goSkin()
   goFR()
   '''
-  #goFault()
+  goFault()
   #goFS()
   #goFSSPS()
-  goFSPSS()
+  #goFSPSS()
   #goSkin()
   #goSlip()
   #goCleanCells()
