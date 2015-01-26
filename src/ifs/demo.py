@@ -90,7 +90,6 @@ def main(args):
   #rosePlot()
 def goSkinNew():
   gx = readImage(gxfile)
-  '''
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
@@ -109,7 +108,6 @@ def goSkinNew():
   sks = fsx.findSkinsX(fcs,fl)
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,sks)
-  '''
   sk  = readSkins(fskbase)
   sks = readSkins(fskgood)
   plot3(gx,skins=sk,clab="old")

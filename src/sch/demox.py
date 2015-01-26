@@ -6,7 +6,7 @@ Version: 2014.06.17
 from uff import *
 from util import *
 from schutils import *
-setupForSubset("s2s")
+setupForSubset("s2x")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -74,10 +74,10 @@ maxThrow = 20.0
 # Directory for saved pn images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
-pngDir = "../../../png/sch/"
+pngDir = "../../../png/sch/s2x/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
-plotOnly = True
+plotOnly = True 
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out other parts that have already written results to files.
@@ -85,7 +85,7 @@ def main(args):
   #goDisplay()
   #goSlopes()
   #goScan()
-  #goThin()
+  goThin()
   #goSmooth()
   #goSkin()
   #goSlip()
@@ -95,15 +95,14 @@ def main(args):
   #goUnfold()
   #goFlatten()
   #goDisplay()
-  #goFS()
-  goSubset()
+  goFS()
+  #goSubset()
   #goShow()
   #goCleanCells()
  # goRose()
 def goSubset():
   gx = readImage(gxfile)
-  gs = copy(n1,n2-60,228,0,60,0,gx)
-  writeImage("gxss",gs)
+  plot3(gx)
 def goRose():
   sk = readSkins(fskbase)
   cells = FaultSkin.getCells(sk)
