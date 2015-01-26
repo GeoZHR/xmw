@@ -318,6 +318,7 @@ public class FaultCell implements Serializable {
   float[] emp; // array of minus-plus alignment errors
   float smp; // shift from minus side to plus side of cell
   float s1,s2,s3; // fault dip-slip vector
+  boolean notUsed;
   boolean needInterp;
 
   interface Get1 { public float get(FaultCell cell); }
@@ -496,6 +497,7 @@ public class FaultCell implements Serializable {
     i1 = round(x1);
     i2 = round(x2);
     i3 = round(x3);
+    notUsed = true;
     needInterp = true;
     float[] u = faultDipVectorFromStrikeAndDip(fp,ft);
     float[] v = faultStrikeVectorFromStrikeAndDip(fp,ft);

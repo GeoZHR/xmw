@@ -26,7 +26,7 @@ public class FaultReskin {
   public FaultReskin() {
     _fs1min = -Float.MAX_VALUE;
     _fs1max =  Float.MAX_VALUE;
-    _fllo = 0.2f;
+    _fllo = 0.3f;
     _flhi = 0.8f;
     _dflmax = 0.2f;
     _dfpmax = 10.0f;
@@ -294,11 +294,13 @@ public class FaultReskin {
     // eliminate spurious ridges, and improves the accuracy of 2nd-order
     // finite-difference approximations (parabolic interpolation) used to
     // locate ridges.
+    /*
     float[][][] fs = new float[n3][n2][n1];
     RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
     rgf.applyX0X(f,fs);
     rgf.applyXX0(fs,fs);
     f = fs;
+    */
 
     // Vertical image boundaries are discontinuities that may look like
     // faults. If a fault appears to be near and nearly parallel to image

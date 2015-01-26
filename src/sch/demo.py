@@ -77,7 +77,7 @@ maxThrow = 20.0
 pngDir = "../../../png/sch/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out other parts that have already written results to files.
@@ -95,10 +95,10 @@ def main(args):
   #goUnfold()
   #goFlatten()
   #goDisplay()
-  #goFS()
+  goFS()
   #goShow()
   #goCleanCells()
-  goRose()
+ # goRose()
 def goRose():
   sk = readSkins(fskbase)
   cells = FaultSkin.getCells(sk)
@@ -151,17 +151,17 @@ def goFS():
   else :
     skinsOld = readSkins(fskbase)
     skinsNew = readSkins(fsmbase)
-  plot3(gx,skins=skinsNew,png="newSkins")
-  plot3(gx,skins=skinsOld,png="oldSkins")
+  #plot3(gx,skins=skinsNew,png="newSkins")
+  #plot3(gx,skins=skinsOld,png="oldSkins")
   sksOld,sksNew =[],[]
   for ik in range(20):
     sksOld.append(skinsOld[ik])
     sksNew.append(skinsNew[ik])
-  plot3(gx,skins=sksNew)
-  plot3(gx,skins=sksOld)
-  for ik in range(15):
-    #plot3(gx,skins=[skinsOld[ik]])
-    plot3(gx,skins=[skinsNew[ik]])
+  #plot3(gx,skins=sksNew)
+  #plot3(gx,skins=sksOld)
+  for ik in range(5):
+    plot3(gx,skins=[skinsOld[ik]],links=True)
+    #plot3(gx,skins=[skinsNew[ik]])
 
 
 def goShow():

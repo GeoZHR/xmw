@@ -1,9 +1,12 @@
 package ifs;
 
+import java.util.ArrayList;
+import edu.mines.jtk.util.Check;
+import static edu.mines.jtk.util.ArrayMath.*;
+
 /** 
  * A k-d tree of samples in a k-dimensional space. Provides efficient 
- * searches for samples nearest to specified query points, and for
- * samples with coordinates within specified bounds.
+ * searches for samples nearest to specified query points.
  * <p>
  * Computational complexity to construct the tree is O(k*n*log(n)), 
  * where k is the number of coordinate values in each sample, and 
@@ -22,7 +25,7 @@ package ifs;
  * Software, v. 3, n. 3, p. 209-226.
  * 
  * @author Dave Hale, Colorado School of Mines
- * @version 2011.11.26
+ * @version 2013.11.11
  */
 public class KdTree {
 
@@ -43,7 +46,7 @@ public class KdTree {
    * For example, simple Euclidean distance corresponds to functions
    * f1(i,ai,bi) = (ai-bi)*(ai-bi) and f2(f1sum) = sqrt(f1sum).
    * <p>
-   * In the work of Bentley et al. (1977, see reference above), the 
+   * In the work of Friedman et al. (1977, see reference above), the 
    * first function f1 is called fi, and the second function f2 is 
    * called F.
    */
@@ -77,7 +80,7 @@ public class KdTree {
       return ab*ab;
     }
     public float f2(float f1sum) {
-      return (float)Math.sqrt(f1sum);
+      return sqrt(f1sum);
     }
   }
 
@@ -107,6 +110,16 @@ public class KdTree {
   }
 
   /**
+   * Returns the distance from the i'th sample to the specified point.
+   * @param i the index of the i'th sample in this tree.
+   * @param x array {x1,x2,...,xk} of point coordinates.
+   * @return the distance.
+   */
+  public float distance(int i, float[] x) {
+    return _d.f2(f1sum(i,x));
+  }
+
+  /**
    * Returns the index of the sample nearest to the specified point.
    * @param x array {x1,x2,...,xk} of point coordinates.
    * @return the index of the nearest sample.
@@ -130,19 +143,9 @@ public class KdTree {
   }
 
   /**
-   * Returns the distance from the i'th sample to the specified point.
-   * @param i the index of the i'th sample in this tree.
-   * @param x array {x1,x2,...,xk} of point coordinates.
-   * @return the distance.
+   * Slow implementation.
    */
-  public float distance(int i, float[] x) {
-    return _d.f2(f1sum(i,x));
-  }
-
-  /**
-   * FOR TESTING ONLY.
-   */
-  private int findNearestSlow(float[] x) {
+  public int findNearestSlow(float[] x) {
     float dmin = Float.MAX_VALUE;
     int imin = -1;
     for (int i=0; i<_n; ++i) {
@@ -156,9 +159,9 @@ public class KdTree {
   }
 
   /**
-   * FOR TESTING ONLY.
+   * Slow implementation.
    */
-  private int[] findInRangeSlow(float[] xmin, float[] xmax) {
+  public int[] findInRangeSlow(float[] xmin, float[] xmax) {
     IntList ilist = new IntList();
     for (int i=0; i<_n; ++i) {
       boolean outside = false;
@@ -172,6 +175,48 @@ public class KdTree {
     return ilist.trim();
   }
 
+  /**
+   * Returns line segments representing boundaries of cells in a 2-D tree.
+   * <em>
+   * These line segments are useful for visualizing a k-D tree for k = 2.
+   * </em>
+   * @return array {x1[n][2],x2[n][2]} of bounding line segments,
+   *  where n is the number of non-leaf nodes in this tree.
+   */
+  public float[][][] getBoundingLines() {
+    Check.state(_k==2,"k=2 for this k-d tree");
+    float x1min = min(_x[0]);
+    float x1max = max(_x[0]);
+    float x2min = min(_x[1]);
+    float x2max = max(_x[1]);
+    ArrayList<float[]> x1list = new ArrayList<float[]>();
+    ArrayList<float[]> x2list = new ArrayList<float[]>();
+    getBoundingLines(_root,x1min,x2min,x1max,x2max,x1list,x2list);
+    float[][] x1 = x1list.toArray(new float[0][]);
+    float[][] x2 = x2list.toArray(new float[0][]);
+    return new float[][][]{x1,x2};
+  }
+  private void getBoundingLines(
+    Node node, float x1min, float x2min, float x1max, float x2max,
+    ArrayList<float[]> x1list, ArrayList<float[]>x2list)
+  {
+    if (!node.isLeaf()) {
+      if (node._j==0) { // 1st dimension split
+        float x1spl = node._x;
+        x1list.add(new float[]{x1spl,x1spl});
+        x2list.add(new float[]{x2min,x2max});
+        getBoundingLines(node._left ,x1min,x2min,x1spl,x2max,x1list,x2list);
+        getBoundingLines(node._right,x1spl,x2min,x1max,x2max,x1list,x2list);
+      } else { // 2nd dimension split
+        float x2spl = node._x;
+        x1list.add(new float[]{x1min,x1max});
+        x2list.add(new float[]{x2spl,x2spl});
+        getBoundingLines(node._left ,x1min,x2min,x1max,x2spl,x1list,x2list);
+        getBoundingLines(node._right,x1min,x2spl,x1max,x2max,x1list,x2list);
+      }
+    }
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // private
 
@@ -182,7 +227,8 @@ public class KdTree {
   private int[] _i; // array of sample indices
   private Node _root; // root node in tree
 
-  private static final int NLEAF = 12; // min # of samples in leaf nodes
+  //private static final int NLEAF = 12; // min # of samples in leaf nodes
+  public static int NLEAF = 12; // min # of samples in leaf nodes
 
   private float f1sum(int i, float[] x) {
     float ds = 0.0f;
@@ -230,15 +276,15 @@ public class KdTree {
         float ds = _d.f1(j,x[j],xmin[j]); 
         sum += ds; 
         if (sum>sds) 
-          return false; // FBF wrong; returns true
+          return false; // not true <- FBF error
       } else if (x[j]>xmax[j]) {
         float ds = _d.f1(j,x[j],xmax[j]); 
         sum += ds; 
         if (sum>sds) 
-          return false; // FBF wrong; returns true
+          return false; // not true <- FBF error
       }
     }
-    return true; // FBF wrong; returns false
+    return true; // not false <- FBF error
   }
 
   /**
@@ -492,10 +538,8 @@ public class KdTree {
       this.x = x;
       this.i = -1;
       ds = Float.MAX_VALUE;
-      if (xmin==null) {
-        xmin = new float[x.length];
-        xmax = new float[x.length];
-      }
+      xmin = new float[x.length];
+      xmax = new float[x.length];
       for (int j=0; j<x.length; ++j) {
         xmin[j] = -Float.MAX_VALUE;
         xmax[j] =  Float.MAX_VALUE;

@@ -114,7 +114,7 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cellsList.add(cList.toArray(new FaultCell[0]));
       }
     }
-    assert _cellList.size()==cellSet.size();
+    //assert _cellList.size()==cellSet.size();
 
     // Convert the list of arrays to the array of arrays to be returned.
     _cellsAB = cellsList.toArray(new FaultCell[0][]);
@@ -160,7 +160,7 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cellsList.add(cList.toArray(new FaultCell[0]));
       }
     }
-    assert _cellList.size()==cellSet.size();
+    //assert _cellList.size()==cellSet.size();
 
     // Convert the list of arrays to the array of arrays to be returned.
     _cellsLR = cellsList.toArray(new FaultCell[0][]);

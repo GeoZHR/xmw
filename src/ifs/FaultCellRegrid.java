@@ -36,21 +36,15 @@ public class FaultCellRegrid {
   public void resetCells(FaultCell[] fcs) {
     int nc = fcs.length;
     for (int ic=0; ic<nc; ++ic) {
-      FaultCell fc = fcs[ic];
-      float x1 = fc.x1;
-      float x2 = fc.x2;
-      float x3 = fc.x3;
-      float fl = fc.fl;
-      float fp = fc.fp;
-      float ft = fc.ft;
-      fcs[ic] = new FaultCell(x1,x2,x3,fl,fp,ft);
+      fcs[ic].skin=null;
     }
   }
 
   public FaultCell[] addNabors(final FaultCell[] fcs, final float[][][] fl) {
-    _fcs1 = fcs;
+    //_fcs1 = fcs;
     _kt = setKdTreeCells(_fcs);
-    _kt1 = setKdTreeCells(_fcs1);
+    //_kt1 = setKdTreeCells(_fcs1);
+    final FaultCellGrow fcg = new FaultCellGrow(_fcs,fl);
     Stopwatch sw = new Stopwatch();
     sw.start();
     final FaultReskin fr = new FaultReskin();
@@ -67,7 +61,8 @@ public class FaultCellRegrid {
       int c3 = fc.i3;
       cg[c3][c2][c1] = fc;
       FaultCell[] fcsn = null;
-      if(fc.needInterp){fcsn=interpNabors(fc);}
+      //if(fc.needInterp){fcsn=interpNabors(fc);}
+      if(fc.needInterp){fcsn=fcg.applyForCells(fc);}
       if(fcsn!=null){
         //FaultCell[] fcsn = nearestNabors(fc,cells);
         if(fc.ca==null){
@@ -77,7 +72,7 @@ public class FaultCellRegrid {
           int i1 = ca.i1;
           int i2 = ca.i2;
           int i3 = ca.i3;
-          ca.fl = fl[i3][i2][i1];
+          //ca.fl = fl[i3][i2][i1];
           cg[i3][i2][i1] = ca;
           }
         }
@@ -88,7 +83,7 @@ public class FaultCellRegrid {
             int i1 = cb.i1;
             int i2 = cb.i2;
             int i3 = cb.i3;
-            cb.fl = fl[i3][i2][i1];
+            //cb.fl = fl[i3][i2][i1];
             cg[i3][i2][i1] = cb;
           }
         }
@@ -99,7 +94,7 @@ public class FaultCellRegrid {
           int i1 = cl.i1;
           int i2 = cl.i2;
           int i3 = cl.i3;
-          cl.fl = fl[i3][i2][i1];
+          //cl.fl = fl[i3][i2][i1];
           cg[i3][i2][i1] = cl;
           }
         }
@@ -110,7 +105,7 @@ public class FaultCellRegrid {
           int i1 = cr.i1;
           int i2 = cr.i2;
           int i3 = cr.i3;
-          cr.fl = fl[i3][i2][i1];
+          //cr.fl = fl[i3][i2][i1];
           cg[i3][i2][i1] = cr;
           }
         }

@@ -234,7 +234,7 @@ public class FaultExtractor {
       System.out.println(" Iteration "+n+"......");
       VecArrayFloat2 vb    = new VecArrayFloat2(b);
       VecArrayFloat2 vsurf = new VecArrayFloat2(surf);
-      updateSlopesAndWeights(fp,surf,pi1,qi1,wi1);
+      updateSlopesAndWeightsX(fp,surf,pi1,qi1,wi1);
       A2 a2 = new A2(wi1,_weight);
       M2 m2 = new M2(_sigma1,_sigma2,wi1,k2,k3);
       if(n>5) {niter=_niter;}
@@ -252,11 +252,97 @@ public class FaultExtractor {
   
   }
 
+  private void updateSlopesAndWeightsX(final float fp,
+    final float[][] sf, final float[][] p2, 
+    final float[][] p3, final float[][] wp) 
+  {
+    final int dx = 2;
+    final int n3 = sf.length;
+    final int n2 = sf[0].length;
+    final int nc = _fcs.length;
+    Parallel.loop(n3,new Parallel.LoopInt(){
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float x1i,x2i,x3i;
+        if(_n3==n3) {
+          x1i = i2;
+          x3i = i3;
+          x2i = sf[i3][i2];
+        } else {
+          x1i = i2;
+          x2i = i3;
+          x3i = sf[i3][i2];
+        }
+        if(nc<1) {
+          p2[i3][i2] = 0f;
+          p3[i3][i2] = 0f;
+          wp[i3][i2] = 0f;
+        } else {
+          float g11 = 0;
+          float g12 = 0;
+          float g13 = 0;
+          float g22 = 0;
+          float g23 = 0;
+          float g33 = 0;
+          float wss = 0;
+          float fls = 0;
+          for (int ic=0; ic<nc; ++ic) {
+            FaultCell fc = _fcs[ic];
+            float dp = fc.fp-fp;
+            dp = min(abs(dp),abs(dp+360),abs(dp-360));
+            if(dp>15f){continue;}
+            float fli = fc.fl;
+            float w11 = fc.w11;
+            float w22 = fc.w22;
+            float w33 = fc.w33;
+            float w12 = fc.w12;
+            float w23 = fc.w23;
+            float w13 = fc.w13;
+            float dx1 = x1i-fc.x1;
+            float dx2 = x2i-fc.x2;
+            float dx3 = x3i-fc.x3;
+            float dxs = dx1*dx1+dx2*dx2+dx3*dx3;
+            float wpi = gaussian(dxs,dx/4);
+            wss += wpi;
+            fls += wpi*fli;
+            g11 += wpi*w11;
+            g22 += wpi*w22;
+            g33 += wpi*w33;
+            g12 += wpi*w12;
+            g13 += wpi*w13;
+            g23 += wpi*w23;
+          }
+          if(wss==0){
+            p2[i3][i2] = 0f;
+            p3[i3][i2] = 0f;
+            wp[i3][i2] = 0f;
+          } else {
+            float[] us = solveEigenproblem(g11,g12,g13,g22,g23,g33);
+            float u1 = us[0];
+            float u2 = us[1];
+            float u3 = us[2];
+            wp[i3][i2] = fls/wss;
+            if(n3==_n3) {
+              if(u2<0f){u1=-u1;u2=-u2;u3=-u3;}
+              p2[i3][i2] = -u1/u2;
+              p3[i3][i2] = -u3/u2;
+            } else {
+              if(u3<0f){u1=-u1;u2=-u2;u3=-u3;}
+              p2[i3][i2] = -u1/u3;
+              p3[i3][i2] = -u2/u3;
+            }
+          }
+        }
+      }
+    }});
+  }
+
+
   private void updateSlopesAndWeights(final float fp,
     final float[][] sf, final float[][] p2, 
     final float[][] p3, final float[][] wp) 
   {
-    final int dx = 10;
+    final int dx = 5;
     final int n3 = sf.length;
     final int n2 = sf[0].length;
     Parallel.loop(n3,new Parallel.LoopInt(){
@@ -580,8 +666,8 @@ public class FaultExtractor {
   ///////////////////////////////////////////////////////////////////////////
   // private
   private float _weight = 0.5f; // -(fxx+fyy)+weight*(fxxxx+2fxxyy+fyyyy)=px+qy
-  private float _sigma1 = 6.0f; // precon smoothing extent for 1st dim
-  private float _sigma2 = 6.0f; // precon smoothing extent for 2nd dim
+  private float _sigma1 = 0.0f; // precon smoothing extent for 1st dim
+  private float _sigma2 = 0.0f; // precon smoothing extent for 2nd dim
   private float _small = 0.01f; // stop CG iterations if residuals small
   private int _niter = 200; // maximum number of CG iterations
   private int _exniter = 10; // external iterations of surface updating
