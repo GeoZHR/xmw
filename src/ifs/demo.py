@@ -91,6 +91,7 @@ def main(args):
 def goSkinNew():
   gx = readImage(gxfile)
   fl = readImage(flfile)
+  '''
   fp = readImage(fpfile)
   ft = readImage(ftfile)
   fs = FaultSkinner()
@@ -100,7 +101,30 @@ def goSkinNew():
   sk = fs.findSkins(cells)
   removeAllSkinFiles(fskbase)
   writeSkins(fskbase,sk)
+  '''
+  da = zerofloat(1)
+  sk  = readSkins(fskbase)
+  sk  = [sk[3],sk[5]]
   fcs = FaultSkin.getCells(sk)
+  fcg = FaultCellGrow(fcs,fl)
+  #cells = fcg.applyForCells(fcs[1015])
+  csL = fcg.findNaborsL(da,fcs[1010])
+  csR = fcg.findNaborsR(da,fcs[1010])
+  for ic in range(len(csL)):
+    csL[ic].fl = 0.1
+  for ic in range(len(csR)):
+    csR[ic].fl = 0.4
+
+  fcs[1010].fl = 1.0
+  cells = fcg.combineCells(fcs,csL)
+  cells = fcg.combineCells(cells,csR)
+
+  plot3(gx,cells=cells,clab="new")
+
+  '''
+  fsx = FaultSkinnerX()
+  cells = fsx.createCells(98,27.31,48.00,0.1,171.191,23.209,fcs)
+  plot3(gx,cells=cells,clab="new")
   fsx = FaultSkinnerX()
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsx.setMinSkinSize(minSkinSize)
@@ -108,10 +132,12 @@ def goSkinNew():
   sks = fsx.findSkinsX(fcs,fl)
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,sks)
-  sk  = readSkins(fskbase)
   sks = readSkins(fskgood)
-  plot3(gx,skins=sk,clab="old")
   plot3(gx,skins=sks,clab="new")
+  '''
+
+
+
 def goFault():
   gx = readImage(gxfile)
   fl = readImage(flfile)
@@ -1035,7 +1061,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     sg.setStates(ss)
-    size = 1.5
+    size = 2.0
     if links:
       size = 0.5 
     for skin in skins:

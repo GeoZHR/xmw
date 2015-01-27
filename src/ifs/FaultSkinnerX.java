@@ -59,6 +59,20 @@ public class FaultSkinnerX {
     _ncsmin = 400;
   }
 
+  public FaultCell[] createCells(
+    float x1, float x2, float x3,
+    float fl, float fp, float ft,
+    FaultCell[] fcs) 
+  {
+    int ic = 0;
+    int nc = fcs.length+1;
+    FaultCell cell = new FaultCell(x1,x2,x3,fl,fp,ft);
+    FaultCell[] cells = new FaultCell[nc];
+    for (FaultCell fc:fcs){cells[ic]=fc;ic++;}
+    cells[nc-1] = cell;
+    return cells;
+  }
+
   public void resetCells(FaultCell[] cells) {
     int nc = cells.length;
     for (int ic=0; ic<nc; ++ic) {
@@ -533,8 +547,7 @@ public class FaultSkinnerX {
     seedList.clear();
     for (FaultCell seed:seeds)
       seedList.add(seed);
-
-    //seedList.add(seeds[10]);
+    //seedList.add(seeds[0]);
 
     // While potential seeds remain, ...
     for (int kseed=0; kseed<nseed; ++kseed) {
@@ -573,8 +586,12 @@ public class FaultSkinnerX {
             new PriorityQueue<FaultCell>(1024,flComparator);
 
         // While the grow queue is not empty, ...
-
+        int ct=0;
         while (!growQueue.isEmpty()) {
+          if(ct%1000==0) {
+            System.out.println("ct="+ct);
+          }
+          ct++;
 
           // Get and remove the cell with highest fault likelihood from the
           // grow queue. If not already in the skin, add them and link and
@@ -632,9 +649,11 @@ public class FaultSkinnerX {
                   FaultCell ca=null, cb=null;
                   FaultCell cl=null, cr=null;
                   FaultCell cn = nearestCell(fc,fcs);
-                  fc.x1 = cn.x1; fc.i1 = cn.i1;
-                  fc.x2 = cn.x2; fc.i2 = cn.i2;
-                  fc.x3 = cn.x3; fc.i3 = cn.i3;
+                  if(cn!=null){
+                    fc.x1 = cn.x1; fc.i1 = cn.i1;
+                    fc.x2 = cn.x2; fc.i2 = cn.i2;
+                    fc.x3 = cn.x3; fc.i3 = cn.i3;
+                  }
                   if(fc.cl==null){cl=findNaborLeft (fcg,fc);}
                   if(fc.cr==null){cr=findNaborRight(fcg,fc);}
                   if(fc.ca==null){ca=findNaborAbove(fcg,fc);}
