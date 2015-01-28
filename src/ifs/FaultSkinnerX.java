@@ -209,6 +209,9 @@ public class FaultSkinnerX {
     return skinsX(cells,fl);
   }
 
+  public FaultSkin[] findSkinsXX(FaultCell[] cells, float[][][] fl) {
+    return skinsXX(cells,fl);
+  }
 
   /**
    * Returns an array of new skins with cells from specified skins. The
@@ -502,6 +505,174 @@ public class FaultSkinnerX {
     }
     return new KdTree(xc);
   }
+
+  // Returns skins constructed from specified cells.
+  private FaultSkin[] skinsXX(FaultCell[] cells, float[][][] fl) {
+    int sk = 0;
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    int ncell = cells.length;
+    HashSet<FaultCell> hsc = new HashSet<FaultCell>();
+    for (FaultCell fc:cells) {hsc.add(fc);}
+
+    // Empty list of skins.
+    ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
+
+    // Cell comparator for high-to-low ordering based on fault likelihoods.
+    Comparator<FaultCell> flComparator = new Comparator<FaultCell>() {
+      public int compare(FaultCell c1, FaultCell c2) {
+        if (c1.fl<c2.fl)
+          return 1;
+        else if (c1.fl>c2.fl)
+          return -1;
+        else
+          return 0;
+      }
+    };
+
+    // Make a list of cells that might be seeds for new skins.
+    ArrayList<FaultCell> seedList = new ArrayList<FaultCell>();
+    for (int icell=0; icell<ncell; ++icell) {
+      FaultCell cell = cells[icell];
+      if (cell.fl>=_flhi && cell.s1>=_fs1min && cell.s1<=_fs1max)
+        seedList.add(cell);
+    }
+    int nseed = 1;
+    //int nseed = seedList.size();
+
+    // Sort the list of seeds high-to-low by fault likelihood.
+    FaultCell[] seeds = seedList.toArray(new FaultCell[0]);
+    Arrays.sort(seeds,flComparator);
+    seedList.clear();
+    /*
+    for (FaultCell seed:seeds)
+      seedList.add(seed);
+    */
+    seedList.add(seeds[0]);
+
+    // While potential seeds remain, ...
+    for (int kseed=0; kseed<nseed; ++kseed) {
+
+      // Skip any potential seeds that are already in a skin.
+      //while (kseed<nseed && seedList.get(kseed).skin!=null)
+      while (kseed<nseed && !seedList.get(kseed).notUsed)
+        ++kseed;
+
+      // If we found a seed with which to construct a new skin, ...
+      if (kseed<nseed) {
+        System.out.println("skinNo="+sk);
+        sk++;
+        FaultCell seed = seedList.get(kseed);
+
+        FaultCellGrow fcr = new FaultCellGrow(getCells(hsc),fl);
+        FaultCellGridX cellGrid = new FaultCellGridX(n1,n2,n3);
+        // Make a new empty skin.
+        FaultSkin skin = new FaultSkin();
+
+        // Make a priority queue of cells, initially with only the seed.
+        PriorityQueue<FaultCell> growQueue = 
+            new PriorityQueue<FaultCell>(1024,flComparator);
+        growQueue.add(seed);
+
+        // While the grow queue is not empty, ...
+        int ct=0;
+        while (!growQueue.isEmpty()) {
+          if(ct%1000==0) {
+            System.out.println("ct="+ct);
+          }
+          ct++;
+
+          // Get and remove the cell with highest fault likelihood from the
+          // grow queue. If not already in the skin, add them and link and
+          // add any mutually best nabors to the grow queue.
+          FaultCell cell = growQueue.poll();
+          if (cell.skin==null) {
+            FaultCell[] fcs = fcr.applyForCells(cell);
+            if(fcs!=null) {
+              FaultCellGrid fcg = new FaultCellGrid(fcs);
+              FaultCell ca=null, cb=null;
+              FaultCell cl=null, cr=null;
+              FaultCell cn = nearestCell(cell,fcs);
+              if(cn!=null){
+                cell.x1 = cn.x1; cell.i1 = cn.i1;
+                cell.x2 = cn.x2; cell.i2 = cn.i2;
+                cell.x3 = cn.x3; cell.i3 = cn.i3;
+              }
+              cellGrid.setCell(cell);
+              if(cell.cl==null){cl=findNaborLeft (fcg,cell);}
+              if(cell.cr==null){cr=findNaborRight(fcg,cell);}
+              if(cell.ca==null){ca=findNaborAbove(fcg,cell);}
+              if(cell.cb==null){cb=findNaborBelow(fcg,cell);}
+              if(ca!=null) cellGrid.setCell(ca);
+              if(cb!=null) cellGrid.setCell(cb);
+              if(cl!=null) cellGrid.setCell(cl);
+              if(cr!=null) cellGrid.setCell(cr);
+            }
+            FaultCell ca,cb,cl,cr;
+            ca = findNaborAbove(cellGrid,cell);
+            cb = findNaborBelow(cellGrid,ca);
+            if (ca!=null && ca.skin==null && cb==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(ca);
+            }
+
+            cb = findNaborBelow(cellGrid,cell);
+            ca = findNaborAbove(cellGrid,cb);
+            if (cb!=null && cb.skin==null && ca==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(cb);
+            }
+
+            cl = findNaborLeft(cellGrid,cell);
+            cr = findNaborRight(cellGrid,cl);
+            if (cl!=null && cl.skin==null && cr==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cl);
+            }
+
+            cr = findNaborRight(cellGrid,cell);
+            cl = findNaborLeft(cellGrid,cr);
+            if (cr!=null && cr.skin==null && cl==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cr);
+            }
+            skin.add(cell);
+          }
+
+        }
+
+        // Done growing. Add this skin to the list of skins. Here we include
+        // skins that are too small. If we did not include them here, we would
+        // need to put them in a list of small skins, so that we could later
+        // remove all of their cells. (By not removing those cells now, we
+        // prevent them from becoming parts of other skins.) Instead, we
+        // simply put all skins in the list, and filter that list later.
+        skinList.add(skin);
+        updateCells(skin,cells,hsc);
+      }
+    }
+
+    // Filter skins to include only those that are big enough. Remove all
+    // cells from any skins that are too small.
+    ArrayList<FaultSkin> bigSkinList = new ArrayList<FaultSkin>();
+    for (FaultSkin skin:skinList) {
+      if (skin.size()>=_ncsmin) {
+        bigSkinList.add(skin);
+      } else {
+        for (FaultCell cell:skin) {
+          cell.skin = null;
+          cell.ca = null;
+          cell.cb = null;
+          cell.cl = null;
+          cell.cr = null;
+        }
+      }
+    }
+    //return getCells(n1,n2,n3,cellGrid);
+    return bigSkinList.toArray(new FaultSkin[0]);
+  }
+
 
   // Returns skins constructed from specified cells.
   private FaultSkin[] skinsX(FaultCell[] cells, float[][][] fl) {

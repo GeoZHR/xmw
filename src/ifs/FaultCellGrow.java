@@ -480,6 +480,7 @@ public class FaultCellGrow {
     return getCells(hsc);
   }
 
+
   public FaultCell[] findNaborsL(float[] da, FaultCell cell) {
     int dd = 10;
     float x1 = cell.x1;

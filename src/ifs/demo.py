@@ -132,9 +132,9 @@ def goSkinNew():
   '''
   fsx = FaultSkinnerX()
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fsx.setMinSkinSize(minSkinSize)
+  fsx.setMinSkinSize(2)
   fsx.resetCells(fcs)
-  sks = fsx.findSkinsX(fcs,fl)
+  sks = fsx.findSkinsXX(fcs,fl)
   '''
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,sks)
@@ -142,6 +142,7 @@ def goSkinNew():
   '''
   plot3(gx,skins=sk,clab="old")
   plot3(gx,skins=sks,clab="new")
+  plot3(gx,skins=sks,links=True,clab="new")
 
 
 

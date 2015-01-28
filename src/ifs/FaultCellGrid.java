@@ -51,6 +51,10 @@ public class FaultCellGrid {
     for (FaultCell cell:cells)
       set(cell);
   }
+
+  public void setCell(FaultCell cell) {
+    set(cell);
+  }
   /*
   public FaultCellGrid(int n1, int n2, int n3, FaultCell[] cells) {
     _j1 = 0;
