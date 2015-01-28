@@ -516,7 +516,7 @@ public class FaultCellGrow {
         else       {dsR.add(ds);fcR.add(fci);}
       }
     }
-    int nb = 50;
+    int nb = 40;
     int nl = dsL.size();
     int nr = dsR.size();
     if(nl<10||nr<10) {return null;}
