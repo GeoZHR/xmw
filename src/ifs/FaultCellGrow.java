@@ -353,9 +353,9 @@ public class FaultCellGrow {
       if(i3>=_n3) {continue;}
       float fpi = fcs[ic].fp;
       float fti = fcs[ic].ft;
-      float fli = _fl[i3][i2][i1];
-      //float flt = _fl[i3][i2][i1];
-      //float fli = exp(flt)/exp(1f);//_fl[i3][i2][i1];
+      //float fli = _fl[i3][i2][i1];
+      float flt = _fl[i3][i2][i1];
+      float fli = exp(flt)/exp(1f);//_fl[i3][i2][i1];
       fcs[ic] = new FaultCell(x1i,x2i,x3i,fli,fpi,fti);
     }
     return fcs;
@@ -435,7 +435,7 @@ public class FaultCellGrow {
   }
 
   private FaultCell[] findNabors(FaultCell cell) {
-    int dd = 10;
+    int dd = 20;
     float[] xmin = new float[3];
     float[] xmax = new float[3];
     xmin[0] = cell.x1-dd;
@@ -497,13 +497,21 @@ public class FaultCellGrow {
     xmin[2] = x3-dd;
     xmin[1] = x2-dd;
     xmin[0] = x1-dd;
-    while(nd<30&&dd<20) { 
+    while(nd<60&&dd<40) { 
       if(w2>=w3) {
         xmax[2]  = x3;
+        xmax[1] += 2f;
+        xmax[0] += 2f;
         xmin[2] -= 2f;
+        xmin[1] -= 2f;
+        xmin[0] -= 2f;
       } else {
         xmax[1]  = x2;
+        xmax[2] += 2f;
+        xmax[0] += 2f;
+        xmin[2] -= 2f;
         xmin[1] -= 2f;
+        xmin[0] -= 2f;
       }
       dd +=2;
       id = _kt.findInRange(xmin,xmax);
@@ -542,13 +550,22 @@ public class FaultCellGrow {
     xmax[0] = x1+dd;
     int nd = 0;
     int[] id = null;
-    while(nd<30&&dd<20) { 
+    while(nd<60&&dd<40) { 
       if(w2>=w3) {
         xmin[2]  = x3;
+        xmin[1] -= 2f;
+        xmin[0] -= 2f;
         xmax[2] += 2f;
+        xmax[1] += 2f;
+        xmax[0] += 2f;
       } else {
         xmin[1]  = x2;
+        xmin[2] -= 2f;
+        xmin[0] -= 2f;
+
+        xmax[2] += 2f;
         xmax[1] += 2f;
+        xmax[0] += 2f;
       }
       dd +=2;
       id = _kt.findInRange(xmin,xmax);
@@ -574,7 +591,7 @@ public class FaultCellGrow {
   private FaultCell[] distance(
     float[] da, FaultCell fcc, FaultCell[] fcs) 
   {
-    int ns = 50;
+    int ns = 60;
     float x1 = fcc.x1;
     float x2 = fcc.x2;
     float x3 = fcc.x3;
@@ -620,9 +637,12 @@ public class FaultCellGrow {
 
   private boolean canBeNabors(FaultCell ci, FaultCell cn) {
     boolean can = true;
+    /*
     if (cn.fl<_fllo) {
       can = false;
-    } else if (absDeltaFp(ci,cn)>_dfpmax) {
+    } else 
+    */
+    if (absDeltaFp(ci,cn)>_dfpmax) {
       can = false;
     } else if (absDeltaFt(ci,cn)>_dftmax) {
       can = false;
@@ -669,8 +689,8 @@ public class FaultCellGrow {
   private int _n1, _n2, _n3;
   private float _fllo=0.2f;
   //private float _dfpmax=15f; // max difference between strikes of nabors
-  private float _dfpmax=40f; // max difference between strikes of nabors
-  private float _dftmax=10f; // max difference between dips of nabors
-  private float _dnpmax=5.f; // max distance to planes of nabors
+  private float _dfpmax=10f; // max difference between strikes of nabors
+  private float _dftmax=20f; // max difference between dips of nabors
+  private float _dnpmax=10f; // max distance to planes of nabors
 }
 

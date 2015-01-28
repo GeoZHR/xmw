@@ -63,6 +63,15 @@ public class FaultCell implements Serializable {
     return fl;
   }
 
+  public float getFp() {
+    return fp;
+  }
+
+  public float getFt() {
+    return ft;
+  }
+
+
   public int[] getI() {
     return new int[]{i1,i2,i3};
   }

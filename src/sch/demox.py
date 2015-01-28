@@ -102,9 +102,40 @@ def main(args):
   #goCleanCells()
  # goRose()
   goSkinNew()
+  #goLook()
+def goLook():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  skins = readSkins(fskbase)
+  skins = [skins[0],skins[15]]
+  fcs = FaultSkin.getCells(skins)
+  cgs = FaultCellGrid(fcs)
+  fci = cgs.get(189,124,124)
+  fcg = FaultCellGrow(fcs,fl)
+  da = zerofloat(1)
+  #cells = fcg.applyForCells(fcs[1015])
+  ck = 43780
+  csL = fcg.findNaborsL(da,fci)
+  csR = fcg.findNaborsR(da,fci)
+  print len(csL)
+  print len(csR)
+  for ic in range(len(csL)):
+    csL[ic].fl = 0.0
+  for ic in range(len(csR)):
+    csR[ic].fl = 1.0
+
+  fci.fl = 1.0
+  cells = fcg.combineCells(fcs,csL)
+  cells = fcg.combineCells(cells,csR)
+  cells = fcg.combineCells(cells,[fci])
+
+  plot3(gx,cells=cells,clab="new")
+
+
 def goSkinNew():
   gx = readImage(gxfile)
   fl = readImage(flfile)
+
   '''
   fp = readImage(fpfile)
   ft = readImage(ftfile)
@@ -116,7 +147,9 @@ def goSkinNew():
   removeAllSkinFiles(fskbase)
   writeSkins(fskbase,sk)
   '''
+
   sk = readSkins(fskbase)
+  '''
   fcs = FaultSkin.getCells(sk)
   fsx = FaultSkinnerX()
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
@@ -125,9 +158,20 @@ def goSkinNew():
   sks = fsx.findSkinsX(fcs,fl)
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,sks)
+  '''
   sks = readSkins(fskgood)
-  plot3(gx,skins=sk,clab="old")
+  #plot3(gx,skins=sk,clab="old")
+  skins = [
+          sks[0],sks[1],sks[4],sks[6],sks[7],sks[8],sks[9],sks[10],sks[11],
+          sks[12],sks[15],sks[16],sks[17],sks[19],sks[20],sks[23]
+          ]
+  '''
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],clab="skin"+str(iskin))
+  '''
+
   plot3(gx,skins=sks,clab="new")
+  plot3(gx,skins=skins,clab="new")
 
 def goSubset():
   gx = readImage(gxfile)
