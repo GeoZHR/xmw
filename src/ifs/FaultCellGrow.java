@@ -48,13 +48,15 @@ public class FaultCellGrow {
   }
 
   public FaultCell[] applyForCells(FaultCell cell) {
+    float ds = 20.f;
     float sigNor = 2.0f;
-    final float[] da = new float[1];
-    final FaultCell[] cells = findNabors(da,cell);
+    //final float[] da = new float[1];
+    //final FaultCell[] cells = findNabors(da,cell);
+    final FaultCell[] cells = nabors(cell);
     if(cells==null) {return null;}
     final int nc = cells.length;
-    final float su = 0.25f/da[0];
-    final float sv = 0.25f/da[0];
+    final float su = 0.25f/(ds*ds);
+    final float sv = 0.25f/(ds*ds);
     final float sw = 1.0f/(sigNor*sigNor);
     final int[] bs1 = new int[2];
     final int[] bs2 = new int[2];
@@ -480,6 +482,76 @@ public class FaultCellGrow {
     return getCells(hsc);
   }
 
+  public FaultCell[] nabors(FaultCell cell) {
+    float dv = 10f;
+    float dh = 40f;
+    float x1 = cell.x1;
+    float x2 = cell.x2;
+    float x3 = cell.x3;
+    float v1 = cell.v1;
+    float v2 = cell.v2;
+    float v3 = cell.v3;
+    float[] xmin = new float[3];
+    float[] xmax = new float[3];
+    xmin[0] = x1-dv; xmax[0] = x1+dv;
+    xmin[1] = x2-dh; xmax[1] = x2+dh;
+    xmin[2] = x3-dh; xmax[2] = x3+dh;
+    int[] id = _kt.findInRange(xmin,xmax);
+    int nd = id.length;
+    if(nd<1) {return null;}
+    ArrayList<Float> dsL = new ArrayList<Float>();
+    ArrayList<Float> dsR = new ArrayList<Float>();
+    ArrayList<FaultCell> fcL = new ArrayList<FaultCell>();
+    ArrayList<FaultCell> fcR = new ArrayList<FaultCell>();
+    for (int ik=0; ik<nd; ++ik) {
+      int ic = id[ik];
+      FaultCell fci = _fc[ic];
+      if(canBeNabors(fci,cell)){
+        float d1 = fci.x1-x1;
+        float d2 = fci.x2-x2;
+        float d3 = fci.x3-x3;
+        float dd = d1*v1+d2*v2+d3*v3;
+        float ds = (d1*d1+d2*d2+d3*d3)*abs(d1);
+        if(dd<=0f) {dsL.add(ds);fcL.add(fci);} 
+        else       {dsR.add(ds);fcR.add(fci);}
+      }
+    }
+    int nb = 50;
+    int nl = dsL.size();
+    int nr = dsR.size();
+    if(nl<10||nr<10) {return null;}
+    ArrayList<FaultCell> nbs = new ArrayList<FaultCell>();
+    if(nl<nb) {
+      for (FaultCell fc:fcL) {nbs.add(fc);}
+    } else {
+      int il = 0;
+      int[] idl = new int[nl];
+      float[] dsl = new float[nl];
+      FaultCell[] fcl = fcL.toArray(new FaultCell[0]);
+      for (float dsi:dsL) {dsl[il]=dsi; idl[il]=il; il++;}
+      quickIndexSort(dsl,idl);
+      for (int ik=0; ik<nb; ++ik) {
+        int ic = idl[ik];
+        nbs.add(fcl[ic]);
+      }
+    }
+    if(nr<nb) {
+      for (FaultCell fc:fcR) {nbs.add(fc);}
+    } else {
+      int ir = 0;
+      int[] idr = new int[nr];
+      float[] dsr = new float[nr];
+      FaultCell[] fcr = fcR.toArray(new FaultCell[0]);
+      for (float dsi:dsR) {dsr[ir]=dsi; idr[ir]=ir; ir++;}
+      quickIndexSort(dsr,idr);
+      for (int ik=0; ik<nb; ++ik) {
+        int ic = idr[ik];
+        nbs.add(fcr[ic]);
+      }
+    }
+    return nbs.toArray(new FaultCell[0]);
+  }
+
 
   public FaultCell[] findNaborsL(float[] da, FaultCell cell) {
     int dd = 10;
@@ -638,11 +710,6 @@ public class FaultCellGrow {
 
   private boolean canBeNabors(FaultCell ci, FaultCell cn) {
     boolean can = true;
-    /*
-    if (cn.fl<_fllo) {
-      can = false;
-    } else 
-    */
     if (absDeltaFp(ci,cn)>_dfpmax) {
       can = false;
     } else if (absDeltaFt(ci,cn)>_dftmax) {
@@ -690,8 +757,8 @@ public class FaultCellGrow {
   private int _n1, _n2, _n3;
   private float _fllo=0.2f;
   //private float _dfpmax=15f; // max difference between strikes of nabors
-  private float _dfpmax=10f; // max difference between strikes of nabors
-  private float _dftmax=20f; // max difference between dips of nabors
-  private float _dnpmax=10f; // max distance to planes of nabors
+  private float _dfpmax=20f; // max difference between strikes of nabors
+  private float _dftmax=10f; // max difference between dips of nabors
+  private float _dnpmax=5.f; // max distance to planes of nabors
 }
 

@@ -549,7 +549,7 @@ public class FaultSkinnerX {
     for (FaultCell seed:seeds)
       seedList.add(seed);
     */
-    seedList.add(seeds[0]);
+    seedList.add(seeds[10000]);
 
     // While potential seeds remain, ...
     for (int kseed=0; kseed<nseed; ++kseed) {
