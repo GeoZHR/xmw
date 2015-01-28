@@ -43,7 +43,7 @@ sigmaPhi,sigmaTheta = 4,20
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.2
 upperLikelihood = 0.5
-minSkinSize = 2000
+minSkinSize = 4000
 #minSkinSize = round(max(n2,n3)*n1*0.2)
 
 # These parameters control the computation of fault dip slips.
@@ -104,37 +104,44 @@ def goSkinNew():
   '''
   da = zerofloat(1)
   sk  = readSkins(fskbase)
-  sk  = [sk[3],sk[5]]
+  #sk  = [sk[3],sk[5]]
   fcs = FaultSkin.getCells(sk)
+  '''
   fcg = FaultCellGrow(fcs,fl)
   #cells = fcg.applyForCells(fcs[1015])
-  csL = fcg.findNaborsL(da,fcs[1010])
-  csR = fcg.findNaborsR(da,fcs[1010])
+  ck = 1010
+  csL = fcg.findNaborsL(da,fcs[ck])
+  csR = fcg.findNaborsR(da,fcs[ck])
+  print len(csL)
+  print len(csR)
   for ic in range(len(csL)):
-    csL[ic].fl = 0.1
+    csL[ic].fl = 0.4
   for ic in range(len(csR)):
-    csR[ic].fl = 0.4
+    csR[ic].fl = 0.6
 
-  fcs[1010].fl = 1.0
+  fcs[ck].fl = 0.0
   cells = fcg.combineCells(fcs,csL)
   cells = fcg.combineCells(cells,csR)
 
   plot3(gx,cells=cells,clab="new")
 
-  '''
   fsx = FaultSkinnerX()
   cells = fsx.createCells(98,27.31,48.00,0.1,171.191,23.209,fcs)
   plot3(gx,cells=cells,clab="new")
+
+  '''
   fsx = FaultSkinnerX()
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsx.setMinSkinSize(minSkinSize)
   fsx.resetCells(fcs)
   sks = fsx.findSkinsX(fcs,fl)
+  '''
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,sks)
   sks = readSkins(fskgood)
-  plot3(gx,skins=sks,clab="new")
   '''
+  plot3(gx,skins=sk,clab="old")
+  plot3(gx,skins=sks,clab="new")
 
 
 

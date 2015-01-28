@@ -163,6 +163,7 @@ public class FaultCellGrow {
     return findCells(bs1,bs2,bs3,fls,g11,g12,g13,g22,g23,g33);
   }
 
+  /*
   public FaultCell[] applyForCellsM(FaultCell cell) {
     float sigNor = 1.0f;
     final float[] da = new float[1];
@@ -315,7 +316,7 @@ public class FaultCellGrow {
     }
     return fcs;
   }
-
+  */
 
   private FaultCell[] findCells(
     int[] bs1, int[] bs2, int[] bs3, float[][][] fl, 
@@ -350,10 +351,11 @@ public class FaultCellGrow {
       if(i1>=_n1) {continue;}
       if(i2>=_n2) {continue;}
       if(i3>=_n3) {continue;}
-      float flt = _fl[i3][i2][i1];
       float fpi = fcs[ic].fp;
       float fti = fcs[ic].ft;
-      float fli = exp(flt)/exp(1f);//_fl[i3][i2][i1];
+      float fli = _fl[i3][i2][i1];
+      //float flt = _fl[i3][i2][i1];
+      //float fli = exp(flt)/exp(1f);//_fl[i3][i2][i1];
       fcs[ic] = new FaultCell(x1i,x2i,x3i,fli,fpi,fti);
     }
     return fcs;
@@ -461,21 +463,21 @@ public class FaultCellGrow {
     float[] dr = new float[1];
     FaultCell[] fcL = findNaborsL(dl,cell);
     FaultCell[] fcR = findNaborsR(dr,cell);
-    if(fcL==null&&fcR==null){return null;}
+    if(fcL==null||fcR==null){return null;}
+    float nl = fcL.length, nr = fcR.length;
+    //if(nl<2||nr<2){return null;}
     da[0] = (dl[0]+dr[0])*0.5f;
-    float nl = fcL.length;
-    float nr = fcR.length;
-    FaultCell[] fcs = new FaultCell[round(nl+nr)];
-    int ic = 0;
+    HashSet<FaultCell> hsc = new HashSet<FaultCell>();
     for (int il=0; il<nl; ++il){
-      fcs[ic] = fcL[il];
-      ic++;
+      FaultCell fc = fcL[il];
+      hsc.add(fc);
     }
     for (int ir=0; ir<nr; ++ir){
-      fcs[ic] = fcR[ir];
-      ic++;
+      FaultCell fc = fcR[ir];
+      if(hsc.contains(fc)){continue;}
+      hsc.add(fc);
     }
-    return fcs;
+    return getCells(hsc);
   }
 
   public FaultCell[] findNaborsL(float[] da, FaultCell cell) {
@@ -489,27 +491,25 @@ public class FaultCellGrow {
     float[] xmax = new float[3];
     int nd = 0;
     int[] id = null;
-    while(nd<20&&dd<20) { 
+    xmax[2] = x3+dd;
+    xmax[1] = x2+dd;
+    xmax[0] = x1+dd;
+    xmin[2] = x3-dd;
+    xmin[1] = x2-dd;
+    xmin[0] = x1-dd;
+    while(nd<30&&dd<20) { 
       if(w2>=w3) {
-        xmax[2] = x3;
-        xmax[1] = x2+dd;
-        xmax[0] = x1+dd;
-        xmin[2] = x3-dd;
-        xmin[1] = x2-dd;
-        xmin[0] = x1-dd;
+        xmax[2]  = x3;
+        xmin[2] -= 2f;
       } else {
-        xmax[1] = x2;
-        xmax[2] = x3+dd;
-        xmax[0] = x1+dd;
-        xmin[2] = x3-dd;
-        xmin[1] = x2-dd;
-        xmin[0] = x1-dd;
+        xmax[1]  = x2;
+        xmin[1] -= 2f;
       }
-      dd += 2;
+      dd +=2;
       id = _kt.findInRange(xmin,xmax);
       nd = id.length;
     }
-    if(nd<1) {System.out.println("testL1");return null;}
+    if(nd<1) {return null;}
     HashSet<FaultCell> hsc = new HashSet<FaultCell>();
     for (int ik=0; ik<nd; ++ik) {
       int ic = id[ik];
@@ -521,8 +521,8 @@ public class FaultCellGrow {
     if(hsc.size()<1){
       return null;
     }
-    return getCells(hsc);
-    //return distance(da,cell,getCells(hsc));
+    //return getCells(hsc);
+    return distance(da,cell,getCells(hsc));
   }
 
   public FaultCell[] findNaborsR(float[] da, FaultCell cell) {
@@ -534,29 +534,27 @@ public class FaultCellGrow {
     float w3 = abs(cell.w3);
     float[] xmin = new float[3];
     float[] xmax = new float[3];
+    xmin[2] = x3-dd;
+    xmin[1] = x2-dd;
+    xmin[0] = x1-dd;
+    xmax[2] = x3+dd;
+    xmax[1] = x2+dd;
+    xmax[0] = x1+dd;
     int nd = 0;
     int[] id = null;
-    while(nd<20&&dd<20) { 
+    while(nd<30&&dd<20) { 
       if(w2>=w3) {
-        xmin[2] = x3;
-        xmin[1] = x2-dd;
-        xmin[0] = x1-dd;
-        xmax[2] = x3+dd;
-        xmax[1] = x2+dd;
-        xmax[0] = x1+dd;
+        xmin[2]  = x3;
+        xmax[2] += 2f;
       } else {
-        xmin[1] = x2;
-        xmin[2] = x3-dd;
-        xmin[0] = x1-dd;
-        xmax[2] = x3+dd;
-        xmax[1] = x2+dd;
-        xmax[0] = x1+dd;
+        xmin[1]  = x2;
+        xmax[1] += 2f;
       }
-      dd += 2;
+      dd +=2;
       id = _kt.findInRange(xmin,xmax);
       nd = id.length;
     }
-    if(nd<1) {System.out.println("testR1");return null;}
+    if(nd<1) {return null;}
     HashSet<FaultCell> hsc = new HashSet<FaultCell>();
     for (int ik=0; ik<nd; ++ik) {
       int ic = id[ik];
@@ -568,36 +566,39 @@ public class FaultCellGrow {
     if(hsc.size()<1){
       return null;
     }
-    return getCells(hsc);
-    //return distance(da,cell,getCells(hsc));
+    //return getCells(hsc);
+    return distance(da,cell,getCells(hsc));
   }
 
 
   private FaultCell[] distance(
     float[] da, FaultCell fcc, FaultCell[] fcs) 
   {
-    int nc = fcs.length;
+    int ns = 50;
     float x1 = fcc.x1;
     float x2 = fcc.x2;
     float x3 = fcc.x3;
+    int nc = fcs.length;
     int[] id = new int[nc];
-    int ns = 10;
     float[] ds = new float[nc];
+    float[] dc = new float[nc];
     for (int ic=0; ic<nc; ++ic) {
       id[ic] = ic;
       float d1 = fcs[ic].x1-x1;
       float d2 = fcs[ic].x2-x2;
       float d3 = fcs[ic].x3-x3;
-      ds[ic]= d1*d1+d2*d2+d3*d3;
+      ds[ic] = d1*d1+d2*d2+d3*d3;
+      dc[ic] = ds[ic]*abs(d1);
     }
     if(nc<ns){da[0]=sum(ds)/nc;return fcs;}
     else {
       float dd = 0.0f;
+      quickIndexSort(dc,id);
       FaultCell[] cells = new FaultCell[ns];
-      quickIndexSort(ds,id);
       for (int ik=0; ik<ns; ++ik) {
-        cells[ik] = fcs[id[ik]];
-        dd += ds[id[ik]];
+        int ic = id[ik];
+        dd += ds[ic];
+        cells[ik] = fcs[ic];
       }
       da[0] = dd/ns;
       return cells;
@@ -621,21 +622,17 @@ public class FaultCellGrow {
     boolean can = true;
     if (cn.fl<_fllo) {
       can = false;
-      /*
     } else if (absDeltaFp(ci,cn)>_dfpmax) {
       can = false;
     } else if (absDeltaFt(ci,cn)>_dftmax) {
-      System.out.println("dt="+absDeltaFt(ci,cn));
       can = false;
     } else if (maxDistanceToPlane(ci,cn)>_dnpmax) {
       can = false;
-      */
     }
     return can;
   }
   private static float absDeltaFp(FaultCell ca, FaultCell cb) {
     float del = ca.fp-cb.fp;
-    System.out.println("dp="+del);
     return min(abs(del),abs(del+360.0f),abs(del-360.0f));
   }
   private static float absDeltaFt(FaultCell ca, FaultCell cb) {
@@ -672,8 +669,8 @@ public class FaultCellGrow {
   private int _n1, _n2, _n3;
   private float _fllo=0.2f;
   //private float _dfpmax=15f; // max difference between strikes of nabors
-  private float _dfpmax=20f; // max difference between strikes of nabors
+  private float _dfpmax=40f; // max difference between strikes of nabors
   private float _dftmax=10f; // max difference between dips of nabors
-  private float _dnpmax=10f; // max distance to planes of nabors
+  private float _dnpmax=5.f; // max distance to planes of nabors
 }
 
