@@ -67,8 +67,9 @@ def main(args):
   goSmooth()
   goSkin()
   goFR()
-  '''
   goSkinNew()
+  '''
+  goTest()
   #goFault()
   #goFS()
   #goFSSPS()
@@ -88,61 +89,64 @@ def main(args):
   #goRemoveOutliers()
   #computeGaussian()
   #rosePlot()
+def goTest():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  sk = readSkins(fskbase)
+  fcs = FaultSkin.getCells(sk)
+  fsx = FaultSkinnerX()
+  fsx.setParameters(20,10,5)
+  fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fsx.setMinSkinSize(minSkinSize)
+  fsx.resetCells(fcs)
+  sks = fsx.findSkinsXX(fcs,fl)
+  FaultSkin.setCells(sks,fl)
+  skins = readSkins(fskgood)
+  plot3(gx,skins=sks,clab="new")
+  plot3(gx,skins=skins,clab="old")
+
+
 def goSkinNew():
   gx = readImage(gxfile)
   fl = readImage(flfile)
   '''
   fp = readImage(fpfile)
   ft = readImage(ftfile)
+  '''
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
+  '''
   cells = fs.findCells([fl,fp,ft])
   sk = fs.findSkins(cells)
   removeAllSkinFiles(fskbase)
   writeSkins(fskbase,sk)
-  '''
-  da = zerofloat(1)
   sk  = readSkins(fskbase)
-  #sk  = [sk[3],sk[5]]
   fcs = FaultSkin.getCells(sk)
-  '''
-  fcg = FaultCellGrow(fcs,fl)
-  #cells = fcg.applyForCells(fcs[1015])
-  ck = 1010
-  csL = fcg.findNaborsL(da,fcs[ck])
-  csR = fcg.findNaborsR(da,fcs[ck])
-  print len(csL)
-  print len(csR)
-  for ic in range(len(csL)):
-    csL[ic].fl = 0.4
-  for ic in range(len(csR)):
-    csR[ic].fl = 0.6
-
-  fcs[ck].fl = 0.0
-  cells = fcg.combineCells(fcs,csL)
-  cells = fcg.combineCells(cells,csR)
-
-  plot3(gx,cells=cells,clab="new")
-
   fsx = FaultSkinnerX()
-  cells = fsx.createCells(98,27.31,48.00,0.1,171.191,23.209,fcs)
-  plot3(gx,cells=cells,clab="new")
-
-  '''
-  fsx = FaultSkinnerX()
+  fsx.setParameters(20,10,5)
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fsx.setMinSkinSize(2)
+  fsx.setMinSkinSize(minSkinSize)
   fsx.resetCells(fcs)
   sks = fsx.findSkinsXX(fcs,fl)
-  '''
+  fsx = FaultSkinnerX()
+  sks = readSkins(fskgood)
+  for ik in range(len(sks)):
+    cells = FaultSkin.getCells([sks[ik]])
+    fsx.resetCells(cells)
+    skins = fs.findSkins(cells)
+    sks[ik] = skins[0]
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,sks)
-  sks = readSkins(fskgood)
   '''
+  sk  = readSkins(fskbase)
+  sks = readSkins(fskgood)
+  FaultSkin.setCells(sks,fl)
   plot3(gx,skins=sk,clab="old")
   plot3(gx,skins=sks,clab="new")
-  plot3(gx,skins=sks,links=True,clab="new")
+  for iskin,skin in enumerate(sks):
+    plot3(gx,skins=[skin],links=True,clab="skin"+str(iskin))
+
 
 
 

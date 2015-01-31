@@ -101,18 +101,37 @@ def main(args):
   #goShow()
   #goCleanCells()
  # goRose()
-  goSkinNew()
+  #goSkinNew()
   #goLook()
+  goTest()
+def goTest():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  sk = readSkins(fskbase)
+  #sk = [sk[0],sk[15]]
+  fcs = FaultSkin.getCells(sk)
+  fsx = FaultSkinnerX()
+  fsx.setParameters(15.0,10.0,5.0)
+  fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fsx.setMinSkinSize(minSkinSize)
+  fsx.resetCells(fcs)
+  sks = fsx.findSkinsXX(fcs,fl)
+  FaultSkin.setCells(sks,fl)
+  plot3(gx,skins=sk,clab="old")
+  plot3(gx,skins=sks,clab="new")
+
 def goLook():
   gx = readImage(gxfile)
   fl = readImage(flfile)
   skins = readSkins(fskbase)
 
-  skins = [skins[0],skins[8]]
+  skins = [skins[0],skins[15]]
   fcs = FaultSkin.getCells(skins)
   cgs = FaultCellGrid(fcs)
-  fci = cgs.get(8,159,139)
+  #fci = cgs.get(118,145,126)
+  fci = cgs.get(13,180,117)
   fcg = FaultCellGrow(fcs,fl)
+  fcg.setParameters(10,10,10)
   da = zerofloat(1)
   #cells = fcg.applyForCells(fcs[1015])
   ck = 43780
@@ -139,31 +158,45 @@ def goSkinNew():
   sk = fs.findSkins(cells)
   removeAllSkinFiles(fskbase)
   writeSkins(fskbase,sk)
-  '''
 
   sk = readSkins(fskbase)
-  sk = [sk[0],sk[8]]
+  sk = [sk[18],sk[19]]
   fcs = FaultSkin.getCells(sk)
   fsx = FaultSkinnerX()
+  fsx.setParameters(13.0,10.0,4.0)
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsx.setMinSkinSize(minSkinSize)
   fsx.resetCells(fcs)
-  sks = fsx.findSkinsX(fcs,fl)
-  '''
+  sks = fsx.findSkinsXX(fcs,fl)
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,sks)
+  sk = readSkins(fskbase)
   sks = readSkins(fskgood)
+  '''
   #plot3(gx,skins=sk,clab="old")
-  skins = [
-          sks[0],sks[1],sks[4],sks[6],sks[7],sks[8],sks[9],sks[10],sks[11],
-          sks[12],sks[15],sks[16],sks[17],sks[19],sks[20],sks[23]
+  sk = readSkins(fskbase)
+  sks = readSkins(fskgood)
+  #FaultSkin.setCells(sk,fl)
+  FaultSkin.setCells(sks,fl)
+  skins1 = [
+          sks[0],sks[1],sks[5],sks[6],sks[7],sks[8],
+          sks[9],sks[10],sks[11],sks[14],sks[15],sks[18]
           ]
-  for iskin,skin in enumerate(sks):
+  skins2 = [
+          sk[0],sk[1],sk[3],sk[8],sk[9],sk[10],
+          sk[11],sk[12],sk[14],sk[15],sk[18],
+          sk[19],sk[20],sk[23],sk[6]
+          ]
+
+  '''
+  for iskin,skin in enumerate(sk):
     plot3(gx,skins=[skin],clab="skin"+str(iskin))
   '''
-
+  #writeSkin(fskgood,20,sks[0])
   plot3(gx,skins=sk,clab="old")
   plot3(gx,skins=sks,clab="new")
+  plot3(gx,skins=skins1,clab="new subset")
+  plot3(gx,skins=skins2,clab="old subset")
 
 def goSubset():
   gx = readImage(gxfile)

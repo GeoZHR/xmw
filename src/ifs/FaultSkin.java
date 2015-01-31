@@ -61,6 +61,18 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     return cells;
   }
 
+  public static void setCells(FaultSkin[] skins, float[][][] fl) {
+    for (FaultSkin skin:skins){
+    for (FaultCell cell:skin) {
+      int i1 = cell.i1;
+      int i2 = cell.i2;
+      int i3 = cell.i3;
+      cell.fl = fl[i3][i2][i1];
+      //float fli = fl[i3][i2][i1];
+      //cell.fl = exp(fli)/exp(1f);
+    }}
+  }
+
   /**
    * Returns the total number of cells in the specified skins.
    * @param skins array of skins for which to count cells.
