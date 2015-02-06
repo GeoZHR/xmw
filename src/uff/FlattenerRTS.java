@@ -1,6 +1,7 @@
 package uff;
 
 import vec.*;
+import ifs.*;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
@@ -71,7 +72,7 @@ public class FlattenerRTS {
    */
   public float[][][][] findShifts(
     float[][] cp, float[][] cm, float[][] dr, 
-    int[][][] fm, float[] fl, float[][][][] p) {
+    float[] fl, float[][][][] p) {
     int n1 = p[0][0][0].length;
     int n2 = p[0][0].length;
     int n3 = p[0].length;
@@ -81,7 +82,7 @@ public class FlattenerRTS {
     float[][][][] rc = new float[3][n3][n2][n1];
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
-    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p[3]);
+    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p0[3]);
     CgSolver cg = new CgSolver(_small,_inner);
     A3 ma = new A3(_epsilon,s3,cp,cm,fl,p);
     for (int outer=0; outer<_outer; ++outer) {
@@ -98,49 +99,67 @@ public class FlattenerRTS {
       if (inner==0) break;
     }
     s3.applyOriginal(r);
-    cleanShifts(fm,r);
-    cleanShifts(fm,r);
-    cleanShifts(fm,r);
+    cleanShifts(p0[3],r);
     return r;
   }
 
-  private void cleanShifts(int[][][] fm, float[][][][] r) {
-    if(fm==null) {return;}
-    int n4 = r.length;
-    for (int i4=0; i4<n4; ++i4) {
-      cleanShifts(fm,r[i4]);
-    }
+  public float[][][][] unfaultShifts(
+    float[][] cp, float[][] cm, float[][] dr, 
+    float[] fl, float[][][][] p) {
+    _inner = 50;
+    mul(fl,10000f,fl);
+    int n3 = p[0].length;
+    int n2 = p[0][0].length;
+    int n1 = p[0][0][0].length;
+    p[0] = fillfloat(1.0f,n1,n2,n3);
+    p[1] = fillfloat(0.0f,n1,n2,n3);
+    p[2] = fillfloat(0.0f,n1,n2,n3);
+    float[][][][] b = new float[3][n3][n2][n1];
+    float[][][][] r = new float[3][n3][n2][n1];
+    float[][][][] rc = new float[3][n3][n2][n1];
+    VecArrayFloat4 vr = new VecArrayFloat4(r);
+    VecArrayFloat4 vb = new VecArrayFloat4(b);
+    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p[3]);
+    CgSolver cg = new CgSolver(_small,_inner);
+    A3 ma = new A3(_epsilon,s3,cp,cm,fl,p);
+    scopy(r,rc);
+    s3.applyOriginal(rc);
+    vb.zero();
+    makeRhs(cp,cm,dr,fl,p,b);
+    s3.applyTranspose(b);
+    int inner = cg.solve(ma,vb,vr).niter;
+    s3.applyOriginal(r);
+    cleanShifts(p[3],r);
+    return r;
   }
 
-  private void cleanShifts(int[][][] fm, float[][][] x) {
-    int n3 = x.length;
-    int n2 = x[0].length;
-    int m2 = n2-1;
-    int m3 = n3-1;
-    int fn = fm[0].length;
-    for (int fi=0; fi<fn; ++fi) {
-      int np = fm[0][fi].length;
-      for (int ip=0; ip<np; ++ip) {
-        int i1 = fm[0][fi][ip];
-        int i2 = fm[1][fi][ip];
-        int i3 = fm[2][fi][ip];
-        int i2m1 = i2-1; if(i2m1<0) i2m1=0;
-        int i3m1 = i3-1; if(i3m1<0) i3m1=0;
-        int i2m2 = i2-2; if(i2m2<0) i2m2=0;
-        int i3m2 = i3-2; if(i3m2<0) i3m2=0;
-        int i2p1 = i2+1; if(i2p1>m2) i2p1=m2;
-        int i3p1 = i3+1; if(i3p1>m3) i3p1=m3;
-        int i2p2 = i2+2; if(i2p2>m2) i2p2=m2;
-        int i3p2 = i3+2; if(i3p2>m3) i3p2=m3;
-        x[i3][i2  ][i1] = x[i3][i2m2][i1];
-        x[i3][i2m1][i1] = x[i3][i2m2][i1];
-        x[i3][i2p1][i1] = x[i3][i2p2][i1];
-        x[i3m1][i2][i1] = x[i3m2][i2][i1];
-        x[i3p1][i2][i1] = x[i3p2][i2][i1];
+
+
+
+  private void cleanShifts(float[][][] wp, float[][][][] r) {
+    int n3 = wp.length;
+    int n2 = wp[0].length;
+    int n1 = wp[0][0].length;
+    float[][][] ds = new float[n3][n2][n1];
+    short[][][] k1 = new short[n3][n2][n1];
+    short[][][] k2 = new short[n3][n2][n1];
+    short[][][] k3 = new short[n3][n2][n1];
+    ClosestPointTransform cpt = new ClosestPointTransform();
+    cpt.apply(0.0f,wp,ds,k1,k2,k3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float wpi = wp[i3][i2][i1];
+      if(wpi==0.0f) {
+        int j1 = k1[i3][i2][i1];
+        int j2 = k2[i3][i2][i1];
+        int j3 = k3[i3][i2][i1];
+        r[0][i3][i2][i1] = r[0][j3][j2][j1];
+        r[1][i3][i2][i1] = r[1][j3][j2][j1];
+        r[2][i3][i2][i1] = r[2][j3][j2][j1];
       }
-    }
+    }}}
   }
-
 
   /**
    * Applies shifts using sinc interpolation.
@@ -159,7 +178,7 @@ public class FlattenerRTS {
     for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
         g[i2][i1] = si.interpolate(
-          n1,1.0,0.0,n2,1.0,0.0,f,i1-r1[i2][i1],i2-r2[i2][i1]);
+          n1,1.0,0.0,n2,1.0,0.0,f,i1+r1[i2][i1],i2+r2[i2][i1]);
       }
     }
   }
@@ -186,7 +205,7 @@ public class FlattenerRTS {
         for (int i1=0; i1<n1; ++i1)
           gf[i3][i2][i1] = si.interpolate(
             n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,
-            ff,i1-r1[i3][i2][i1],i2-r2[i3][i2][i1],i3-r3[i3][i2][i1]);
+            ff,i1+r1[i3][i2][i1],i2+r2[i3][i2][i1],i3+r3[i3][i2][i1]);
     }});
   }
 
@@ -246,14 +265,17 @@ public class FlattenerRTS {
       float[][][][] x = v4z.getArray();
       float[][][][] y = v4y.getArray();
       _smoother.applyOriginal(x);
-      applyLhs(_cp,_cm,_fl,_p,x,y);
+      applyLhs(_p,x,y);
+      if(_fl!=null&&_cp!=null&&_cm!=null) {
+        screenLhs(_cp,_cm,_fl,x,y);
+      }
       _smoother.applyTranspose(y);
       if (_epsilon>0.0f)
         v4y.add(1.0,v4x,_epsilon*_epsilon);
     }
-    private float[] _fl;
-    private float[][] _cp;
-    private float[][] _cm;
+    private float[] _fl=null;
+    private float[][] _cp=null;
+    private float[][] _cm=null;
     private float _epsilon = 0.0f;
     private Smoother3 _smoother;
     private float[][][][] _p;
@@ -366,7 +388,9 @@ public class FlattenerRTS {
     public void compute(int i3) {
       makeRhsSlice3(i3,p,y);
     }});
-    screenRhs(cp,cm,dr,fl,y);
+    if(cp!=null&&cm!=null&&fl!=null) {
+      screenRhs(cp,cm,dr,fl,y);
+    }
   }
 
   private static void screenRhs(
@@ -382,13 +406,16 @@ public class FlattenerRTS {
       int i1m = (int)cm[0][ic];
       int i2m = (int)cm[1][ic];
       int i3m = (int)cm[2][ic];
-      float fls = fl[ic]*fl[ic];
-      y[0][i3p][i2p][i1p] += dr1*fls;
-      y[1][i3p][i2p][i1p] += dr2*fls;
-      y[2][i3p][i2p][i1p] += dr3*fls;
-      y[0][i3m][i2m][i1m] -= dr1*fls;
-      y[1][i3m][i2m][i1m] -= dr2*fls;
-      y[2][i3m][i2m][i1m] -= dr3*fls;
+      float fls = fl[ic];//*fl[ic];
+      float dx1 = dr1*fls;
+      float dx2 = dr2*fls;
+      float dx3 = dr3*fls;
+      y[0][i3p][i2p][i1p] += dx1;
+      y[1][i3p][i2p][i1p] += dx2;
+      y[2][i3p][i2p][i1p] += dx3;
+      y[0][i3m][i2m][i1m] -= dx1;
+      y[1][i3m][i2m][i1m] -= dx2;
+      y[2][i3m][i2m][i1m] -= dx3;
     }
   }
 
@@ -426,15 +453,15 @@ public class FlattenerRTS {
         float u2smu1p = u2i*u2i-u1p;
         float u3smu1p = u3i*u3i-u1p;
 
-        float b1 = W2*epi*(u1i*u1i-1.0f);
-        float b2 = W2*epi*(u2u1p);
-        float b3 = W2*epi*(u3u1p);
-        float b4 = W0*epi*(u2u1p);
-        float b5 = W1*epi*(u2i*u2i);
-        float b6 = W1*epi*(u2u3);
-        float b7 = W0*epi*(u3u1p);
-        float b8 = W1*epi*(u2u3);
-        float b9 = W1*epi*(u3i*u3i);
+        float b1 = -W2*epi*(u1i*u1i-1.0f);
+        float b2 = -W2*epi*(u2u1p);
+        float b3 = -W2*epi*(u3u1p);
+        float b4 = -W0*epi*(u2u1p);
+        float b5 = -W1*epi*(u2i*u2i);
+        float b6 = -W1*epi*(u2u3);
+        float b7 = -W0*epi*(u3u1p);
+        float b8 = -W1*epi*(u2u3);
+        float b9 = -W1*epi*(u3i*u3i);
 
         float y11 = b1*u1u1p + b2*u2u1p   + b3*u3u1p;
         float y12 = b4*u1u1p + b5*u2u1p   + b6*u3u1p;
@@ -486,7 +513,7 @@ public class FlattenerRTS {
     }
   }
 
-  private static void applyLhs(float[][] cp, float[][] cm, float[] fl, 
+  private static void applyLhs(
     final float[][][][] p, final float[][][][] x, final float[][][][] y)
   { 
     final int n3 = y[0].length;
@@ -498,7 +525,6 @@ public class FlattenerRTS {
     public void compute(int i3) {
       applyLhsSlice3(i3,p,x,y);
     }});
-    screenLhs(cp,cm,fl,x,y);
   }
 
   private static void screenLhs(
@@ -512,22 +538,31 @@ public class FlattenerRTS {
       int i1m = (int)cm[0][ic];
       int i2m = (int)cm[1][ic];
       int i3m = (int)cm[2][ic];
-      float fls = fl[ic]*fl[ic];
-      float x1p = x[0][i3p][i2p][i1p];
-      float x2p = x[1][i3p][i2p][i1p];
-      float x3p = x[2][i3p][i2p][i1p];
-      float x1m = x[0][i3m][i2m][i1m];
-      float x2m = x[1][i3m][i2m][i1m];
-      float x3m = x[2][i3m][i2m][i1m];
-      float dx1 = (x1p-x1m)*fls;
-      float dx2 = (x2p-x2m)*fls;
-      float dx3 = (x3p-x3m)*fls;
-      y[0][i3p][i2p][i1p] += dx1;
-      y[1][i3p][i2p][i1p] += dx2;
-      y[2][i3p][i2p][i1p] += dx3;
+      float fls = fl[ic];//*fl[ic];
+
+      float dx1 = 0.0f;
+      float dx2 = 0.0f;
+      float dx3 = 0.0f;
+
+      dx1 += x[0][i3p][i2p][i1p];
+      dx2 += x[1][i3p][i2p][i1p];
+      dx3 += x[2][i3p][i2p][i1p];
+
+      dx1 -= x[0][i3m][i2m][i1m];
+      dx2 -= x[1][i3m][i2m][i1m];
+      dx3 -= x[2][i3m][i2m][i1m];
+
+      dx1 *= fls;
+      dx2 *= fls;
+      dx3 *= fls;
+
       y[0][i3m][i2m][i1m] -= dx1;
       y[1][i3m][i2m][i1m] -= dx2;
       y[2][i3m][i2m][i1m] -= dx3;
+
+      y[0][i3p][i2p][i1p] += dx1;
+      y[1][i3p][i2p][i1p] += dx2;
+      y[2][i3p][i2p][i1p] += dx3;
     }
   }
 
@@ -855,9 +890,20 @@ public class FlattenerRTS {
 
   private static void updateParameters(
     float[][][][] r, float[][][][] p, float[][][][] q) {
+    float[][][] w = p[3];
+    int n3 = w.length;
+    int n2 = w[0].length;
+    int n1 = w[0][0].length;
     for (int i=0; i<4; ++i) // shift normal vectors and ep
       applyShiftsLinear(r,p[i],q[i]);
     normalize(q[0],q[1],q[2]);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(w[i3][i2][i1]==0.0f) {
+        q[3][i3][i2][i1] = 0.0f;
+      }
+    }}}
   }
 
   // Normalize vectors
@@ -914,7 +960,7 @@ public class FlattenerRTS {
     li.setUniform(n1,1.0,0.0,n2,1.0,0.0,f);
     for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
-        g[i2][i1] = li.interpolate(i1-r1[i2][i1],i2-r2[i2][i1]);
+        g[i2][i1] = li.interpolate(i1+r1[i2][i1],i2+r2[i2][i1]);
       }
     }
   }
@@ -942,7 +988,7 @@ public class FlattenerRTS {
       for (int i2=0; i2<n2; ++i2)
         for (int i1=0; i1<n1; ++i1)
           gf[i3][i2][i1] = li.interpolate(
-            i1-r1[i3][i2][i1],i2-r2[i3][i2][i1],i3-r3[i3][i2][i1]);
+            i1+r1[i3][i2][i1],i2+r2[i3][i2][i1],i3+r3[i3][i2][i1]);
     }});
   }
 

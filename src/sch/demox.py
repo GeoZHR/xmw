@@ -111,6 +111,7 @@ def goTest():
   #sk = [sk[0],sk[15]]
   fcs = FaultSkin.getCells(sk)
   fsx = FaultSkinnerX()
+  fsx.setMaxPlanarDistance(0.2)
   fsx.setParameters(15.0,10.0,5.0)
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsx.setMinSkinSize(minSkinSize)

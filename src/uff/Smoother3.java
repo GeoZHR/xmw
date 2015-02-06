@@ -12,7 +12,7 @@ import static edu.mines.jtk.util.ArrayMath.*;
 public class Smoother3 {
 
   public Smoother3(float sigma1, float sigma2, float sigma3, float[][][] wp) {
-    _wp = wp;
+    _wp = copy(wp);
     _sigma1 = sigma1;
     _sigma2 = sigma2;
     _sigma3 = sigma3;
@@ -24,14 +24,13 @@ public class Smoother3 {
     int n3 = wp.length;
     int n2 = wp[0].length;
     int n1 = wp[0][0].length;
-    _wp = fillfloat(1.0f,n1,n2,n3);
-    /*
     _wh = copy(wp);
-    for (int i3=0; i3<n3; ++i3) 
-      for (int i2=0; i2<n2; ++i2) 
-        for (int i1=0; i1<n1; ++i1) 
-          _wh[i3][i2][i1]=(_wh[i3][i2][i1]<0.005f)?0.005f:_wh[i3][i2][i1];
-    */
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      _wp[i3][i2][i1]=(_wp[i3][i2][i1]<0.1f)?0.1f:_wh[i3][i2][i1];
+      _wh[i3][i2][i1]=(_wh[i3][i2][i1]<0.001f)?0.001f:_wh[i3][i2][i1];
+    }}}
   }
 
   public void apply(float[][][][] x) {
@@ -39,10 +38,10 @@ public class Smoother3 {
     for (int i4=0; i4<n4; ++i4) {
       //smooth1(_sigma1,_wh,x[i4]);
       smooth1(_sigma1,x[i4]);
-      smooth2(_sigma2,_wh,x[i4]);
-      smooth3(_sigma3,_wh,x[i4]);
-      smooth3(_sigma3,_wh,x[i4]);
-      smooth2(_sigma2,_wh,x[i4]);
+      smooth2(_sigma2,_wp,x[i4]);
+      smooth3(_sigma3,_wp,x[i4]);
+      smooth3(_sigma3,_wp,x[i4]);
+      smooth2(_sigma2,_wp,x[i4]);
       smooth1(_sigma1,x[i4]);
       //smooth1(_sigma1,_wh,x[i4]);
     }
@@ -51,7 +50,7 @@ public class Smoother3 {
   public void applyOriginal(float[][][][] x) {
     int n4 = x.length;
     for (int i4=0; i4<n4; ++i4) {
-      smooth1(_sigma1,x[i4]);
+      smooth1(_sigma1,_wh,x[i4]);
       smooth2(_sigma2,_wh,x[i4]); 
       smooth3(_sigma3,_wh,x[i4]);
     }
@@ -62,7 +61,7 @@ public class Smoother3 {
     for (int i4=0; i4<n4; ++i4) {
       smooth3(_sigma3,_wh,x[i4]);
       smooth2(_sigma2,_wh,x[i4]); 
-      smooth1(_sigma1,x[i4]);
+      smooth1(_sigma1,_wh,x[i4]);
     }
   }
 

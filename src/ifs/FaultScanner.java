@@ -12,7 +12,7 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
-import static ipf.FaultGeometry.*;
+import static ifs.FaultGeometry.*;
 
 /**
  * Computes fault likelihoods, strikes, and dips, by scanning over fault

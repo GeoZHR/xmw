@@ -1,6 +1,7 @@
 package uff;
 
 import vec.*;
+import ifs.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
@@ -59,7 +60,7 @@ public class FlattenerRTD {
   }
 
   public float[][][][] computeShifts(
-    boolean unfaultOnly, int[][][] fm, float[][][] cx, float[][][][] p) 
+    boolean unfaultOnly, float[][][] cx, float[][][][] p) 
   {
     int n3 = p[0].length;
     int n2 = p[0][0].length;
@@ -77,16 +78,40 @@ public class FlattenerRTD {
     A3 a3 = new A3(_epsilon,p);
     for (int iter=0; iter<_outer; ++iter) {
       if(iter>0){
+        cleanShifts(p[3],r);
         updateParameters(r,p0,p);
       }
       vb.zero();
       makeRhs(p,b);
       cg.solve(a3,m3,vb,vr);
     }
-    cleanShifts(fm,r);
-    cleanShifts(fm,r);
-    cleanShifts(fm,r);
+    cleanShifts(p[3],r);
     return r;
+  }
+
+  private void cleanShifts(float[][][] wp, float[][][][] r) {
+    int n3 = wp.length;
+    int n2 = wp[0].length;
+    int n1 = wp[0][0].length;
+    float[][][] ds = new float[n3][n2][n1];
+    short[][][] k1 = new short[n3][n2][n1];
+    short[][][] k2 = new short[n3][n2][n1];
+    short[][][] k3 = new short[n3][n2][n1];
+    ClosestPointTransform cpt = new ClosestPointTransform();
+    cpt.apply(0.0f,wp,ds,k1,k2,k3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float wpi = wp[i3][i2][i1];
+      if(wpi==0.0f) {
+        int j1 = k1[i3][i2][i1];
+        int j2 = k2[i3][i2][i1];
+        int j3 = k3[i3][i2][i1];
+        r[0][i3][i2][i1] = r[0][j3][j2][j1];
+        r[1][i3][i2][i1] = r[1][j3][j2][j1];
+        r[2][i3][i2][i1] = r[2][j3][j2][j1];
+      }
+    }}}
   }
 
   private void setIters(boolean unfaultOnly) {
@@ -657,42 +682,6 @@ public class FlattenerRTD {
       copy(x[i4],y[i4]);
   }
 
-  private void cleanShifts(int[][][] fm, float[][][][] r) {
-    if(fm==null) {return;}
-    int n4 = r.length;
-    for (int i4=0; i4<n4; ++i4) {
-      cleanShifts(fm,r[i4]);
-    }
-  }
-
-  private void cleanShifts(int[][][] fm, float[][][] x) {
-    int n3 = x.length;
-    int n2 = x[0].length;
-    int m2 = n2-1;
-    int m3 = n3-1;
-    int fn = fm[0].length;
-    for (int fi=0; fi<fn; ++fi) {
-      int np = fm[0][fi].length;
-      for (int ip=0; ip<np; ++ip) {
-        int i1 = fm[0][fi][ip];
-        int i2 = fm[1][fi][ip];
-        int i3 = fm[2][fi][ip];
-        int i2m1 = i2-1; if(i2m1<0) i2m1=0;
-        int i3m1 = i3-1; if(i3m1<0) i3m1=0;
-        int i2m2 = i2-2; if(i2m2<0) i2m2=0;
-        int i3m2 = i3-2; if(i3m2<0) i3m2=0;
-        int i2p1 = i2+1; if(i2p1>m2) i2p1=m2;
-        int i3p1 = i3+1; if(i3p1>m3) i3p1=m3;
-        int i2p2 = i2+2; if(i2p2>m2) i2p2=m2;
-        int i3p2 = i3+2; if(i3p2>m3) i3p2=m3;
-        x[i3][i2  ][i1] = x[i3][i2m2][i1];
-        x[i3][i2m1][i1] = x[i3][i2m2][i1];
-        x[i3][i2p1][i1] = x[i3][i2p2][i1];
-        x[i3m1][i2][i1] = x[i3m2][i2][i1];
-        x[i3p1][i2][i1] = x[i3p2][i2][i1];
-      }
-    }
-  }
 
   public static void initializeShifts(float[][][] cu, float[][][][] r) {
     if(cu==null) {return;}

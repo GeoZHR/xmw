@@ -1,4 +1,5 @@
 import sys
+import jarray
 
 from java.awt import *
 from java.io import *
@@ -17,9 +18,9 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from fmm import *
 from ifs import *
-
+from uff import *
+from unfold import *
 
 #############################################################################
 # Run the function main on the Swing thread

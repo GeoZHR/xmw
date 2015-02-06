@@ -227,7 +227,7 @@ public class FaultSlipper {
         }
       }
       sq[is] = copy(sp);
-      //bg.gridBlended(st,sp,sq[is]);
+      bg.gridBlended(st,sp,sq[is]);
     }
     return sq;
   }
@@ -448,7 +448,7 @@ public class FaultSlipper {
 
 
     // Smooth alignment errors in above-below and left-right directions.
-    for (int ismooth=0; ismooth<2; ++ismooth) { // TODO: how many?
+    for (int ismooth=0; ismooth<50; ++ismooth) { // TODO: how many?
       dw.smoothErrors1(eab,eab);
       normalizeErrors(eab); // TODO: helpful?
       dw.smoothErrors1(elr,elr);

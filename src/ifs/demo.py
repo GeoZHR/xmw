@@ -68,8 +68,11 @@ def main(args):
   goSkin()
   goFR()
   goSkinNew()
-  '''
   goTest()
+  goSmoothTest()
+  goSlipTest()
+  '''
+  goConstraints()
   #goFault()
   #goFS()
   #goFSSPS()
@@ -89,13 +92,67 @@ def main(args):
   #goRemoveOutliers()
   #computeGaussian()
   #rosePlot()
+def goConstraints():
+  gx = readImage(gxfile)
+  s1 = readImage(fs1file)
+  sk = readSkins(fskgood)
+  ws = zerofloat(n1,n2,n3)
+  cp = zerofloat(n1,n2,n3)
+  fsc = FaultSlipConstraints(sk)
+  cs = fsc.getWeightsAndConstraints(ws,cp)
+  plot3(ws)
+  plot3(cp)
+  plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)")
+
+def goSmoothTest():
+  flstop = 0.1
+  fsigma = 8.0
+  gx = readImage(gxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  fsx = FaultSkinnerX()
+  flt = zerofloat(n1,n2,n3)
+  sks = readSkins(fskgood)
+  fsx.getFl(sks,flt) 
+  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
+  writeImage(gsxfile,gsx)
+  plot3(gx)
+  plot3(gsx)
+
+def goSlipTest():
+  print "goSlip ..."
+  gx = readImage(gxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  gsx = readImage(gsxfile)
+  skins = readSkins(fskgood)
+  smark = -999.999
+  s1 = readImage(fs1file)
+  s2 = readImage(fs2file)
+  s3 = readImage(fs3file)
+  fsl = FaultSlipper(gsx,p2,p3)
+  plot3(gx,skins=skins,smax=10.0,png="skinss1")
+  plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
+  s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+  gw = fsl.unfault([s1,s2,s3],gx)
+  plot3(gx)
+  plot3(gw,clab="Amplitude",png="gw")
+
 def goTest():
   gx = readImage(gxfile)
   fl = readImage(flfile)
   sk = readSkins(fskbase)
   fcs = FaultSkin.getCells(sk)
   fsx = FaultSkinnerX()
-  fsx.setParameters(20,10,5)
+  fsx.setParameters(30,10,5)
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsx.setMinSkinSize(minSkinSize)
   fsx.resetCells(fcs)
@@ -146,8 +203,6 @@ def goSkinNew():
   plot3(gx,skins=sks,clab="new")
   for iskin,skin in enumerate(sks):
     plot3(gx,skins=[skin],links=True,clab="skin"+str(iskin))
-
-
 
 
 def goFault():
@@ -809,7 +864,7 @@ def goSlip():
   gsx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  skins = readSkins(fskbase)
+  skins = readSkins(fskgood)
   fsl = FaultSlipper(gsx,p2,p3)
   fsl.setOffset(2.0) # the default is 2.0 samples
   fsl.setZeroSlope(False) # True only if we want to show the error
@@ -822,8 +877,8 @@ def goSlip():
   fsk.setMinMaxThrow(minThrow,maxThrow)
   skins = fsk.reskin(skins)
   print ", after =",len(skins)
-  removeAllSkinFiles(fskbase)
-  writeSkins(fskbase,skins)
+  removeAllSkinFiles(fskgood)
+  writeSkins(fskgood,skins)
   smark = -999.999
   s1,s2,s3 = fsl.getDipSlips(skins,smark)
   writeImage(fs1file,s1)

@@ -76,12 +76,12 @@ public class FaultCell implements Serializable {
     return new int[]{i1,i2,i3};
   }
 
-  public float[] getIm() {
-    return new float[]{i1,i2m,i3m};
+  public int[] getIm() {
+    return new int[]{i1,i2m,i3m};
   }
 
-  public float[] getIp() {
-    return new float[]{i1,i2p,i3p};
+  public int[] getIp() {
+    return new int[]{i1,i2p,i3p};
   }
 
 

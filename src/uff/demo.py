@@ -26,6 +26,7 @@ fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
+fskgood = "fsg" # fault skin (basename only)
 
 u1file = "u1" # normal vector (1st component)
 u2file = "u2" # normal vector (2nd component)
@@ -73,20 +74,21 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  '''
   goFakeData()
+  '''
   goSlopes()
   goScan()
   goThin()
   goSmooth()
   goBetterSkin()
-  '''
   goSlip()
+  '''
   #goCPT()
   #goSlipOneByOne()
   #goUnfaultAndUnfold()
   #goUnfault()
   #goUnfold()
+  #goConstraints()
   '''
   goUnfaultAndUnfoldc(True)
   goUnfoldc2()
@@ -94,18 +96,37 @@ def main(args):
   goFlatten2()
   goTest()
   '''
-
+def goConstraints():
+  gx = readImage(gxfile)
+  sk = readSkins(fskgood)
+  cp1 = zerofloat(n1,n2,n3)
+  cp2 = zerofloat(n1,n2,n3)
+  sk = readSkins(fskbase)
+  p2,p3,ep = FaultScanner.slopes(4.0,1.0,1.0,5.0,gx)
+  wp1 = pow(ep,2.0)
+  wp2 = pow(ep,2.0)
+  fsc = FaultSlipConstraints(sk)
+  cfs = ConstraintsFromFaults(sk,wp2)
+  cs1 = fsc.getWeightsAndConstraints(wp1,cp1)
+  cs2 = cfs.getWeightsAndConstraints(wp2,cp2)
+  plot3(wp1,clab="wp1")
+  plot3(cp1,clab="cp1")
+  plot3(wp2,clab="wp2")
+  plot3(cp2,clab="cp2")
+  plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)")
+ 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 3 # number of planar faults
+  nplanar = 4 # number of planar faults
   conjugate = True # if True, two large planar faults will intersect
-  conical = True # if True, may want to set nplanar to 0 (or not!)
+  conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.5 # (rms noise)/(rms signal) ratio
+  noise = 0.0 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
@@ -118,8 +139,8 @@ def goFakeData():
   if impedance:
     gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
   plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-  #plot3(gx,p2,cmap=bwrNotch(1.0))
-  #plot3(gx,p3,cmap=bwrNotch(1.0))
+  plot3(gx,p2,cmap=bwrNotch(1.0))
+  plot3(gx,p3,cmap=bwrNotch(1.0))
 
 def goSlopes():
   print "goSlopes ..."
@@ -267,7 +288,7 @@ def goSlip():
   gsx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  skins = readSkins(fskbase)
+  skins = readSkins(fskgood)
   fsl = FaultSlipper(gsx,p2,p3)
   fsl.setOffset(2.0) # the default is 2.0 samples
   fsl.setZeroSlope(False) # True only if we want to show the error
@@ -280,7 +301,7 @@ def goSlip():
   fsk.setMinMaxThrow(minThrow,maxThrow)
   skins = fsk.reskin(skins)
   print ", after =",len(skins)
-  removeAllSkinFiles(fskbase)
+  removeAllSkinFiles(fskgood)
   writeSkins(fskbase,skins)
   smark = -999.999
   s1,s2,s3 = fsl.getDipSlips(skins,smark)
@@ -473,16 +494,19 @@ def goUnfaultAndUnfoldc(unfaultOnly):
     cp  = zerofloat(n1,n2,n3)
     p2,p3,ep = FaultScanner.slopes(4.0,1.0,1.0,5.0,gx)
     skins = readSkins(fskbase)
-    cfs = ConstraintsFromFaults(skins,ep)
+    fsc = FaultSlipConstraints(skins)
+    #cfs = ConstraintsFromFaults(skins,ep)
     wp = pow(ep,2.0)
-    cs = cfs.getWeightsAndConstraints(wp,cp)
-    fm = cfs.getFaultMap()
+    #cs = cfs.getWeightsAndConstraints(wp,cp)
+    cs = fsc.getWeightsAndConstraints(wp,cp)
+    #fm = cfs.getFaultMap()
+    fm = fsc.getFaultMap()
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
     u3 = fillfloat(0.0,n1,n2,n3)
     p = array(u1,u2,u3,wp)
     flattener = FlattenerRTD(6.0,6.0)
-    [r1,r2,r3] = flattener.computeShifts(True,fm,cs,p)
+    [r1,r2,r3] = flattener.computeShifts(True,cs,p)
     flattener.applyShifts([r1,r2,r3],gx,fc)
     writeImage(r1cfile,r1)
     writeImage(r2cfile,r2)
@@ -520,6 +544,7 @@ def goUnfaultAndUnfoldc(unfaultOnly):
     fd = readImage(gfcfile)
   s1 = readImage(fs1file)
   hmin,hmax,hmap = -3.0,3.0,ColorMap.GRAY
+  plot3(wp)
   plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   plot3(cp,cmin=hmin,cmax=hmax,cmap=hmap,clab="ControlPointsM",png="cp")

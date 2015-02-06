@@ -38,9 +38,9 @@ public class ScreenPointsFromFaults {
       if(round(px[0])>=_n1){continue;}
       if(nearestFaultCell(px,fm)) {
         FaultCell fc = fcg.get((int)px[0],(int)px[1],(int)px[2]);
-        float[] xm = fc.getIm();
-        float[] xp = fc.getIp();
-        cl.add(new float[][]{xm,xp,cs});
+        int[] xm = fc.getIm();
+        int[] xp = fc.getIp();
+        //cl.add(new float[][]{xm,xp,cs});
       }
     }
     int ns = cl.size();

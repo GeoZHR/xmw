@@ -65,6 +65,10 @@ public class FaultSkinnerX {
     _dnpmax1 = dnp;
   }
 
+  public void setSkinning(boolean useOldCells) {
+    _useOldCells = useOldCells;
+  }
+
   public FaultCell[] createCells(
     float x1, float x2, float x3,
     float fl, float fp, float ft,
@@ -88,6 +92,17 @@ public class FaultSkinnerX {
       cells[ic].cr = null;
       cells[ic].skin=null;
       cells[ic].notUsed=true;
+    }
+  }
+
+  public void getFl(FaultSkin[] sks, float[][][] fl) {
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1 = fc.i1;
+        int i2 = fc.i2;
+        int i3 = fc.i3;
+        fl[i3][i2][i1] = fc.fl;
+      }
     }
   }
 
@@ -188,7 +203,32 @@ public class FaultSkinnerX {
   }
 
   public FaultSkin[] findSkinsXX(FaultCell[] cells, float[][][] fl) {
-    return skinsXX(cells,fl);
+    FaultSkin[] sks = skinsXX(cells,fl);
+    return resetSkins(sks,fl);
+  }
+
+  private FaultSkin[] resetSkins(FaultSkin[] sks, float[][][] fl) {
+    FaultSkinner fsk = new FaultSkinner();
+    fsk.setMaxPlanarDistance(1.0);
+    fsk.setGrowLikelihoods(0.1,0.2);
+    ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1 = fc.i1;
+        int i2 = fc.i2;
+        int i3 = fc.i3;
+        fc.ca = null;
+        fc.cb = null;
+        fc.cl = null;
+        fc.cr = null;
+        fc.skin = null;
+        fc.fl = fl[i3][i2][i1];
+      }
+      FaultCell[] fcs = sk.getCells();
+      FaultSkin[] skin = fsk.findSkins(fcs);
+      skinList.add(skin[0]);
+    }
+    return skinList.toArray(new FaultSkin[0]);
   }
 
   /**
@@ -278,6 +318,7 @@ public class FaultSkinnerX {
   private float _dfpmax1;
   private float _dftmax1;
   private float _dnpmax1;
+  private boolean _useOldCells;
 
 
   private void updateCells(
@@ -411,7 +452,9 @@ public class FaultSkinnerX {
             }
             if(checkPlanar(cell)) {
               boolean missNabors = true;
-              missNabors = findInOldCells(cell);
+              if(_useOldCells) {
+                missNabors = findInOldCells(cell);
+              }
               if(missNabors) {findInNewCells(cell);}
               FaultCell ca,cb,cl,cr;
               ca = findNaborAbove(cell);
@@ -475,7 +518,7 @@ public class FaultSkinnerX {
     }
     return bigSkinList.toArray(new FaultSkin[0]);
   }
-  
+
   private boolean checkPlanar(FaultCell cell) {
     float nc = 0.0f;
     float dp = 0.0f;
@@ -537,7 +580,7 @@ public class FaultSkinnerX {
     }
     
     if(nc==0.0f)  {return true;}
-    if(dp/nc<1.0f){return true;}
+    if(dp/nc<3f*_dnpmax){return true;}
     else          {return false;}
   }
 
