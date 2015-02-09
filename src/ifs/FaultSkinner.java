@@ -52,7 +52,7 @@ public class FaultSkinner {
     _fllo = 0.2f;
     _flhi = 0.8f;
     _dflmax = 0.2f;
-    _dfpmax = 10.0f;
+    _dfpmax = 30.0f;
     _dftmax = 10.0f;
     _dnpmax = 0.5f;
     _ds1max = 1.0f;
@@ -637,9 +637,9 @@ public class FaultSkinner {
     float dx1 = ax1-bx1;
     float dx2 = ax2-bx2;
     float dx3 = ax3-bx3;
-    float dab = abs(aw1*dx1+aw2*dx2+aw3*dx3);
-    float dba = abs(bw1*dx1+bw2*dx2+bw3*dx3);
-    return max(dab,dba);
+    float dab = aw1*dx1+aw2*dx2+aw3*dx3;
+    float dba = bw1*dx1+bw2*dx2+bw3*dx3;
+    return max(abs(dab),abs(dba));
   }
 
   // Rotates a specified point by strike (phi) and dip (theta) angles,

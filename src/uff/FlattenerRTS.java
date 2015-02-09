@@ -72,17 +72,17 @@ public class FlattenerRTS {
    */
   public float[][][][] findShifts(
     float[][] cp, float[][] cm, float[][] dr, 
-    float[] fl, float[][][][] p) {
-    int n1 = p[0][0][0].length;
-    int n2 = p[0][0].length;
+    float[] fl, float[][][][] p, float[][][] ws) {
     int n3 = p[0].length;
+    int n2 = p[0][0].length;
+    int n1 = p[0][0][0].length;
     float[][][][] p0 = scopy(p);
     float[][][][] b = new float[3][n3][n2][n1];
     float[][][][] r = new float[3][n3][n2][n1];
     float[][][][] rc = new float[3][n3][n2][n1];
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
-    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p0[3]);
+    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,ws);
     CgSolver cg = new CgSolver(_small,_inner);
     A3 ma = new A3(_epsilon,s3,cp,cm,fl,p);
     for (int outer=0; outer<_outer; ++outer) {
@@ -105,9 +105,9 @@ public class FlattenerRTS {
 
   public float[][][][] unfaultShifts(
     float[][] cp, float[][] cm, float[][] dr, 
-    float[] fl, float[][][][] p) {
+    float[] fl, float[][][][] p, float[][][] ws) {
     _inner = 50;
-    mul(fl,10000f,fl);
+    mul(fl,100000f,fl);
     int n3 = p[0].length;
     int n2 = p[0][0].length;
     int n1 = p[0][0][0].length;
@@ -133,9 +133,6 @@ public class FlattenerRTS {
     return r;
   }
 
-
-
-
   private void cleanShifts(float[][][] wp, float[][][][] r) {
     int n3 = wp.length;
     int n2 = wp[0].length;
@@ -160,6 +157,32 @@ public class FlattenerRTS {
       }
     }}}
   }
+
+  private void cleanImage(float[][] hx, float[][] fx, float[][][] g) {
+    int n3 = g.length;
+    int n2 = g[0].length;
+    int nh = hx[0].length;
+    int nf = fx[0].length;
+    for (int ih=0; ih<nh; ++ih) {
+      int i1 = round(hx[0][ih]);
+      int i2 = round(hx[1][ih]);
+      int i3 = round(hx[2][ih]);
+      int p2 = i2+1; if(p2>=n2){p2=n2-1;}
+      int p3 = i3+1; if(p3>=n3){p3=n3-1;}
+      g[i3][i2][i1] = 0.5f*(g[i3][p2][i1]+g[p3][i2][i1]);
+    }
+
+    for (int ik=0; ik<nf; ++ik) {
+      int i1 = round(fx[0][ik]);
+      int i2 = round(fx[1][ik]);
+      int i3 = round(fx[2][ik]);
+      int m2 = i2-1; if(m2<0){m2=0;}
+      int m3 = i3-1; if(m3<0){m3=0;}
+      g[i3][i2][i1] = 0.5f*(g[i3][m2][i1]+g[m3][i2][i1]);
+    }
+
+  }
+
 
   /**
    * Applies shifts using sinc interpolation.
@@ -190,7 +213,7 @@ public class FlattenerRTS {
    * @param g output shifted image.
    */
   public void applyShifts(
-    float[][][][] r, float[][][] f, float[][][] g)
+    float[][][][] r, float[][] hx, float[][] fx, float[][][] f, float[][][] g)
   {
     final int n1 = f[0][0].length;
     final int n2 = f[0].length;
@@ -207,6 +230,7 @@ public class FlattenerRTS {
             n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,
             ff,i1+r1[i3][i2][i1],i2+r2[i3][i2][i1],i3+r3[i3][i2][i1]);
     }});
+    if(hx!=null&&fx!=null) {cleanImage(hx,fx,g);}
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -422,11 +446,11 @@ public class FlattenerRTS {
   private static void makeRhsSlice3(
     int i3, float[][][][] p, float[][][][] y)
   { 
-    int n1 = y[0][0][0].length;
     int n2 = y[0][0].length;
+    int n1 = y[0][0][0].length;
+    float[][][] ep = p[3];
     float[][][] y1 = y[0]; float[][][] y2 = y[1]; float[][][] y3 = y[2];
     float[][][] u1 = p[0]; float[][][] u2 = p[1]; float[][][] u3 = p[2];
-    float[][][] ep = p[3];
     for (int i2=1; i2<n2; ++i2) {
       float[] y100 = y1[i3  ][i2  ];
       float[] y101 = y1[i3  ][i2-1];

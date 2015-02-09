@@ -84,6 +84,10 @@ public class FaultCell implements Serializable {
     return new int[]{i1,i2p,i3p};
   }
 
+  public float[] getU() {
+    return new float[]{u1,u2,u3};
+  }
+
 
     /**
    * Gets the slip vectors (s1,s2,s3) of this cell.

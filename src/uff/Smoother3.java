@@ -29,7 +29,7 @@ public class Smoother3 {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       _wp[i3][i2][i1]=(_wp[i3][i2][i1]<0.1f)?0.1f:_wh[i3][i2][i1];
-      _wh[i3][i2][i1]=(_wh[i3][i2][i1]<0.001f)?0.001f:_wh[i3][i2][i1];
+      //_wh[i3][i2][i1]=(_wh[i3][i2][i1]<0.1f)?0.1f:_wh[i3][i2][i1];
     }}}
   }
 

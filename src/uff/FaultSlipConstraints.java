@@ -43,6 +43,34 @@ public class FaultSlipConstraints {
     return fm;
   }
 
+
+  public void setNormals(float[][][][] p) {
+    for (FaultSkin sk:_sks) {
+      for (FaultCell fc:sk) {
+        int[] ip = fc.getIp();
+        int[] im = fc.getIm();
+        float[] cs = fc.getS();
+        int i1p = ip[0];
+        int i2p = ip[1];
+        int i3p = ip[2];
+        int i1m = im[0];
+        int i2m = im[1];
+        int i3m = im[2];
+        float s1 = cs[0];
+        float s2 = cs[1];
+        float s3 = cs[2];
+        float ss = 1.0f/sqrt(s1*s1+s2*s2+s3*s3);
+        if(s1<0.0f) {ss = -ss;}
+        p[0][i3p][i2p][i1p] = s1*ss;
+        p[1][i3p][i2p][i1p] = s2*ss;
+        p[2][i3p][i2p][i1p] = s3*ss;
+        p[0][i3m][i2m][i1m] = s1*ss;
+        p[1][i3m][i2m][i1m] = s2*ss;
+        p[2][i3m][i2m][i1m] = s3*ss;
+      }
+    }
+  }
+
   /*
   public float[][][] getWeightsAndConstraints(
     float[][][] ws, float[][][] fm, float[][][] cp) {
@@ -99,10 +127,12 @@ public class FaultSlipConstraints {
   }
 
   */
-  public float[][][] screenPoints(float[][][] ws, float[][][] cp) {
+  public float[][][] screenPoints(
+    float[][][] ws, float[][][] wp, float[][][] cp) 
+  {
     int ct = 2;
     int nk = _sks.length;
-    setWeightsNearFaults(ws);
+    setWeightsNearFaults(ws,wp);
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
     for (int ik=0; ik<nk; ++ik) {
       ct++;
@@ -133,6 +163,8 @@ public class FaultSlipConstraints {
         cl.add(new float[][]{hx,fx,cs,xf});
         ws[f3][f2][f1] = 0.0f;
         ws[h3][h2][h1] = 0.0f;
+        wp[f3][f2][f1] = 0.0f;
+        wp[h3][h2][h1] = 0.0f;
       }
     }
     int ns = cl.size();
@@ -214,7 +246,7 @@ public class FaultSlipConstraints {
   }
 
 
-  public void setWeightsNearFaults(float[][][] ws) {
+  public void setWeightsNearFaults(float[][][] ws, float[][][] wp) {
     float fnull = -99f;
     int n3 = ws.length;
     int n2 = ws[0].length;
@@ -239,7 +271,11 @@ public class FaultSlipConstraints {
     for (int i2=0; i2<n2; ++i2){
     for (int i1=0; i1<n1; ++i1){
       float di = ds[i3][i2][i1];
-      if(di<=2f) { ws[i3][i2][i1] = 1.0f;}
+      float wi = wp[i3][i2][i1];
+      if(di<=2f) { 
+        ws[i3][i2][i1] = 1.0f;
+        if(wi>0.6f) {wp[i3][i2][i1] = 0.6f;}
+      }
     }}}
   }
 
