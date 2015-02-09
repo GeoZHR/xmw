@@ -61,7 +61,7 @@ maxThrow = 15.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../png/"
-plotOnly = False
+plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
@@ -75,8 +75,8 @@ def main(args):
   goReSkin()
   '''
   #goSlip()
-  #goUnfaultC()
-  goUnfaultS()
+  goUnfaultC()
+  #goUnfaultS()
   #goSlipTest()
 def goSlipTest():
   smark=-99
@@ -346,7 +346,8 @@ def goUnfaultC():
     skins = readSkins(fskslip)
     fsc = FaultSlipConstraints(skins)
     wp = pow(ep,2.0)
-    cs = fsc.getWeightsAndConstraints(wp,cp)
+    ws = pow(ep,2.0)
+    cs = fsc.controlPoints(ws,wp,cp)
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
     u3 = fillfloat(0.0,n1,n2,n3)
@@ -354,7 +355,8 @@ def goUnfaultC():
     lof.applyForNormal(gx,u1,u2,u3)
     ps = array(u1,u2,u3,wp)
     flattener = FlattenerRTD(4.0,4.0)
-    [r1,r2,r3] = flattener.computeShifts(False,cs,ps)
+    fsc.setNormals(ps)
+    [r1,r2,r3] = flattener.computeShifts(False,cs,ws,ps)
     flattener.applyShifts([r1,r2,r3],gx,fw)
     writeImage(fwcfile,fw)
     writeImage(fwpfile,wp)
@@ -609,8 +611,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
     sf.world.addChild(sg)
   #ipg.setSlices(95,5,51)
-  #ipg.setSlices(95,5,90)
-  ipg.setSlices(95,5,n3-1)
+  ipg.setSlices(95,5,90)
+  #ipg.setSlices(95,5,n3-1)
   if cbar:
     sf.setSize(837,700)
   else:

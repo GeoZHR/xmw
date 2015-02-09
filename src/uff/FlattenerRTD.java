@@ -60,7 +60,7 @@ public class FlattenerRTD {
   }
 
   public float[][][][] computeShifts(
-    boolean unfaultOnly, float[][][] cx, float[][][][] p) 
+    boolean unfaultOnly, float[][][] cx, float[][][] ws, float[][][][] p) 
   {
     int n3 = p[0].length;
     int n2 = p[0][0].length;
@@ -73,7 +73,7 @@ public class FlattenerRTD {
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
     CgSolver cg = new CgSolver(_small,_inner);
-    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p0[3]);
+    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,ws);
     M3 m3 = new M3(cx,s3);
     A3 a3 = new A3(_epsilon,p);
     for (int iter=0; iter<_outer; ++iter) {
@@ -85,7 +85,7 @@ public class FlattenerRTD {
       makeRhs(p,b);
       cg.solve(a3,m3,vb,vr);
     }
-    cleanShifts(p[3],r);
+    cleanShifts(ws,r);
     return r;
   }
 
@@ -176,7 +176,7 @@ public class FlattenerRTD {
     for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
         g[i2][i1] = si.interpolate(
-          n1,1.0,0.0,n2,1.0,0.0,f,i1-r1[i2][i1],i2-r2[i2][i1]);
+          n1,1.0,0.0,n2,1.0,0.0,f,i1+r1[i2][i1],i2+r2[i2][i1]);
       }
     }
   }
@@ -203,7 +203,7 @@ public class FlattenerRTD {
         for (int i1=0; i1<n1; ++i1)
           gf[i3][i2][i1] = si.interpolate(
             n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,
-            ff,i1-r1[i3][i2][i1],i2-r2[i3][i2][i1],i3-r3[i3][i2][i1]);
+            ff,i1+r1[i3][i2][i1],i2+r2[i3][i2][i1],i3+r3[i3][i2][i1]);
     }});
   }
 
@@ -436,15 +436,15 @@ public class FlattenerRTD {
         float u2smu1p = u2i*u2i-u1p;
         float u3smu1p = u3i*u3i-u1p;
 
-        float b1 = W2*epi*(u1i*u1i-1.0f);
-        float b2 = W2*epi*(u2u1p);
-        float b3 = W2*epi*(u3u1p);
-        float b4 = W0*epi*(u2u1p);
-        float b5 = W1*epi*(u2i*u2i);
-        float b6 = W1*epi*(u2u3);
-        float b7 = W0*epi*(u3u1p);
-        float b8 = W1*epi*(u2u3);
-        float b9 = W1*epi*(u3i*u3i);
+        float b1 = -W2*epi*(u1i*u1i-1.0f);
+        float b2 = -W2*epi*(u2u1p);
+        float b3 = -W2*epi*(u3u1p);
+        float b4 = -W0*epi*(u2u1p);
+        float b5 = -W1*epi*(u2i*u2i);
+        float b6 = -W1*epi*(u2u3);
+        float b7 = -W0*epi*(u3u1p);
+        float b8 = -W1*epi*(u2u3);
+        float b9 = -W1*epi*(u3i*u3i);
 
         float y11 = b1*u1u1p + b2*u2u1p   + b3*u3u1p;
         float y12 = b4*u1u1p + b5*u2u1p   + b6*u3u1p;
@@ -1066,7 +1066,7 @@ public class FlattenerRTD {
     li.setUniform(n1,1.0,0.0,n2,1.0,0.0,f);
     for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
-        g[i2][i1] = li.interpolate(i1-r1[i2][i1],i2-r2[i2][i1]);
+        g[i2][i1] = li.interpolate(i1+r1[i2][i1],i2+r2[i2][i1]);
       }
     }
   }
@@ -1093,7 +1093,7 @@ public class FlattenerRTD {
       for (int i2=0; i2<n2; ++i2) 
         for (int i1=0; i1<n1; ++i1) 
           gf[i3][i2][i1] = li.interpolate(
-              i1-r1[i3][i2][i1],i2-r2[i3][i2][i1],i3-r3[i3][i2][i1]);
+              i1+r1[i3][i2][i1],i2+r2[i3][i2][i1],i3+r3[i3][i2][i1]);
     }});
   }
 }
