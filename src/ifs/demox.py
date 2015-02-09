@@ -61,7 +61,7 @@ maxThrow = 15.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../png/"
-plotOnly = True
+plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
@@ -75,8 +75,8 @@ def main(args):
   goReSkin()
   '''
   #goSlip()
-  goUnfaultC()
-  #goUnfaultS()
+  #goUnfaultC()
+  goUnfaultS()
   #goSlipTest()
 def goSlipTest():
   smark=-99

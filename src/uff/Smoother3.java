@@ -16,21 +16,6 @@ public class Smoother3 {
     _sigma1 = sigma1;
     _sigma2 = sigma2;
     _sigma3 = sigma3;
-    weightsForHorizontalSmooth(wp);
-  }
-
-  private void weightsForHorizontalSmooth(float[][][] wp) {
-    System.out.println("test!!!");
-    int n3 = wp.length;
-    int n2 = wp[0].length;
-    int n1 = wp[0][0].length;
-    _wh = copy(wp);
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      //_wp[i3][i2][i1]=(_wp[i3][i2][i1]<0.1f)?0.1f:_wh[i3][i2][i1];
-      //_wh[i3][i2][i1]=(_wh[i3][i2][i1]<0.1f)?0.1f:_wh[i3][i2][i1];
-    }}}
   }
 
   public void apply(float[][][][] x) {
@@ -48,25 +33,24 @@ public class Smoother3 {
   public void applyOriginal(float[][][][] x) {
     int n4 = x.length;
     for (int i4=0; i4<n4; ++i4) {
-      smooth1(_sigma1,_wh,x[i4]);
-      smooth2(_sigma2,_wh,x[i4]); 
-      smooth3(_sigma3,_wh,x[i4]);
+      smooth1(_sigma1,_wp,x[i4]);
+      smooth2(_sigma2,_wp,x[i4]); 
+      smooth3(_sigma3,_wp,x[i4]);
     }
   }
 
   public void applyTranspose(float[][][][] x) {
     int n4 = x.length;
     for (int i4=0; i4<n4; ++i4) {
-      smooth3(_sigma3,_wh,x[i4]);
-      smooth2(_sigma2,_wh,x[i4]); 
-      smooth1(_sigma1,_wh,x[i4]);
+      smooth3(_sigma3,_wp,x[i4]);
+      smooth2(_sigma2,_wp,x[i4]); 
+      smooth1(_sigma1,_wp,x[i4]);
     }
   }
 
   ///////////////////////////////////////////////////////////////////////////
   // private
   private float[][][] _wp;
-  private float[][][] _wh;
 
   private float _sigma1,_sigma2,_sigma3;
   private static final boolean PARALLEL = true;
