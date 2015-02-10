@@ -11,154 +11,30 @@ import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
- * Computes fault blocks. 
- * <em>EXPERIMENTAL</em>
+ * Surface reconstruction from oriented points. 
+ * <p>
+ * Based on the works by Gael Guennebaud and Markus Gross, 2007, 
+ * Algebraic Point Set Surfaces; 
+ * Gael Guennebaud, Marcel Germann and Markus Gross, 2008, 
+ * Dynamic Sampling and Rendering of Algebraic Point Set Surfaces.
  *
  * @author Xinming Wu, Colorado School of Mines
- * @version 2014.09.16
+ * @version 2014.02.09
  */
 public class PointSetSurface {
 
+  /**
+   * Given fault cells or oriented points, a signed function or scalar field 
+   * is computed, and the zero-contour surface of this scalar field is the 
+   * surface fitting the positions and normals of the oriented points.
+   * @param n1 1st dimension of the scalar field to be computed
+   * @param n2 2nd dimension of the scalar field to be computed
+   * @param n3 3rd dimension of the scalar field to be computed
+   * @param fc an array of fault cells
+   */ 
   public float[][][] findScalarField(int n1, int n2, int n3, FaultCell[] fc) {
     return scalarField(n1,n2,n3,fc);
   }
-
-
-  private float[][][] setKdTreePoints(FaultCell[] fc) {
-    int nc = fc.length;
-    float[][][] xu = new float[2][3][nc];
-    int ik = 0;
-    for (int ic=0; ic<nc; ic+=1) {
-      xu[0][0][ik] = fc[ic].i1;
-      xu[0][1][ik] = fc[ic].i2;
-      xu[0][2][ik] = fc[ic].i3;
-      xu[1][0][ik] = fc[ic].w1;
-      xu[1][1][ik] = fc[ic].w2;
-      xu[1][2][ik] = fc[ic].w3;
-      ik++;
-    }
-    return xu;
-  }
-
-  private float[][][] setKdTreeNodes(
-    int n1, int n2, int n3, 
-    FaultCell[] fc, int[][] bb2, int[][] bb3)
-  {
-    int nc = fc.length;
-    float[][][] xu = new float[2][3][nc];
-    for (int i1=0; i1<n1; ++i1) {
-      bb2[i1][0] = n2; bb2[i1][1] = -n2;
-      bb3[i1][0] = n3; bb3[i1][1] = -n3;
-    }
-    for (int ic=0; ic<nc; ic++) {
-      int i1 = fc[ic].i1;
-      int i2 = fc[ic].i2;
-      int i3 = fc[ic].i3;
-
-      float w1 = fc[ic].w1;
-      float w2 = fc[ic].w2;
-      float w3 = fc[ic].w3;
-
-      xu[0][0][ic] = i1;
-      xu[0][1][ic] = i2;
-      xu[0][2][ic] = i3;
-      xu[1][0][ic] = w1;
-      xu[1][1][ic] = w2;
-      xu[1][2][ic] = w3;
-
-      int b2l = bb2[i1][0];
-      int b2r = bb2[i1][1];
-      if(i2<b2l) bb2[i1][0] = i2;
-      if(i2>b2r) bb2[i1][1] = i2;
-      int b3l = bb3[i1][0];
-      int b3r = bb3[i1][1];
-      if(i3<b3l) bb3[i1][0] = i3;
-      if(i3>b3r) bb3[i1][1] = i3;
-    }
-
-    for (int i1=0; i1<n1; ++i1) {
-      bb2[i1][0] -= 5; bb3[i1][0] -= 5;
-      bb2[i1][1] += 5; bb3[i1][1] += 5;
-    }
-    return xu;
-  }
-
-
-  public void alignNormals(int n1, int n2, int n3, FaultCell[] fc) {
-    int nc = fc.length;
-    int ib = startCell(fc);
-    int[] mk = new int[nc];
-    float[][][] xu = setKdTreePoints(fc);
-    HashSet<Integer> idh = new HashSet<Integer>();
-    idh.add(ib);
-    float[] xmin = new float[3];
-    float[] xmax = new float[3];
-    int[] ds = new int[]{5,5,5};
-    int[] ns = new int[]{n1,n2,n3};
-    KdTree kt = new KdTree(xu[0]);
-    while (idh.size()>0) {
-      for (int ic:idh) {
-        mk[ic] = 1;
-        idh.remove(ic);
-        int[] is = fc[ic].getI();
-        float[] us = fc[ic].getW();
-        getRange(ds,is,ns,xmin,xmax);
-        int[] ids = kt.findInRange(xmin,xmax);
-        int nd = ids.length;
-        if (nd<0) {continue;}
-        for (int ik=0; ik<nd; ++ik) {
-          int id = ids[ik];
-          if(mk[id]==0) {
-            float x1 = fc[id].i1-is[0];
-            float x2 = fc[id].i2-is[1];
-            float x3 = fc[id].i3-is[2];
-            float sx = x1*x1+x2*x2+x3*x3;
-            if(sx==0.0f){continue;}
-            idh.add(id);
-            float[] vs = fc[id].getW();
-            float[] xs = new float[]{x1/sx,x2/sx,x3/sx};
-            float[] ur = reflectionVector(xs,us);
-            if(sum(mul(vs,ur))<0.0f) {
-              fc[id].setNormal(-vs[0],-vs[1],-vs[2]);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  private float[] reflectionVector(float[] xi, float[] ui) {
-    float u1 = ui[0];
-    float u2 = ui[1];
-    float u3 = ui[2];
-    float x1 = xi[0];
-    float x2 = xi[1];
-    float x3 = xi[2];
-
-    float ux = u1*x1+u2*x2+u3*x3;
-    float w1 = u1-x1;
-    float w2 = u2-x2;
-    float w3 = u3-x3;
-    float ws = 1.0f/(w1*w1+w2*w2+w3*w3);
-    w1 *= ws; w2 *= ws; w3 *= ws;
-    float wu = 2.0f*(w1*u1+w2*u2+w3*u3);
-    float v1 = wu*w1-u1;
-    float v2 = wu*w2-u2;
-    float v3 = wu*w3-u3;
-    return new float[]{v1,v2,v3};
-  }
-
-  private int startCell(FaultCell[] fc) {
-    int id = 0;
-    float flMax = 0.0f;
-    int nc = fc.length;
-    for (int ic=0; ic<nc; ++ic) {
-      float fl = fc[ic].fl;
-      if(fl>flMax) {id = ic; flMax = fl;}
-    }
-    return id;
-  }
-
 
   public float[][][] scalarField(
     final int n1, final int n2, final int n3, FaultCell[] fc) 
@@ -167,7 +43,6 @@ public class PointSetSurface {
     final float v = -30.f;
     final int[][] bb2 = new int[n1][2];
     final int[][] bb3 = new int[n1][2];
-    final int[] ns = new int[]{n1,n2,n3};
     final float[][][] xu = setKdTreeNodes(n1,n2,n3,fc,bb2,bb3);
     final int[] bs1 = setBounds(n1,xu[0][0]);
     final int[] bs2 = setBounds(n2,xu[0][1]);
@@ -177,7 +52,6 @@ public class PointSetSurface {
     final float[][][] sf = fillfloat(v,n1,n2,n3);
     Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
     public void compute(int i3) {
-      //for (int i3=bs3[0]; i3<bs3[1]; ++i3) {
       float[] xmin = new float[3];
       float[] xmax = new float[3];
       System.out.println("i3="+i3);
@@ -187,10 +61,13 @@ public class PointSetSurface {
           if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
           int[] id = null;
           int di = 10,nd = 0;
-          int[] is = new int[]{i1,i2,i3};
           while(nd<20 && di<=dt) {
-            int[] ds=new int[]{di,di,di};
-            getRange(ds,is,ns,xmin,xmax);
+            xmin[0] = i1-di;
+            xmin[1] = i2-di;
+            xmin[2] = i3-di;
+            xmax[0] = i1+di;
+            xmax[1] = i2+di;
+            xmax[2] = i3+di;
             id = kt.findInRange(xmin,xmax);
             nd = id.length;
             di += 2;
@@ -233,13 +110,54 @@ public class PointSetSurface {
             xp[1][ip] = xi[1]; up[1][ip] = ui[1];
             xp[2][ip] = xi[2]; up[2][ip] = ui[2];
           }
+          int[] is = new int[]{i1,i2,i3};
           float[] r = scalarField(dx,is,xp,up);
           sf[i3][i2][i1] = r[0];
         }
       }
-      //}
     }});
     return sf;
+  }
+
+
+  private float[][][] setKdTreeNodes(int n1, int n2, int n3, 
+    FaultCell[] fc, int[][] bb2, int[][] bb3) {
+    int nc = fc.length;
+    float[][][] xu = new float[2][3][nc];
+    for (int i1=0; i1<n1; ++i1) {
+      bb2[i1][0] = n2; bb2[i1][1] = -n2;
+      bb3[i1][0] = n3; bb3[i1][1] = -n3;
+    }
+    for (int ic=0; ic<nc; ic++) {
+      float w1 = fc[ic].getW1();
+      float w2 = fc[ic].getW2();
+      float w3 = fc[ic].getW3();
+      int i1 = round(fc[ic].getX1());
+      int i2 = round(fc[ic].getX2());
+      int i3 = round(fc[ic].getX3());
+
+      xu[0][0][ic] = i1;
+      xu[0][1][ic] = i2;
+      xu[0][2][ic] = i3;
+      xu[1][0][ic] = w1;
+      xu[1][1][ic] = w2;
+      xu[1][2][ic] = w3;
+
+      int b2l = bb2[i1][0];
+      int b2r = bb2[i1][1];
+      if(i2<b2l) bb2[i1][0] = i2;
+      if(i2>b2r) bb2[i1][1] = i2;
+      int b3l = bb3[i1][0];
+      int b3r = bb3[i1][1];
+      if(i3<b3l) bb3[i1][0] = i3;
+      if(i3>b3r) bb3[i1][1] = i3;
+    }
+
+    for (int i1=0; i1<n1; ++i1) {
+      bb2[i1][0] -= 5; bb3[i1][0] -= 5;
+      bb2[i1][1] += 5; bb3[i1][1] += 5;
+    }
+    return xu;
   }
 
   private int[] setBounds(int n, float[] x) {
@@ -253,6 +171,9 @@ public class PointSetSurface {
     return bs;
   }
 
+  /**
+   * Simple but not robust method computing a signed distance funcion.
+   */
   private float scalarFieldS(float h, float[] y,float[][] xp, float[][] up) {
     float c = 0.0f;
     int np = xp[0].length;
@@ -275,6 +196,7 @@ public class PointSetSurface {
     return c/sum(wp);
   }
 
+  // bigger bt will produce smoother surfaces
   private static float[] scalarField(
     float[] dx, int[] xp, float[][] xf, float[][] uf) {
     int np = xf[0].length;
@@ -350,19 +272,6 @@ public class PointSetSurface {
     }
     return wp;
   }
-
-  private static void getRange(int[] ds, int[] is, int[] ns, 
-  float[] xmin, float[] xmax) {
-    int i1m = is[0]-ds[0]; if(i1m<0){i1m=0;}
-    int i2m = is[1]-ds[1]; if(i2m<0){i2m=0;}
-    int i3m = is[2]-ds[2]; if(i3m<0){i3m=0;}
-    int i1p = is[0]+ds[0]; if(i1p>=ns[0]){i1p=ns[0]-1;}
-    int i2p = is[1]+ds[1]; if(i2p>=ns[1]){i2p=ns[1]-1;}
-    int i3p = is[2]+ds[2]; if(i3p>=ns[2]){i3p=ns[2]-1;}
-    xmin[0] = i1m; xmin[1] = i2m; xmin[2] = i3m;
-    xmax[0] = i1p; xmax[1] = i2p; xmax[2] = i3p;
-  }
-
 
 
 }

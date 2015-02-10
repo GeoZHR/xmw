@@ -14,13 +14,13 @@ import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
- * Compute a volume whoes isosurfaces are fault surfaces.
+ * Compute a volume whoes zero isosurfaces are fault surfaces.
  * <p>
  * Assume we can obtain an image with fault normal vectors, then we can 
- * solve a Poisson problem to compute a volume whose isosurfaces are fault 
+ * solve a Poisson problem to compute a volume whose zero isosurfaces are fault 
  * surfaces.
  * @author Xinming Wu, Colorado School of Mines
- * @version 2014.07.26
+ * @version 2014.02.09
  */
 public class ScreenPoissonSurfer {
 
@@ -51,13 +51,15 @@ public class ScreenPoissonSurfer {
     int n1, int n2, int n3, FaultCell[] fcs) {
     float[][][][] us = new float[5][n3][n2][n1];
     for (FaultCell fc:fcs) {
-      int i1 = fc.i1;
-      int i2 = fc.i2;
-      int i3 = fc.i3;
-      us[0][i3][i2][i1] = fc.fl;
-      us[1][i3][i2][i1] = fc.w1;
-      us[2][i3][i2][i1] = fc.w2;
-      us[3][i3][i2][i1] = fc.w3;
+      int[] is = fc.getI();
+      int i1 = is[0];
+      int i2 = is[1];
+      int i3 = is[2];
+      float[] ws = fc.getW();
+      us[0][i3][i2][i1] = fc.getFl();
+      us[1][i3][i2][i1] = ws[0];
+      us[2][i3][i2][i1] = ws[1];
+      us[3][i3][i2][i1] = ws[2];
       us[4][i3][i2][i1] = 1.00f;
     }
     interpNormals(fcs,us);
@@ -65,14 +67,12 @@ public class ScreenPoissonSurfer {
   }
 
   private void interpNormals(final FaultCell[] fc, final float[][][][] us) {
-    int di = 16;
+    final int di = 20;
     final int n3 = us[0].length;
     final int n2 = us[0][0].length;
     final int n1 = us[0][0][0].length;
     final int[][] bb2 = new int[n1][2];
     final int[][] bb3 = new int[n1][2];
-    final int[] ns = new int[]{n1,n2,n3};
-    final int[] ds = new int[]{di,di,di};
     final float[][] xp = setKdTreeNodes(n1,n2,n3,fc,bb2,bb3);
     final int[] bs1 = setBounds(n1,xp[0]);
     final int[] bs2 = setBounds(n2,xp[1]);
@@ -90,8 +90,12 @@ public class ScreenPoissonSurfer {
           if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
           if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
           int[] id = null;
-          int[] is = new int[]{i1,i2,i3};
-          getRange(ds,is,ns,xmin,xmax);
+          xmin[0]  = i1-di;
+          xmin[1]  = i2-di;
+          xmin[2]  = i3-di;
+          xmax[0]  = i1+di;
+          xmax[1]  = i2+di;
+          xmax[2]  = i3+di;
           id = kt.findInRange(xmin,xmax);
           int nd = id.length;
           if(nd<1){continue;}
@@ -99,12 +103,12 @@ public class ScreenPoissonSurfer {
           float st = sth;
           for (int ik=0; ik<nd; ++ik) {
             int ip = id[ik];
-            float x1 = fc[ip].i1;
-            float x2 = fc[ip].i2;
-            float x3 = fc[ip].i3;
-            float w1 = fc[ip].w1;
-            float w2 = fc[ip].w2;
-            float w3 = fc[ip].w3;
+            float x1 = fc[ip].getX1();
+            float x2 = fc[ip].getX2();
+            float x3 = fc[ip].getX3();
+            float w1 = fc[ip].getW1();
+            float w2 = fc[ip].getW2();
+            float w3 = fc[ip].getW3();
             float d1 = x1-i1;
             float d2 = x2-i2;
             float d3 = x3-i3;
@@ -118,32 +122,20 @@ public class ScreenPoissonSurfer {
             if(sti<st) {ic=ip;st=sti;}
           }
           if(st==sth){continue;}
-          us[1][i3][i2][i1] = fc[ic].w1;
-          us[2][i3][i2][i1] = fc[ic].w2;
-          us[3][i3][i2][i1] = fc[ic].w3;
-          us[0][i3][i2][i1] = fc[ic].fl*(1.f-st);
+          us[1][i3][i2][i1] = fc[ic].getW1();
+          us[2][i3][i2][i1] = fc[ic].getW2();
+          us[3][i3][i2][i1] = fc[ic].getW3();
+          us[0][i3][i2][i1] = fc[ic].getFl()*(1.f-st);
         }
       }
     }});
 
   }
-  private static void getRange(int[] ds, int[] is, int[] ns, 
-    float[] xmin, float[] xmax) {
-    int i1m = is[0]-ds[0]; if(i1m<0){i1m=0;}
-    int i2m = is[1]-ds[1]; if(i2m<0){i2m=0;}
-    int i3m = is[2]-ds[2]; if(i3m<0){i3m=0;}
-    int i1p = is[0]+ds[0]; if(i1p>=ns[0]){i1p=ns[0]-1;}
-    int i2p = is[1]+ds[1]; if(i2p>=ns[1]){i2p=ns[1]-1;}
-    int i3p = is[2]+ds[2]; if(i3p>=ns[2]){i3p=ns[2]-1;}
-    xmin[0] = i1m; xmin[1] = i2m; xmin[2] = i3m;
-    xmax[0] = i1p; xmax[1] = i2p; xmax[2] = i3p;
-  }
-
 
   private int[] setBounds(int n, float[] x) {
     int[] bs = new int[2];
-    int n1m = (int)min(x)-5; 
-    int n1p = (int)max(x)+5; 
+    int n1m = (int)min(x)-10; 
+    int n1p = (int)max(x)+10; 
     if(n1m<0){n1m=0;} if(n1p>n){n1p=n;}
     bs[0] = n1m; bs[1] = n1p;
     return bs;
@@ -161,9 +153,10 @@ public class ScreenPoissonSurfer {
       bb3[i1][0] = n3; bb3[i1][1] = -n3;
     }
     for (int ic=0; ic<nc; ic++) {
-      int i1 = fc[ic].i1;
-      int i2 = fc[ic].i2;
-      int i3 = fc[ic].i3;
+      int[] is = fc[ic].getI();
+      int i1 = is[0];
+      int i2 = is[1];
+      int i3 = is[2];
 
       xp[0][ic] = i1;
       xp[1][ic] = i2;
@@ -180,8 +173,8 @@ public class ScreenPoissonSurfer {
     }
 
     for (int i1=0; i1<n1; ++i1) {
-      bb2[i1][0] -= 5; bb3[i1][0] -= 5;
-      bb2[i1][1] += 5; bb3[i1][1] += 5;
+      bb2[i1][0] -= 10; bb3[i1][0] -= 10;
+      bb2[i1][1] += 10; bb3[i1][1] += 10;
     }
     return xp;
   }
@@ -219,15 +212,11 @@ public class ScreenPoissonSurfer {
     int n2 = w[0].length;
     int n1 = w[0][0].length;
     for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float wi = w[i3][i2][i1];
-          if(wi==0.0f) {
-            f[i3][i2][i1] = v;
-          }
-        }
-      }
-    }
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float wi = w[i3][i2][i1];
+      if(wi==0.0f) {f[i3][i2][i1] = v;}
+    }}}
   }
 
   ///////////////////////////////////////////////////////////////////////////
