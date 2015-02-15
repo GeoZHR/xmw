@@ -98,10 +98,14 @@ public class FaultSkinnerX {
   public void getFl(FaultSkin[] sks, float[][][] fl) {
     for (FaultSkin sk:sks) {
       for (FaultCell fc:sk) {
-        int i1 = fc.i1;
-        int i2 = fc.i2;
-        int i3 = fc.i3;
-        fl[i3][i2][i1] = fc.fl;
+        int i1m = fc.i1;
+        int i2m = fc.i2m;
+        int i3m = fc.i3m;
+        int i1p = fc.i1;
+        int i2p = fc.i2p;
+        int i3p = fc.i3p;
+        fl[i3m][i2m][i1m] = fc.fl;
+        fl[i3p][i2p][i1p] = fc.fl;
       }
     }
   }

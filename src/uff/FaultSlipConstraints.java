@@ -76,24 +76,20 @@ public class FaultSlipConstraints {
     return cs;
   }
 
-  public float[][][] screenPoints(
-    float[][][] ws, float[][][] wp, float[][][] cp) 
-  {
-    int ct = 2;
+  public float[][][] screenPoints(float[][][] wp){
     int nk = _sks.length;
-    setWeightsNearFaults(ws,wp);
+    float[][] fln = normalizeFl();
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
     for (int ik=0; ik<nk; ++ik) {
-      ct++;
       FaultSkin[] ski = new FaultSkin[]{_sks[ik]};
       FaultCell[] fcs = FaultSkin.getCells(ski);
       int nc = fcs.length;
       for (int ic=0; ic<nc; ++ic) {
         FaultCell fc = fcs[ic];
-        float fl = fc.getFl();
         int[] im = fc.getIm();
         int[] ip = fc.getIp();
         float[] cs = fc.getS();
+        float fl = fln[ik][ic];
         float[] hx = new float[3];
         float[] fx = new float[3];
         float[] xf = new float[3];
@@ -103,17 +99,14 @@ public class FaultSlipConstraints {
         int h1 = ip[0];
         int h2 = ip[1];
         int h3 = ip[2];
-        cp[h3][h2][h1] += ct;
-        cp[f3][f2][f1] += ct;
+        wp[f3][f2][f1] = 0.0f;
+        wp[h3][h2][h1] = 0.0f;
         hx[0] = h1; fx[0] = f1;
         hx[1] = h2; fx[1] = f2;
         hx[2] = h3; fx[2] = f3;
         xf[0] = fl; xf[1] = fl; xf[2] = fl;
+        //cs[1] *= 2f; cs[2] *= 2f;
         cl.add(new float[][]{hx,fx,cs,xf});
-        ws[f3][f2][f1] = 0.0f;
-        ws[h3][h2][h1] = 0.0f;
-        wp[f3][f2][f1] = 0.0f;
-        wp[h3][h2][h1] = 0.0f;
       }
     }
     int ns = cl.size();
@@ -140,7 +133,56 @@ public class FaultSlipConstraints {
     return cs;
   }
 
+  public float[][][] screenPointsNearFaults(int n2, int n3) {
+    int nk = _sks.length;
+    ArrayList<float[][]> cl = new ArrayList<float[][]>();
+    for (int ik=0; ik<nk; ++ik) {
+      FaultSkin[] ski = new FaultSkin[]{_sks[ik]};
+      FaultCell[] fcs = FaultSkin.getCells(ski);
+      int nc = fcs.length;
+      for (int ic=0; ic<nc; ++ic) {
+        FaultCell fc = fcs[ic];
+        int[] im = fc.getIm();
+        int[] ip = fc.getIp();
+        int i1m = im[0], i2m = im[1], i3m = im[2];
+        int i1p = ip[0], i2p = ip[1], i3p = ip[2];
+        if(i2p>i2m) {
+          i2m -= 1; if(i2m<0)   {i2m=0;}
+          i2p += 1; if(i2p>=n2) {i2p=n2-1;}
+        } else {
+          i2p -= 1; if(i2p<0)   {i2p=0;}
+          i2m += 1; if(i2m>=n2) {i2m=n2-1;}
+        }
+        if(i3p>i3m) {
+          i3m -= 1; if(i3m<0)   {i3m=0;}
+          i3p += 1; if(i3p>=n3) {i3p=n3-1;}
+        } else {
+          i3p -= 1; if(i3p<0)   {i3p=0;}
+          i3m += 1; if(i3m>=n3) {i3m=n3-1;}
+        }
+        float[] hx = new float[]{i1p,i2p,i3p};
+        float[] fx = new float[]{i1m,i2m,i3m};
+        cl.add(new float[][]{hx,fx});
+      }
+    }
+    int ns = cl.size();
+    float[][][] cs = new float[2][3][ns];
+    for (int is=0; is<ns; ++is) {
+      float[][] ps = cl.get(is);
+      cs[0][0][is] = ps[0][0];
+      cs[0][1][is] = ps[0][1];
+      cs[0][2][is] = ps[0][2];
+
+      cs[1][0][is] = ps[1][0];
+      cs[1][1][is] = ps[1][1];
+      cs[1][2][is] = ps[1][2];
+    }
+    return cs;
+  }
+
+
   public void setNormals(float[][][][] p) {
+    //setNormalsNearFaults(p);
     for (FaultSkin sk:_sks) {
       for (FaultCell fc:sk) {
         int[] ip = fc.getIp();
@@ -167,11 +209,11 @@ public class FaultSlipConstraints {
     }
   }
 
-  private void setWeightsNearFaults(float[][][] ws, float[][][] wp) {
+  private void setNormalsNearFaults(float[][][][] ps) {
     float fnull = -99f;
-    int n3 = ws.length;
-    int n2 = ws[0].length;
-    int n1 = ws[0][0].length;
+    int n3 = ps[0].length;
+    int n2 = ps[0][0].length;
+    int n1 = ps[0][0][0].length;
     float[][][] ds = new float[n3][n2][n1];
     short[][][] k1 = new short[n3][n2][n1];
     short[][][] k2 = new short[n3][n2][n1];
@@ -192,12 +234,35 @@ public class FaultSlipConstraints {
     for (int i2=0; i2<n2; ++i2){
     for (int i1=0; i1<n1; ++i1){
       float di = ds[i3][i2][i1];
-      float wi = wp[i3][i2][i1];
-      if(di<=2f) { 
-        ws[i3][i2][i1] = 1.0f;
-        if(wi>0.6f) {wp[i3][i2][i1] = 0.6f;}
+      if(di<=1f) { 
+        ps[0][i3][i2][i1] = 1.0f;
+        ps[1][i3][i2][i1] = 0.0f;
+        ps[2][i3][i2][i1] = 0.0f;
       }
     }}}
+  }
+
+
+  private float[][] normalizeFl() {
+    int nk = _sks.length;
+    float[][] fl = new float[nk][];
+    for (int ik=0; ik<nk; ++ik) {
+      FaultSkin[] ski = new FaultSkin[]{_sks[ik]};
+      FaultCell[] fcs = FaultSkin.getCells(ski);
+      int nc = fcs.length;
+      fl[ik] = new float[nc];
+      float fmin = fcs[0].getFl();
+      float fmax = fcs[0].getFl();
+      for (int ic=0; ic<nc; ++ic) {
+        float flc = fcs[ic].getFl();
+        fl[ik][ic] = flc;
+        if(flc<fmin) {fmin=flc;}
+        if(flc>fmax) {fmax=flc;}
+      }
+      //sub(fl[ik],fmin,fl[ik]);
+      div(fl[ik],fmax,fl[ik]);
+    }
+    return fl;
   }
 
   FaultSkin[] _sks;

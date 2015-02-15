@@ -1,7 +1,7 @@
 package uff;
 
 import vec.*;
-import ifs.*;
+//import ifs.*;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
@@ -30,6 +30,10 @@ public class FlattenerRTS {
   public void setIters(int inner, int outer) {
     _inner=inner;
     _outer=outer;
+  }
+
+  public void setScreenNearFaults(float[][][] cn) {
+    _cn = cn;
   }
 
   /**
@@ -72,7 +76,7 @@ public class FlattenerRTS {
    */
   public float[][][][] findShifts(
     float[][] cp, float[][] cm, float[][] dr, 
-    float[] fl, float[][][][] p, float[][][] ws) {
+    float[] fl, float[][][][] p) {
     int n3 = p[0].length;
     int n2 = p[0][0].length;
     int n1 = p[0][0][0].length;
@@ -82,7 +86,7 @@ public class FlattenerRTS {
     float[][][][] rc = new float[3][n3][n2][n1];
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
-    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,ws);
+    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p[3]);
     CgSolver cg = new CgSolver(_small,_inner);
     A3 ma = new A3(_epsilon,s3,cp,cm,fl,p);
     for (int outer=0; outer<_outer; ++outer) {
@@ -90,6 +94,7 @@ public class FlattenerRTS {
       if (outer>0) {
         scopy(r,rc);
         s3.applyOriginal(rc);
+        //cleanShifts(p0[3],r);
         updateParameters(rc,p0,p);
         vb.zero();
       }
@@ -103,9 +108,39 @@ public class FlattenerRTS {
     return r;
   }
 
+  private void computeMissFit(
+    float[][] cp, float[][] cm, float[][] dr,
+    float[][][][] r, float[][][] mf) {
+    int nc = cp[0].length;
+    for (int ic=0; ic<nc; ++ic) {
+      int i1p = round(cp[0][ic]);
+      int i2p = round(cp[1][ic]);
+      int i3p = round(cp[2][ic]);
+      int i1m = round(cm[0][ic]);
+      int i2m = round(cm[1][ic]);
+      int i3m = round(cm[2][ic]);
+      float s1p = r[0][i3p][i2p][i1p];
+      float s2p = r[1][i3p][i2p][i1p];
+      float s3p = r[2][i3p][i2p][i1p];
+      float s1m = r[0][i3m][i2m][i1m];
+      float s2m = r[1][i3m][i2m][i1m];
+      float s3m = r[2][i3m][i2m][i1m];
+      float ds1 = abs(s1p-s1m);
+      float ds2 = abs(s2p-s2m);
+      float ds3 = abs(s3p-s3m);
+      ds1 = abs(ds1-dr[0][ic]);
+      ds2 = abs(ds2-dr[1][ic]);
+      ds3 = abs(ds3-dr[2][ic]);
+      mf[i3p][i2p][i1p] = ds1;
+      mf[i3m][i2m][i1m] = ds1;
+      //mf[i3p][i2p][i1p] = sqrt(ds1*ds1+ds2*ds2+ds3*ds3);
+      //mf[i3m][i2m][i1m] = sqrt(ds1*ds1+ds2*ds2+ds3*ds3);
+    }
+  }
+
   public float[][][][] unfaultShifts(
     float[][] cp, float[][] cm, float[][] dr, 
-    float[] fl, float[][][][] p, float[][][] ws) {
+    float[] fl, float[][][][] p) {
     _inner = 50;
     mul(fl,100000f,fl);
     int n3 = p[0].length;
@@ -114,16 +149,19 @@ public class FlattenerRTS {
     p[0] = fillfloat(1.0f,n1,n2,n3);
     p[1] = fillfloat(0.0f,n1,n2,n3);
     p[2] = fillfloat(0.0f,n1,n2,n3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+    if(p[3][i3][i2][i1]>0.0f)   {
+      p[3][i3][i2][i1] = 1.0f;
+    }}}}
     float[][][][] b = new float[3][n3][n2][n1];
     float[][][][] r = new float[3][n3][n2][n1];
-    float[][][][] rc = new float[3][n3][n2][n1];
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
     Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p[3]);
     CgSolver cg = new CgSolver(_small,_inner);
     A3 ma = new A3(_epsilon,s3,cp,cm,fl,p);
-    scopy(r,rc);
-    s3.applyOriginal(rc);
     vb.zero();
     makeRhs(cp,cm,dr,fl,p,b);
     s3.applyTranspose(b);
@@ -247,6 +285,7 @@ public class FlattenerRTS {
   //private float _small = 0.001f; // stop CG iterations if residuals are small
   private int _inner = 100; // maximum number of inner CG iterations
   private int _outer = 1; // maximum number of outer iterations
+  private static float[][][] _cn = null;
 
   private static class A2 implements CgSolver.A {
     A2(float epsilon, Smoother2 smoother, float[][][] p) {
@@ -588,146 +627,89 @@ public class FlattenerRTS {
       y[1][i3p][i2p][i1p] += dx2;
       y[2][i3p][i2p][i1p] += dx3;
     }
+    if(_cn!=null) {screenNearFaults(cp,cm,x,y);}
   }
 
-  private static void applyLhsSlice3(
-    int i3, float[][][] wp, float[][][][] x, float[][][][] y) 
+  private static void screenNearFaults(
+    float[][] cp, float[][] cm, float[][][][] x, float[][][][] y) 
   {
-    int n2 = x[0][0].length;
-    int n1 = x[0][0][0].length;
-    float[][][] x1 = x[0]; float[][][] x2 = x[1]; float[][][] x3 = x[2];
-    float[][][] y1 = y[0]; float[][][] y2 = y[1]; float[][][] y3 = y[2];
+    screen2(cp,_cn[0][1],x,y);
+    screen3(cp,_cn[0][2],x,y);
+    screen2(cm,_cn[1][1],x,y);
+    screen3(cm,_cn[1][2],x,y);
+  }
 
-    for (int i2=1; i2<n2; ++i2) {
-      float[] x100 = x1[i3  ][i2  ];
-      float[] x101 = x1[i3  ][i2-1];
-      float[] x110 = x1[i3-1][i2  ];
-      float[] x111 = x1[i3-1][i2-1];
+  private static void screen2(
+    float[][] cm, float[] c2, float[][][][] x, float[][][][] y) 
+  {
+    int nc = cm[0].length;
+    for (int ic=0; ic<nc; ++ic) {
+      int i1m = (int)cm[0][ic];
+      int i2m = (int)cm[1][ic];
+      int i3m = (int)cm[2][ic];
+      int i2p = (int)c2[ic];
+      int i1p = i1m, i3p = i3m;
 
-      float[] x200 = x2[i3  ][i2  ];
-      float[] x201 = x2[i3  ][i2-1];
-      float[] x210 = x2[i3-1][i2  ];
-      float[] x211 = x2[i3-1][i2-1];
+      float dx1 = 0.0f;
+      float dx2 = 0.0f;
+      float dx3 = 0.0f;
 
-      float[] x300 = x3[i3  ][i2  ];
-      float[] x301 = x3[i3  ][i2-1];
-      float[] x310 = x3[i3-1][i2  ];
-      float[] x311 = x3[i3-1][i2-1];
+      dx1 += x[0][i3p][i2p][i1p];
+      dx2 += x[1][i3p][i2p][i1p];
+      dx3 += x[2][i3p][i2p][i1p];
 
-      float[] y100 = y1[i3  ][i2  ];
-      float[] y101 = y1[i3  ][i2-1];
-      float[] y110 = y1[i3-1][i2  ];
-      float[] y111 = y1[i3-1][i2-1];
+      dx1 -= x[0][i3m][i2m][i1m];
+      dx2 -= x[1][i3m][i2m][i1m];
+      dx3 -= x[2][i3m][i2m][i1m];
 
-      float[] y200 = y2[i3  ][i2  ];
-      float[] y201 = y2[i3  ][i2-1];
-      float[] y210 = y2[i3-1][i2  ];
-      float[] y211 = y2[i3-1][i2-1];
+      dx1 *= 0.05f;
+      dx2 *= 0.05f;
+      dx3 *= 0.05f;
 
-      float[] y300 = y3[i3  ][i2  ];
-      float[] y301 = y3[i3  ][i2-1];
-      float[] y310 = y3[i3-1][i2  ];
-      float[] y311 = y3[i3-1][i2-1];
+      y[0][i3m][i2m][i1m] -= dx1;
+      y[1][i3m][i2m][i1m] -= dx2;
+      y[2][i3m][i2m][i1m] -= dx3;
 
-      for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
-        float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
-        float wps = wpi*wpi;
-        float x1a = 0.0f;
-        float x1b = 0.0f;
-        float x1c = 0.0f;
-        float x1d = 0.0f;
+      y[0][i3p][i2p][i1p] += dx1;
+      y[1][i3p][i2p][i1p] += dx2;
+      y[2][i3p][i2p][i1p] += dx3;
+    }
+  }
 
-        float x2a = 0.0f;
-        float x2b = 0.0f;
-        float x2c = 0.0f;
-        float x2d = 0.0f;
+  private static void screen3(
+    float[][] cm, float[] c3, float[][][][] x, float[][][][] y) 
+  {
+    int nc = cm[0].length;
+    for (int ic=0; ic<nc; ++ic) {
+      int i1m = (int)cm[0][ic];
+      int i2m = (int)cm[1][ic];
+      int i3m = (int)cm[2][ic];
+      int i3p = (int)c3[ic];
+      int i1p = i1m, i2p = i2m;
 
-        float x3a = 0.0f;
-        float x3b = 0.0f;
-        float x3c = 0.0f;
-        float x3d = 0.0f;
+      float dx1 = 0.0f;
+      float dx2 = 0.0f;
+      float dx3 = 0.0f;
 
-        x1a += x100[i1 ];
-        x1d -= x100[i1m];
-        x1b += x101[i1 ];
-        x1c -= x101[i1m];
-        x1c += x110[i1 ];
-        x1b -= x110[i1m];
-        x1d += x111[i1 ];
-        x1a -= x111[i1m];
+      dx1 += x[0][i3p][i2p][i1p];
+      dx2 += x[1][i3p][i2p][i1p];
+      dx3 += x[2][i3p][i2p][i1p];
 
-        x2a += x200[i1 ];
-        x2d -= x200[i1m];
-        x2b += x201[i1 ];
-        x2c -= x201[i1m];
-        x2c += x210[i1 ];
-        x2b -= x210[i1m];
-        x2d += x211[i1 ];
-        x2a -= x211[i1m];
+      dx1 -= x[0][i3m][i2m][i1m];
+      dx2 -= x[1][i3m][i2m][i1m];
+      dx3 -= x[2][i3m][i2m][i1m];
 
-        x3a += x300[i1 ];
-        x3d -= x300[i1m];
-        x3b += x301[i1 ];
-        x3c -= x301[i1m];
-        x3c += x310[i1 ];
-        x3b -= x310[i1m];
-        x3d += x311[i1 ];
-        x3a -= x311[i1m];
+      dx1 *= 0.05f;
+      dx2 *= 0.05f;
+      dx3 *= 0.05f;
 
-        float y11 = 0.25f*(x1a+x1b+x1c+x1d)*wps;
-        float y12 = 0.25f*(x1a-x1b+x1c-x1d)*wps;
-        float y13 = 0.25f*(x1a+x1b-x1c-x1d)*wps;
+      y[0][i3m][i2m][i1m] -= dx1;
+      y[1][i3m][i2m][i1m] -= dx2;
+      y[2][i3m][i2m][i1m] -= dx3;
 
-        float y21 = 0.25f*(x2a+x2b+x2c+x2d)*wps;
-        float y22 = 0.25f*(x2a-x2b+x2c-x2d)*wps;
-        float y23 = 0.25f*(x2a+x2b-x2c-x2d)*wps;
-
-        float y31 = 0.25f*(x3a+x3b+x3c+x3d)*wps;
-        float y32 = 0.25f*(x3a-x3b+x3c-x3d)*wps;
-        float y33 = 0.25f*(x3a+x3b-x3c-x3d)*wps;
-
-        float y1a = 0.25f*(y11+y12+y13);
-        float y1b = 0.25f*(y11-y12+y13);
-        float y1c = 0.25f*(y11+y12-y13);
-        float y1d = 0.25f*(y11-y12-y13);
-
-        float y2a = 0.25f*(y21+y22+y23);
-        float y2b = 0.25f*(y21-y22+y23);
-        float y2c = 0.25f*(y21+y22-y23);
-        float y2d = 0.25f*(y21-y22-y23);
-
-        float y3a = 0.25f*(y31+y32+y33);
-        float y3b = 0.25f*(y31-y32+y33);
-        float y3c = 0.25f*(y31+y32-y33);
-        float y3d = 0.25f*(y31-y32-y33);
-
-        y100[i1 ] += y1a;
-        y100[i1m] -= y1d;
-        y101[i1 ] += y1b;
-        y101[i1m] -= y1c;
-        y110[i1 ] += y1c;
-        y110[i1m] -= y1b;
-        y111[i1 ] += y1d;
-        y111[i1m] -= y1a;
-
-        y200[i1 ] += y2a;
-        y200[i1m] -= y2d;
-        y201[i1 ] += y2b;
-        y201[i1m] -= y2c;
-        y210[i1 ] += y2c;
-        y210[i1m] -= y2b;
-        y211[i1 ] += y2d;
-        y211[i1m] -= y2a;
-
-        y300[i1 ] += y3a;
-        y300[i1m] -= y3d;
-        y301[i1 ] += y3b;
-        y301[i1m] -= y3c;
-        y310[i1 ] += y3c;
-        y310[i1m] -= y3b;
-        y311[i1 ] += y3d;
-        y311[i1m] -= y3a;
-      }
+      y[0][i3p][i2p][i1p] += dx1;
+      y[1][i3p][i2p][i1p] += dx2;
+      y[2][i3p][i2p][i1p] += dx3;
     }
   }
 

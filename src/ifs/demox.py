@@ -59,8 +59,8 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
-#pngDir = "../../png/"
+#pngDir = None
+pngDir = "../../../png/ifs/"
 plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -72,8 +72,9 @@ def main(args):
   goThin()
   #goSmooth()
   goSkin()
-  goReSkin()
   '''
+  #goReSkin()
+  #goSmooth()
   #goSlip()
   #goUnfaultC()
   goUnfaultS()
@@ -204,25 +205,10 @@ def goStat():
   plotStat(sp,pfl,"Fault strike (degrees)")
   plotStat(st,tfl,"Fault dip (degrees)")
 
-def goSmooth():
-  print "goSmooth ..."
-  flstop = 0.1
-  fsigma = 8.0
-  gx = readImage(gxfile)
-  flt = readImage(fltfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
-  writeImage(gsxfile,gsx)
-  plot3(gx,clab="Amplitude")
-  plot3(gsx,clab="Amplitude",png="gsx")
 
 def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
-  gsx = readImage(gsxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
@@ -260,27 +246,39 @@ def goReSkin():
   cells = FaultSkin.getCells(sk)
   fsx.resetCells(cells)
   skins = fsx.findSkinsXX(cells,fl)
-  FaultSkin.setCells(skins,fl)
-  flt = zerofloat(n1,n2,n3)
-  fsx.getFl(skins,flt)
-
-  gx = readImage(gxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
-  writeImage(gsxfile,gsx)
 
   print "total number of cells =",len(cells)
   print "total number of skins =",len(skins)
   print "number of cells in skins =",FaultSkin.countCells(skins)
   removeAllSkinFiles(fskgood)
   writeSkins(fskgood,skins)
-  plot3(gx)
-  plot3(gsx)
   plot3(gx,cells=cells,png="cells")
   plot3(gx,skins=skins,png="skins")
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+
+
+def goSmooth():
+  print "goSmooth ..."
+  flstop = 0.1
+  fsigma = 8.0
+  fl = readImage(flfile)
+  gx = readImage(gxfile)
+  skins = readSkins(fskgood)
+  FaultSkin.setCells(skins,fl)
+  flt = zerofloat(n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFl(skins,flt)
+
+  p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
+  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  writeImage(gsxfile,gsx)
+  plot3(gx)
+  plot3(gsx)
+
 
 def goSlip():
   print "goSlip ..."
@@ -323,6 +321,7 @@ def goSlip():
   writeImage(fs3file,s3)
   plot3(gsx)
   #plot3(gx,skins=skins,links=True,png="skinss1")
+  plot3(gx,skins=skins,png="skinss1")
   plot3(gx,skins=skins,smax=10.0,png="skinss1")
   plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
@@ -340,9 +339,9 @@ def goSlip():
 def goUnfaultC():
   if not plotOnly:
     gx = readImage(gxfile)
+    ep = readImage(epfile)
     fw = zerofloat(n1,n2,n3)
     cp = zerofloat(n1,n2,n3)
-    p2,p3,ep = FaultScanner.slopes(4.0,1.0,1.0,5.0,gx)
     skins = readSkins(fskslip)
     fsc = FaultSlipConstraints(skins)
     wp = pow(ep,2.0)
@@ -356,7 +355,7 @@ def goUnfaultC():
     ps = array(u1,u2,u3,wp)
     flattener = FlattenerRTD(4.0,4.0)
     fsc.setNormals(ps)
-    [r1,r2,r3] = flattener.computeShifts(False,cs,ws,ps)
+    [r1,r2,r3] = flattener.computeShifts(True,cs,ws,ps)
     flattener.applyShifts([r1,r2,r3],gx,fw)
     writeImage(fwcfile,fw)
     writeImage(fwpfile,wp)
@@ -389,49 +388,32 @@ def goUnfaultS():
     gx = readImage(gxfile)
     fw = zerofloat(n1,n2,n3)
     gw = zerofloat(n1,n2,n3)
-    cp = zerofloat(n1,n2,n3)
-    p2,p3,ep = FaultScanner.slopes(4.0,1.0,1.0,5.0,gx)
-    skins = readSkins(fskslip)
-    fsc = FaultSlipConstraints(skins)
-    ws = pow(ep,6.0)
-    wp = pow(ep,6.0)
-    fm = fillfloat(1.0,n1,n2,n3)
-    cs = fsc.screenPoints(ws,wp,cp)
+    ep = zerofloat(n1,n2,n3)
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
     u3 = fillfloat(0.0,n1,n2,n3)
     lof = LocalOrientFilter(2.0,1.0,1.0)
-    lof.applyForNormal(gx,u1,u2,u3)
-    ps = array(u1,u2,u3,copy(ws))
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    ws = pow(ep,6.0)
+    wp = pow(ep,6.0)
+    skins = readSkins(fskslip)
+    fsc = FaultSlipConstraints(skins)
+    cs = fsc.screenPoints(wp)
+    cn = fsc.screenPointsNearFaults(n2,n3)
+    ps = array(u1,u2,u3,copy(wp))
     flattener = FlattenerRTS(6.0,6.0)
     flattener.setIters(20,20)
-    fl = mul(pow(cs[3][0],6.0),1.0)
+    flattener.setScreenNearFaults(cn)
     fsc.setNormals(ps)
-    [r1,r2,r3] = flattener.findShifts(cs[0],cs[1],cs[2],fl,ps,copy(wp))
+    fl = mul(pow(cs[3][0],6.0),0.5)
+    [r1,r2,r3] = flattener.findShifts(cs[0],cs[1],cs[2],fl,ps)
     flattener.applyShifts([r1,r2,r3],cs[0],cs[1],gx,gw)
-    ps = array(u1,u2,u3,copy(ws))
-    [s1,s2,s3] = flattener.unfaultShifts(cs[0],cs[1],cs[2],fl,ps,copy(ws))
-    flattener.applyShifts([s1,s2,s3],None,None,gx,fw)
-    '''
-    r1 = s1
-    r2 = s2
-    r3 = s3
-    plot3(fw)
-    lof = LocalOrientFilter(2.0,1.0,1.0)
-    lof.applyForNormal(fw,u1,u2,u3)
-    wp = pow(ep,6.0)
-    ps = array(u1,u2,u3,wp)
-    [s1,s2,s3] = flattener.findShifts(None,None,None,None,ps)
-    r1 = add(s1,r1)
-    r2 = add(s2,r2)
-    r3 = add(s3,r3)
-    flattener.applyShifts([s1,s2,s3],fw,gw)
-    plot3(gw)
-    '''
+    ps = array(u1,u2,u3,copy(wp))
+    [t1,t2,t3] = flattener.unfaultShifts(cs[0],cs[1],cs[2],fl,ps)
+    flattener.applyShifts([t1,t2,t3],None,None,gx,fw)
     writeImage(gwsfile,gw)
     writeImage(fwsfile,fw)
     writeImage(fwpfile,wp)
-    writeImage(fcpfile,cp)
     writeImage(frs1file,r1)
     writeImage(frs2file,r2)
     writeImage(frs3file,r3)
@@ -444,18 +426,33 @@ def goUnfaultS():
     r1 = readImage(frs1file)
     r2 = readImage(frs2file)
     r3 = readImage(frs3file)
-  #plot3(wp)
   plot3(gx)
+  h1 = readImage(fs1file)
   plot3(fw,clab="unfaulted")
   plot3(gw,clab="unfaultAndUnfold")
-  plot3(gx,cp,cmin=0,cmax=6,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1i")
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(4.0,1.0,1.0)
+  lof.applyForNormal(gx,u1,u2,u3)
+  plot2(s1,s2,gw[47],png="flatten2d")
+  u1,h1 = u1[47],h1[47]
+  x1,x2,x3=getThrowArrs(h1)
+  plot2(s1,s2,gx[47],x1=x1,x2=x2,x3=x3,
+        clab="Vertical component of fault throws",cint=0.1,png="throws2d")
+  plot2(s1,s2,gx[47],g=u1,gmin=0.7,gmax=1.0,
+        clab="Vertical component of normal vectors",cint=0.1,png="normals2d")
+  plot2(s1,s2,gx[47],g=h1,gmin=0.1,gmax=max(h1),
+        clab="Vertical component of normal vectors",cint=1.0,png="throwCbar2d")
+
+  '''
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+  '''
 
 def array(x1,x2,x3=None,x4=None):
   if x3 and x4:
@@ -464,6 +461,20 @@ def array(x1,x2,x3=None,x4=None):
     return jarray.array([x1,x2,x3],Class.forName('[[[F'))
   else:
     return jarray.array([x1,x2],Class.forName('[[[F'))
+def getThrowArrs(h):
+  n2 = len(h)
+  n1 = len(h[0])
+  smark = -999.999
+  d1,d2=1.0,1.0
+  x1,x2,x3=[],[],[]
+  for i2 in range(1,n2-1,1):
+    for i1 in range(1,n1-1,1):
+      hi = h[i2][i1]
+      if(hi>0):
+        x1.extend([i1*d1])
+        x2.extend([i2*d2])
+        x3.extend([hi*d1])
+  return x1,x2,x3
 
 #############################################################################
 # graphics
@@ -631,5 +642,89 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.paintToPng(137,1,pngDir+png+"cbar.png")
 
+def plot2(s1,s2,f,g=None,x1=None,x2=None,x3=None,gmin=None,gmax=None,
+          clab=None,cint=None,title=None,png=None):
+  n2 = len(f)
+  n1 = len(f[0])
+  panel = panel2()
+  if clab:
+    cb = panel.addColorBar(clab)
+    cb.setInterval(cint)
+  else:
+    cb = panel.addColorBar()
+    cb.setInterval(1.0)
+    cb.setLabel("Amplitude")
+    #cb.setLabel("Vector difference")
+  if title:
+    panel.setTitle(title)
+  panel.setColorBarWidthMinimum(120)
+  panel.setVInterval(20)
+  panel.setHInterval(20)
+  panel.setHLabel("Crossline (Samples)")
+  panel.setVLabel("Time (Samples)")
+  pv = panel.addPixels(s1,s2,f)
+  #pv = panel.addPixels(f)
+  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  pv.setColorModel(ColorMap.GRAY)
+  pv.setClips(-3.0,3.0)
+  if g:
+    alpha = 0.3
+    pv = panel.addPixels(s1,s2,g)
+    #pv = panel.addPixels(g)
+    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    if gmin==None: gmin = min(g)
+    if gmax==None: gmax = max(g)
+    pv.setClips(gmin,gmax)
+    pv.setColorModel(ColorMap.getJet(alpha))
+    if gmin==0:
+      updateColorModel(pv,1.0)
+  if x1:
+    cmap = ColorMap(ColorMap.getJet(1.0))
+    x3 = sub(x3,min(x3))
+    x3 = div(x3,max(x3)-min(x3))
+    for i1 in range(len(x1)):
+      x1i,x2i,x3i=x1[i1],x2[i1],x3[i1]
+      pv = panel.addPoints([x1i],[x2i])
+      pv.setMarkSize(4.0)
+      pv.setMarkColor(cmap.getColor(x3i))
+      pv.setLineStyle(PointsView.Line.NONE)
+      pv.setMarkStyle(PointsView.Mark.FILLED_SQUARE)
+  frame2(panel,png)
+
+def updateColorModel(pv,alpha):
+    n = 256
+    r = zerobyte(n)
+    g = zerobyte(n)
+    b = zerobyte(n)
+    a = zerobyte(n)
+    icm = pv.getColorModel()
+    icm.getReds(r)
+    icm.getGreens(g)
+    icm.getBlues(b)
+    for i in range(n):
+      ai = int(255.0*alpha*i/n)
+      if ai>127:
+        ai -= 256
+      a[i] = ai
+    icm = IndexColorModel(8,n,r,g,b,a)
+    pv.setColorModel(icm)
+
+def panel2():
+  #panel = PlotPanel(1,1,
+  #  PlotPanel.Orientation.X1DOWN_X2RIGHT,
+  #  PlotPanel.AxesPlacement.NONE)
+  panel = PlotPanel(1,1,
+    PlotPanel.Orientation.X1DOWN_X2RIGHT)
+  return panel
+
+def frame2(panel,png=None):
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setSize(n2*6+120,n1*5);
+  frame.setFontSizeForSlide(1.0,0.9,16.0/9.0)
+  frame.setVisible(True)
+  if png:
+    frame.paintToPng(720,3.3,pngDir+png+".png")
+  return frame
 #############################################################################
 run(main)
