@@ -182,7 +182,6 @@ public class FaultSlipConstraints {
 
 
   public void setNormals(float[][][][] p) {
-    //setNormalsNearFaults(p);
     for (FaultSkin sk:_sks) {
       for (FaultCell fc:sk) {
         int[] ip = fc.getIp();
@@ -207,39 +206,6 @@ public class FaultSlipConstraints {
         p[2][i3m][i2m][i1m] = s3*ss;
       }
     }
-  }
-
-  private void setNormalsNearFaults(float[][][][] ps) {
-    float fnull = -99f;
-    int n3 = ps[0].length;
-    int n2 = ps[0][0].length;
-    int n1 = ps[0][0][0].length;
-    float[][][] ds = new float[n3][n2][n1];
-    short[][][] k1 = new short[n3][n2][n1];
-    short[][][] k2 = new short[n3][n2][n1];
-    short[][][] k3 = new short[n3][n2][n1];
-    float[][][] fm = fillfloat(fnull,n1,n2,n3);
-    for (FaultSkin sk:_sks) {
-      for (FaultCell fc:sk) {
-        int[] is = fc.getI();
-        int i1 = is[0];
-        int i2 = is[1];
-        int i3 = is[2];
-        fm[i3][i2][i1] = 0.0f;
-      }
-    }
-    ClosestPointTransform cpt = new ClosestPointTransform();
-    cpt.apply(fnull,fm,ds,k1,k2,k3);
-    for (int i3=0; i3<n3; ++i3){
-    for (int i2=0; i2<n2; ++i2){
-    for (int i1=0; i1<n1; ++i1){
-      float di = ds[i3][i2][i1];
-      if(di<=1f) { 
-        ps[0][i3][i2][i1] = 1.0f;
-        ps[1][i3][i2][i1] = 0.0f;
-        ps[2][i3][i2][i1] = 0.0f;
-      }
-    }}}
   }
 
 
