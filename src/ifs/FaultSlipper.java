@@ -448,18 +448,18 @@ public class FaultSlipper {
 
 
     // Smooth alignment errors in above-below and left-right directions.
-    /*
-    for (int ismooth=0; ismooth<2; ++ismooth) { // TODO: how many?
+    for (int ismooth=0; ismooth<1; ++ismooth) { // TODO: how many?
       dw.smoothErrors1(eab,eab);
       normalizeErrors(eab); // TODO: helpful?
       dw.smoothErrors1(elr,elr);
       normalizeErrors(elr); // TODO: helpful?
     }
-    */
+    /*
     for (int ismooth=0; ismooth<1; ++ismooth) { // TODO: how many?
       dw.smoothErrors1X(eab,eab);
       dw.smoothErrors1X(elr,elr);
     }
+    */
 
 
     // Find shifts by accumulating once more and then backtracking.
