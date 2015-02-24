@@ -88,7 +88,7 @@ maxThrow =60.0
 # Directory for saved pn images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
-pngDir = "../../../png/sch/s2x/"
+pngDir = "../../../png/sch/s2w/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
 plotOnly = False
@@ -97,9 +97,9 @@ plotOnly = False
 # can comment out other parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goSlopes()
-  goScan()
-  goThin()
+  #goSlopes()
+  #goScan()
+  #goThin()
   goSkin()
   goReskin()
   #goSmooth()
@@ -306,7 +306,6 @@ def goThin():
 def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
-  gsx = readImage(gsxfile)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
