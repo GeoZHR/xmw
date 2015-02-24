@@ -151,6 +151,10 @@ public class FaultSlipper {
         int i3m = cell.i3m;
         int i2p = cell.i2p;
         int i3p = cell.i3p;
+        if(i2m<0||i2p<0){continue;}
+        if(i3m<0||i3p<0){continue;}
+        if(i2m>=n2||i2p>=n2){continue;}
+        if(i3m>=n3||i3p>=n3){continue;}
 
         // If slip on the minus side has not been set, zero it.
         if (s1[i3m][i2m][i1]==smark) {
@@ -449,7 +453,7 @@ public class FaultSlipper {
 
     // Smooth alignment errors in above-below and left-right directions.
     /*
-    for (int ismooth=0; ismooth<2; ++ismooth) { // TODO: how many?
+    for (int ismooth=0; ismooth<5; ++ismooth) { // TODO: how many?
       dw.smoothErrors1(eab,eab);
       normalizeErrors(eab); // TODO: helpful?
       dw.smoothErrors1(elr,elr);
@@ -460,7 +464,6 @@ public class FaultSlipper {
       dw.smoothErrors1X(eab,eab);
       dw.smoothErrors1X(elr,elr);
     }
-
 
     // Find shifts by accumulating once more and then backtracking.
     for (int iab=0; iab<nab; ++iab) {
@@ -609,7 +612,8 @@ public class FaultSlipper {
 
   private static float alignmentError(float f, float g) {
     float fmg = f-g;
-    return fmg*fmg;
+    return pow(abs(fmg),0.25f);
+    //return fmg*fmg;
   }
 
   private static float imageValueAt(

@@ -21,7 +21,7 @@ public class FaultSlipTest {
         fc.cr=null;
         fc.skin=null;
         if(i1==78&&i3==89){
-          continue;
+          //continue;
         }
         cl.add(fc);
       }

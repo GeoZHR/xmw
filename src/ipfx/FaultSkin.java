@@ -73,6 +73,47 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     }}
   }
 
+
+  public static void getLikelihood(FaultSkin[] skins, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] sc = new float[n3][n2][n1];
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2 = cell.i2;
+        int i3 = cell.i3;
+        sc[i3][i2][i1] += 1f;
+        fl[i3][i2][i1] += cell.fl;
+      }
+    }
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float sci = sc[i3][i2][i1];
+      if(sci>1f){fl[i3][i2][i1] /= sci;}
+    }}}
+  }
+
+  public static void getThrow(float mark, FaultSkin[] skins, float[][][] fs) {
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2 = cell.i2;
+        int i3 = cell.i3;
+        float s1 = cell.s1;
+        float si = fs[i3][i2][i1];
+        if(si==mark) {
+          fs[i3][i2][i1] = s1;
+        } else if(abs(s1)>abs(si)) {
+          fs[i3][i2][i1] = s1;
+        }
+      }
+    }
+  }
+
+
   /**
    * Returns the total number of cells in the specified skins.
    * @param skins array of skins for which to count cells.
@@ -126,6 +167,8 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cellsList.add(cList.toArray(new FaultCell[0]));
       }
     }
+    System.out.println("cellsize1="+_cellList.size());
+    System.out.println("cellsize2="+cellSet.size());
     assert _cellList.size()==cellSet.size();
 
     // Convert the list of arrays to the array of arrays to be returned.
@@ -450,6 +493,7 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
       throw new RuntimeException(e);
     }
   }
+
 
   /////////////////////////////////////////////////////////////////////////
   // package

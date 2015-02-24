@@ -75,8 +75,7 @@ public class FlattenerRTS {
    * @return array of shifts {r1,r2,r3}.
    */
   public float[][][][] findShifts(
-    float[][] cp, float[][] cm, float[][] dr, 
-    float[] fl, float[][][][] p) {
+    float[][][] cs, float[][][] ws, float[][][][] p) {
     int n3 = p[0].length;
     int n2 = p[0][0].length;
     int n1 = p[0][0][0].length;
@@ -86,19 +85,18 @@ public class FlattenerRTS {
     float[][][][] rc = new float[3][n3][n2][n1];
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
-    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p[3]);
+    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,ws);
     CgSolver cg = new CgSolver(_small,_inner);
-    A3 ma = new A3(_epsilon,s3,cp,cm,fl,p);
+    A3 ma = new A3(_epsilon,s3,cs,p);
     for (int outer=0; outer<_outer; ++outer) {
       System.out.println("iter="+outer);
       if (outer>0) {
         scopy(r,rc);
         s3.applyOriginal(rc);
-        //cleanShifts(p0[3],r);
         updateParameters(rc,p0,p);
         vb.zero();
       }
-      makeRhs(cp,cm,dr,fl,p,b);
+      makeRhs(cs,p,b);
       s3.applyTranspose(b);
       int inner = cg.solve(ma,vb,vr).niter;
       if (inner==0) break;
@@ -108,66 +106,27 @@ public class FlattenerRTS {
     return r;
   }
 
-  private void computeMissFit(
-    float[][] cp, float[][] cm, float[][] dr,
-    float[][][][] r, float[][][] mf) {
-    int nc = cp[0].length;
-    for (int ic=0; ic<nc; ++ic) {
-      int i1p = round(cp[0][ic]);
-      int i2p = round(cp[1][ic]);
-      int i3p = round(cp[2][ic]);
-      int i1m = round(cm[0][ic]);
-      int i2m = round(cm[1][ic]);
-      int i3m = round(cm[2][ic]);
-      float s1p = r[0][i3p][i2p][i1p];
-      float s2p = r[1][i3p][i2p][i1p];
-      float s3p = r[2][i3p][i2p][i1p];
-      float s1m = r[0][i3m][i2m][i1m];
-      float s2m = r[1][i3m][i2m][i1m];
-      float s3m = r[2][i3m][i2m][i1m];
-      float ds1 = abs(s1p-s1m);
-      float ds2 = abs(s2p-s2m);
-      float ds3 = abs(s3p-s3m);
-      ds1 = abs(ds1-dr[0][ic]);
-      ds2 = abs(ds2-dr[1][ic]);
-      ds3 = abs(ds3-dr[2][ic]);
-      mf[i3p][i2p][i1p] = ds1;
-      mf[i3m][i2m][i1m] = ds1;
-      //mf[i3p][i2p][i1p] = sqrt(ds1*ds1+ds2*ds2+ds3*ds3);
-      //mf[i3m][i2m][i1m] = sqrt(ds1*ds1+ds2*ds2+ds3*ds3);
-    }
-  }
-
   public float[][][][] unfaultShifts(
-    float[][] cp, float[][] cm, float[][] dr, 
-    float[] fl, float[][][][] p) {
+    float[][][] cs, float[][][] ws, float[][][][] p) {
     _inner = 50;
-    mul(fl,100000f,fl);
+    float[] fl = cs[3][0];
+    mul(fl,10f,fl);
     int n3 = p[0].length;
     int n2 = p[0][0].length;
     int n1 = p[0][0][0].length;
-    p[0] = fillfloat(1.0f,n1,n2,n3);
-    p[1] = fillfloat(0.0f,n1,n2,n3);
-    p[2] = fillfloat(0.0f,n1,n2,n3);
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-    if(p[3][i3][i2][i1]>0.0f)   {
-      p[3][i3][i2][i1] = 1.0f;
-    }}}}
     float[][][][] b = new float[3][n3][n2][n1];
     float[][][][] r = new float[3][n3][n2][n1];
     VecArrayFloat4 vr = new VecArrayFloat4(r);
     VecArrayFloat4 vb = new VecArrayFloat4(b);
-    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p[3]);
+    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,ws);
     CgSolver cg = new CgSolver(_small,_inner);
-    A3 ma = new A3(_epsilon,s3,cp,cm,fl,p);
+    A3 ma = new A3(_epsilon,s3,cs,p);
     vb.zero();
-    makeRhs(cp,cm,dr,fl,p,b);
+    makeRhs(cs,p,b);
     s3.applyTranspose(b);
     int inner = cg.solve(ma,vb,vr).niter;
     s3.applyOriginal(r);
-    cleanShifts(p[3],r);
+    cleanShifts(ws,r);
     return r;
   }
 
@@ -196,29 +155,49 @@ public class FlattenerRTS {
     }}}
   }
 
+  private void cleanImage(float[][][] wp, float[][][] g) {
+    int n3 = wp.length;
+    int n2 = wp[0].length;
+    int n1 = wp[0][0].length;
+    ClosestPointTransform cpt = new ClosestPointTransform();
+    for (int i1=0; i1<n1; ++i1) {
+      float[][] wp1 = new float[n3][n2];
+      float[][] ds1 = new float[n3][n2];
+      short[][] k12 = new short[n3][n2];
+      short[][] k13 = new short[n3][n2];
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        wp1[i3][i2] = wp[i3][i2][i1];
+      }}
+      cpt.apply(0.0f,wp1,ds1,k12,k13);
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float wpi = wp1[i3][i2];
+        if(wpi==0.0f) {
+          int j2 = k12[i3][i2];
+          int j3 = k13[i3][i2];
+          g[i3][i2][i1] = g[j3][j2][i1];
+        }
+      }}
+    }
+  }
+
   private void cleanImage(float[][] hx, float[][] fx, float[][][] g) {
-    int n3 = g.length;
-    int n2 = g[0].length;
     int nh = hx[0].length;
-    int nf = fx[0].length;
     for (int ih=0; ih<nh; ++ih) {
-      int i1 = round(hx[0][ih]);
-      int i2 = round(hx[1][ih]);
-      int i3 = round(hx[2][ih]);
-      int p2 = i2+1; if(p2>=n2){p2=n2-1;}
-      int p3 = i3+1; if(p3>=n3){p3=n3-1;}
-      g[i3][i2][i1] = 0.5f*(g[i3][p2][i1]+g[p3][i2][i1]);
+      int i1p = round(hx[0][ih]);
+      int i2p = round(hx[1][ih]);
+      int i3p = round(hx[2][ih]);
+      int i1m = round(fx[0][ih]);
+      int i2m = round(fx[1][ih]);
+      int i3m = round(fx[2][ih]);
+      int dmp = abs(i2p-i2m)+abs(i3p-i3m);
+      if(dmp<=2) {
+        float avg = 0.5f*(g[i3m][i2m][i1m]+g[i3p][i2p][i1p]);
+        g[i3m][i2m][i1m] = avg;
+        g[i3p][i2p][i1p] = avg;
+      }
     }
-
-    for (int ik=0; ik<nf; ++ik) {
-      int i1 = round(fx[0][ik]);
-      int i2 = round(fx[1][ik]);
-      int i3 = round(fx[2][ik]);
-      int m2 = i2-1; if(m2<0){m2=0;}
-      int m3 = i3-1; if(m3<0){m3=0;}
-      g[i3][i2][i1] = 0.5f*(g[i3][m2][i1]+g[m3][i2][i1]);
-    }
-
   }
 
 
@@ -251,7 +230,7 @@ public class FlattenerRTS {
    * @param g output shifted image.
    */
   public void applyShifts(
-    float[][][][] r, float[][] hx, float[][] fx, float[][][] f, float[][][] g)
+    float[][][][] r, float[][][] cs, float[][][] wp, float[][][] f, float[][][] g)
   {
     final int n1 = f[0][0].length;
     final int n2 = f[0].length;
@@ -268,7 +247,8 @@ public class FlattenerRTS {
             n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,
             ff,i1+r1[i3][i2][i1],i2+r2[i3][i2][i1],i3+r3[i3][i2][i1]);
     }});
-    if(hx!=null&&fx!=null) {cleanImage(hx,fx,g);}
+    //if(wp!=null) {cleanImage(wp,g);}
+    if(cs!=null) {cleanImage(cs[0],cs[1],g);}
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -312,12 +292,10 @@ public class FlattenerRTS {
   }
   private static class A3 implements CgSolver.A {
     A3(float epsilon, Smoother3 smoother, 
-       float[][] cp, float[][] cm, float[] fl, float[][][][] p) {
+       float[][][] cs, float[][][][] p) {
       _epsilon = epsilon;
       _smoother = smoother;
-      _cp = cp;
-      _cm = cm;
-      _fl = fl;
+      _cs = cs;
       _p = p;
     }
     public void apply(Vec vx, Vec vy) {
@@ -329,16 +307,14 @@ public class FlattenerRTS {
       float[][][][] y = v4y.getArray();
       _smoother.applyOriginal(x);
       applyLhs(_p,x,y);
-      if(_fl!=null&&_cp!=null&&_cm!=null) {
-        screenLhs(_cp,_cm,_fl,x,y);
+      if(_cs!=null) {
+        screenLhs(_cs[0],_cs[1],_cs[3][0],x,y);
       }
       _smoother.applyTranspose(y);
       if (_epsilon>0.0f)
         v4y.add(1.0,v4x,_epsilon*_epsilon);
     }
-    private float[] _fl=null;
-    private float[][] _cp=null;
-    private float[][] _cm=null;
+    private float[][][] _cs=null;
     private float _epsilon = 0.0f;
     private Smoother3 _smoother;
     private float[][][][] _p;
@@ -437,8 +413,7 @@ public class FlattenerRTS {
   }
 
   private static void makeRhs(
-    float[][] cp, float[][] cm, float[][] dr, float[] fl, 
-    final float[][][][] p, final float[][][][] y)
+    float[][][] cs, final float[][][][] p, final float[][][][] y)
   { 
     final int n3 = y[0].length;
     // i3 = 1,3,5,...
@@ -451,8 +426,8 @@ public class FlattenerRTS {
     public void compute(int i3) {
       makeRhsSlice3(i3,p,y);
     }});
-    if(cp!=null&&cm!=null&&fl!=null) {
-      screenRhs(cp,cm,dr,fl,y);
+    if(cs!=null) {
+      screenRhs(cs[0],cs[1],cs[2],cs[3][0],y);
     }
   }
 
@@ -591,7 +566,7 @@ public class FlattenerRTS {
   }
 
   private static void screenLhs(
-    float[][] cp, float[][] cm, float[]fl, float[][][][] x, float[][][][] y) 
+    float[][] cp, float[][] cm, float[] fl, float[][][][] x, float[][][][] y) 
   {
     int nc = cp[0].length;
     for (int ic=0; ic<nc; ++ic) {
@@ -896,20 +871,9 @@ public class FlattenerRTS {
 
   private static void updateParameters(
     float[][][][] r, float[][][][] p, float[][][][] q) {
-    float[][][] w = p[3];
-    int n3 = w.length;
-    int n2 = w[0].length;
-    int n1 = w[0][0].length;
-    for (int i=0; i<4; ++i) // shift normal vectors and ep
+    for (int i=0; i<3; ++i) // shift normal vectors and ep
       applyShiftsLinear(r,p[i],q[i]);
     normalize(q[0],q[1],q[2]);
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      if(w[i3][i2][i1]==0.0f) {
-        q[3][i3][i2][i1] = 0.0f;
-      }
-    }}}
   }
 
   // Normalize vectors

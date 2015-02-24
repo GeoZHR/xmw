@@ -334,6 +334,7 @@ public class FaultCell implements Serializable {
   boolean notInQ;
   boolean interp;
   boolean notUsed;
+  boolean intersect;
   boolean needInterp;
 
   interface Get1 { public float get(FaultCell cell); }
@@ -512,6 +513,7 @@ public class FaultCell implements Serializable {
     i1 = round(x1);
     i2 = round(x2);
     i3 = round(x3);
+    intersect = false;
     notUsed = true;
     needInterp = true;
     interp = false;

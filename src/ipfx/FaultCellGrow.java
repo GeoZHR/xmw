@@ -11,7 +11,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import static ifs.FaultGeometry.*;
+import static ipfx.FaultGeometry.*;
 
 /**
  * Regrid fault cells from known cells.
@@ -25,7 +25,7 @@ public class FaultCellGrow {
   public FaultCellGrow(FaultCell[] fc, float[][][] fl) {
     _fc = fc; 
     _fl = fl;
-    _kt = setKdTree();
+    setKdTree();
     _n3 = fl.length;
     _n2 = fl[0].length;
     _n1 = fl[0][0].length;
@@ -56,8 +56,6 @@ public class FaultCellGrow {
   public FaultCell[] applyForCells(FaultCell cell) {
     float ds = 20.f;
     float sigNor = 2.0f;
-    //final float[] da = new float[1];
-    //final FaultCell[] cells = findNabors(da,cell);
     final FaultCell[] cells = nabors(cell);
     if(cells==null) {return null;}
     final int nc = cells.length;
@@ -183,12 +181,31 @@ public class FaultCellGrow {
       if(i3>=_n3) {continue;}
       float fpi = fcs[ic].fp;
       float fti = fcs[ic].ft;
-      //float fli = _fl[i3][i2][i1];
-      float flt = _fl[i3][i2][i1];
-      float fli = exp(flt)/exp(1f);//_fl[i3][i2][i1];
+      float fli = bilinearInterp(x1i,x2i,x3i);
       fcs[ic] = new FaultCell(x1i,x2i,x3i,fli,fpi,fti);
     }
     return fcs;
+  }
+
+  private float bilinearInterp(float x1, float x2, float x3) {
+    int i1i = round(x1);
+    int i2i = round(x2);
+    int i3i = round(x3);
+    int i2p=i2i,i2m=i2i;
+    int i3p=i3i,i3m=i3i;
+    if(i2i>x2) {i2m -= 1;}
+    else       {i2p += 1;}
+    if(i3i>x3) {i3m -= 1;}
+    else       {i3p += 1;}
+    if(i2m<0||i2p>=_n2) {return _fl[i3i][i2i][i1i];}
+    if(i3m<0||i3p>=_n3) {return _fl[i3i][i2i][i1i];}
+    x2 -= i2i; x3 -= i3i;
+    float fla = _fl[i3m][i2m][i1i];
+    float flb = _fl[i3m][i2p][i1i];
+    float flc = _fl[i3p][i2m][i1i];
+    float fld = _fl[i3p][i2p][i1i];
+    float fli = fla*(1f-x2)*(1f-x3)+flb*(1f-x3)*x2+flc*(1f-x2)*x3+fld*x2*x3;
+    return fli;
   }
 
   // Uses fault images to find cells, oriented points located on ridges.
@@ -396,11 +413,10 @@ public class FaultCellGrow {
   public FaultCell[] nabors(FaultCell cell) {
     float dv = 10f;
     //float dh = 65f;
-    float dh = 20f;
+    float dh = 30f;
     float x1 = cell.x1;
     float x2 = cell.x2;
     float x3 = cell.x3;
-    float v1 = cell.v1;
     float v2 = cell.v2;
     float v3 = cell.v3;
     float[] xmin = new float[3];
@@ -422,7 +438,7 @@ public class FaultCellGrow {
         float d1 = fci.x1-x1;
         float d2 = fci.x2-x2;
         float d3 = fci.x3-x3;
-        float dd = d1*v1+d2*v2+d3*v3;
+        float dd = d2*v2+d3*v3;
         float ds = d1*d1+d2*d2+d3*d3;
         if(abs(d1)>1f) {ds *= abs(d1);}
         if(dd<=0f) {dsL.add(ds);fcL.add(fci);} 
@@ -497,7 +513,7 @@ public class FaultCellGrow {
     return max(dab,dba);
   }
 
-  private KdTree setKdTree() {
+  private void setKdTree() {
     int nc = _fc.length;
     float[][] xc = new float[3][nc];
     for (int ic=0; ic<nc; ++ic) {
@@ -505,7 +521,7 @@ public class FaultCellGrow {
       xc[1][ic] = _fc[ic].x2;
       xc[2][ic] = _fc[ic].x3;
     }
-    return new KdTree(xc);
+    _kt =  new KdTree(xc);
   }
 
   
@@ -513,7 +529,7 @@ public class FaultCellGrow {
   private FaultCell[] _fc;
   private float[][][] _fl;
   private int _n1, _n2, _n3;
-  private float _fllo=0.2f;
+  private float _fllo = 0.2f;
   //private float _dfpmax=15f; // max difference between strikes of nabors
   //private float _dfpmax=13f; // max difference between strikes of nabors
   private float _dfpmax=20f; // max difference between strikes of nabors

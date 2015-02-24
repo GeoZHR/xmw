@@ -58,8 +58,8 @@ public class FlattenerRTD {
     return r;
   }
 
-  public float[][][][] computeShifts(
-    boolean unfaultOnly, float[][][] cx, float[][][] ws, float[][][][] p) 
+  public float[][][][] computeShifts(boolean unfaultOnly, 
+    float[][][] cx, float[][][] ws, float[][][][] p) 
   {
     int n3 = p[0].length;
     int n2 = p[0][0].length;
@@ -77,14 +77,13 @@ public class FlattenerRTD {
     A3 a3 = new A3(_epsilon,p);
     for (int iter=0; iter<_outer; ++iter) {
       if(iter>0){
-        cleanShifts(p[3],r);
         updateParameters(r,p0,p);
       }
       vb.zero();
       makeRhs(p,b);
       cg.solve(a3,m3,vb,vr);
     }
-    cleanShifts(ws,r);
+    cleanShifts(p[3],r);
     return r;
   }
 
@@ -97,12 +96,12 @@ public class FlattenerRTD {
     short[][][] k2 = new short[n3][n2][n1];
     short[][][] k3 = new short[n3][n2][n1];
     ClosestPointTransform cpt = new ClosestPointTransform();
-    cpt.apply(0.0f,wp,ds,k1,k2,k3);
+    cpt.apply(0.005f,wp,ds,k1,k2,k3);
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = wp[i3][i2][i1];
-      if(wpi==0.0f) {
+      if(wpi==0.005f) {
         int j1 = k1[i3][i2][i1];
         int j2 = k2[i3][i2][i1];
         int j3 = k3[i3][i2][i1];
@@ -122,41 +121,6 @@ public class FlattenerRTD {
     }
   }
 
-    /**
-   * Estimates shift vectors for a 3D image.
-   * @param p array of parameters {u1,u2,u3,ep,a}.
-   * @return array of shifts {r1,r2,r3}.
-   */
-  /*
-  public float[][][][] findShifts(float[][][][] p) {
-    int n1 = p[0][0][0].length;
-    int n2 = p[0][0].length;
-    int n3 = p[0].length;
-    float[][][][] p0 = scopy(p);
-    float[][][][] b = new float[3][n3][n2][n1];
-    float[][][][] r = new float[3][n3][n2][n1];
-    float[][][][] rc = new float[3][n3][n2][n1];
-    VecArrayFloat4 vr = new VecArrayFloat4(r);
-    VecArrayFloat4 vb = new VecArrayFloat4(b);
-    Smoother3 s3 = new Smoother3(_sigma1,_sigma2,_sigma2,p[3]);
-    CgSolver cg = new CgSolver(_small,_inner);
-    A3 ma = new A3(_epsilon,s3,p);
-    for (int outer=0; outer<_outer; ++outer) {
-      if (outer>0) {
-        scopy(r,rc);
-        s3.apply(rc);
-        updateParameters(rc,p0,p);
-        vb.zero();
-      }
-      makeRhs(p,b);
-      s3.applyTranspose(b);
-      int inner = cg.solve(ma,vb,vr).niter;
-      if (inner==0) break;
-    }
-    s3.apply(r);
-    return r;
-  }
-  */
 
   /**
    * Applies shifts using sinc interpolation.
@@ -212,8 +176,7 @@ public class FlattenerRTD {
   private static final float W0 = 1.000f; // flatness
   private static final float W1 = 0.011f; // distance
   private static final float W2 = 0.001f; // thickness
-  //private static final float W1 = 0.0f; // distance
-  //private static final float W2 = 0.0f; // thickness
+
 
   private float _sigma1 = 6.0f; // half-width of smoother in 1st dimension
   private float _sigma2 = 6.0f; // half-width of smoother in 2nd dimension
@@ -703,103 +666,6 @@ public class FlattenerRTD {
       r[2][hx3][hx2][hx1] = -fs3;
     }
   }
-  /*
-  public static void initializeShifts2(
-    int[] cn, float[][][] cu, float[][][] cx, float[][][][] r) 
-  {
-    if (cx!=null) {
-      int ns = cn.length;
-      for (int is=0; is<ns; ++is) {
-        if(cn[is]>1) {
-          float xa1 = cx[0][is][0];
-          float xa2 = cx[1][is][0];
-          float xa3 = cx[2][is][0];
-          float xb1 = cx[0][is][1];
-          float xb2 = cx[1][is][1];
-          float xb3 = cx[2][is][1];
-
-          float ua1 = cu[0][is][0];
-          float ua2 = cu[1][is][0];
-          float ua3 = cu[2][is][0];
-          int ia1 = round(ua1);
-          int ia2 = round(ua2);
-          int ia3 = round(ua3);
-          float da1 = ia1-ua1;
-
-          float ub1 = cu[0][is][1];
-          float ub2 = cu[1][is][1];
-          float ub3 = cu[2][is][1];
-          int ib1 = round(ub1);
-          int ib2 = round(ub2);
-          int ib3 = round(ub3);
-
-          float xs1 = cx[0][is][2]*0.5f;
-          float xs2 = cx[1][is][2]*0.5f;
-          float xs3 = cx[2][is][2]*0.5f;
-
-          r[0][ia3][ia2][ia1] = xs1;
-          r[1][ia3][ia2][ia1] = xs2;
-          r[2][ia3][ia2][ia1] = xs3;
-
-          r[0][ib3][ib2][ib1] = -xs1;
-          r[1][ib3][ib2][ib1] = -xs2;
-          r[2][ib3][ib2][ib1] = -xs3;
-        }
-      }
-    }
-  }
-
-
-  public static void initializeShifts(
-    int[] cn, float[][][] cu, float[][][] cx, float[][][][] r) 
-  {
-    if (cx!=null) {
-      int ns = cn.length;
-      for (int is=0; is<ns; ++is) {
-        if(cn[is]>1) {
-          float xa1 = cx[0][is][0];
-          float xa2 = cx[1][is][0];
-          float xa3 = cx[2][is][0];
-          float xb1 = cx[0][is][1];
-          float xb2 = cx[1][is][1];
-          float xb3 = cx[2][is][1];
-
-          float ua1 = cu[0][is][0];
-          float ua2 = cu[1][is][0];
-          float ua3 = cu[2][is][0];
-          int ia1 = round(ua1);
-          int ia2 = round(ua2);
-          int ia3 = round(ua3);
-          float da1 = ia1-ua1;
-
-          float ub1 = cu[0][is][1];
-          float ub2 = cu[1][is][1];
-          float ub3 = cu[2][is][1];
-          int ib1 = round(ub1);
-          int ib2 = round(ub2);
-          int ib3 = round(ub3);
-          float db1 = ib1-ub1;
-
-          float ya1 = xa1+da1;
-          float yb1 = xb1+db1;
-
-          float avg1 = (ya1+yb1)*0.5f;
-
-          float avg2 = 0.5f*(xb2-xa2+ua2-ub2);
-          float avg3 = 0.5f*(xb3-xa3+ua3-ub3);
-
-          r[0][ia3][ia2][ia1] = avg1-ya1;
-          r[1][ia3][ia2][ia1] = -avg2;
-          r[2][ia3][ia2][ia1] = -avg3;
-
-          r[0][ib3][ib2][ib1] = avg1-yb1;
-          r[1][ib3][ib2][ib1] = avg2;
-          r[2][ib3][ib2][ib1] = avg3;
-        }
-      }
-    }
-  }
-  */
 
   private static void constrain(float[][][] cu, float[][][] x) {
     if(cu==null) {return;}
@@ -816,185 +682,6 @@ public class FlattenerRTD {
     }
   }
 
-  /*
-  private static void removeAverage(float[][][][] x) {
-    int n4 = x.length;
-    for (int i4=0; i4<n4; ++i4) 
-      removeAverage(x[i4]);
-  }
-
-
-  private static void removeAverage(float[][][] x) {
-    int n3 = x.length;
-    int n2 = x[0].length;
-    int n1 = x[0][0].length;
-    float nh = (float)(n2*n3);
-    for (int i1=0; i1<n1; ++i1) {
-      float sumx = 0.0f;
-      for (int i3=0; i3<n3; ++i3)  
-        for (int i2=0; i2<n2; ++i2)  
-          sumx += x[i3][i2][i1];
-      float avgx = sumx/nh;
-      for (int i3=0; i3<n3; ++i3) 
-        for (int i2=0; i2<n2; ++i2) 
-          x[i3][i2][i1] -= avgx; 
-    }
-  }
-
-  private void countPoints(float[][][] cu, int[] cn) {
-    zero(cn);
-    int cot = 0;
-    int ns = cu[0].length; 
-    for (int is=0; is<ns; ++is) {
-      for (int ip=0; ip<2; ++ip) {
-        float cu1 = cu[0][is][ip];
-        if(cu1>=0.0f) {cn[is] += 1;}
-      }
-      if(cn[is]>1){cot++;}
-    }
-    System.out.println("sets of control points:"+cot);
-  }
-
-  private void constraintTransform2(
-    float[][][] fm, float[][][] cx, float[][][] cu, int[] cn)
-  {
-    int n3 = fm.length;
-    int n2 = fm[0].length;
-    int n1 = fm[0][0].length;
-    int m1 = n1-1;
-    int m2 = n2-1;
-    int m3 = n3-1;
-    int ns = cx[0].length;
-    setArrayValue(-1.0f,cu);
-    int[][][] mk = new int[n3][n2][n1];
-    for (int is=0; is<ns; ++is) {
-      float s1 = .5f*cx[0][is][2];
-      float s2 = .5f*cx[1][is][2];
-      float s3 = .5f*cx[2][is][2];
-
-      float xa1 = cx[0][is][3];
-      float xa2 = cx[1][is][3];
-      float xa3 = cx[2][is][3];
-
-      float xs1 = xa1+s1;
-      float xs2 = xa2+s2;
-      float xs3 = xa3+s3;
-
-
-    }
-
-  }
-
-
-  private void constraintTransform(
-    float [][][] fm, float[][][] cx, float[][][] cu, int[] cn) 
-  {
-    int n3 = fm.length;
-    int n2 = fm[0].length;
-    int n1 = fm[0][0].length;
-    int m1 = n1-1;
-    int m2 = n2-1;
-    int m3 = n3-1;
-    int ns = cx[0].length;
-    setArrayValue(-1.0f,cu);
-    int[][][] mk = new int[n3][n2][n1];
-    for (int is=0; is<ns; ++is) {
-      float xa1 = cx[0][is][0];
-      float xa2 = cx[1][is][0];
-      float xa3 = cx[2][is][0];
-
-      float xb1 = cx[0][is][1];
-      float xb2 = cx[1][is][1];
-      float xb3 = cx[2][is][1];
-
-      float avg = 0.5f*(xb1-xa1);
-
-      float xs2 = cx[1][is][2];
-      float xs3 = cx[2][is][2];
-      float xs1 = avg/cx[0][is][2];
-      float ps2 = abs(xs2);
-      float ps3 = abs(xs3);
-
-      float ua1 = (xa1+avg);
-      float ua2 = (xa2+xs2*xs1);
-      float ua3 = (xa3+xs3*xs1);
-      int ia1 = round(ua1); 
-      int ia2 = round(ua2); 
-      int ia3 = round(ua3); 
-      if(ia1<0||ia1>m1){continue;}
-      if(ia2<0){ia2=0;}if(ia2>m2){ia2=m2;}
-      if(ia3<0){ia3=0;}if(ia3>m3){ia3=m3;}
-      if(fm[ia3][ia2][ia1]==0.0f){
-        if(ps2>ps3) {ia2 -= round(xs2/ps2);} 
-        else        {ia3 -= round(xs3/ps3);}
-        if(ia2<0){ia2=0;}if(ia2>m2){ia2=m2;}
-        if(ia3<0){ia3=0;}if(ia3>m3){ia3=m3;}
-      }
-      if(fm[ia3][ia2][ia1]==0.0f){continue;}
-      mk[ia3][ia2][ia1] +=1;
-      if(mk[ia3][ia2][ia1]>1){continue;}
-
-      float ub1 = (xb1-avg);
-      float ub2 = (xb2-xs2*xs1);
-      float ub3 = (xb3-xs3*xs1);
-      int ib1 = round(ub1); 
-      int ib2 = round(ub2); 
-      int ib3 = round(ub3); 
-      if(ib1<0||ib1>m1){continue;}
-      if(ib2<0){ib2=0;}if(ib2>m2){ib2=m2;}
-      if(ib3<0){ib3=0;}if(ib3>m3){ib3=m3;}
-
-      if(fm[ib3][ib2][ib1]==0.0f){
-        if(ps2>ps3) {ib2 += round(xs2/ps2);} 
-        else        {ib3 += round(xs3/ps3);}
-        if(ib2<0){ib2=0;}if(ib2>m2){ib2=m2;}
-        if(ib3<0){ib3=0;}if(ib3>m3){ib3=m3;}
-      }
-      if(ib2<0||ib2>m2){continue;}
-      if(ib3<0||ib3>m3){continue;}
-      if(fm[ib3][ib2][ib1]==0.0f){continue;}
-      mk[ib3][ib2][ib1] +=1;
-      if(mk[ib3][ib2][ib1]>1){continue;}
-
-      cu[0][is][0] = ua1;
-      cu[1][is][0] = ua2;
-      cu[2][is][0] = ua3;
-
-      cu[0][is][1] = ub1;
-      cu[1][is][1] = ub2;
-      cu[2][is][1] = ub3;
-    }
-    countPoints(cu,cn);
-  }
-
-  private void addPoints(int[] cn, float[][][] cu, float[][][] cp) {
-    int ns = cu[0].length;
-    for (int is=0; is<ns; ++is) {
-      if (cn[is]>1) {
-        for (int ip=0; ip<2; ++ip) {
-          int u1 = round(cu[0][is][ip]);
-          int u2 = round(cu[1][is][ip]);
-          int u3 = round(cu[2][is][ip]);
-          cp[u3][u2][u1] = 1.0f;
-        }
-      }
-    }
-  }
-
-  private void setArrayValue(float v, float[][][] x) {
-    int n3 = x.length;
-    int n2 = x[0].length;
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        int n1 = x[i3][i2].length;
-        for (int i1=0; i1<n1; ++i1) {
-          x[i3][i2][i1] = v;
-        }
-      }
-    }
-  }
-
-  */
   private static void updateParameters(
     float[][][] r, float[][][] p, float[][][] q)
   {

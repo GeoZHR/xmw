@@ -96,7 +96,212 @@ public class FaultSkinnerX {
     }
   }
 
+  public FaultCell[] resetCells(FaultSkin[] skins) {
+    ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+    for (FaultSkin skin:skins) {
+      int ic = -1;
+      int nc = skin.size();
+      float[] fl = new float[nc];
+      for (FaultCell fc:skin){ic++;fl[ic]=fc.fl;}
+      breakIntersects(skin);
+      ic = -1;
+      for (FaultCell cell:skin) {
+        ic++;
+        if (cell.fl==0f){continue;}
+        cell.ca=null;
+        cell.cb=null;
+        cell.cl=null;
+        cell.cr=null;
+        cell.skin=null;
+        cell.fl = fl[ic];
+        cell.notUsed=true;
+        fcl.add(cell);
+      }
+    }
+    return fcl.toArray(new FaultCell[0]);
+  }
+
+
+  private void breakIntersects(FaultSkin skin) {
+    int ic = -1;
+    int nc = skin.size();
+    float[][] xc = new float[3][nc];
+    FaultCell[] fcs = new FaultCell[nc];
+    for (FaultCell fc:skin) {
+      ic++;
+      fcs[ic] = fc;
+      xc[0][ic] = fc.x1;
+      xc[1][ic] = fc.x2;
+      xc[2][ic] = fc.x3;
+    }
+    KdTree kt = new KdTree(xc);
+    HashSet<FaultCell> hsc = new HashSet<FaultCell>();
+    for (FaultCell cell:skin){hsc.add(cell);}
+    ArrayList<FaultCell[]> fca = new ArrayList<FaultCell[]>();
+    while(hsc.size()>0) {
+      FaultCell[] cells = findInFpWind(hsc);
+      fca.add(cells);
+    }
+    FaultCell[][] cells = fca.toArray(new FaultCell[0][0]);
+    int ns = cells.length;
+    boolean needBreak = false;
+    for(int is=0; is<ns; ++is) {
+      int nk = cells[is].length;
+      float den = (float)nk/(float)nc;
+      if(den>=0.1f&&den<0.9f){
+        trace("test");
+        needBreak=true;
+        for (int ik=0; ik<nk; ++ik){
+          cells[is][ik].fl=is+1;
+        }
+      }
+    }
+    if(!needBreak) {return;}
+    for (FaultCell fc:skin){checkIntersect(fc);}
+    for (FaultCell fc:skin) {
+      float[] xmin = new float[3];
+      float[] xmax = new float[3];
+      if(fc.intersect) {
+        xmin[0] = fc.x1-10;
+        xmax[0] = fc.x1+10;
+        xmin[1] = fc.x2-10;
+        xmax[1] = fc.x2+10;
+        xmin[2] = fc.x3-10;
+        xmax[2] = fc.x3+10;
+        int[] id = kt.findInRange(xmin,xmax);
+        int nd = id.length;
+        if(nd<1){continue;}
+        for (int ik=0; ik<nd; ++ik) {
+          int ip = id[ik];
+          float dfp = absDeltaFp(fc,fcs[ip]);
+          if(dfp<10f){fcs[ip].fl=0f;}
+        }
+      }
+    }
+  }
+
+  private void checkIntersect(FaultCell cell) {
+    float flc = cell.fl;
+    FaultCell ca = cell.ca;
+    FaultCell cb = cell.cb;
+    FaultCell cl = cell.cl;
+    FaultCell cr = cell.cr;
+    if(flc<1f){return;}
+    if(ca!=null) {
+      float fla = ca.fl;
+      if(flc!=fla&&fla>1f){cell.intersect=true;}
+    }
+    if(cb!=null) {
+      float flb = cb.fl;
+      if(flc!=flb&&flb>1f){cell.intersect=true;}
+    }
+    if(cl!=null) {
+      float fll = cl.fl;
+      if(flc!=fll&&fll>1f){cell.intersect=true;}
+    }
+    if(cr!=null) {
+      float flr = cr.fl;
+      if(flc!=flr&&flr>1f){cell.intersect=true;}
+    }
+  }
+
+  private FaultCell[] findInFpWind(HashSet<FaultCell> hsc) {
+    int maxN = 0;
+    float dp = 20f;
+    int nc = hsc.size();
+    float[] fpms = new float[2];
+    float[] fpm1 = new float[1];
+    float[] fpp1 = new float[1];
+    float[] fpm2 = new float[1];
+    float[] fpp2 = new float[1];
+    float[] fpm3 = new float[1];
+    float[] fpp3 = new float[1];
+    FaultCell[] cells = new FaultCell[nc]; 
+    KdTree kt = setFpKdTree(hsc,fpms,cells);
+    HashSet<Integer> hsi = new HashSet<Integer>();
+    float fpMin = fpms[0], fpMax=fpms[1];
+    for (float pt=fpMin; pt<=fpMax; pt+=1f) {
+      float fpm = pt-dp;
+      float fpp = pt+dp;
+      int nd1=0, nd2=0, nd3=0;
+      fpm3[0] = fpm; fpp3[0] = fpp;
+      int[] id1=null, id2=null, id3=null;
+      if (fpm<0.0f) {
+        fpm3[0] = 0.0f;
+        fpp1[0] = 360f;
+        fpm1[0] = 360f+fpm;
+        id1 = kt.findInRange(fpm1,fpp1);
+      }
+      if(fpp>360f) {
+        fpp3[0] = 360f;
+        fpm2[0] = 0.0f;
+        fpp2[0] = fpp-360f;
+        id2 = kt.findInRange(fpm2,fpp2);
+      }
+      id3 = kt.findInRange(fpm3,fpp3);
+      if(id1!=null){nd1=id1.length;}
+      if(id2!=null){nd2=id2.length;}
+      if(id3!=null){nd3=id3.length;}
+      int nd = nd1+nd2+nd3;
+      if(nd>maxN) {
+        maxN = nd;
+        hsi.clear();
+        if(id1!=null) {
+          for (int ik=0; ik<nd1; ++ik){
+            hsi.add(id1[ik]);
+          }
+        }
+        if(id2!=null) {
+          for (int ik=0; ik<nd2; ++ik){
+            hsi.add(id2[ik]);
+          }
+        }
+        if(id3!=null) {
+          for (int ik=0; ik<nd3; ++ik){
+            hsi.add(id3[ik]);
+          }
+        }
+      }
+    }
+    int ic = -1;
+    int ni = hsi.size();
+    FaultCell[] fcs = new FaultCell[ni];
+    for (int ik:hsi) {
+      ic ++;
+      FaultCell cell = cells[ik];
+      fcs[ic] = cell;
+      hsc.remove(cell);
+    }
+    return fcs;
+  }
+
+
+  private KdTree setFpKdTree(
+    HashSet<FaultCell> hsc, float[] fpms, FaultCell[] cells) 
+  {
+    int ic = -1;
+    int nc = hsc.size();
+    float[][] xc = new float[1][nc];
+    float fpMin = 360f;
+    float fpMax = 0.0f;
+    for (FaultCell cell:hsc) {
+      ic ++;
+      float fp = cell.fp;
+      xc[0][ic] = fp;
+      if(fp>fpMax){fpMax=fp;}
+      if(fp<fpMin){fpMin=fp;}
+      cells[ic] = cell;
+    }
+    fpms[0]=fpMin;
+    fpms[1]=fpMax;
+    return new KdTree(xc);
+  }
+
+
+
   public void getFl(FaultSkin[] sks, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
     for (FaultSkin sk:sks) {
       for (FaultCell fc:sk) {
         int i1m = fc.i1;
@@ -105,6 +310,8 @@ public class FaultSkinnerX {
         int i1p = fc.i1;
         int i2p = fc.i2p;
         int i3p = fc.i3p;
+        if(i2m>=n2){continue;}
+        if(i3m>=n3){continue;}
         fl[i3m][i2m][i1m] = fc.fl;
         fl[i3p][i2p][i1p] = fc.fl;
       }
@@ -209,27 +416,30 @@ public class FaultSkinnerX {
 
   public FaultSkin[] findSkinsXX(FaultCell[] cells, float[][][] fl) {
     FaultSkin[] sks = skinsXX(cells,fl);
+    //return sks;
     return reskin(sks,fl);
     //return resetSkins(sks,fl);
   }
 
-  private FaultSkin[] reskin(FaultSkin[] sks, float[][][] fl) {
+  public FaultSkin[] reskin(FaultSkin[] sks, float[][][] fl) {
     int ns = sks.length;
     int n3 = fl.length;
     int n2 = fl[0].length;
     int n1 = fl[0][0].length;
+    ArrayList<FaultSkin> skl = new ArrayList<FaultSkin>();
     for (int is=0; is<ns; ++is) {
       System.out.println("skin="+is);
       FaultCell[] fcs = sks[is].getCells();
-      float[][][] fpt = new float[n3][n2][n1];
-      float[][][] ftt = new float[n3][n2][n1];
-      float[][][] flt = faultImagesFromCells(20,fcs,fpt,ftt);
+      float[][][][] flpt = new float[3][n3][n2][n1];
+      faultImagesFromCells(30,fcs,flpt);
       FaultSkinner fs = new FaultSkinner();
       fs.setMaxDeltaStrike(10);
       fs.setGrowLikelihoods(0.2,0.5);
       fs.setMinSkinSize(round(fcs.length/2));
-      FaultCell[] cells = fs.findCells(new float[][][][]{flt,fpt,ftt});
+      FaultCell[] cells = fs.findCells(flpt);
+      System.out.println("cells="+cells.length);
       FaultSkin[] skins = fs.findSkins(cells);
+      if(skins.length<1){continue;}
       for (FaultCell fc:skins[0]) {
         float x1 = fc.x1;
         float x2 = fc.x2;
@@ -252,18 +462,21 @@ public class FaultSkinnerX {
         float fld = fl[i3n][i2n][i1i];
         fc.fl=fla*(1f-x2)*(1f-x3)+flb*(1f-x3)*x2+flc*(1f-x2)*x3+fld*x2*x3;
       }
-      sks[is] = skins[0];
+      skl.add(skins[0]);
     }
-    return sks;
+    return skl.toArray(new FaultSkin[0]);
   }
 
-  private float[][][] faultImagesFromCells(final int dt,
-    final FaultCell[] fc, final float[][][] fp, final float[][][] ft)
+  private void faultImagesFromCells(
+    final int dt, final FaultCell[] fc, final float[][][][] flpt)
   {
+    final float[][][] fl = flpt[0];
+    final float[][][] fp = flpt[1];
+    final float[][][] ft = flpt[2];
     int nc = fc.length;
-    int n3 = fp.length;
-    int n2 = fp[0].length;
-    int n1 = fp[0][0].length;
+    final int n3 = fl.length;
+    final int n2 = fl[0].length;
+    final int n1 = fl[0][0].length;
     float sigmaNor = 4.0f;
     final float mark = -360f;
     final float[][][] fpt = fillfloat(mark,n1,n2,n3);
@@ -276,10 +489,8 @@ public class FaultSkinnerX {
     final float sv = 0.25f/(dt*dt); 
     final float su = 0.25f/(dt*dt); 
     final float sw = 1.0f/(sigmaNor*sigmaNor); 
-    final float[][][] fl = zerofloat(n1,n2,n3);
     Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
     public void compute(int i3) {
-    //for (int i3=bs3[0]; i3<bs3[1]; i3++) {
       float[] xmin = new float[3];
       float[] xmax = new float[3];
       for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
@@ -299,16 +510,9 @@ public class FaultSkinnerX {
             float dfp = min(abs(del),abs(del+360.0f),abs(del-360.0f));
             if(dfp<=90f) {fcl.add(fci);}
           }
-          FaultCell[] fcs = nabors(i1,i2,i3,fcl.toArray(new FaultCell[0]));
+          FaultCell[] cells = fcl.toArray(new FaultCell[0]);
+          FaultCell[] fcs = nabors(i1,i2,i3,cells);
           if(fcs==null){continue;}
-          /*
-          float g11 = 0.0f;
-          float g22 = 0.0f;
-          float g33 = 0.0f;
-          float g12 = 0.0f;
-          float g13 = 0.0f;
-          float g23 = 0.0f;
-          */
           float wps = 0.0f;
           for (FaultCell fci:fcs) {
             float x1i = fci.i1;
@@ -364,33 +568,21 @@ public class FaultSkinnerX {
 
             float gss = 0.0f;
             float flc = fci.fl;
-            float wpi = pow(flc,10.f);
+            float wpi = pow(flc,2.f);
             gss += (wd1+wd2+wd3+wds)*sw;
             gss += (ud1+ud2+ud3+uds)*su;
             gss += (vd1+vd2+vd3+vds)*sv;
             float fli = exp(-gss)*wpi;
             fl[i3][i2][i1] += fli;
-            /*
-            g11 += fli*w11;
-            g12 += fli*w12;
-            g13 += fli*w13;
-            g22 += fli*w22;
-            g23 += fli*w23;
-            g33 += fli*w33;
-            */
             wps += wpi;
           }
           if(wps!=0f) {
             fl[i3][i2][i1] /= wps;
-            //float[] fpt = computeStrikeAndDip(g11,g12,g13,g22,g23,g33);
-            //if(fpt!=null){fp[i3][i2][i1]=fpt[0];ft[i3][i2][i1]=fpt[1];}
           }
         }
       }
     }});
-    //}
     computeStrikeDip(fl,fp,ft);
-    return fl;
   }
 
 
@@ -410,9 +602,18 @@ public class FaultSkinnerX {
     for (int i1=0; i1<n1; ++i1) {
       float fli = fl[i3][i2][i1];
       if(fli>0f) {
-        float u1i = -u1[i3][i2][i1];
-        float u2i = -u2[i3][i2][i1];
-        float u3i = -u3[i3][i2][i1];
+        int k1 = i1;
+        int k2 = i2;
+        int k3 = i3;
+        if(k1==0) {k1=1;}
+        if(k2==0) {k2=1;}
+        if(k3==0) {k3=1;}
+        if(k1==n1-1) {k1=n1-2;}
+        if(k2==n2-1) {k2=n2-2;}
+        if(k3==n3-1) {k3=n3-2;}
+        float u1i = -u1[k3][k2][k1];
+        float u2i = -u2[k3][k2][k1];
+        float u3i = -u3[k3][k2][k1];
         if(u2i!=0.0f && u3i!=0.0f) {
           ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
           fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
@@ -421,7 +622,9 @@ public class FaultSkinnerX {
     }}}
   }
 
-  public FaultCell[] nabors(int i1, int i2, int i3, FaultCell[] cells) {
+  public FaultCell[] nabors(
+    int i1, int i2, int i3, FaultCell[] cells) 
+  {
     ArrayList<Float> dsL = new ArrayList<Float>();
     ArrayList<Float> dsR = new ArrayList<Float>();
     ArrayList<FaultCell> fcL = new ArrayList<FaultCell>();
@@ -439,7 +642,7 @@ public class FaultSkinnerX {
       float ds = d1*d1+d2*d2+d3*d3;
       if(abs(d1)>1f) {ds *= abs(d1);}
       if(dd<=0f) {dsL.add(ds);fcL.add(fci);} 
-      else       {dsR.add(ds);fcR.add(fci);}
+      else if(dd>=0f) {dsR.add(ds);fcR.add(fci);}
     }
     int nb = 20;
     int nl = dsL.size();
@@ -534,9 +737,7 @@ public class FaultSkinnerX {
     return bs;
   }
 
-
-  private void setKdTreeNodes(
-    FaultCell[] fc, float[][] xc, float[][][] fp) {
+  public void cpt(FaultCell[] fc, float[][][] fp) {
     int nc = fc.length;
     int n3 = fp.length;
     int n2 = fp[0].length;
@@ -553,10 +754,7 @@ public class FaultSkinnerX {
       int i1 = fc[ic].i1;
       int i2 = fc[ic].i2;
       int i3 = fc[ic].i3;
-      xc[0][ic] = i1;
-      xc[1][ic] = i2;
-      xc[2][ic] = i3;
-      pt[i3][i2][i1] = fc[ic].fp;
+      pt[i3][i2][i1] = 1.0f;
       w1[i3][i2][i1] = fc[ic].w1;
       w2[i3][i2][i1] = fc[ic].w2;
       w3[i3][i2][i1] = fc[ic].w3;
@@ -567,7 +765,59 @@ public class FaultSkinnerX {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       float di = dt[i3][i2][i1];
-      if(di<15f) {
+      if(di<=30f) {
+        int j1 = k1[i3][i2][i1];
+        int j2 = k2[i3][i2][i1];
+        int j3 = k3[i3][i2][i1];
+        float d1 = i1-j1;
+        float d2 = i2-j2;
+        float d3 = i3-j3;
+        float u1 = w1[j3][j2][j1];
+        float u2 = w2[j3][j2][j1];
+        float u3 = w3[j3][j2][j1];
+        float ds = abs(u1*d1+u2*d2+u3*d3);
+        if(ds<=2.0f) {
+          fp[i3][i2][i1] = 1.0f;
+        }
+      }
+    }}}
+  }
+
+
+  private void setKdTreeNodes(
+    FaultCell[] fc, float[][] xc, float[][][] fp) {
+    float mark = -360f;
+    int nc = fc.length;
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    short[][][] k1 = new short[n3][n2][n1];
+    short[][][] k2 = new short[n3][n2][n1];
+    short[][][] k3 = new short[n3][n2][n1];
+    float[][][] dt = new float[n3][n2][n1];
+    float[][][] w1 = new float[n3][n2][n1];
+    float[][][] w2 = new float[n3][n2][n1];
+    float[][][] w3 = new float[n3][n2][n1];
+    float[][][] pt = fillfloat(mark,n1,n2,n3);
+    for (int ic=0; ic<nc; ic++) {
+      int i1 = fc[ic].i1;
+      int i2 = fc[ic].i2;
+      int i3 = fc[ic].i3;
+      xc[0][ic] = i1;
+      xc[1][ic] = i2;
+      xc[2][ic] = i3;
+      pt[i3][i2][i1] = fc[ic].fp;
+      w1[i3][i2][i1] = fc[ic].w1;
+      w2[i3][i2][i1] = fc[ic].w2;
+      w3[i3][i2][i1] = fc[ic].w3;
+    }
+    ClosestPointTransform cpt = new ClosestPointTransform();
+    cpt.apply(mark,pt,dt,k1,k2,k3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float di = dt[i3][i2][i1];
+      if(di<=30f) {
         int j1 = k1[i3][i2][i1];
         int j2 = k2[i3][i2][i1];
         int j3 = k3[i3][i2][i1];
@@ -828,40 +1078,38 @@ public class FaultSkinnerX {
             for(FaultCell fc:skin) {
               fc.notInQ = true;
             }
-            if(checkPlanar(cell)) {
-              boolean missNabors = true;
-              if(_useOldCells) {
-                missNabors = findInOldCells(cell);
-              }
-              if(missNabors) {findInNewCells(cell);}
-              FaultCell ca,cb,cl,cr;
-              ca = findNaborAbove(cell);
-              cb = findNaborBelow(ca);
-              if (ca!=null && ca.skin==null && cb==cell) {
-                linkAboveBelow(ca,cb);
-                growQueue.add(ca);
-              }
+            boolean missNabors = true;
+            if(_useOldCells) {
+              missNabors = findInOldCells(cell);
+            }
+            if(missNabors) {findInNewCells(cell);}
+            FaultCell ca,cb,cl,cr;
+            ca = findNaborAbove(cell);
+            cb = findNaborBelow(ca);
+            if (ca!=null && ca.skin==null && cb==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(ca);
+            }
 
-              cb = findNaborBelow(cell);
-              ca = findNaborAbove(cb);
-              if (cb!=null && cb.skin==null && ca==cell) {
-                linkAboveBelow(ca,cb);
-                growQueue.add(cb);
-              }
+            cb = findNaborBelow(cell);
+            ca = findNaborAbove(cb);
+            if (cb!=null && cb.skin==null && ca==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(cb);
+            }
 
-              cl = findNaborLeft(cell);
-              cr = findNaborRight(cl);
-              if (cl!=null && cl.skin==null && cr==cell) {
-                linkLeftRight(cl,cr);
-                growQueue.add(cl);
-              }
+            cl = findNaborLeft(cell);
+            cr = findNaborRight(cl);
+            if (cl!=null && cl.skin==null && cr==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cl);
+            }
 
-              cr = findNaborRight(cell);
-              cl = findNaborLeft(cr);
-              if (cr!=null && cr.skin==null && cl==cell) {
-                linkLeftRight(cl,cr);
-                growQueue.add(cr);
-              }
+            cr = findNaborRight(cell);
+            cl = findNaborLeft(cr);
+            if (cr!=null && cr.skin==null && cl==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cr);
             }
             skin.add(cell);
           }
@@ -987,11 +1235,11 @@ public class FaultSkinnerX {
     if(cr==null) {return true;}
     if(ca==null) {return true;}
     if(cb==null) {return true;}
-    _cellsX.set(ca);
-    _cellsX.set(cb);
-    _cellsX.set(cl);
-    _cellsX.set(cr);
-    _cellsX.set(cell);
+    _cellsX.setCell(ca);
+    _cellsX.setCell(cb);
+    _cellsX.setCell(cl);
+    _cellsX.setCell(cr);
+    _cellsX.setCell(cell);
     return false;
   }
 

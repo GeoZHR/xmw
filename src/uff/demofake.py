@@ -48,8 +48,8 @@ sigmaPhi,sigmaTheta = 4,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.5
+lowerLikelihood = 0.5
+upperLikelihood = 0.8
 minSkinSize = 3000
 
 # These parameters control the computation of fault dip slips.
@@ -61,7 +61,7 @@ maxThrow = 15.0
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
 pngDir = "../../../png/uff/fake/"
-plotOnly = False
+plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
@@ -72,12 +72,12 @@ def main(args):
   goThin()
   #goSmooth()
   goSkin()
-  goReSkin()
-  goSmooth()
-  goSlip()
   '''
+  goReSkin()
+  #goSmooth()
+  #goSlip()
   #goUnfaultC()
-  goUnfaultS()
+  #goUnfaultS()
   #goSlipTest()
 def goSlipTest():
   smark=-99
@@ -86,7 +86,7 @@ def goSlipTest():
   p3  = readImage(p3file)
   gsx  = readImage(gsxfile)
   sks = readSkins(fskgood)
-  sks = [sks[1]]
+  sks = [sks[0]]
   fst = FaultSlipTest(sks[0])
   skt = fst.getSubSkin()
   fst.checkCellArrays(skt[0])
@@ -95,8 +95,8 @@ def goSlipTest():
   s1,s2,s3 = fsl.getDipSlips(skp,smark)
   plot3(gx,s1,cmin=-0.01,cmax=max(s1),cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
-  plot3(gx,skins=skt,links=True,clab="subskin")
-  plot3(gx,skins=skp,smax=10.0,clab="fault throw")
+  plot3(gx,skins=skt,links=True)
+  plot3(gx,skins=skp,smax=10.0)
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   #sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
@@ -108,7 +108,7 @@ def goFakeData():
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
+  gx,p2,p3 = FakeDataX.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
   writeImage(p2kfile,p2)
@@ -233,15 +233,15 @@ def goReSkin():
   print "goReSkin ..."
   flstop = 0.1
   fsigma = 8.0
-  useOldCells = False
+  useOldCells = True
   gx = readImage(gxfile)
   fl = readImage(flfile)
   sk = readSkins(fskbase)
   fsx = FaultSkinnerX()
-  fsx.setParameters(20,10,10)
+  fsx.setParameters(10,10,0.5)
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsx.setMinSkinSize(minSkinSize)
-  fsx.setMaxPlanarDistance(1.0)
+  fsx.setMaxPlanarDistance(0.5)
   fsx.setSkinning(useOldCells)
   cells = FaultSkin.getCells(sk)
   fsx.resetCells(cells)
@@ -269,7 +269,6 @@ def goSmooth():
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
-
   p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(p2file,p2)
@@ -288,7 +287,6 @@ def goSlip():
   p3 = readImage(p3file)
   #skins = readSkins(fskbase)
   skins = readSkins(fskgood)
-  #skins = [skins[1]]
   '''
   cells = skins[0].getCellsLR()
   for fc in cells[25]:
@@ -326,7 +324,7 @@ def goSlip():
   plot3(gx,s1,cmin=-0.01,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
-  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+  plot3(gx,s1,cmin=min(s1),cmax=max(s1),cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
@@ -343,19 +341,19 @@ def goUnfaultC():
     fw = zerofloat(n1,n2,n3)
     cp = zerofloat(n1,n2,n3)
     skins = readSkins(fskslip)
-    fsc = FaultSlipConstraints(skins)
-    wp = pow(ep,2.0)
-    ws = pow(ep,2.0)
-    cs = fsc.controlPoints(ws,wp,cp)
     u1 = fillfloat(1.0,n1,n2,n3)
     u2 = fillfloat(0.0,n1,n2,n3)
     u3 = fillfloat(0.0,n1,n2,n3)
-    lof = LocalOrientFilter(2.0,1.0,1.0)
-    lof.applyForNormal(gx,u1,u2,u3)
+    lof = LocalOrientFilter(4.0,1.0,1.0)
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    wp = pow(ep,4.0)
+    ws = pow(ep,4.0)
+    fsc = FaultSlipConstraints(skins)
+    cs = fsc.controlPoints(ws,wp,cp)
     ps = array(u1,u2,u3,wp)
     flattener = FlattenerRTD(4.0,4.0)
-    fsc.setNormals(ps)
-    [r1,r2,r3] = flattener.computeShifts(True,cs,ws,ps)
+    #fsc.setNormals(ps)
+    [r1,r2,r3] = flattener.computeShifts(False,cs,ws,ps)
     flattener.applyShifts([r1,r2,r3],gx,fw)
     writeImage(fwcfile,fw)
     writeImage(fwpfile,wp)
@@ -373,10 +371,9 @@ def goUnfaultC():
     r3 = readImage(frc3file)
   plot3(wp)
   plot3(gx,cp,cmin=0,cmax=6,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx)
+        clab="constraints",png="gxs1i")
   plot3(fw)
-  plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
+  plot3(gx,r1,cmin=min(r1),cmax=max(r1),cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
@@ -394,23 +391,19 @@ def goUnfaultS():
     u3 = fillfloat(0.0,n1,n2,n3)
     lof = LocalOrientFilter(2.0,1.0,1.0)
     lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-    ws = pow(ep,4.0)
     wp = pow(ep,4.0)
+    ws = pow(ep,4.0)
     skins = readSkins(fskslip)
     fsc = FaultSlipConstraints(skins)
-    cs = fsc.screenPoints(wp)
-    cn = fsc.screenPointsNearFaults(n2,n3)
     ps = array(u1,u2,u3,copy(wp))
+    cs = fsc.screenPointsX(ws,ps)
     flattener = FlattenerRTS(6.0,6.0)
     flattener.setIters(20,20)
-    flattener.setScreenNearFaults(cn)
-    fsc.setNormals(ps)
-    fl = mul(pow(cs[3][0],4.0),1.0)
-    [r1,r2,r3] = flattener.findShifts(cs[0],cs[1],cs[2],fl,ps)
-    flattener.applyShifts([r1,r2,r3],cs[0],cs[1],gx,gw)
-    ps = array(u1,u2,u3,copy(wp))
-    [t1,t2,t3] = flattener.unfaultShifts(cs[0],cs[1],cs[2],fl,ps)
-    flattener.applyShifts([t1,t2,t3],None,None,gx,fw)
+    pow(cs[3][0],8.0,cs[3][0])
+    [r1,r2,r3] = flattener.findShifts(cs,ws,ps)
+    flattener.applyShifts([r1,r2,r3],None,gx,gw)
+    [t1,t2,t3] = flattener.unfaultShifts(cs,ps)
+    flattener.applyShifts([t1,t2,t3],None,gx,fw)
     writeImage(gwsfile,gw)
     writeImage(fwsfile,fw)
     writeImage(fwpfile,wp)
@@ -422,7 +415,6 @@ def goUnfaultS():
     fw = readImage(fwsfile)
     gw = readImage(gwsfile)
     wp = readImage(fwpfile)
-    cp = readImage(fcpfile)
     r1 = readImage(frs1file)
     r2 = readImage(frs2file)
     r3 = readImage(frs3file)
@@ -445,9 +437,10 @@ def goUnfaultS():
   plot2(s1,s2,gx[47],g=h1,gmin=0.1,gmax=max(h1),
         clab="Vertical component of normal vectors",cint=1.0,png="throwCbar2d")
 
-  '''
   plot3(gx,r1,cmin=-5.0,cmax=8.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
+
+  '''
   plot3(gx,r2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,r3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
@@ -622,7 +615,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
     sf.world.addChild(sg)
   #ipg.setSlices(95,5,51)
-  ipg.setSlices(95,5,90)
+  #ipg.setSlices(95,5,90)
+  ipg.setSlices(95,5,93)
   #ipg.setSlices(95,5,n3-1)
   if cbar:
     sf.setSize(837,700)
