@@ -411,9 +411,10 @@ public class FaultCellGrow {
   }
 
   public FaultCell[] nabors(FaultCell cell) {
-    float dv = 10f;
+    //float dv = 10f;
+    float dv = 5f;
     //float dh = 65f;
-    float dh = 30f;
+    float dh = 45f;
     float x1 = cell.x1;
     float x2 = cell.x2;
     float x3 = cell.x3;
@@ -427,6 +428,7 @@ public class FaultCellGrow {
     int[] id = _kt.findInRange(xmin,xmax);
     int nd = id.length;
     if(nd<1) {return null;}
+    int nbc=0, nac=0;
     ArrayList<Float> dsL = new ArrayList<Float>();
     ArrayList<Float> dsR = new ArrayList<Float>();
     ArrayList<FaultCell> fcL = new ArrayList<FaultCell>();
@@ -443,11 +445,14 @@ public class FaultCellGrow {
         if(abs(d1)>1f) {ds *= abs(d1);}
         if(dd<=0f) {dsL.add(ds);fcL.add(fci);} 
         else       {dsR.add(ds);fcR.add(fci);}
+        if(fci.x1>x1){nac++;}
+        if(fci.x1<x1){nbc++;}
       }
     }
     int nb = 20;
     int nl = dsL.size();
     int nr = dsR.size();
+    if(nbc<10||nac<10){return null;}
     if(nl<10||nr<10) {return null;}
     ArrayList<FaultCell> nbs = new ArrayList<FaultCell>();
     if(nl<nb) {

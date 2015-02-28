@@ -147,7 +147,7 @@ public class FakeDataX {
     float r1a = 0.0f*n1, r2a = 0.5f*n2, r3a = 0.6f*n3;
     //float r1a = 0.0f*n1, r2a = 0.4f*n2, r3a = 0.6f*n3;
     float r1b = 0.0f*n1, r2b = 0.1f*n2, r3b = 0.3f*n3;
-    float r1c = 0.2f*n1, r2c = 0.82f*n2, r3c = 0.5f*n3;
+    float r1c = 0.3f*n1, r2c = 0.75f*n2, r3c = 0.3f*n3;
     float r1d = 0.1f*n1, r2d = 0.5f*n2, r3d = 0.5f*n3;
     float r1e = 0.0f*n1, r2e = 0.55f*n2, r3e = 0.6f*n3;
     float phie =  10.0f, thetae = 78.0f;
@@ -158,7 +158,7 @@ public class FakeDataX {
     float thetad = 75.0f;
     float[] c1 = {0.0f}, c2 = {0.0f}, sc = {20.0f}, hc = {sa*5.0f};
     T2 throwa = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
-    T2 throwb = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwb = new Linear2(0.0f,sa*0.2f,0.0f,0.0f,0.0f,0.0f);
     T2 throwe = new Linear2(0.0f,-sa*0.1f,0.0f,0.0f,0.0f,0.0f);
     T2 throwc = new Gaussians2(c1,c2,sc,hc);
     T1 throwd = new Linear1(0.0f,sa*0.1f);
@@ -180,9 +180,9 @@ public class FakeDataX {
         p = apply(shear,p);
       } else if (sequence.charAt(js)=='A') {
         if (nplanar>0) p = apply(faulta,p);
-        if (nplanar>1) p = apply(faultb,p);
+        if (nplanar>1) p = apply(faulte,p);
         if (nplanar>2) p = apply(faultc,p);
-        if (nplanar>3) p = apply(faulte,p);
+        if (nplanar>3) p = apply(faultb,p);
         if (conical) p = apply(faultd,p);
       }
     }

@@ -70,6 +70,10 @@ public class FaultSlipper {
     _zeroSlope = zeroSlope;
   }
 
+  public void setErrorPower(float power) {
+    _power = power;
+  }
+
   /**
    * Computes fault dip slips for the specified skins.
    * Specified bounds on throw are used to reduce unnecessary computation.
@@ -195,6 +199,84 @@ public class FaultSlipper {
     return new float[][][][]{s1,s2,s3};
   }
 
+  public float[][][][] getDipSlipsX(FaultSkin[] skins, float smark) {
+    int n1 = _n1, n2 = _n2, n3 = _n3;
+    float[][][] s1 = new float[n3][n2][n1];
+    float[][][] s2 = new float[n3][n2][n1];
+    float[][][] s3 = new float[n3][n2][n1];
+    float[][][] ss = new float[n3][n2][n1];
+
+    // Initially set all slip vectors to the specified mark.
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          s1[i3][i2][i1] = smark;
+          s2[i3][i2][i1] = smark;
+          s3[i3][i2][i1] = smark;
+        }
+      }
+    }
+
+    // For all cells in all skins, ...
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+
+        // Get sample indices for the minus and plus sides of the cell.
+        int i1 = cell.i1;
+        int i2m = cell.i2m;
+        int i3m = cell.i3m;
+        int i2p = cell.i2p;
+        int i3p = cell.i3p;
+        if(i2m<0||i2p<0){continue;}
+        if(i3m<0||i3p<0){continue;}
+        if(i2m>=n2||i2p>=n2){continue;}
+        if(i3m>=n3||i3p>=n3){continue;}
+
+        // Set or accumulate slip on the plus side.
+        if (s1[i3m][i2m][i1]==smark) {
+          s1[i3m][i2m][i1]  = cell.s1;
+          s2[i3m][i2m][i1]  = cell.s2;
+          s3[i3m][i2m][i1]  = cell.s3;
+          ss[i3m][i2m][i1]  = 1.0f;
+        } else {
+          s1[i3m][i2m][i1] += cell.s1;
+          s2[i3m][i2m][i1] += cell.s2;
+          s3[i3m][i2m][i1] += cell.s3;
+          ss[i3m][i2m][i1] += 1.0f;
+        }
+
+
+        // Set or accumulate slip on the plus side.
+        if (s1[i3p][i2p][i1]==smark) {
+          s1[i3p][i2p][i1]  = cell.s1;
+          s2[i3p][i2p][i1]  = cell.s2;
+          s3[i3p][i2p][i1]  = cell.s3;
+          ss[i3p][i2p][i1]  = 1.0f;
+        } else {
+          s1[i3p][i2p][i1] += cell.s1;
+          s2[i3p][i2p][i1] += cell.s2;
+          s3[i3p][i2p][i1] += cell.s3;
+          ss[i3p][i2p][i1] += 1.0f;
+        }
+      }
+    }
+
+    // Where more than one slip was accumulated, compute the average.
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          if (ss[i3][i2][i1]>1.0f) {
+            float si = 1.0f/ss[i3][i2][i1];
+            s1[i3][i2][i1] *= si;
+            s2[i3][i2][i1] *= si;
+            s3[i3][i2][i1] *= si;
+          }
+        }
+      }
+    }
+    return new float[][][][]{s1,s2,s3};
+  }
+
   /**
    * Interpolates specified dip-slip vectors.
    * @param s array {s1,s2,s3} of dip-slip vectors.
@@ -277,6 +359,7 @@ public class FaultSlipper {
   private int _n1,_n2,_n3; // image dimensions
   private float _offset = 2.0f; // horizontal offset (distance to faults)
   private boolean _zeroSlope; // if true, assume reflectors have zero slope
+  private static float _power = 2.0f;
 
   /**
    * Computes alignment errors and initializes shifts for specified skin.
@@ -565,6 +648,10 @@ public class FaultSlipper {
 
       // Account for any remaining fractional shift.
       float y1 = y[0], y2 = y[1], y3 = y[2];
+      cellBegin.r1 = cell.x1-x1;
+      cellBegin.r2 = cell.x2-x2;
+      cellBegin.r3 = cell.x3-x3;
+
       y1 += smp;
       y2 += smp*cell.us*cell.u2;
       y3 += smp*cell.us*cell.u3;
@@ -613,8 +700,7 @@ public class FaultSlipper {
 
   private static float alignmentError(float f, float g) {
     float fmg = f-g;
-    return pow(abs(fmg),0.25f);
-    //return fmg*fmg;
+    return pow(abs(fmg),_power);
   }
 
   private static float imageValueAt(

@@ -6,7 +6,7 @@ Version: 2014.06.17
 from uff import *
 from util import *
 from schutils import *
-setupForSubset("s2w")
+setupForSubset("s2x")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -88,7 +88,7 @@ maxThrow =60.0
 # Directory for saved pn images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
-pngDir = "../../../png/sch/s2w/"
+pngDir = "../../../png/sch/s2x/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
 plotOnly = False
@@ -100,8 +100,8 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  goSkin()
-  goReskin()
+  #goSkin()
+  #goReskin()
   #goSmooth()
   #goSlip()
   #goUnfault()
@@ -109,6 +109,9 @@ def main(args):
   #goUnfaultC()
   #goTeaser()
   #goSlices()
+  gx = readImage(gxfile)
+  sk = readSkins(fskgood)
+  plot3(gx,skins=sk)
 
 def goSlices():
   fl = readImage(flfile)
@@ -420,10 +423,12 @@ def goUnfaultS():
     ep = fillfloat(0.0,n1,n2,n3)
     wp = fillfloat(1.0,n1,n2,n3)
     ws = fillfloat(1.0,n1,n2,n3)
+    '''
     lof = LocalOrientFilter(2.0,1.0,1.0)
     lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
     wp = pow(ep,4.0)
     ws = pow(ep,4.0)
+    '''
     skins = readSkins(fslbase)
     fsc = FaultSlipConstraints(skins)
     ps = array(u1,u2,u3,copy(wp))
@@ -431,9 +436,9 @@ def goUnfaultS():
     flattener = FlattenerRTS(6.0,6.0)
     flattener.setIters(20,20)
     #pow(cs[3][0],0.0,cs[3][0])
-    mul(cs[3][0],1.0,cs[3][0])
-    [t1,t2,t3] = flattener.findShifts(cs,ws,ps)
-    #[t1,t2,t3] = flattener.unfaultShifts(cs,ws,ps)
+    #mul(cs[3][0],1.0,cs[3][0])
+    #[t1,t2,t3] = flattener.findShifts(cs,ws,ps)
+    [t1,t2,t3] = flattener.unfaultShifts(cs,ws,ps)
     flattener.applyShifts([t1,t2,t3],None,None,gx,fw)
     writeImage(fwsfile,fw)
     writeImage(fwpfile,ps[3])

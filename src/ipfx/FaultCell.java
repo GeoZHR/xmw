@@ -88,6 +88,61 @@ public class FaultCell implements Serializable {
     return new float[]{u1,u2,u3};
   }
 
+  public int getM1() {
+    return i1;
+  }
+  public int getM2() {
+    return i2m;
+  }
+  public int getM3() {
+    return i3m;
+  }
+
+  public int getP1() {
+    return i1;
+  }
+  public int getP2() {
+    return i2p;
+  }
+  public int getP3() {
+    return i3p;
+  }
+
+  public int getI1() {
+    return i1;
+  }
+  public int getI2() {
+    return i2;
+  }
+  public int getI3() {
+    return i3;
+  }
+  public float getT1() {
+    return t1;
+  }
+  public float getT2() {
+    return t2;
+  }
+  public float getT3() {
+    return t3;
+  }
+  public void setT1(float t1) {
+    this.t1 = t1;
+  }
+  public void setT2(float t2) {
+    this.t2 = t2;
+  }
+  public void setT3(float t3) {
+    this.t3 = t3;
+  }
+
+  public void setUnfaultShifts(float[] ts) {
+    this.t1=ts[0];
+    this.t2=ts[1];
+    this.t3=ts[2];
+  }
+
+
 
     /**
    * Gets the slip vectors (s1,s2,s3) of this cell.
@@ -119,6 +174,17 @@ public class FaultCell implements Serializable {
   public float getS3() {
     return s3;
   }
+
+  public float getR1() {
+    return r1;
+  }
+  public float getR2() {
+    return r2;
+  }
+  public float getR3() {
+    return r3;
+  }
+
 
   /**
    * Gets the coordinates (x1,x2,x3) of the location for this cell.
@@ -331,6 +397,8 @@ public class FaultCell implements Serializable {
   float[] emp; // array of minus-plus alignment errors
   float smp; // shift from minus side to plus side of cell
   float s1,s2,s3; // fault dip-slip vector
+  float r1,r2,r3; // fault dip-slip vector
+  float t1,t2,t3; // fault dip-slip vector
   boolean notInQ;
   boolean interp;
   boolean notUsed;

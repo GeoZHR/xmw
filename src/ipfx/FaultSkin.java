@@ -72,20 +72,50 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
       //cell.fl = exp(fli)/exp(1f);
     }}
   }
-
-
   public static void getLikelihood(FaultSkin[] skins, float[][][] fl) {
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2 = cell.i2;
+        int i3 = cell.i3;
+        fl[i3][i2][i1] = cell.fl;
+      }
+    }
+  }
+
+  public static void setValueOnFaults(float v, 
+    FaultSkin[] skins, float[][][] fl) 
+  {
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2 = cell.i2;
+        int i3 = cell.i3;
+        fl[i3][i2][i1] = v;
+      }
+    }
+  }
+
+  public static void getLikelihoods(FaultSkin[] skins, float[][][] fl) {
     int n3 = fl.length;
     int n2 = fl[0].length;
     int n1 = fl[0][0].length;
     float[][][] sc = new float[n3][n2][n1];
     for (FaultSkin skin:skins) {
       for (FaultCell cell:skin) {
-        int i1 = cell.i1;
-        int i2 = cell.i2;
-        int i3 = cell.i3;
-        sc[i3][i2][i1] += 1f;
-        fl[i3][i2][i1] += cell.fl;
+        int i1i = cell.i1;
+        int i2m = cell.i2m;
+        int i3m = cell.i3m;
+        int i2p = cell.i2p;
+        int i3p = cell.i3p;
+        if(i2m<0){i2m=0;}if(i2m>=n2){i2m=n2-1;}
+        if(i2p<0){i2p=0;}if(i2p>=n2){i2p=n2-1;}
+        if(i3m<0){i3m=0;}if(i3m>=n3){i3m=n3-1;}
+        if(i3p<0){i3p=0;}if(i3p>=n3){i3p=n3-1;}
+        sc[i3m][i2m][i1i] += 1f;
+        sc[i3p][i2p][i1i] += 1f;
+        fl[i3m][i2m][i1i] += cell.fl;
+        fl[i3p][i2p][i1i] += cell.fl;
       }
     }
     for (int i3=0; i3<n3; ++i3) {
@@ -167,8 +197,6 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cellsList.add(cList.toArray(new FaultCell[0]));
       }
     }
-    System.out.println("cellsize1="+_cellList.size());
-    System.out.println("cellsize2="+cellSet.size());
     assert _cellList.size()==cellSet.size();
 
     // Convert the list of arrays to the array of arrays to be returned.
@@ -394,6 +422,9 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cell.s1 = ais.readFloat();
         cell.s2 = ais.readFloat();
         cell.s3 = ais.readFloat();
+        cell.r1 = ais.readFloat();
+        cell.r2 = ais.readFloat();
+        cell.r3 = ais.readFloat();
       }
       FaultCell[] cells = cellList.toArray(new FaultCell[0]);
       FaultCellGrid fcg = new FaultCellGrid(cells);
@@ -450,6 +481,9 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         aos.writeFloat(cell.s1); 
         aos.writeFloat(cell.s2); 
         aos.writeFloat(cell.s3);
+        aos.writeFloat(cell.r1); 
+        aos.writeFloat(cell.r2); 
+        aos.writeFloat(cell.r3);
       }
       for (FaultCell cell:skin) {
         FaultCell[] nabors = new FaultCell[]{cell.ca,cell.cb,cell.cl,cell.cr};

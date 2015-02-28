@@ -629,6 +629,7 @@ public class FaultSkinnerX {
     ArrayList<Float> dsR = new ArrayList<Float>();
     ArrayList<FaultCell> fcL = new ArrayList<FaultCell>();
     ArrayList<FaultCell> fcR = new ArrayList<FaultCell>();
+    int nbc=0, nac=0;
     for (FaultCell fci:cells) {
       float x1 = fci.x1;
       float x2 = fci.x2;
@@ -643,11 +644,14 @@ public class FaultSkinnerX {
       if(abs(d1)>1f) {ds *= abs(d1);}
       if(dd<=0f) {dsL.add(ds);fcL.add(fci);} 
       else if(dd>=0f) {dsR.add(ds);fcR.add(fci);}
+      if(d1>0f){nac++;}
+      if(d1<0f){nbc++;}
     }
     int nb = 20;
     int nl = dsL.size();
     int nr = dsR.size();
     if(nl<10||nr<10) {return null;}
+    if(nac<5||nbc<5) {return null;}
     //if(nl<nb||nr<nb) {nb = min(nl,nr);}
     ArrayList<FaultCell> nbs = new ArrayList<FaultCell>();
     if(nl<nb) {
