@@ -28,6 +28,7 @@ fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
+fwifile = "fwi"
 fwsfile = "fws"
 fwcfile = "fwc"
 fx1file = "fx1"
@@ -42,7 +43,12 @@ fr3file = "fr3"
 fc1file = "fc1"
 fc2file = "fc2"
 fc3file = "fc3"
-
+fcx1file = "fcx1"
+fcx2file = "fcx2"
+fcx3file = "fcx3"
+ftx1file = "ftx1"
+ftx2file = "ftx2"
+ftx3file = "ftx3"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -80,8 +86,10 @@ def main(args):
   goSmooth()
   goSlip()
   '''
-  #goUnfaultS()
-  goUnfaultC()
+  goUnfaultS()
+  #goUnfaultC()
+  #go2dFault()
+  #goSub2d()
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -321,8 +329,9 @@ def goSlip():
   plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",cint=1.0,png="gxs3i")
   gw = fsl.unfault([s1,s2,s3],gx)
+  writeImage(fwifile,gw)
   plot3(gx)
-  plot3(gw,clab="Amplitude",png="gw")
+  plot3(gw,clab="Amplitude",png="fwi")
   plot3(add(gw,ss),t1,cmin=-10,cmax=20.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gws")
 
@@ -342,9 +351,9 @@ def goUnfaultS():
     sp = fsc.screenPoints(wp)
 
     uf = UnfaultS(4.0,2.0)
-    uf.setIters(100,1)
+    uf.setIters(100)
     uf.setTensors(et)
-    mul(sp[3][0],10,sp[3][0])
+    mul(sp[3][0],5,sp[3][0])
     #mul(sp[3][0],1,sp[3][0])
     [t1,t2,t3] = uf.findShifts(sp,wp)
     uf.applyShifts([t1,t2,t3],gx,fw)
@@ -353,9 +362,12 @@ def goUnfaultS():
     print min(t1)
     print max(t1)
     writeImage(fwsfile,fw)
-    writeImage(fx1file,t1)
-    writeImage(fx2file,t2)
-    writeImage(fx3file,t3)
+    #writeImage(ftx1file,t1)
+    #writeImage(ftx2file,t2)
+    #writeImage(ftx3file,t3)
+    writeImage(ft1file,t1)
+    writeImage(ft2file,t2)
+    writeImage(ft3file,t3)
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
@@ -363,13 +375,13 @@ def goUnfaultS():
     t2 = readImage(ft2file)
     t3 = readImage(ft3file)
   plot3(gx)
-  plot3(fw,clab="Amplitude")#,png="ufc")
+  plot3(fw,clab="Amplitude",png="ufs")
   plot3(gx,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1sx")
+        clab="Vertical shift (samples)",png="gxs1")
   plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Inline shift (samples)",png="gxs2sx")
+        clab="Inline shift (samples)",png="gxs2")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
-        clab="Crossline shift (samples)",png="gxs3sx")
+        clab="Crossline shift (samples)",png="gxs3")
 def goUnfaultC():
   if not plotOnly:
     gx = readImage(gxfile)
@@ -388,7 +400,7 @@ def goUnfaultC():
     plot3(gx,cp,cmin=0.1,cmax=6,cmap=jetFillExceptMin(1.0))
 
     uf = UnfaultC(4.0,4.0)
-    uf.setIters(100,1)
+    uf.setIters(100)
     uf.setTensors(et)
     [t1,t2,t3] = uf.findShifts(sp,wp,ws)
     uf.applyShifts([t1,t2,t3],gx,fw)
@@ -396,7 +408,7 @@ def goUnfaultC():
     plot3(wp)
     print min(t1)
     print max(t1)
-    writeImage(fwcfile,fw)
+    #writeImage(fwcfile,fw)
     writeImage(fc1file,t1)
     writeImage(fc2file,t2)
     writeImage(fc3file,t3)
@@ -407,14 +419,13 @@ def goUnfaultC():
     t2 = readImage(fc2file)
     t3 = readImage(fc3file)
   plot3(gx)
-  plot3(fw,clab="Amplitude")#,png="ufc")
+  plot3(fw,clab="Amplitude",png="ufc")
   plot3(gx,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1sx")
+        clab="Vertical shift (samples)",png="gxc1")
   plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Inline shift (samples)",png="gxs2sx")
+        clab="Inline shift (samples)",png="gxc2")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
-        clab="Crossline shift (samples)",png="gxs3sx")
-
+        clab="Crossline shift (samples)",png="gxc3")
 
 def goSlices():
   fl = readImage(flfile)
@@ -454,6 +465,39 @@ def goSlices():
   plot3f(fws,a=fss,amin=0.01,amax=max(fss)-18,
         amap=jetFillExceptMin(1.0),alab="Vertical component of throw (ms)",
         aint=2.0,png="unfss")
+
+def go2dFault():
+  sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
+  nplanar = 1 # number of planar faults
+  conjugate = False # if True, two large planar faults will intersect
+  conical = False # if True, may want to set nplanar to 0 (or not!)
+  impedance = False # if True, data = impedance model
+  wavelet = True # if False, no wavelet will be used
+  noise = 0.0 # (rms noise)/(rms signal) ratio
+  gx,p2,p3 = FakeDataX.seismicAndSlopes3d2014A(
+      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
+  g3 = gx[55]
+  g3 = copy(40,40,40,52,g3)
+  plot2(g3,png="fault2d")
+
+def goSub2d():
+  sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
+  conjugate = False # if True, two large planar faults will intersect
+  conical = False # if True, may want to set nplanar to 0 (or not!)
+  impedance = False # if True, data = impedance model
+  wavelet = True # if False, no wavelet will be used
+  noise = 0.0 # (rms noise)/(rms signal) ratio
+  gx,p2,p3 = FakeDataX.seismicAndSlopes3d2014A(
+      sequence,1,conjugate,conical,impedance,wavelet,noise)
+  gw,p2,p3 = FakeDataX.seismicAndSlopes3d2014A(
+      sequence,0,conjugate,conical,impedance,wavelet,noise)
+  gx3 = gx[55]
+  gw3 = gw[55]
+  gx3 = copy(40,40,40,52,gx3)
+  gw3 = copy(40,40,40,52,gw3)
+  plot2(gx3,png="gxSub2d")
+  plot2(gw3,png="gwSub2d")
+
 
 def like(x):
   n3 = len(x)
@@ -640,6 +684,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(sg)
   #ipg.setSlices(85,5,56)
   ipg.setSlices(91,5,50)
+  ipg.setSlices(90,5,50)
   #ipg.setSlices(n1-1,0,n3-1)
   if cbar:
     sf.setSize(837,700)
@@ -659,6 +704,25 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+
+def plot2(x,cmap=ColorMap.GRAY,perc=100,cmin=0.0,cmax=0.0,\
+         colorbar=None,title=None,png=None):
+  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+  #sp.setBackground(Color(204,204,204,255))
+  #sp.setFontSizeForSlide(1.0,1.0)
+  #cb = sp.addColorBar()
+  #cb.setWidthMinimum(130)
+  if colorbar:
+    cb.setLabel(colorbar)
+  sp.setSize(600,600)
+  if title:
+    sp.addTitle(title)
+  pv = sp.addPixels(x)
+  #pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pv.setColorModel(cmap)
+  pv.setClips(-2.0,2.0)
+  if png and pngDir:
+    sp.paintToPng(360,3.0,pngDir+png+'.png')
 
 
 #############################################################################

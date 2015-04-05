@@ -28,7 +28,9 @@ fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
+fssbase = "fss" # fault skin (basename only)
 fwsfile = "fws"
+fwcfile = "fwc"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -57,18 +59,56 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  '''
-  goFakeData()
-  goSlopes()
-  goScan()
-  goThin()
-  goSkin()
-  goReSkin()
-  goSmooth()
-  goSlip()
-  '''
-  goUnfaultS()
+  #goFakeData()
+  #goSlopes()
+  #goScan()
+  #goThin()
+  #goSkin()
+  #goReSkin()
+  #goSmooth()
+  #goSlip()
+  #goUnfaultS()
+  #goUnfaultC()
+  #goSubset()
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  cells = fs.findCells([fl,fp,ft])
+  plot3(gx,cells=cells,png="cellsSeg")
 
+def goSubset():
+  gx  = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fcs = fs.findCells([fl,fp,ft])
+  #f1,f2,f3=37,15,15
+  #l1,l2,l3=56,35,34
+  f1,f2,f3=37,15,9
+  l1,l2,l3=56,35,28
+
+  n1 = l1-f1+1
+  n2 = l2-f2+1
+  n3 = l3-f3+1
+  sks = readSkins(fskbase)
+  skg = readSkins(fskgood)
+  gxs = copy(n1,n2,n3,f1,f2,f3,gx)
+  fsb = FaultSkinSub(f1,f2,f3,l1,l2,l3)
+  fcss =fsb.getSubCell(fcs)
+  for fc in fcss:
+    if(fc.fl<0.7):
+      fc.setFl(fc.fl-0.08)
+  skss=fsb.getSubSkin(sks)
+  skgs=fsb.getSubSkin(skg)
+  fsb.setForNewCells(0.3,[skss[0]],skgs[0])
+  fsb.setForNewCells(0.6,[skss[1],skss[2]],skgs[1])
+  plot3(gxs,cells=fcss,png="subcells2")
+  plot3(gxs,skins=skss,links=True,png="subskins2")
+  plot3(gxs,skins=skgs,links=True,png="subskinsi2")
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   #sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
@@ -80,7 +120,7 @@ def goFakeData():
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeDataX.seismicAndSlopes3d2014A(
+  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
   writeImage(p2kfile,p2)
@@ -182,8 +222,6 @@ def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
   gsx = readImage(gsxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
@@ -208,7 +246,7 @@ def goSkin():
 
 def goReSkin():
   print "goReSkin ..."
-  useOldCells = True
+  useOldCells = False
   gx = readImage(gxfile)
   if not plotOnly:
     fl = readImage(flfile)
@@ -222,8 +260,8 @@ def goReSkin():
     cells = FaultSkin.getCells(sk)
     fsx.resetCells(cells)
     skins = fsx.findSkinsXX(cells,fl)
-    removeAllSkinFiles(fskgood)
-    writeSkins(fskgood,skins)
+    removeAllSkinFiles(fssbase)
+    writeSkins(fssbase,skins)
   skins = readSkins(fskgood)
   for skin in skins:
     skin.smoothCellNormals(4)
@@ -241,15 +279,16 @@ def goSmooth():
   skins = readSkins(fskgood)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
-  fsx.getFl(skins,flt)
+  fsx.getFls(skins,flt)
   p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
   writeImage(gsxfile,gsx)
-  plot3(gx)
-  plot3(gsx)
+  plot3(gsx,png="gsx")
+  #plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+  #      clab="Fault likelihood",png="fli")
 
 
 def goSlip():
@@ -278,7 +317,7 @@ def goSlip():
   writeImage(fs1file,s1)
   writeImage(fs2file,s2)
   writeImage(fs3file,s3)
-  plot3(gx,skins=skins,smax=10.0,png="skinss1")
+  plot3(gx,skins=skins,smax=10.0,slices=[85,5,60],png="skinss1")
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
@@ -296,20 +335,21 @@ def goUnfaultS():
   if not plotOnly:
     gx = readImage(gxfile)
     fw = zerofloat(n1,n2,n3)
-    gw = zerofloat(n1,n2,n3)
-    u1 = fillfloat(1.0,n1,n2,n3)
-    u2 = fillfloat(0.0,n1,n2,n3)
-    u3 = fillfloat(0.0,n1,n2,n3)
+    lof = LocalOrientFilter(8.0,2.0,2.0)
+    et = lof.applyForTensors(gx)
+    et.setEigenvalues(0.001,1.0,1.0)
+
     wp = fillfloat(1.0,n1,n2,n3)
-    ws = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
     fsc = FaultSlipConstraints(skins)
-    ps = array(u1,u2,u3,copy(wp))
-    cs = fsc.screenPointsX(ws,ps)
-    flattener = FlattenerRTS(6.0,6.0)
-    flattener.setIters(20,20)
-    [t1,t2,t3] = flattener.unfaultShifts(cs,ws,ps)
-    flattener.applyShifts([t1,t2,t3],cs,None,gx,fw)
+    sp = fsc.screenPoints(wp)
+
+    uf = UnfaultS(4.0,2.0)
+    uf.setIters(100)
+    uf.setTensors(et)
+    mul(sp[3][0],10,sp[3][0])
+    [t1,t2,t3] = uf.findShifts(sp,wp)
+    uf.applyShifts([t1,t2,t3],gx,fw)
     writeImage(fwsfile,fw)
   else :
     gx = readImage(gxfile)
@@ -322,6 +362,40 @@ def goUnfaultS():
   FaultSkin.getThrow(mark,skins,s1)
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
+  plot3(fw,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="fws1")
+def goUnfaultC():
+  if not plotOnly:
+    gx = readImage(gxfile)
+    fw = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(8.0,2.0,2.0)
+    et = lof.applyForTensors(gx)
+    et.setEigenvalues(0.001,1.0,1.0)
+
+    wp = fillfloat(1.0,n1,n2,n3)
+    ws = fillfloat(1.0,n1,n2,n3)
+    cp = fillfloat(0.0,n1,n2,n3)
+    skins = readSkins(fslbase)
+    fsc = FaultSlipConstraints(skins)
+    sp = fsc.controlPoints(ws,wp,cp)
+
+    uf = UnfaultC(4.0,4.0)
+    uf.setIters(100)
+    uf.setTensors(et)
+    [t1,t2,t3] = uf.findShifts(sp,wp,ws)
+    uf.applyShifts([t1,t2,t3],gx,fw)
+    writeImage(fwcfile,fw)
+  else :
+    gx = readImage(gxfile)
+    fw = readImage(fwcfile)
+  plot3(gx)
+  plot3(fw,png="unfaultC",slices=[85,5,60])
+  skins = readSkins(fslbase)
+  mark = -999.99
+  s1 = fillfloat(mark,n1,n2,n3)
+  FaultSkin.getThrow(mark,skins,s1)
+  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",slices=[85,5,60],png="gxs1")
   plot3(fw,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="fws1")
 
@@ -432,11 +506,12 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,smax=0.0,
+          xyz=None,cells=None,skins=None,smax=0.0,slices=None,
           links=False,curve=False,trace=False,png=None):
-  n1 = len(f[0][0])
-  n2 = len(f[0])
   n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -446,7 +521,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-2.0,2.0)
+      #ipg.setClips(-2.0,2.0)
+      ipg.setClips(-2.0,1.5) # use for subset plots
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
@@ -489,7 +565,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     cmap = ColorMap(0.0,1.0,ColorMap.JET)
-    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.5,cmap,cells,False)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
@@ -510,7 +586,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sg.setStates(ss)
     size = 2.0
     if links:
-      size = 0.6 
+      size = 0.65 
+      ls = LineState()
+      ls.setWidth(4.0)
+      ls.setSmooth(True)
+      ss.add(ls)
     ct = 0
     for skin in skins:
       if smax>0.0: # show fault throws
@@ -534,22 +614,23 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           sg.addChild(pg)
       if links:
         if ct==0:
-          r,g,b=0,0,1
+          r,g,b=0,0,0
         if ct==1:
-          r,g,b=0,1,0
+          r,g,b=0,0,1
         if ct==2:
           r,g,b=0,1,1
         if ct==3:
-          r,g,b=0.627451,0.12549,0.941176
+          #r,g,b=0.627451,0.12549,0.941176
+          r,g,b=1,1,1
         xyz = skin.getCellLinksXyz()
         rgb = skin.getCellLinksRgb(r,g,b,xyz)
-        #lg = LineGroup(xyz,rgb)
-        lg = LineGroup(xyz)
+        lg = LineGroup(xyz,rgb)
+        #lg = LineGroup(xyz)
         sg.addChild(lg)
         ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(85,5,56)
-  #ipg.setSlices(n1-1,0,n3-1)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
     sf.setSize(837,700)
   else:
@@ -559,10 +640,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   radius = 0.45*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
   ov.setWorldSphere(BoundingSphere(0.5*n1-10,0.5*n2,0.5*n3-6,radius))
-  #ov.setAzimuthAndElevation(-55.0,25.0)
   ov.setAzimuthAndElevation(-70.0,25.0)
   ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
+  #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
+  #ov.setAzimuthAndElevation(-40.0,25.0)
+  #ov.setTranslate(Vector3(0.0241,-0.0400,0.0103))
   ov.setScale(1.2)
+  #ov.setScale(1.3) #use only for subset plots
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

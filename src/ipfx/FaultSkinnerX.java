@@ -298,8 +298,18 @@ public class FaultSkinnerX {
   }
 
 
-
   public void getFl(FaultSkin[] sks, float[][][] fl) {
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1i = fc.i1;
+        int i2i = fc.i2;
+        int i3i = fc.i3;
+        fl[i3i][i2i][i1i] = fc.fl;
+      }
+    }
+  }
+
+  public void getFls(FaultSkin[] sks, float[][][] fl) {
     int n3 = fl.length;
     int n2 = fl[0].length;
     for (FaultSkin sk:sks) {
@@ -416,8 +426,8 @@ public class FaultSkinnerX {
 
   public FaultSkin[] findSkinsXX(FaultCell[] cells, float[][][] fl) {
     FaultSkin[] sks = skinsXX(cells,fl);
-    //return sks;
-    return reskin(sks,fl);
+    return sks;
+    //return reskin(sks,fl);
     //return resetSkins(sks,fl);
   }
 

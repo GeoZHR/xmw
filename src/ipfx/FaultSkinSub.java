@@ -66,7 +66,7 @@ public class FaultSkinSub {
     return sl.toArray(new FaultSkin[0]);
   }
 
-  public FaultCell[] getSubCells(FaultCell[] cells) {
+  public FaultCell[] getSubCell(FaultCell[] cells) {
     ArrayList<FaultCell> cl = new ArrayList<FaultCell>();
     float x2m = 0f;
     float x3m = 0f;
@@ -89,6 +89,41 @@ public class FaultSkinSub {
       cl.add(cell);
     }
     return cl.toArray(new FaultCell[0]);
+  }
+
+  public void setForNewCells(float fl, FaultSkin[] skold, FaultSkin sknew) {
+    int n1 = _l1-_f1+1;
+    int n2 = _l2-_f2+1;
+    int n3 = _l3-_f3+1;
+    FaultCell[][][] fcg = new FaultCell[n3][n2][n1];
+    for (FaultSkin ski:skold) {
+    for (FaultCell cell:ski) {
+      int i1i = cell.i1;
+      int i2i = cell.i2;
+      int i3i = cell.i3;
+      int i2m = cell.i2m;
+      int i3m = cell.i3m;
+      int i2p = cell.i2p;
+      int i3p = cell.i3p;
+      fcg[i3i][i2i][i1i] = cell;
+      fcg[i3m][i2m][i1i] = cell;
+      fcg[i3p][i2p][i1i] = cell;
+    }}
+    for (FaultCell cell:sknew) {
+      int i1i = cell.i1;
+      int i2i = cell.i2;
+      int i3i = cell.i3;
+      int i2m = cell.i2m;
+      int i3m = cell.i3m;
+      int i2p = cell.i2p;
+      int i3p = cell.i3p;
+      FaultCell fci = fcg[i3i][i2i][i1i];
+      FaultCell fcm = fcg[i3m][i2m][i1i];
+      FaultCell fcp = fcg[i3p][i2p][i1i];
+      if(fci==null&&fcm==null&&fcp==null) {
+        cell.setFl(fl);
+      }
+    }
   }
 
   private int _f1,_l1;

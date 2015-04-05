@@ -411,8 +411,8 @@ public class FaultCellGrow {
   }
 
   public FaultCell[] nabors(FaultCell cell) {
-    //float dv = 10f;
-    float dv = 5f;
+    float dv = 10f;
+    //float dv = 5f;
     //float dh = 65f;
     float dh = 45f;
     float x1 = cell.x1;
@@ -452,7 +452,7 @@ public class FaultCellGrow {
     int nb = 20;
     int nl = dsL.size();
     int nr = dsR.size();
-    if(nbc<10||nac<10){return null;}
+    if(nbc<5||nac<5){return null;}
     if(nl<10||nr<10) {return null;}
     ArrayList<FaultCell> nbs = new ArrayList<FaultCell>();
     if(nl<nb) {

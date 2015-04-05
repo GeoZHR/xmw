@@ -24,6 +24,34 @@ public class FaultSlipConstraints {
     _sks = sks;
   }
 
+  public void setValuesNearFaults(float v, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] mk = new float[n3][n2][n1];
+    float[][][] ds = new float[n3][n2][n1];
+    short[][][] k1 = new short[n3][n2][n1];
+    short[][][] k2 = new short[n3][n2][n1];
+    short[][][] k3 = new short[n3][n2][n1];
+    for (FaultSkin skin:_sks) {
+    for (FaultCell cell:skin) {
+      int i1 = cell.getI1();
+      int i2 = cell.getI2();
+      int i3 = cell.getI3();
+      mk[i3][i2][i1] = 1.0f;
+    }}
+    ClosestPointTransform cpt = new ClosestPointTransform();
+    cpt.apply(0f,mk,ds,k1,k2,k3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float dsi = ds[i3][i2][i1];
+      if(dsi<=6f&&dsi>0f){fl[i3][i2][i1]=v;}
+    }}}
+ 
+  }
+
+
   public float[][][] controlPoints(
     float[][][] ws, float[][][] wp, float[][][] cp) {
     int n3 = ws.length;
@@ -193,9 +221,9 @@ public class FaultSlipConstraints {
         float ds1 = cb.getS1()-sa[0];
         float ds2 = cb.getS2()-sa[1];
         float ds3 = cb.getS3()-sa[2];
-        sa[0] -= ds1;
-        sa[1] -= ds2;
-        sa[2] -= ds3;
+        //sa[0] -= ds1;  //not sure
+        //sa[1] -= ds2;  //not sure
+        //sa[2] -= ds3;  //not sure
       }
       cell.setUnfaultShifts(sa);
     }}
@@ -260,26 +288,6 @@ public class FaultSlipConstraints {
   }
 
 
-  public void setValuesOnFaults(float v, FaultSkin[] sks, float[][][] fl) {
-    int n3 = fl.length;
-    int n2 = fl[0].length;
-    for (FaultSkin sk:sks) {
-      for (FaultCell fc:sk) {
-        int[] ms = fc.getIm();
-        int[] ps = fc.getIm();
-        int i1m = ms[0];
-        int i2m = ms[1];
-        int i3m = ms[2];
-        int i1p = ps[0];
-        int i2p = ps[1];
-        int i3p = ps[2];
-        if(i2m>=n2){continue;}
-        if(i3m>=n3){continue;}
-        fl[i3m][i2m][i1m] = v;
-        fl[i3p][i2p][i1p] = v;
-      }
-    }
-  }
 
   private void flNormalization() {
     for (FaultSkin skin:_sks) {

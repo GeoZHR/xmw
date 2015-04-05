@@ -24,7 +24,7 @@ public class UnfaultC {
     _sigma2 = (float)sigma2;
   }
 
-  public void setIters(int inner, int outer) {
+  public void setIters(int inner) {
     _inner=inner;
   }
 

@@ -108,10 +108,7 @@ def main(args):
   #goUnfaultS()
   #goUnfaultC()
   #goTeaser()
-  #goSlices()
-  gx = readImage(gxfile)
-  sk = readSkins(fskgood)
-  plot3(gx,skins=sk)
+  goSlices()
 
 def goSlices():
   fl = readImage(flfile)
@@ -149,15 +146,16 @@ def goSlices():
   plot3(gxt)
   plot3(fws)
 
-  fsb = FaultSkinSub(0,0,0,150-1,n2-1,n3-1)
-  cls = fsb.getSubCells(cls)
+  fsb = FaultSkinSub(0,0,0,150-2,n2-1,n3-1)
+  #cls = fsb.getSubCells(cls)
   sks = fsb.getSubSkin(sks)
   skl = fsb.getSubSkin(skl)
-  fsb.setValueOnFaults(-5,cls,gxt)
-  fsb.setValueOnFaults(-5,sks,gxw)
+  #fsb.setValueOnFaults(-5,cls,gxt)
+  #fsb.setValueOnFaults(-5,sks,gxw)
   fsb.setValueOnFaults(5,skl,gxs)
   fsb.setValueOnFaults(5,skl,fws)
 
+  '''
   plot3f(gxt,a=flt,amin=0.01,amax=0.8,
         amap=jetFillExceptMin(1.0),alab="Fault likelihood",aint=0.1,png="flt")
   plot3f(gxw,a=fls,amin=0.01,amax=0.8,
@@ -172,6 +170,11 @@ def goSlices():
   plot3(gx,cells=cls,png="cells")
   plot3(gx,skins=sks,png="skins")
   plot3(gx,skins=skl,smax=max(fss)-45,png="throw")
+  '''
+  slices=[115,191,214]
+  plot3(fws,fss,cmin=-0.01,cmax=max(fss)-25,cmap=jetFillExceptMin(1.0),
+        slices=slices,png="uft")
+
 
 def goTeaser():
   gx = readImage(gxfile)

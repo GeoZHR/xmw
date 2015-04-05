@@ -143,13 +143,57 @@ public class FakeData {
     T2 s2 = new Gaussians2(g2,g3,sg,hg);
     VerticalShear3 shear = new VerticalShear3(s1,s2);
 
+
     // Faulting transforms
-    //float r1a = 0.0f*n1, r2a = 0.5f*n2, r3a = 0.6f*n3;
-    float r1a = 0.0f*n1, r2a = 0.4f*n2, r3a = 0.6f*n3;
+    float r1a = 0.0f*n1, r2a = 0.5f*n2, r3a = 0.6f*n3;
+    //float r1a = 0.0f*n1, r2a = 0.4f*n2, r3a = 0.6f*n3;
     float r1b = 0.0f*n1, r2b = 0.1f*n2, r3b = 0.3f*n3;
-    //float r1c = 0.3f*n1, r2c = 0.8f*n2, r3c = 0.5f*n3;
-    float r1c = 0.2f*n1, r2c = 0.7f*n2, r3c = 0.6f*n3;
+    float r1c = 0.3f*n1, r2c = 0.82f*n2, r3c = 0.5f*n3;
     float r1d = 0.1f*n1, r2d = 0.5f*n2, r3d = 0.5f*n3;
+    float r1e = 0.0f*n1, r2e = 0.55f*n2, r3e = 0.6f*n3;
+    float phie =  10.0f, thetae = 78.0f;
+    //float phia =  10.0f, thetaa = 75.0f; if (conjugate) phia += 60.0f;
+    float phia =  10.0f, thetaa = 70.0f; if (conjugate) phia += 180.0f;
+    float phib =  10.0f, thetab = 70.0f;
+    float phic = 190.0f, thetac = 75.0f;
+    float thetad = 75.0f;
+    float[] c1 = {0.0f}, c2 = {0.0f}, sc = {20.0f}, hc = {sa*5.0f};
+    T2 throwa = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwb = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwe = new Linear2(0.0f,-sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwc = new Gaussians2(c1,c2,sc,hc);
+    T1 throwd = new Linear1(0.0f,sa*0.1f);
+    PlanarFault3 faulta = new PlanarFault3(r1a,r2a,r3a,phia,thetaa,throwa);
+    PlanarFault3 faultb = new PlanarFault3(r1b,r2b,r3b,phib,thetab,throwb);
+    PlanarFault3 faultc = new PlanarFault3(r1c,r2c,r3c,phic,thetac,throwc);
+    ConicalFault3 faultd = new ConicalFault3(r1d,r2d,r3d,thetad,throwd);
+    PlanarFault3 faulte = new PlanarFault3(r1e,r2e,r3e,phie,thetae,throwe);
+
+    // Reflectivity or impedance.
+    float[][][][] p = makeReflectivityWithNormals(m1,n2,n3);
+    p = addChannels(p);
+    if (impedance)
+      p = impedanceFromReflectivity(p);
+
+    // Apply the deformation sequence.
+    for (int js=0; js<ns; ++js) {
+      if (sequence.charAt(js)=='O') {
+        p = apply(shear,p);
+      } else if (sequence.charAt(js)=='A') {
+        if (nplanar>0) p = apply(faulta,p);
+        if (nplanar>1) p = apply(faultb,p);
+        if (nplanar>2) p = apply(faultc,p);
+        if (nplanar>3) p = apply(faulte,p);
+        if (conical) p = apply(faultd,p);
+      }
+    }
+    /*
+    // Faulting transforms
+    float r1a = 0.0f*n1, r2a = 0.50f*n2, r3a = 0.6f*n3;
+    float r1b = 0.0f*n1, r2b = 0.10f*n2, r3b = 0.3f*n3;
+    float r1c = 0.2f*n1, r2c = 0.82f*n2, r3c = 0.5f*n3;
+    float r1d = 0.1f*n1, r2d = 0.50f*n2, r3d = 0.5f*n3;
+    float r1e = 0.0f*n1, r2e = 0.55f*n2, r3e = 0.6f*n3;
     //float phia =  10.0f, thetaa = 72.0f; if (conjugate) phia += 180.0f;
     float phia =  10.0f, thetaa = 75.0f; if (conjugate) phia += 60.0f;
     float phib =  10.0f, thetab = 75.0f;
@@ -182,6 +226,7 @@ public class FakeData {
         if (conical) p = apply(faultd,p);
       }
     }
+    */
 
     // Wavelet and noise.
     if (wavelet)

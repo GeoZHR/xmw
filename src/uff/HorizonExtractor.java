@@ -9,6 +9,38 @@ import static edu.mines.jtk.util.ArrayMath.*;
 
 public class HorizonExtractor {
 
+  public float[][][][] computeCompositeShifts(
+    float[][][][] ts, float[][][][] rs) 
+  {
+    int n3 = ts[0].length;
+    int n2 = ts[0][0].length;
+    int n1 = ts[0][0][0].length;
+    float[][][] r1 = rs[0];
+    float[][][] r2 = rs[1];
+    float[][][] r3 = rs[2];
+    float[][][] t1 = ts[0];
+    float[][][] t2 = ts[1];
+    float[][][] t3 = ts[2];
+    float[][][][] cs = new float[3][n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float r1i = r1[i3][i2][i1];
+      float r2i = r2[i3][i2][i1];
+      float r3i = r3[i3][i2][i1];
+      float w1i = i1-r1i;
+      float w2i = i2-r2i;
+      float w3i = i3-r3i;
+      float t1i = nearestInterp(w1i,w2i,w3i,t1);
+      float t2i = nearestInterp(w1i,w2i,w3i,t2);
+      float t3i = nearestInterp(w1i,w2i,w3i,t3);
+      cs[0][i3][i2][i1] = r1i-t1i;
+      cs[1][i3][i2][i1] = r2i-t2i;
+      cs[2][i3][i2][i1] = r3i-t3i;
+    }}}
+    return cs;
+  }
+
   public float[][][] findInUnfaultSpace(int i1, float[][][][] rs) {
     float[][][] r1 = rs[0];
     float[][][] r2 = rs[1];
@@ -23,6 +55,7 @@ public class HorizonExtractor {
       w1[i3][i2] = i1-r1[i3][i2][i1];
       w2[i3][i2] = i2-r2[i3][i2][i1];
       w3[i3][i2] = i3-r3[i3][i2][i1];
+
     }}
     return new float[][][]{w1,w2,w3};
   }
@@ -92,8 +125,9 @@ public class HorizonExtractor {
   }
 
 
-  public TriangleGroup applyForTg(
+  public TriangleGroup applyForTg( float color,
     float[][][] xs, float[][][] gx, FaultSkin[] sks) {
+    _color = color;
     int n3 = gx.length;
     int n2 = gx[0].length;
     int n1 = gx[0][0].length;
@@ -101,7 +135,7 @@ public class HorizonExtractor {
     Sampling s2 = new Sampling(n2);
     Sampling s3 = new Sampling(n3);
     float[][] hz = horizonInterp(xs,mk);
-    float[][] tg = buildTrigs(s3,s2,hz,gx,mk);
+    float[][] tg = buildTrigs(s3,s2,_color,hz,gx,mk);
     //float[][][] rgb = rgbFromHeight(hz);
     return new TriangleGroup(true,tg[0],tg[1]);
   }
@@ -133,7 +167,7 @@ public class HorizonExtractor {
   }
 
   private float[][] buildTrigs(Sampling sx, Sampling sy, 
-    float[][] z, float[][][] gx, short[][][] mk) {
+    float color, float[][] z, float[][][] gx, short[][][] mk) {
     int i = 0;
     int k = 0;
     int nz = mk[0][0].length;
@@ -188,12 +222,20 @@ public class HorizonExtractor {
         xyz[i++] = x1;  xyz[i++] = y1;  xyz[i++] = z[ix+1][iy+1];
       }
     }
+    float[] rgb;
     zas = copy(k,0,zas);
     xyz = copy(i,0,xyz);
     float zmin = -max(zas);
     float zmax = -min(zas);
-    ColorMap cp = new ColorMap(zmin,zmax,ColorMap.JET);
-    float[] rgb = cp.getRgbFloats(mul(zas,-1f));
+    if(color>0.0f) {
+      zero(zas);
+      add(zas,color,zas);
+      ColorMap cp = new ColorMap(0.0f,1.0f,ColorMap.JET);
+      rgb = cp.getRgbFloats(zas);
+    }else {
+      ColorMap cp = new ColorMap(zmin,zmax,ColorMap.JET);
+      rgb = cp.getRgbFloats(mul(zas,-1f));
+    }
     //ColorMap cp = new ColorMap(min(zas),max(zas),ColorMap.RED_WHITE_BLUE);
     //float[] rgb = cp.getRgbFloats(zas);
     return new float[][]{xyz,rgb};
@@ -300,4 +342,6 @@ public class HorizonExtractor {
     if(i3<0){i3=0;}if(i3>=n3){i3=n3-1;}
     return gx[i3][i2][i1];
   }
+
+  private float _color = -1f;
 }
