@@ -40,19 +40,15 @@ def main(args):
   goFlatten()
 
 def goSlope():
-  f = readImage(fxfile)
-  p2 = copy(f)
-  p3 = copy(f)
-  ep = copy(f)
+  fx = readImage(fxfile)
+  p2 = copy(fx)
+  p3 = copy(fx)
+  ep = copy(fx)
   lsf = LocalSlopeFinder(8.0,2.0)
-  lsf.findSlopes(f,p2,p3,ep);
+  lsf.findSlopes(fx,p2,p3,ep);
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
-  for g in [p2,p3,ep]:
-    world = World()
-    addImage2ToWorld(world,f,g)
-    makeFrame(world)
 
 def goFlatten():
   findShifts = True
@@ -69,19 +65,11 @@ def goFlatten():
   gt = fm.flatten(fx)
   writeImage(gtfile,gt)
   gt = readImage(gtfile)
-  world = World()
-  ipg=addImageToWorld(world,gt)
-  ipg.setSlices(k1,k2,k3)
-  makeFrame(world,png="gt3d")
-  display3(fx,clabel="Amplitude",png="fx")
-  display3(gt,clabel="Amplitude",png="gt")
+  plot3(fx,g=ep,clab="Planarity",cint=0.2)
+  plot3(gt,clab="Amplitude",cint=2)
+  plot3s(fx,clabel="Amplitude",png="fx")
+  plot3s(gt,clabel="Amplitude",png="gt")
 
-def display(filename):
-  f = readImage(filename)
-  world = World()
-  ipg = addImageToWorld(world,f)
-  ipg.setSlices(k1,k2,k3)
-  makeFrame(world)
 #############################################################################
 # read/write files
 
@@ -128,83 +116,79 @@ def slice23(k1,f):
   SimpleFloat3(f).get23(n2,n3,k1,0,0,s)
   return s
 
-from org.python.util import PythonObjectInputStream
-def readTensors(name):
-  """
-  Reads tensors from file with specified basename; e.g., "tpet".
-  """
-  fis = FileInputStream(seismicDir+name+".dat")
-  ois = PythonObjectInputStream(fis)
-  tensors = ois.readObject()
-  fis.close()
-  return tensors
-def writeTensors(name,tensors):
-  """
-  Writes tensors to file with specified basename; e.g., "tpet".
-  """
-  fos = FileOutputStream(seismicDir+name+".dat")
-  oos = ObjectOutputStream(fos)
-  oos.writeObject(tensors)
-  fos.close()
-
 #############################################################################
 # graphics
 
 gray = ColorMap.GRAY
 jet = ColorMap.JET
+def jetFill(alpha):
+  return ColorMap.setAlpha(ColorMap.JET,alpha)
 
-def addImageToWorld(world,image,cmap=gray,cmin=0,cmax=0):
-  ipg = ImagePanelGroup(s1,s2,s3,image)
-  ipg.setColorModel(cmap)
-  if cmin<cmax:
-    ipg.setClips(cmin,cmax)
-  world.addChild(ipg)
-  return ipg
+def addColorBar(frame, clab=None, cint=None):
+  cbar = ColorBar(clab)
+  if cint:
+    cbar.setInterval(cint)
+  cbar.setFont(Font("Arial", Font.PLAIN, 32))  # size by experimenting
+  cbar.setWidthMinimum
+  cbar.setBackground(Color.WHITE)
+  frame.add(cbar, BorderLayout.EAST)
+  return cbar
 
-def addImage2ToWorld(world,image1,image2):
-  ipg = ImagePanelGroup2(s1,s2,s3,image1,image2)
-  ipg.setColorModel1(ColorMap.getGray())
-  ipg.setColorModel2(ColorMap.getJet(0.3))
-  #ipg.setColorModel2(ColorMap.getHue(0.0,20.0,0.3))
-  world.addChild(ipg)
-  return ipg
-
-def makeFrame(world,png=None):
+def plot3(f,g=None,cmin=None,cmax=None,
+          cmap=None,clab=None,cint=None,png=None):
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
-  frame = SimpleFrame(world)
-  view = frame.getOrbitView()
-  zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
-  view.setAxesScale(1.0,1.0,zscale)
-  view.setScale(1.1)
-  view.setAzimuth(azimuth)
-  view.setElevation(elevation)
-  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  #frame.viewCanvas.setBackground(frame.getBackground())
-  frame.setVisible(True)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
-  cbar = addColorBar(frame,"Amplitude",2)
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      ipg.setClips(fmin,fmax)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(fmin,fmax)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.4)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
-    frame.setSize(1137,900)
+  ipg.setSlices(k1,k2,k3)
+  if cbar:
+    sf.setSize(837,700)
   else:
-    frame.setSize(1000,900)
-  frame.paintToFile(pngDir+png+".png")
+    sf.setSize(700,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
 
-def addColorBar(frame,clab=None,cint=None):
-  cbar = ColorBar(clab)
-  if cint:
-    cbar.setInterval(cint)
-  cbar.setFont(Font("Arial",Font.PLAIN,32)) # size by experimenting
-  cbar.setWidthMinimum(120)
-  cbar.setBackground(Color.WHITE)
-  frame.add(cbar,BorderLayout.EAST)
-  cbar.colorMapChanged(ColorMap(-5,5,ColorMap.GRAY))
-  return cbar
- 
-def display3(s,c=None,clabel="",cmin=0,cmax=0,png=None):
+  ov = sf.getOrbitView()
+  zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.2)
+  ov.setAzimuth(azimuth)
+  ov.setElevation(elevation)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(137,1,pngDir+png+"cbar.png")
+
+def plot3s(s,c=None,clabel="",cmin=0,cmax=0,png=None):
   pp = PlotPanelPixels3(
     PlotPanelPixels3.Orientation.X1DOWN_X2RIGHT,
     PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM,
