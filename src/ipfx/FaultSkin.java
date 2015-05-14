@@ -95,6 +95,21 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
       }
     }
   }
+  public static void setValuesOnFaults(float v, 
+    FaultSkin[] skins, float[][][] fl) 
+  {
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2m = cell.i2m;
+        int i3m = cell.i3m;
+        int i2p = cell.i2p;
+        int i3p = cell.i3p;
+        fl[i3m][i2m][i1] = v;
+        fl[i3p][i2p][i1] = v;
+      }
+    }
+  }
 
   public static void getLikelihoods(FaultSkin[] skins, float[][][] fl) {
     int n3 = fl.length;

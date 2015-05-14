@@ -65,8 +65,8 @@ def goFlatten():
   gt = fm.flatten(fx)
   writeImage(gtfile,gt)
   gt = readImage(gtfile)
-  plot3(fx,g=ep,clab="Planarity",cint=0.2)
-  plot3(gt,clab="Amplitude",cint=2)
+  plot3(fx,g=ep,clab="Planarity",cint=0.2,png="ep3d")
+  plot3(gt,clab="Amplitude",cint=2,png="gt3d")
   plot3s(fx,clabel="Amplitude",png="fx")
   plot3s(gt,clabel="Amplitude",png="gt")
 
@@ -228,7 +228,7 @@ def plot3s(s,c=None,clabel="",cmin=0,cmax=0,png=None):
     pp.pixelsView23.tile.addTiledView(pv23)
   pf = PlotFrame(pp)
   #pf.setFontSizeForSlide(1.0,0.95,16.0/9.0)
-  pf.setFontSizeForSlide(0.7,0.8,16.0/9.0)
+  pf.setFontSizeForSlide(0.7,0.85,16.0/9.0)
   pf.setSize(960,800)
   pf.setVisible(True)
   if png and pngDir:

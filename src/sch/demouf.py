@@ -87,8 +87,17 @@ def main(args):
   #goTeaser()
   #goSlices()
   #goShifts()
-  goHorizon()
+  #goHorizon()
   #goView3D()
+  gx = readImage(gxfile)
+  gw = readImage(gwfile)
+  #plot3f(gx,clab="Amplitude",aint=0.5,png="seismic")
+  #plot3f(gw,clab="Amplitude",aint=0.5,png="seismicUf")
+  slices=[93,185,174]
+  gx = gain(gx)
+  gw = gain(gw)
+  plot3(gx,slices=slices)
+  plot3(gw,slices=slices)
 
 def goView3D():
   mark = -100
@@ -393,6 +402,7 @@ def goUnfaultS():
     et.setEigenvalues(0.001,1.0,1.0)
 
     wp = fillfloat(1.0,n1,n2,n3)
+    '''
     sks = readSkins(fsksubs)
     fls = like(gx)
     FaultSkin.getLikelihood(sks,fls)
@@ -400,6 +410,7 @@ def goUnfaultS():
     plot3s(gx,fls,cmin=0.01,cmax=0.8,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",cint=0.2,png="subFl")
     plot3s(gx,skins=sks)
+    '''
 
     skins = readSkins(fslbase)
     fsc = FaultSlipConstraints(skins)
@@ -425,13 +436,16 @@ def goUnfaultS():
     t3 = readImage(ft3file)
   gx = gain(gx)
   fw = gain(fw)
-  plot3(gx)
-  plot3(fw,clab="unfaulted")
-  plot3(gx,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),
+  slices=[111,185,174]
+  plot3(gx,slices=slices)
+  plot3(fw,slices=slices,clab="unfaulted")
+  plot3(fw,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),slices=slices,
+        clab="Vertical shift (samples)",png="fws1i")
+  plot3(gx,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),slices=slices,
         clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),slices=slices,
         clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+  plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),slices=slices,
         clab="Crossline shift (samples)",png="gxs3i")
 
 def goUnfaultC():
@@ -486,7 +500,7 @@ def goUnfold():
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(2.0, 1.0)
+    lof = LocalOrientFilter(4.0, 1.0)
     fw = smoothF(fw)
     lof.applyForNormalPlanar(fw,u1,u2,u3,ep)
     pow(ep,8.0,ep)
@@ -501,10 +515,12 @@ def goUnfold():
   else :
     gw = readImage(gwfile)
     fw = readImage(fwfile)
+  #slices=[93,193,174]
+  slices=[93,185,174]
   gw = gain(gw)
   fw = gain(fw)
-  plot3(fw)
-  plot3(gw)
+  plot3(fw,slices=slices)
+  plot3(gw,slices=slices)
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -763,6 +779,7 @@ def plot3(f,g=None,qg=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
   #ov.setAzimuthAndElevation(25.0,20.0)
   ov.setAzimuthAndElevation(-35.0,50.0)
+  ov.setAzimuthAndElevation(-35.0,40.0)
   #ov.setAzimuthAndElevation(150.0,15.0)
   #ov.setAzimuthAndElevation(160.0,65.0)
   ov.setScale(1.3)
@@ -937,7 +954,7 @@ def plot3f(g,a=None,amin=None,amax=None,amap=None,alab=None,aint=None,
   pf.setBackground(background)
   pp.setColorBarWidthMinimum(100)
   #pf.setFontSize(18) #for print
-  pf.setFontSize(30) #for slices
+  pf.setFontSize(36) #for slices
   #pf.setFontSizeForPrint(1.0,0.8)
   pf.setSize(1150,800)
   pf.setVisible(True)

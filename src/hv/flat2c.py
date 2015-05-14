@@ -16,7 +16,7 @@ from hv import *
 from fault import *
 from util import *
 
-seismicDir = "../../../data/"
+seismicDir = "../../../data/seis/tpd/"
 ffile = "tp73"
 s1 = Sampling(251,1.0,0.0)
 s2 = Sampling(357,1.0,0.0)
@@ -267,9 +267,9 @@ def plot(s1,s2,x,u=None,c=None,cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=N
       sp.add(pv)
   sp.setVLabel(vlabel)
   sp.setHLabel(hlabel)
-  sp.setSize(600+120,1000)
+  sp.setSize(600+150,1000)
   sp.setFontSizeForSlide(0.5,0.9,16.0/9.0)
-  sp.plotPanel.setColorBarWidthMinimum(120)
+  sp.plotPanel.setColorBarWidthMinimum(150)
   if pngDir and png:
     sp.paintToPng(720,2.2222,pngDir+png+".png")
 

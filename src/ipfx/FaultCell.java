@@ -87,6 +87,9 @@ public class FaultCell implements Serializable {
   public float[] getU() {
     return new float[]{u1,u2,u3};
   }
+  public float[] getV() {
+    return new float[]{v1,v2,v3};
+  }
 
   public int getM1() {
     return i1;

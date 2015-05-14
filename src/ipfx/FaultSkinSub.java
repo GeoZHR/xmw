@@ -1,6 +1,7 @@
 package ipfx;
 
 import java.util.*;
+import static edu.mines.jtk.util.ArrayMath.*;
 
 public class FaultSkinSub {
 
@@ -65,6 +66,72 @@ public class FaultSkinSub {
     }
     return sl.toArray(new FaultSkin[0]);
   }
+
+  public FaultSkin[] getSubSkinNew(FaultSkin[] sko, FaultSkin[] sks) {
+    int n1 = _l1-_f1+1;
+    int n2 = _l2-_f2+1;
+    int n3 = _l3-_f3+1;
+    FaultCell[][][] fcg = new FaultCell[n3][n2][n1];
+    for (FaultSkin ski:sko) {
+    for (FaultCell cell:ski) {
+      //if(cell.ca==null){continue;}
+      //if(cell.cb==null){continue;}
+      //if(cell.cl==null){continue;}
+      //if(cell.cr==null){continue;}
+      int i1i = cell.i1;
+      int i2i = cell.i2;
+      int i3i = cell.i3;
+      int i2m = cell.i2m;
+      int i3m = cell.i3m;
+      int i2p = cell.i2p;
+      int i3p = cell.i3p;
+      if(i1i<_f1||i1i>_l1){continue;}
+      if(i2i<_f2||i2i>_l2){continue;}
+      if(i3i<_f3||i3i>_l3){continue;}
+      i2m -= _f2; i3m -= _f3;
+      i2p -= _f2; i3p -= _f3;
+      i1i -= _f1; i2i -= _f2; i3i -= _f3;
+      fcg[i3i][i2i][i1i] = cell;
+      fcg[i3m][i2m][i1i] = cell;
+      fcg[i3p][i2p][i1i] = cell;
+    }}
+
+    ArrayList<FaultSkin> sl = new ArrayList<FaultSkin>();
+    ArrayList<FaultCell> cl = new ArrayList<FaultCell>();
+    for (FaultSkin sk:sks){
+      for (FaultCell fc:sk) {
+        int i1 = fc.i1;
+        int i2 = fc.i2;
+        int i3 = fc.i3;
+        if(i1<_f1||i1>_l1){continue;}
+        if(i2<_f2||i2>_l2){continue;}
+        if(i3<_f3||i3>_l3){continue;}
+        int i1m = i1-_f1;
+        int i2m = i2-_f2;
+        int i3m = i3-_f3;
+        FaultCell fcgi = fcg[i3m][i2m][i1m];
+        if(fcgi!=null&&abs(fcgi.fp-fc.fp)<20f){fc=fcg[i3m][i2m][i1m];}
+        float fl = fc.fl;
+        float fp = fc.fp;
+        float ft = fc.ft;
+        float x1 = fc.x1-_f1;
+        float x2 = fc.x2-_f2;
+        float x3 = fc.x3-_f3;
+        FaultCell cell = new FaultCell(x1,x2,x3,fl,fp,ft);
+        cell.s1 = fc.s1;
+        cell.s2 = fc.s2;
+        cell.s3 = fc.s3;
+        cl.add(cell);
+      }
+      FaultSkinner fs = new FaultSkinner();
+      //fs.setGrowLikelihoods(0.01,0.2);
+      fs.setMinSkinSize(10);
+      FaultSkin[] skins = fs.findSkins(cl.toArray(new FaultCell[0]));
+      for (FaultSkin ski:skins){sl.add(ski);}
+    }
+    return sl.toArray(new FaultSkin[0]);
+  }
+
 
   public FaultCell[] getSubCell(FaultCell[] cells) {
     ArrayList<FaultCell> cl = new ArrayList<FaultCell>();

@@ -7,6 +7,8 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package uff;
 
 import vec.*;
+import java.io.IOException;
+import edu.mines.jtk.io.ArrayFile;
 import java.util.logging.Logger;
 
 /**
@@ -189,6 +191,15 @@ public class CgSolver {
       rrnorm = rnorm*rnorm;
       double beta = rrnorm/rrnormOld;
       d.add(beta,r,1.0);
+      /*
+      VecArrayFloat4 vx = (VecArrayFloat4)x;
+      float[][][][] xa = vx.getArray();
+      if(iter%5==0||iter==94) {
+        System.out.println("iter="+iter);
+        String filename="../../../data/seis/sch/dat/suf/mvcg/"+"m";
+        //writeFile(filename+Integer.toString(iter)+".dat", xa[0]);
+      }
+      */
     }
     logDone(iter, rnorm);
     if (info==null) {
@@ -288,5 +299,15 @@ public class CgSolver {
   private static void logDone(int iter, double rnorm) {
     String s = String.format("end: iter=%d rnorm=%1.8g%n",iter,rnorm);
     _log.fine(s);
+  }
+
+  private static void writeFile(String filename, float[][][] f) {
+    try {
+        ArrayFile af = new ArrayFile(filename,"rw");
+        af.writeFloats(f);
+        af.close();
+    } catch (IOException ioe) {
+      // ...
+    }
   }
 }

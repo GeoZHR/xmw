@@ -21,7 +21,6 @@ import static ipfx.FaultGeometry.*;
  */
 
 public class FaultCellGrow {
-
   public FaultCellGrow(FaultCell[] fc, float[][][] fl) {
     _fc = fc; 
     _fl = fl;
@@ -411,10 +410,13 @@ public class FaultCellGrow {
   }
 
   public FaultCell[] nabors(FaultCell cell) {
-    float dv = 10f;
+    //float dv = 10f;
+    //float dh = 6f;
     //float dv = 5f;
     //float dh = 65f;
-    float dh = 45f;
+    float dv = 10f;
+    float dh = 35f;
+
     float x1 = cell.x1;
     float x2 = cell.x2;
     float x3 = cell.x3;
@@ -449,7 +451,7 @@ public class FaultCellGrow {
         if(fci.x1<x1){nbc++;}
       }
     }
-    int nb = 20;
+    int nb = 30;
     int nl = dsL.size();
     int nr = dsR.size();
     if(nbc<5||nac<5){return null;}

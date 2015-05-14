@@ -24,6 +24,10 @@ pngDir = "../../../png/sch/movie/ua/"
 def main(args):
   gx = readImage(gxfile) 
   fw = readImage(fwfile) 
+  slices=(111,185,174) # most plots use these
+  plot3(gx,png="ua0")
+  plot3(fw,png="ua20")
+  '''
   t1 = readImage(t1file)
   t2 = readImage(t2file)
   t3 = readImage(t3file)
@@ -39,7 +43,6 @@ def main(args):
         0.55,0.60,0.65,0.70,0.75,0.8,0.85,0.90,0.95,1.00]
   slices=(111,185,174) # most plots use these
   plot3(gx,png="u0")
-  '''
   slices=(111,185,174) # most plots use these
   for it,si in enumerate(st):
     fw = zerofloat(n1,n2,n3)

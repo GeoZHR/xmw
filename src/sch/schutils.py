@@ -104,6 +104,18 @@ def setupForSubset(name):
     d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2,f3 = 0.300,0.0,0.0 # (s,km,km)
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="mvcg":
+    """ a smaller subset of s2x """
+    print "setupForSubset: suf"
+    seismicDir = _datdir+"suf/mvcg/"
+    #n1,n2,n3 = 200,208,228
+    n1,n2,n3 = 120,200,200
+    #d1,d2,d3 = 1.0,1.0,1.0
+    #f1,f2,f3 = 0.0,0.0,0.0
+    d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
+    f1,f2,f3 = 0.300,0.0,0.0 # (s,km,km)
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+
   else:
     print "unrecognized subset:",name
     System.exit

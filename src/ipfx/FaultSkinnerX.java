@@ -426,8 +426,8 @@ public class FaultSkinnerX {
 
   public FaultSkin[] findSkinsXX(FaultCell[] cells, float[][][] fl) {
     FaultSkin[] sks = skinsXX(cells,fl);
-    return sks;
-    //return reskin(sks,fl);
+    //return sks;
+    return reskin(sks,fl);
     //return resetSkins(sks,fl);
   }
 
@@ -444,7 +444,8 @@ public class FaultSkinnerX {
       faultImagesFromCells(30,fcs,flpt);
       FaultSkinner fs = new FaultSkinner();
       fs.setMaxDeltaStrike(10);
-      fs.setGrowLikelihoods(0.2,0.5);
+      //fs.setGrowLikelihoods(0.2,0.5);
+      fs.setGrowLikelihoods(0.1,0.2);
       fs.setMinSkinSize(round(fcs.length/2));
       FaultCell[] cells = fs.findCells(flpt);
       System.out.println("cells="+cells.length);

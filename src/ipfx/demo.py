@@ -54,22 +54,23 @@ maxThrow =  15.0
 # otherwise, must create the specified directory before running this script.
 #pngDir = None
 pngDir = "../../../png/ipfx/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
-  #goSlopes()
-  #goScan()
-  #goThin()
-  #goSkin()
-  #goReSkin()
-  #goSmooth()
-  #goSlip()
-  #goUnfaultS()
+  goFakeData()
+  goSlopes()
+  goScan()
+  goThin()
+  goSkin()
+  goReSkin()
+  goSmooth()
+  goSlip()
+  goUnfaultS()
   #goUnfaultC()
   #goSubset()
+  '''
   gx = readImage(gxfile)
   fl = readImage(flfile)
   fp = readImage(fpfile)
@@ -78,6 +79,8 @@ def main(args):
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   cells = fs.findCells([fl,fp,ft])
   plot3(gx,cells=cells,png="cellsSeg")
+  '''
+
 
 def goSubset():
   gx  = readImage(gxfile)
@@ -103,7 +106,7 @@ def goSubset():
     if(fc.fl<0.7):
       fc.setFl(fc.fl-0.08)
   skss=fsb.getSubSkin(sks)
-  skgs=fsb.getSubSkin(skg)
+  skgs=fsb.getSubSkinNew(sks,skg)
   fsb.setForNewCells(0.3,[skss[0]],skgs[0])
   fsb.setForNewCells(0.6,[skss[1],skss[2]],skgs[1])
   plot3(gxs,cells=fcss,png="subcells2")
@@ -265,10 +268,13 @@ def goReSkin():
   skins = readSkins(fskgood)
   for skin in skins:
     skin.smoothCellNormals(4)
-  plot3(gx,skins=skins,png="skins")
-  plot3(gx,skins=skins,links=True,png="links")
+  plot3(gx,skins=skins,png="skinsNew")
+  #plot3(gx,skins=skins,links=True,png="skinsNew")
+  #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
+  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+  '''
 
 def goSmooth():
   print "goSmooth ..."
@@ -279,16 +285,19 @@ def goSmooth():
   skins = readSkins(fskgood)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
-  fsx.getFls(skins,flt)
+  fsx.getFl(skins,flt)
+  '''
   p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
   writeImage(gsxfile,gsx)
-  plot3(gsx,png="gsx")
-  #plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-  #      clab="Fault likelihood",png="fli")
+  '''
+  plot3(gx,png="gx")
+  #plot3(gsx,png="gsx")
+  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fli")
 
 
 def goSlip():
@@ -350,20 +359,25 @@ def goUnfaultS():
     mul(sp[3][0],10,sp[3][0])
     [t1,t2,t3] = uf.findShifts(sp,wp)
     uf.applyShifts([t1,t2,t3],gx,fw)
-    writeImage(fwsfile,fw)
+    #writeImage(fwsfile,fw)
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
-  plot3(gx)
-  plot3(fw,clab="unfaulted")
+  plot3(gx,png="gxuf")
+  plot3(fw,png="fwuf")
   skins = readSkins(fslbase)
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)
   FaultSkin.getThrow(mark,skins,s1)
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
-  plot3(fw,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="fws1")
+  plot3(gx,t1,cmin=-6.0,cmax=6.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+
 def goUnfaultC():
   if not plotOnly:
     gx = readImage(gxfile)
@@ -528,7 +542,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2.0,2.0)
+    ipg.setClips1(-2.0,1.5)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -622,14 +636,17 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         if ct==3:
           #r,g,b=0.627451,0.12549,0.941176
           r,g,b=1,1,1
+        r,g,b=0,0,1
         xyz = skin.getCellLinksXyz()
         rgb = skin.getCellLinksRgb(r,g,b,xyz)
         lg = LineGroup(xyz,rgb)
         #lg = LineGroup(xyz)
         sg.addChild(lg)
-        ct = ct+1
+        #ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(85,5,56)
+  ipg.setSlices(85,5,43)
+  #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
     sf.setSize(837,700)
@@ -642,6 +659,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setWorldSphere(BoundingSphere(0.5*n1-10,0.5*n2,0.5*n3-6,radius))
   ov.setAzimuthAndElevation(-70.0,25.0)
   ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
+  # for subset plots
   #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
   #ov.setAzimuthAndElevation(-40.0,25.0)
   #ov.setTranslate(Vector3(0.0241,-0.0400,0.0103))
