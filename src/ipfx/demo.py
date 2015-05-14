@@ -263,8 +263,8 @@ def goReSkin():
     cells = FaultSkin.getCells(sk)
     fsx.resetCells(cells)
     skins = fsx.findSkinsXX(cells,fl)
-    removeAllSkinFiles(fssbase)
-    writeSkins(fssbase,skins)
+    removeAllSkinFiles(fskgood)
+    writeSkins(fskgood,skins)
   skins = readSkins(fskgood)
   for skin in skins:
     skin.smoothCellNormals(4)
