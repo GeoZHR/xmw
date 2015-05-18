@@ -82,7 +82,9 @@ public class SurfaceExtractor {
   }  
 
   // Interpolate an initial surface passing through control points
-  public float[][] surfaceInitialization(int n2, int n3, float[][][] p, boolean NaNs) {
+  public float[][] surfaceInitialization(
+    int n2, int n3, float[][][] p, boolean NaNs) 
+  {
     int n1 = p[0][0].length;
     float lmt = (float)n1-1.0f;
     if (_k1.length==1) {

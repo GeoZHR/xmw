@@ -28,7 +28,6 @@ fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
-fssbase = "fss" # fault skin (basename only)
 fwsfile = "fws"
 fwcfile = "fwc"
 
@@ -70,17 +69,6 @@ def main(args):
   goUnfaultS()
   #goUnfaultC()
   #goSubset()
-  '''
-  gx = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  cells = fs.findCells([fl,fp,ft])
-  plot3(gx,cells=cells,png="cellsSeg")
-  '''
-
 
 def goSubset():
   gx  = readImage(gxfile)

@@ -100,6 +100,7 @@ def readImage(basename):
   ais.close()
   return image
 
+
 def writeImage(basename,image):
   """ 
   Writes an image to a file with specified basename
@@ -115,6 +116,10 @@ def writeImage(basename,image):
 
 def skinName(basename,index):
   return basename+("%03i"%(index))
+
+def uncName(basename,index):
+  return basename+("%03i"%(index))
+
 def skinIndex(basename,fileName):
   assert fileName.startswith(basename)
   i = len(basename)
@@ -131,6 +136,12 @@ def listAllSkinFiles(basename):
 
 def removeAllSkinFiles(basename):
   """ Removes all skins with specified basename. """
+  fileNames = listAllSkinFiles(basename)
+  for fileName in fileNames:
+    File(seismicDir+fileName).delete()
+
+def removeAllUncFiles(basename):
+  """ Removes all unconformities with specified basename. """
   fileNames = listAllSkinFiles(basename)
   for fileName in fileNames:
     File(seismicDir+fileName).delete()
@@ -161,6 +172,42 @@ def writeSkins(basename,skins):
   """ Writes all skins with specified basename. """
   for index,skin in enumerate(skins):
     writeSkin(basename,index,skin)
+
+def readUnc(basename,index):
+  """ Reads one unconformity with specified basename and index. """
+  fileName = seismicDir+uncName(basename,index)+".dat"
+  unc = zerofloat(n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(unc)
+  ais.close()
+  return unc
+
+def readUncs(basename):
+  """ Reads all unconformities with specified basename. """
+  fileNames = []
+  for fileName in File(seismicDir).list():
+    if fileName.startswith(basename):
+      fileNames.append(fileName)
+  fileNames.sort()
+  uncs = []
+  for iskin,fileName in enumerate(fileNames):
+    index = skinIndex(basename,fileName)
+    unc = readUnc(basename,index)
+    uncs.append(unc)
+  return uncs
+
+def writeUnc(basename,index,unc):
+  """ Writes one unconformity with specified basename and index. """
+  fileName = seismicDir+uncName(basename,index)+".dat"
+  aos = ArrayOutputStream(fileName)
+  aos.writeFloats(unc)
+  aos.close()
+  return unc
+
+def writeUncs(basename,uncs):
+  """ Writes all unconformities with specified basename. """
+  for index,unc in enumerate(uncs):
+    writeUnc(basename,index,unc)
 
 from org.python.util import PythonObjectInputStream
 def readObject(name):

@@ -28,9 +28,12 @@ fskgood = "fsg" # fault skin with interpolated cells (basename only)
 ft1file = "ft1" # fault slip interpolated (1st component)
 ft2file = "ft2" # fault slip interpolated (2nd component)
 ft3file = "ft3" # fault slip interpolated (3rd component)
-fwsfile  = "fws" # image after unfaulting
-ulfile = "unc" # unconformity likelihood
-ultfile = "unct" # thinned unconformity likelihood
+fwsfile = "fws" # image after unfaulting
+ulfile  = "ul" # unconformity likelihood
+ultfile = "ult" # thinned unconformity likelihood
+uncfile = "unc" # unconformity surface
+fgfile = "fg" #flattened image
+rgtfile = "rgt" #relative geologic time image
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -63,13 +66,13 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goReSkin()
-  goSmooth()
-  #goSlip()
+  #goReSkin()
+  #goSmooth()
+  goSlip()
   #goUnfault()
-  goUnfaultS()
+  #goUnfaultS()
   #goUncScan()
-
+  #goFlatten()
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
@@ -105,14 +108,15 @@ def goScan():
     writeImage(ftfile,ft)
   else:
     gx = readImage(gxfile)
+    gx = gain(gx)
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
     plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
-    plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+    plot3(gx,fp,cmin=0,cmax=180,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
-    plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
+    plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
 
 def goThin():
@@ -209,7 +213,7 @@ def goReSkin():
   FaultSkin.getLikelihood(skins,flt)
   gx = gain(gx)
   plot3(gx)
-  plot3(gx,skins=sks)
+  plot3(gx,skins=skins,png="skins")
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flc")
 
@@ -286,9 +290,7 @@ def goUnfault():
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
   plot3(gx,fss,cmin=0,cmax=10,cmap=jetFillExceptMin(1.0),
-      slices=[93,180,192],clab="Fault throw (ms)",cint=5,png="throw3D")
-
-
+      slices=[93,180,192],clab="Fault throw (samples)",cint=2,png="throw3D")
 
 def goUnfaultS():
   if not plotOnly:
@@ -313,7 +315,6 @@ def goUnfaultS():
     writeImage(ft1file,t1)
     writeImage(ft2file,t2)
     writeImage(ft3file,t3)
-
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
@@ -323,13 +324,10 @@ def goUnfaultS():
   gx = gain(gx)
   fw = gain(fw)
   plot3(gx)
-  plot3(fw,clab="unfaulted")
-  '''
-  plot3(fw,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="fws1i")
-  plot3(gx,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),
+  plot3(fw,png="unfaulted")
+  plot3(gx,t1,cmin=-5,cmax=5,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+  plot3(gx,t2,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
@@ -344,31 +342,91 @@ def goUnfaultS():
         clab="Fault likelihood",png="fls")
   plot3(gx,fss,cmin=-0.5,cmax=10,cmap=jetFillExceptMin(1.0),
       slices=[93,180,192],clab="Fault throw (ms)",cint=5,png="throw3D")
+  '''
 
 def goUncScan():
   sig1s,sig2s=1.0,2.0
   gx = readImage(gxfile)
   fw = readImage(fwsfile)
-  fw = smoothF(fw)
   if not plotOnly:
+    fw = smoothF(fw)
+    ip = InsPhase()
+    cs = like(fw)
+    ip.applyForCosine(fw,cs)
     unc = UncSurfer()
-    unc.setSampling(2,1)
+    unc.setSampling(2,2)
     unc.setForLof(sig1s,sig2s)
-    ul=unc.likelihood(fw)
-    writeImage(ulfile,ul)
+    ul=unc.likelihood(cs)
+    ult = like(ul)
+    unc.thin(0.1,ul,ult)
+    sfs = unc.surfer(n2,n3,0.1,2000,ult,ul)
+    #unc.surfaceUpdate(2.0,2.0,fw,sfs)
+    removeAllUncFiles(uncfile)
+    writeUncs(uncfile,sfs)
+    uli = unc.interp(n1,n2,n3,ul)
+    writeImage(ulfile,uli)
   fw = gain(fw)
   ul = readImage(ulfile)
-  ult = like(gx)
-  ult = fillfloat(0.0,n1,n2,n3)
-  unc = UncSurfer()
-  unc.thin(0.2,ul,ult)
-  plot3(fw,ul,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),
+  #unc = UncSurfer()
+  #ult = like(ul)
+  #unc.thin(0.2,ul,ult)
+  #ul = div(exp(ul),exp(1.0))
+  #sfs = unc.surfer2(n2,n3,0.2,3000,ult)
+  #sfs = unc.extractUncs(sfs,fw)
+  #removeAllUncFiles(uncfile)
+  #writeUncs(uncfile,sfs)
+  ul = gain2(ul,12)
+  ul = sub(ul,min(ul))
+  ul = div(ul,max(ul))
+  plot3(fw,ul,cmin=0.3,cmax=1.0,cmap=jetRamp(1.0),
         clab="Unconformity likelihood",png="ul")
-  plot3(fw,ult,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Thinned unconformity likelihood",png="ult")
+  #plot3(fw,uncs=sfs,png="uncs")
+
+def goFlatten():
+  fw = readImage(fwsfile)
+  if not plotOnly:
+    sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,10.0
+    p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,fw)
+    wp = pow(ep,2.0)
+    uncs = readUncs(uncfile)
+    sc = SetupConstraints()
+    cs = sc.constraintsFromSurfaces([add(uncs[1],2.0)])
+    #cs = sc.constraintsFromSurfaces([uncs[0]])
+    #cs = sc.constraintsFromSurfaces(uncs)
+    sfs = add(uncs,3.0)
+    for i3 in range(206,n3):
+      for i2 in range(180,n2):
+        sfs[0][i3][i2] = -100
+    for i3 in range(n3-150,n3):
+      for i2 in range(0,120):
+        sfs[1][i3][i2] = -100
+    sfs = sc.uncConstraints(sfs)
+    rs = zerofloat(n1,n2,n3)
+    fl3 = Flattener3()
+    sig1,sig2=4.0,4.0
+    fl3.setSmoothings(sig1,sig2)
+    fl3.setIterations(0.01,200);
+    fl3.computeShifts(p2,p3,ep,cs,sfs,rs)
+    mp = fl3.getMappingsFromShifts(s1,s2,s3,rs)
+    rgt = mp.u1
+    fg  = mp.flatten(fw)
+    writeImage(fgfile,fg)
+    writeImage(rgtfile,rgt)
+  fg  = readImage(fgfile)
+  rgt = readImage(rgtfile)
+  fw = gain(fw)
+  fg = gain(fg)
+  plot3(fw)
+  plot3(fg,png="fg")
+  uncs = readUncs(uncfile)
+  plot3(fw,uncs=[uncs[0]],png="unc1")
+  plot3(fw,uncs=[uncs[1]],png="unc2")
+  plot3(fw,uncs=uncs,png="uncs")
+  plot3(fw,rgt,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
+        clab="Relative geologic time (samples)",png="rgt")
 
 def smoothF(x):
-  fsigma = 16.0
+  fsigma = 4.0
   flstop = 0.9
   flt = fillfloat(0.0,n1,n2,n3)
   sigma1,sigma2,sigma3,pmax = 8.0,1.0,1.0,1.0
@@ -382,6 +440,14 @@ def like(x):
   return zerofloat(n1,n2,n3)
 
 
+def gain2(x,sigma):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(sigma)
+  ref.apply1(g,g)
+  y = like(x)
+  div(x,sqrt(g),y)
+  return y
+
 def gain(x):
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(20.0)
@@ -389,6 +455,7 @@ def gain(x):
   y = like(x)
   div(x,sqrt(g),y)
   return y
+
 def array(x1,x2,x3=None,x4=None):
   if x3 and x4:
     return jarray.array([x1,x2,x3,x4],Class.forName('[[[F'))
@@ -441,9 +508,28 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
+def rgbFromHeight(h,r,g,b):
+  n1 = len(h[0])
+  n2 = len(h)
+  ht = zerofloat(n1*n2)
+  mp = ColorMap(-max(h),-min(h),ColorMap.JET)
+  i = 0
+  for i1 in range(n1):
+    for i2 in range(n2):
+      ht[i] = -h[i2][i1]
+      i=i+1
+  htRGB = mp.getRgbFloats(ht)
+  i = 0
+  for i1 in range(n1):
+    for i2 in range(n2):
+      r[i2][i1] = htRGB[i  ] 
+      g[i2][i1] = htRGB[i+1] 
+      b[i2][i1] = htRGB[i+2] 
+      i = i+3
+
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,png=None):
+          links=False,curve=False,trace=False,uncs=None,png=None):
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
@@ -506,6 +592,29 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
+  if uncs:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setLocalViewer(True)
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ss.add(ms)
+    sg.setStates(ss)
+    us = UncSurfer()
+    ul=readImage(ulfile)
+    ul = gain2(ul,12)
+    ul = sub(ul,min(ul))
+    ul = div(ul,max(ul))
+    for unc in uncs:
+      [xyz,rgb]=us.buildTrigs(n1,s3,s2,-0.1,unc,ul)
+      tg  = TriangleGroup(True,xyz,rgb)
+      sg.addChild(tg)
+    sf.world.addChild(sg)
   if skins:
     sg = Group()
     ss = StateSet()

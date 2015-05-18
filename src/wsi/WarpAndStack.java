@@ -10,7 +10,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import warp.*;
+//import warp.*;
 /**
  * Migrated shot gather image flattening before stacking.
  * @author Xinming Wu, Colorado School of Mines
@@ -122,6 +122,7 @@ public class WarpAndStack {
     copy(y,x);
   }
 
+  /*
   private void warpR(int offset, float[] f, float[] x) {
     if(offset==0){return;}
     int maxlag = 50;
@@ -135,6 +136,7 @@ public class WarpAndStack {
     float[] y = dw.applyShifts(s1,x,u);
     copy(y,x);
   }
+  */
 
 
   /*
@@ -150,7 +152,8 @@ public class WarpAndStack {
 
   */
 
-  private void computeSlope(final float[][][] x, final float[][][] p3, float[][][] ep) {
+  private void computeSlope(
+    final float[][][] x, final float[][][] p3, float[][][] ep) {
     int n3 = x.length;
     int n2 = x[0].length;
     int n1 = x[0][0].length;
