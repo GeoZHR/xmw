@@ -76,6 +76,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  '''
   goFakeData()
   goSlopes()
   goScan()
@@ -84,6 +85,7 @@ def main(args):
   goReSkin()
   goSmooth()
   goSlip()
+  '''
   goUnfaultS()
   #goUnfaultC()
   #go2dFault()
