@@ -236,7 +236,7 @@ def goSkin():
 
 def goReSkin():
   print "goReSkin ..."
-  useOldCells = False
+  useOldCells = True
   gx = readImage(gxfile)
   if not plotOnly:
     fl = readImage(flfile)
