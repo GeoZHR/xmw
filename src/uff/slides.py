@@ -214,7 +214,6 @@ def goStat():
 def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
-  gsx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
   fl = readImage(flfile)
