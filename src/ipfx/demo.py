@@ -273,19 +273,15 @@ def goSmooth():
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
-  '''
   p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
   writeImage(gsxfile,gsx)
-  '''
-  plot3(gx,png="gx")
-  #plot3(gsx,png="gsx")
   plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fli")
-
+  plot3(gsx,png="gsx")
 
 def goSlip():
   print "goSlip ..."
@@ -589,7 +585,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if links:
       size = 0.65 
       ls = LineState()
-      ls.setWidth(4.0)
+      ls.setWidth(1.5)
       ls.setSmooth(True)
       ss.add(ls)
     ct = 0
