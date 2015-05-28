@@ -26,6 +26,7 @@ from util import *
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image
 gtfile  = "gt" # RGT volume
+ghfile  = "gh" # horizon volume
 gufile  = "gu" # flattened image 
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
@@ -41,61 +42,82 @@ s3 = Sampling(300,1,0)
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
-pngDir = None
-#pngDir = "../../../png/dgb/rgt/"
+#pngDir = None
+pngDir = "../../../png/dgb/rgt/"
 seismicDir = "../../../data/seis/dgb/rgt/"
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
+  goSlopes()
   goFlatten()
 
 def goSlopes():
   print "goSlopes ..."
-  # set half-width of smoother for computing structure tensors
-  sig1 = 2.0 #half-width in vertical direction
-  sig2 = 1.0 #half-width in one literal direction
-  sig3 = 1.0 #half-width in another literal direction
-  pmax = 5.0 #maximum slope returned by this slope finder
-  gx = readImage(gxfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(sig1,sig2,sig3,pmax)
-  lsf.findSlopes(gx,p2,p3,ep);
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
-  print "p2  min =",min(p2)," max =",max(p2)
-  print "p3  min =",min(p3)," max =",max(p3)
-  print "ep  min =",min(ep)," max =",max(ep)
-  plot3(gx)
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+  if not plotOnly:
+    # set half-width of smoother for computing structure tensors
+    sig1 = 2.0 #half-width in vertical direction
+    sig2 = 1.0 #half-width in one literal direction
+    sig3 = 1.0 #half-width in another literal direction
+    pmax = 5.0 #maximum slope returned by this slope finder
+    gx = readImage(gxfile)
+    p2 = zerofloat(n1,n2,n3)
+    p3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lsf = LocalSlopeFinder(sig1,sig2,sig3,pmax)
+    lsf.findSlopes(gx,p2,p3,ep);
+    writeImage(p2file,p2)
+    writeImage(p3file,p3)
+    writeImage(epfile,ep)
+    print "p2  min =",min(p2)," max =",max(p2)
+    print "p3  min =",min(p3)," max =",max(p3)
+    print "ep  min =",min(ep)," max =",max(ep)
+  else:
+    gx = readImage(gxfile)
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    plot3(gx)
+    plot3(gx,p2, cmin=-1,cmax=1,cmap=jetRamp(1.0),
         clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+    plot3(gx,p3, cmin=-1,cmax=1,cmap=jetRamp(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,pow(ep,4.0),cmin=0,cmax=1,cmap=jetRamp(1.0),
+    plot3(gx,pow(ep,4.0),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
 
 def goFlatten():
-  gx = readImage(gxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  ep = readImage(epfile)
-  p2 = mul(d1/d2,p2)
-  p3 = mul(d1/d3,p3)
-  ep = pow(ep,6.0)
-  fl = Flattener3()
-  fl.setIterations(0.01,200)
-  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-  gu = fm.flatten(gx)
-  gt = fm.u1
-  writeImage(gufile,gu)
-  writeImage(gtfile,gt)
-  plot3(gx)
-  plot3(gu)
-  plot3(gx,gt,cmin=0,cmax=200,cmap=jetRamp(1.0),clab="Relative geologic time")
+  if not plotOnly:
+    gx = readImage(gxfile)
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    p2 = mul(d1/d2,p2)
+    p3 = mul(d1/d3,p3)
+    ep = pow(ep,6.0)
+    fl = Flattener3()
+    fl.setIterations(0.01,200)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+    gu = fm.flatten(gx)
+    gt = fm.u1
+    gh = fm.x1
+    writeImage(gufile,gu)
+    writeImage(gtfile,gt)
+    writeImage(ghfile,gh)
+  else:
+    gx = readImage(gxfile)
+    gu = readImage(gufile)
+    gt = readImage(gtfile)
+    gh = readImage(ghfile)
+    plot3(gx,png="seismic")
+    plot3(gu,png="flattened")
+    plot3(gx,gt,cmin=min(gt)+20,cmax=max(gt)-10,cmap=jetRamp(1.0),
+          clab="Relative geologic time",png="rgt")
+    ha = []
+    hs = [280,260,240,220,200,180,160,140,120,100,80,60,40]
+    for ih, h in enumerate(hs):
+      ha.append(h)
+      plot3(gx,hs=ha,png="horizon"+str(ih))
 
 
 #############################################################################
@@ -156,7 +178,8 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
+def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          hs = None,png=None):
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
@@ -188,7 +211,15 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
     sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
-  ipg.setSlices(300,300,268)
+  if hs:
+    x1 = readImage(ghfile)
+    u1 = readImage(gtfile)
+    hfr = HorizonFromRgt(x1,u1)
+    for hi in hs:
+      [xyz,rgb] = hfr.singleHorizon(hi)
+      tg = TriangleGroup(True,xyz,rgb)
+      sf.world.addChild(tg)
+  ipg.setSlices(290,300,268)
   if cbar:
     sf.setSize(937,700)
   else:
@@ -196,7 +227,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.5)
   ov.setAzimuthAndElevation(220,25)
