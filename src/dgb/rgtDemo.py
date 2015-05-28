@@ -98,9 +98,9 @@ def goFlatten():
     fl = Flattener3()
     fl.setIterations(0.01,200)
     fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-    gu = fm.flatten(gx)
-    gt = fm.u1
-    gh = fm.x1
+    gu = fm.flatten(gx) # flattened image
+    gt = fm.u1 # rgt volume
+    gh = fm.x1 # horizon volume
     writeImage(gufile,gu)
     writeImage(gtfile,gt)
     writeImage(ghfile,gh)
