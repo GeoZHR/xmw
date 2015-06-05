@@ -1,11 +1,8 @@
 package hv;
 
-import java.io.*;
 import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-
 
 /**
  * Extract a single seismic horizon surface with control points
@@ -88,31 +85,32 @@ public class SurfaceExtractorC {
     int n1 = p[0][0].length; 
     float lmt = (float)n1-1.f;
     float[][] surft = copy(surf);
-    float avg = sum(surft)/(n2*n3);
     float[][] b   = new float[n3][n2]; 
     float[][] pi1 = new float[n3][n2]; 
     float[][] qi1 = new float[n3][n2]; 
     float[][] wi1 = new float[n3][n2]; 
-    int np = k1.length;
-    float[] cf = new float[np]; // force of constraints
+    //float[][] ks = new float[][]{k1,k2,k3};
+    checkControlPoints(k2, k3, surf); 
+    float[][] ks = updateConstraints(k1,k2,k3,p,q,ep,surf);
+    //int np = k1.length;
+    //float[] cf = new float[np]; // force of constraints
+    int niter = 50;
     for (int n=1; n<=_exniter; n++){
       System.out.println(" Iteration "+n+"......");
       VecArrayFloat2 vb    = new VecArrayFloat2(b);
       VecArrayFloat2 vsurf = new VecArrayFloat2(surf);
       updateSlopesAndWeights(p,q,ep,surf,pi1,qi1,wi1);
-      System.out.println(" maxp="+max(pi1));
-      System.out.println(" maxq="+max(qi1));
-      System.out.println(" maxw="+max(wi1));
       A2 a2 = new A2(wi1,_weight);
-      M2 m2 = new M2(avg,_sigma1,_sigma2,wi1,k2,k3);
-      CgSolver cs = new CgSolver(_small, _niter);
+      M2 m2 = new M2(_sigma1,_sigma2,wi1,ks[1],ks[2]);
+      if(n>5) {niter=_niter;}
+      CgSolver cs = new CgSolver(_small,niter);
       vb.zero();
       makeRhs(wi1,pi1,qi1,b);
       cs.solve(a2,m2,vb,vsurf);
       surf = vsurf.getArray();
       surfaceCorrect(surf,lmt);
-      checkControlPoints(k2, k3, surf); 
-      constraintForce(k2,k3,surft,surf,cf);
+      //checkControlPoints(k2, k3, surf); 
+      //constraintForce(k2,k3,surft,surf,cf);
       float ad = sum(abs(sub(surft,surf)))/(n3*n2); 
       System.out.println(" Average adjustments per sample = "+ad);
       if (ad<0.02f) break;
@@ -122,7 +120,7 @@ public class SurfaceExtractorC {
     // show the constraint force for each control point,
     // the points with little constraint force are not important, 
     // and hence can be removed from the constraints.
-    checkConstraintForce(k2,k3,cf);
+    //checkConstraintForce(k2,k3,cf);
   }
 
   public void surfaceRefine(float[][] surf, float[][][] u) {
@@ -140,6 +138,8 @@ public class SurfaceExtractorC {
       }
     }
   }
+
+
   public float[][] updateWeights(float[][] surf, float[][][] w) {
     int n3 = w.length;
     int n2 = w[0].length;
@@ -156,6 +156,7 @@ public class SurfaceExtractorC {
     }
     return wi;
   }
+
   private static void updateSlopesAndWeights (
     float[][][] p, float[][][] q, float[][][] ep,
     float[][] surf, float[][] pi1, float[][] qi1,float[][] wi1)
@@ -171,7 +172,7 @@ public class SurfaceExtractorC {
         double x2i = (double)i2;
         double x3i = (double)i3;
         double x1i = (double)surf[i3][i2];
-        float wi = wsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,ep,x1i,x2i,x3i);
+	      float wi = wsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,ep,x1i,x2i,x3i);
         wi1[i3][i2] = (wi>0.0005f)?wi:0.0005f;
         pi1[i3][i2] = psi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0, p,x1i,x2i,x3i);
 	      qi1[i3][i2] = qsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0, q,x1i,x2i,x3i);
@@ -198,7 +199,6 @@ public class SurfaceExtractorC {
     public void apply(Vec vx, Vec vy){
       VecArrayFloat2 v2x = (VecArrayFloat2) vx;
       VecArrayFloat2 v2y = (VecArrayFloat2) vy;
-      VecArrayFloat2 v2z = v2x.clone();
       float[][] x = v2x.getArray();
       float[][] y = v2y.getArray();
       int n1 = y[0].length; int n2 = y.length;
@@ -220,8 +220,7 @@ public class SurfaceExtractorC {
 
    // Preconditioner; includes smoothers and (optional) constraints.
   private static class M2 implements CgSolver.A {
-    M2(float avg, float sigma1, float sigma2, float[][] wp, float[] k2, float[] k3) {
-      _avg = avg;
+    M2(float sigma1, float sigma2, float[][] wp, float[] k2, float[] k3) {
       _sigma1 = sigma1;
       _sigma2 = sigma2;
       _wp = wp;
@@ -237,17 +236,125 @@ public class SurfaceExtractorC {
       float[][] y = v2y.getArray();
       copy(x,y);
       constrain(_k2,_k3,y);
-      //removeAverage(_avg,y);
       smooth2(_sigma2,_wp,y);
       smooth1(2.f*_sigma1,_wp,y);
       smooth2(_sigma2,_wp,y);
-      //removeAverage(_avg,y);
       constrain(_k2,_k3,y);
     }
-    private float _avg,_sigma1,_sigma2;
+    private float _sigma1,_sigma2;
     private float[][] _wp;
     private float[] _k2,_k3;
   }
+
+  private float[][] updateConstraints( float[] k1, float[] k2, float[] k3, 
+    float[][][] p, float[][][] q, float[][][] w, float[][] surf){
+    int cot = 0;
+    int w2 = 5; 
+    int w3 = w2;
+    int n3 = p.length;
+    int n2 = p[0].length;
+    int n1 = p[0][0].length;
+    float[][] cMark = new float[n3][n2];
+    float[][] cConf = fillfloat(-1.0f,n2,n3);
+    int nc = k1.length;
+    float wh = max(w)*0.8f;
+    for (int ic=0; ic<nc; ++ic) {
+      System.out.println("ic="+ic);
+      float c1 = k1[ic];
+      int c2 = (int)k2[ic];
+      int c3 = (int)k3[ic];
+      int i3b = c3-w3; if(i3b<0) i3b=0;
+      int i2b = c2-w2; if(i2b<0) i2b=0;
+      int i3e = c3+w3; if(i3e>=n3) i3e=n3-1;
+      int i2e = c2+w2; if(i2e>=n2) i2e=n2-1;
+      int n2s = i2e-i2b+1;
+      int n3s = i3e-i3b+1;
+      float[][][] ws = copy(n1,n2s,n3s,0,i2b,i3b,w);
+      float[][][] ps = copy(n1,n2s,n3s,0,i2b,i3b,p);
+      float[][][] qs = copy(n1,n2s,n3s,0,i2b,i3b,q);
+      float[] k2s = new float[]{c2-i2b};
+      float[] k3s = new float[]{c3-i3b};
+      float[][] sfs = fillfloat(c1,n2s,n3s);
+      subsetUpdate(ws,ps,qs,k2s,k3s,sfs);
+      for(int i3s=2; i3s<n3s-2; ++i3s) {
+        for(int i2s=2; i2s<n2s-2; ++i2s) {
+          int i2 = i2s+i2b;
+          int i3 = i3s+i3b;
+          int d2 = i2-c2;
+          int d3 = i3-c3;
+          float dsi = d2*d2+d3*d3;
+          float cfi = cConf[i3][i2];
+          float k1i = sfs[i3s][i2s];
+          float wpi = w[i3][i2][round(k1i)];
+          if(dsi==0.0f) {
+            cot++;
+            cConf[i3][i2] = dsi;
+            cMark[i3][i2] = k1i;
+            continue;
+          }
+          if(wpi<wh && dsi>8.0f){continue;}
+          if(cfi==-1.f) {
+            cot++;
+            cConf[i3][i2] = dsi;
+            cMark[i3][i2] = k1i;
+            continue;
+          }
+          if(dsi<cfi && abs(cMark[i3][i2]-k1i)<1.0f) {
+            cConf[i3][i2] = dsi;
+            cMark[i3][i2] = k1i;
+          }
+        }
+      }
+    }
+    int k = 0;
+    float[][] ks = new float[3][cot];
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float cfi = cConf[i3][i2];
+        if(cfi>=0.0f) {
+          ks[2][k] = i3;
+          ks[1][k] = i2;
+          ks[0][k] = cMark[i3][i2];
+          surf[i3][i2] = cMark[i3][i2];
+          k++;
+        }
+      }
+    }
+    return ks;
+  }
+
+  // Updates the surface using the seismic normal vectors and control points.
+  public void subsetUpdate
+    (float[][][] w, float[][][] p ,float[][][] q,
+     float[] k2, float[] k3,float[][] surf)
+  {	
+    int n3 = p.length; 
+    int n2 = p[0].length; 
+    int n1 = p[0][0].length; 
+    float lmt = (float)n1-1.f;
+    float[][] surft = copy(surf);
+    float[][] b   = new float[n3][n2]; 
+    float[][] pi1 = new float[n3][n2]; 
+    float[][] qi1 = new float[n3][n2]; 
+    float[][] wi1 = new float[n3][n2]; 
+    for (int n=1; n<=30; n++){
+      VecArrayFloat2 vb    = new VecArrayFloat2(b);
+      VecArrayFloat2 vsurf = new VecArrayFloat2(surf);
+      updateSlopesAndWeights(p,q,w,surf,pi1,qi1,wi1);
+      A2 a2 = new A2(wi1,_weight);
+      M2 m2 = new M2(_sigma1,_sigma2,wi1,k2,k2);
+      CgSolver cs = new CgSolver(_small, _niter);
+      vb.zero();
+      makeRhs(wi1,pi1,qi1,b);
+      cs.solve(a2,m2,vb,vsurf);
+      surf = vsurf.getArray();
+      surfaceCorrect(surf,lmt);
+      float ad = sum(abs(sub(surft,surf)))/(n3*n2); 
+      if (ad<0.02f) break;
+      surft = copy(surf);
+    }
+  }
+
 
   private static void constraintForce
     (float[] k2, float[] k3, float[][] fp, float[][] fi, float[] cf)
@@ -285,17 +392,6 @@ public class SurfaceExtractorC {
     }
   }
 
-  private static void removeAverage(float avg, float[][] x) {
-    int n2 = x.length;
-    int n1 = x[0].length;
-    double n1n2 = (double)n1*(double)n2;
-    double sumx = sum(x);
-    double avgx = sumx/n1n2;
-    float  avgi = (float)avgx-avg;
-    for (int i2=0; i2<n2; ++i2) 
-      for (int i1=0; i1<n1; ++i1) 
-        x[i2][i1] -= avgi;
-  }
   private static void constrain(float[] k2, float[] k3, float[][] x) {
     if (k2!=null && k3!=null) {
       int np = k2.length;
@@ -358,7 +454,7 @@ public class SurfaceExtractorC {
     for (int i2=1; i2<n2; ++i2) {
       for (int i1=1; i1<n1; ++i1) {
         float wpi = (wp!=null)?wp[i2][i1]:1.000f;
-        wpi = (wpi>0.05f)?wpi:0.05f;
+        if(wpi<0.05f) {wpi=0.05f;}
         float wps = wpi*wpi;
         float d11 = wps;
         float d22 = wps;
@@ -390,7 +486,7 @@ public class SurfaceExtractorC {
     for (int i2=1; i2<n2; ++i2) {
       for (int i1=1; i1<n1; ++i1) {
         float wpi = (wp!=null)?wp[i2][i1]:1.000f;
-        wpi = (wpi>0.05f)?wpi:0.05f;
+        if(wpi<0.05f) {wpi=0.05f;}
         float p2i = p2[i2][i1];
         float p3i = p3[i2][i1];
         float b11 = wpi;

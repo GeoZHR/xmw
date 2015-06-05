@@ -42,15 +42,15 @@ s3 = Sampling(300,1,0)
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
-#pngDir = None
-pngDir = "../../../png/dgb/rgt/"
+pngDir = None
+#pngDir = "../../../png/dgb/rgt/"
 seismicDir = "../../../data/seis/dgb/rgt/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
   goFlatten()
 
 def goSlopes():
@@ -78,15 +78,16 @@ def goSlopes():
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
-    plot3(gx)
-    plot3(gx,p2, cmin=-1,cmax=1,cmap=jetRamp(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-    plot3(gx,p3, cmin=-1,cmax=1,cmap=jetRamp(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-    plot3(gx,pow(ep,4.0),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
+  plot3(gx)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+      clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+      clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,pow(ep,4.0),cmin=0,cmax=1,cmap=jetRamp(1.0),
+      clab="Planarity")
 
 def goFlatten():
+  print "goFlatten ..."
   if not plotOnly:
     gx = readImage(gxfile)
     p2 = readImage(p2file)
@@ -109,15 +110,15 @@ def goFlatten():
     gu = readImage(gufile)
     gt = readImage(gtfile)
     gh = readImage(ghfile)
-    plot3(gx,png="seismic")
-    plot3(gu,png="flattened")
-    plot3(gx,gt,cmin=min(gt)+20,cmax=max(gt)-10,cmap=jetRamp(1.0),
-          clab="Relative geologic time",png="rgt")
-    ha = []
-    hs = [280,260,240,220,200,180,160,140,120,100,80,60,40]
-    for ih, h in enumerate(hs):
-      ha.append(h)
-      plot3(gx,hs=ha,png="horizon"+str(ih))
+  plot3(gx,png="seismic")
+  plot3(gu,png="flattened")
+  plot3(gx,gt,cmin=min(gt)+20,cmax=max(gt)-10,cmap=jetRamp(1.0),
+        clab="Relative geologic time",png="rgt")
+  ha = []
+  hs = [280,260,240,220,200,180,160,140,120,100,80,60,40]
+  for ih, h in enumerate(hs):
+    ha.append(h)
+    plot3(gx,hs=ha,png="horizon"+str(ih))
 
 
 #############################################################################
@@ -214,12 +215,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if hs:
     x1 = readImage(ghfile)
     u1 = readImage(gtfile)
-    hfr = HorizonFromRgt(x1,u1)
+    hfr = HorizonFromRgt(s1,s2,s3,x1,u1)
     for hi in hs:
       [xyz,rgb] = hfr.singleHorizon(hi)
       tg = TriangleGroup(True,xyz,rgb)
       sf.world.addChild(tg)
-  ipg.setSlices(290,300,268)
+  #ipg.setSlices(290,300,268)
+  ipg.setSlices(290,300,271)
   if cbar:
     sf.setSize(937,700)
   else:

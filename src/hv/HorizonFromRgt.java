@@ -6,6 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 
 package hv;
+import edu.mines.jtk.dsp.Sampling;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -24,7 +25,12 @@ public class HorizonFromRgt {
    * @param x1 an array of horizon volume x1(u1,x2,x3).
    * @param u1 an array of relative geologic time volume u1(x1,x2,x3).
    */
-  public HorizonFromRgt(float[][][] x1, float[][][] u1) {
+  public HorizonFromRgt(
+    Sampling s1, Sampling s2, Sampling s3, float[][][] x1, float[][][] u1) 
+  {
+    _s1 = s1;
+    _s2 = s2;
+    _s3 = s3;
     _x1 = x1;
     _u1 = u1;
   }
@@ -35,7 +41,9 @@ public class HorizonFromRgt {
     int n1 = _u1[0][0].length;
     float top = 0;
     float down = n1-1;
-    int i1 = round(u1i);
+    float d1 = (float)_s1.getDelta();
+    float f1 = (float)_s1.getFirst();
+    int i1 = round((u1i-f1)/d1);
     float[][] sfi = new float[n3][n2];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
@@ -56,28 +64,40 @@ public class HorizonFromRgt {
     int n2 = surf.length;
     float[] xyz = new float[n1*n2*18];
     int i = 0;
-    for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
+    float d1 = (float)_s2.getDelta();
+    float d2 = (float)_s3.getDelta();
+    float f1 = (float)_s2.getFirst();
+    float f2 = (float)_s3.getFirst();
+    for (int i2=0; i2<n2-1; ++i2) {
+      for (int i1=0; i1<n1-1; ++i1) {
         float surfi = surf[i2][i1];
-        if (surfi<down && surfi>top && i1<n1-1 && i2<n2-1) {
-          xyz[i   ] = (float) i2;
-          xyz[i+1 ] = (float) i1;
+        if (surfi<down && surfi>top) {
+          float x1i = i1*d1+f1;
+          float x2i = i2*d2+f2;
+          float x1p = (i1+1)*d1+f1;
+          float x2p = (i2+1)*d2+f2;
+          xyz[i   ] = x2i;
+          xyz[i+1 ] = x1i;
           xyz[i+2 ] = surf[i2][i1];
-          xyz[i+3 ] = (float) i2+1;
-          xyz[i+4 ] = (float) i1;
+
+          xyz[i+3 ] = x2p;
+          xyz[i+4 ] = x1i;
           xyz[i+5 ] = surf[i2+1][i1];
-          xyz[i+6 ] = (float) i2+1;
-          xyz[i+7 ] = (float) i1+1;
+
+          xyz[i+6 ] = x2p;
+          xyz[i+7 ] = x1p;
           xyz[i+8 ] = surf[i2+1][i1+1];
 
-          xyz[i+9 ] = (float) i2;
-          xyz[i+10] = (float) i1;
+          xyz[i+9 ] = x2i;
+          xyz[i+10] = x1i;
           xyz[i+11] = surf[i2][i1];
-          xyz[i+12] = (float) i2+1;
-          xyz[i+13] = (float) i1+1;
+
+          xyz[i+12] = x2p;
+          xyz[i+13] = x1p;
           xyz[i+14] = surf[i2+1][i1+1];
-          xyz[i+15] = (float) i2;
-          xyz[i+16] = (float) i1+1;
+
+          xyz[i+15] = x2i;
+          xyz[i+16] = x1p;
           xyz[i+17] = surf[i2][i1+1];
           i = i+18;
         } 
@@ -86,6 +106,9 @@ public class HorizonFromRgt {
     return copy(i,0,xyz);
   }
 
+  private Sampling _s1;
+  private Sampling _s2;
+  private Sampling _s3;
   private float[][][] _x1;
   private float[][][] _u1;
 }

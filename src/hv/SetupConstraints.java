@@ -124,12 +124,14 @@ public class SetupConstraints {
     sub(k3,ib3,k3);
     SurfaceExtractorC se = new SurfaceExtractorC();
     se.setCG(0.01f,200);
+    se.setExternalIterations(20);
     se.setSmoothings(_sigma1,_sigma2);
     se.setWeights(_scale);
     float lmt = n1-1.f;
     k1 = se.refineConstraints(k1,k2,k3,u);
     float[][] surf = se.surfaceInitialization(n2m,n3m,lmt,k1,k2,k3);
     se.surfaceUpdateFromSlopes(epm,p2m,p3m,k1,k2,k3,surf);
+    //return surf;
     /*
     SurfaceRefine sr = new SurfaceRefine();
     sr.setExternalIterations(10,100);
@@ -185,6 +187,6 @@ public class SetupConstraints {
     return sum/ci;
   }
   private float _scale  = 0.0f;
-  private float _sigma1 = 12.0f;
-  private float _sigma2 = 12.0f;
+  private float _sigma1 = 6.0f;
+  private float _sigma2 = 6.0f;
 }
