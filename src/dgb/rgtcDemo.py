@@ -132,7 +132,7 @@ def goFlattenC():
     k3 = [kk1[2],kk2[2],kk3[2],kk4[2]]
     k4 = [kk1[3],kk2[3],kk3[3],kk4[3]]
     fl = Flattener3C()
-    fl.setIterations(0.01,1000)
+    fl.setIterations(0.01,500)
     fl.setSmoothings(6.0,6.0)
     #fl.setWeight1(0.05)
     #fl.setScale(0.0001)
