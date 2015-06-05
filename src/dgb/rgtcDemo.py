@@ -51,37 +51,34 @@ plotOnly = False
 # Three sets of control points, each set 
 # (k11 k12 k13 or k21 k22 k23 or k31 k32 k33) 
 # belongs to one seismic horizon
-k11=[ 31, 68,56]
-k12=[226,275,35]
-k13=[263, 53,35]
 
-k21 = [ 86, 93, 48, 46, 78, 72]
-k22 = [300,300,300, 28, 77, 63]
-k23 = [ 32, 65,242,271, 85, 31]
+k11 = [ 86, 93, 48, 46, 78, 72]
+k12 = [300,300,300, 28, 77, 63]
+k13 = [ 32, 65,242,271, 85, 31]
 
-k31 = [182,177,175,177,176,175,183,182,181,177]
-k32 = [275,220,200,153,178,146, 94,300,300, 33]
-k33 = [268,268,268,268,271,271,271,202, 94,289]
+k21 = [182,177,175,177,176,175,183,182,181,177]
+k22 = [275,220,200,153,178,146, 94,300,300, 33]
+k23 = [268,268,268,268,271,271,271,202, 94,289]
 
-k41 = [244,244,257,256,254,254,245]
-k42 = [300,300,300,300,244,132, 24]
-k43 = [ 18, 73,161,241,271,271,271]
+k31 = [244,244,257,256,254,254,245]
+k32 = [300,300,300,300,244,132, 24]
+k33 = [ 18, 73,161,241,271,271,271]
 
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
   goFlattenC()
 
 def goSlopes():
   print "goSlopes ..."
   if not plotOnly:
     # set half-width of smoother for computing structure tensors
-    sig1 = 4.0 #half-width in vertical direction
+    sig1 = 2.0 #half-width in vertical direction
     sig2 = 1.0 #half-width in one literal direction
     sig3 = 1.0 #half-width in another literal direction
-    pmax = 8.0 #maximum slope returned by this slope finder
+    pmax = 5.0 #maximum slope returned by this slope finder
     gx = readImage(gxfile)
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
@@ -89,12 +86,16 @@ def goSlopes():
     lsf = LocalSlopeFinder(sig1,sig2,sig3,pmax)
     lsf.findSlopes(gx,p2,p3,ep);
     ep = pow(ep,6.0)
-    zm = ZeroMask(k11,k12,k13,p2,p3,ep,gx)
+    #control points for extracting the water bottom surface
+    c1=[ 31, 68,56]
+    c2=[226,275,35]
+    c3=[263, 53,35]
+    zm = ZeroMask(c1,c2,c3,p2,p3,ep,gx)
     zero = 0.00;
     tiny = 0.01;
-    zm.setValue(zero,p2);
-    zm.setValue(zero,p3);
-    zm.setValue(tiny,ep);
+    zm.setValue(zero,p2)#set inline slopes for samples above water bottom
+    zm.setValue(zero,p3)#set crossline slopes for samples above water bottom
+    zm.setValue(tiny,ep)#set planarities for samples above water bottom
     writeImage(p2file,p2)
     writeImage(p3file,p3)
     writeImage(epfile,ep)
@@ -115,6 +116,7 @@ def goSlopes():
       clab="Planarity")
 
 def goFlattenC():
+  print "Flatten ..."
   if not plotOnly:
     gx = readImage(gxfile)
     p2 = readImage(p2file)
@@ -126,11 +128,10 @@ def goFlattenC():
     kk1 = sc.extend(k11,k12,k13,n2,n3,p2,p3,ep,gx)
     kk2 = sc.extend(k21,k22,k23,n2,n3,p2,p3,ep,gx)
     kk3 = sc.extend(k31,k32,k33,n2,n3,p2,p3,ep,gx)
-    kk4 = sc.extend(k41,k42,k43,n2,n3,p2,p3,ep,gx)
-    k1 = [kk1[0],kk2[0],kk3[0],kk4[0]]
-    k2 = [kk1[1],kk2[1],kk3[1],kk4[1]]
-    k3 = [kk1[2],kk2[2],kk3[2],kk4[2]]
-    k4 = [kk1[3],kk2[3],kk3[3],kk4[3]]
+    k1 = [kk1[0],kk2[0],kk3[0]]
+    k2 = [kk1[1],kk2[1],kk3[1]]
+    k3 = [kk1[2],kk2[2],kk3[2]]
+    k4 = [kk1[3],kk2[3],kk3[3]]
     fl = Flattener3C()
     fl.setIterations(0.01,500)
     fl.setSmoothings(6.0,6.0)

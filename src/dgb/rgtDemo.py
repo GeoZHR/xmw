@@ -45,12 +45,12 @@ d1,d2,d3 = s1.delta,s2.delta,s3.delta
 pngDir = None
 #pngDir = "../../../png/dgb/rgt/"
 seismicDir = "../../../data/seis/dgb/rgt/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
+  goSlopes()
   goFlatten()
 
 def goSlopes():
