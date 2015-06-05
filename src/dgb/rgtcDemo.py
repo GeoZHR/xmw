@@ -43,8 +43,8 @@ s3 = Sampling(300,1,0)
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
-pngDir = None
-#pngDir = "../../../png/dgb/rgtc/"
+#pngDir = None
+pngDir = "../../../png/dgb/rgtc/"
 seismicDir = "../../../data/seis/dgb/rgtc/"
 plotOnly = False
 
@@ -68,7 +68,7 @@ k33 = [ 18, 73,161,241,271,271,271]
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
+  goSlopes()
   goFlattenC()
 
 def goSlopes():
@@ -116,7 +116,7 @@ def goSlopes():
       clab="Planarity")
 
 def goFlattenC():
-  print "Flatten ..."
+  print "Flatten with control points..."
   if not plotOnly:
     gx = readImage(gxfile)
     p2 = readImage(p2file)
@@ -135,7 +135,7 @@ def goFlattenC():
     fl = Flattener3C()
     fl.setIterations(0.01,500)
     fl.setSmoothings(6.0,6.0)
-    #fl.setWeight1(0.05)
+    #fl.setWeight1(0.05)  
     #fl.setScale(0.0001)
     fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep,k4,k1,k2,k3)
     gu = fm.flatten(gx) # flattened image

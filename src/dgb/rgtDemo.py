@@ -42,8 +42,8 @@ s3 = Sampling(300,1,0)
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
-pngDir = None
-#pngDir = "../../../png/dgb/rgt/"
+#pngDir = None
+pngDir = "../../../png/dgb/rgt/"
 seismicDir = "../../../data/seis/dgb/rgt/"
 plotOnly = False
 
