@@ -52,9 +52,9 @@ plotOnly = False
 # (k11 k12 k13 or k21 k22 k23 or k31 k32 k33) 
 # belongs to one seismic horizon
 
-k11 = [ 86, 93, 48, 46, 78, 72]
-k12 = [300,300,300, 28, 77, 63]
-k13 = [ 32, 65,242,271, 85, 31]
+k11 = [ 86, 93, 48, 46, 78, 72] #1st coordinates of the control points
+k12 = [300,300,300, 28, 77, 63] #2nd coordinates of the control points
+k13 = [ 32, 65,242,271, 85, 31] #3rd coordinates of the control points
 
 k21 = [182,177,175,177,176,175,183,182,181,177]
 k22 = [275,220,200,153,178,146, 94,300,300, 33]
