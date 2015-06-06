@@ -119,7 +119,25 @@ public class LocalSlopeFinder {
     _p3min = (float)p3min;
     _p3max = (float)p3max;
   }
- 
+
+    /**
+   * Constructs a 2D spatially variant smoothing filter 
+   * with a 2D array of scale factors.
+   * @param scales2 2D array of scale factors.
+   */
+  public void setScales(float[][] scales2) {
+    _scales2 = scales2;
+  }
+
+  /**
+   * Constructs a 3D spatially variant smoothing filter 
+   * with a 3D array of scale factors.
+   * @param scales3 3D array of scale factors.
+   */
+  public void setScales(float[][][] scales3) {
+    _scales3 = scales3;
+  }
+
   /**
    * Finds slopes of features in the specified 2D image.
    * @param f array[n2][n1] of input image samples.
@@ -144,6 +162,8 @@ public class LocalSlopeFinder {
     float[][] u1 = new float[n2][n1];
     float[][] u2 = p2;
     LocalOrientFilter lof = new LocalOrientFilter(_sigma1,_sigma2);
+    //LocalOrientFilterX lofx = new LocalOrientFilterX(_sigma1,_sigma2);
+    //lofx.setScales(_scales2);
     lof.applyForNormalLinear(f,u1,u2,el);
 
     // Compute slopes from normal vectors.
@@ -181,6 +201,8 @@ public class LocalSlopeFinder {
     float[][][] u2 = p2;
     float[][][] u3 = p3;
     LocalOrientFilter lof = new LocalOrientFilter(_sigma1,_sigma2,_sigma3);
+    //LocalOrientFilterX lofx = new LocalOrientFilterX(_sigma1,_sigma2,_sigma3);
+    //lofx.setScales(_scales3);
     lof.applyForNormalPlanar(f,u1,u2,u3,ep);
 
     // Compute slopes from normal vectors.
@@ -214,4 +236,6 @@ public class LocalSlopeFinder {
   private float _sigma3 = 1.0f; // smoothing half-width in 3rd dimension
   private float _p2min,_p2max; // min and max slopes in 2nd dimension
   private float _p3min,_p3max; // min and max slopes in 3rd dimension
+  private float[][] _scales2 = null; // 2D array of scale factors
+  private float[][][] _scales3 = null; // 3D array of scale factors
 }
