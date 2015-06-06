@@ -29,7 +29,7 @@ pngDir = "../../../png/swt/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goLogArray()
+  goLogArray()
   goFlatten()
 
 def goLogArray():
@@ -57,11 +57,6 @@ def goFlatten():
 
   gd = wlw.applyShifts(wd,s)
   gv = wlw.applyShifts(wv,s)
-
-  wd = wlw.replaceNulls(wd,2.0)
-  wv = wlw.replaceNulls(wv,2.0)
-  gd = wlw.replaceNulls(gd,2.0)
-  gv = wlw.replaceNulls(gv,2.0)
 
   dcbar = "Density (g/cc)"
   vcbar = "Velocity (km/s)"
