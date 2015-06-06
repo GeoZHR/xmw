@@ -54,13 +54,13 @@ def setupForSubset(name):
   elif name=="subw":
     print "setupForSubset: subset of well logs"
     welllogDir = _welldir+"subw/"
-    #n3 number of wells
-    #n2 number of log curves
+    #n3 number of log curves
+    #n2 number of wells
     #n1 depth samples of the longest well
-    nz,nc,nl = 10558,2,12
-    dz,dc,dl = 0.000152,1.0,1.0 
-    fz,fc,fl = 0.246278,1.0,1.0
-    s1,s2,s3 = Sampling(nz,dz,fz),Sampling(nc,dc,fc),Sampling(nl,dl,fl)
+    n1,n2,n3 = 10558,12,2
+    d1,d2,d3 = 0.000152,1.0,1.0 
+    f1,f2,f3 = 0.246278,1.0,1.0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   else:
     print "unrecognized subset:",name
     System.exit
@@ -139,14 +139,14 @@ def writeLogDataToArray(basename,wldata):
   nullValue = -999.25
   nl = 12 # number of well logs
   nc = 2  # number of log curves
-  wa = fillfloat(nullValue,nz,nc,nl)
+  wa = fillfloat(nullValue,nz,nl,nc)
   for ic, curve in enumerate(curves):
     logs = wldata.getLogsWith(curve)
     for il, log in enumerate(logs):
       f,z,y,x = log.getSamples(curve)
       n = len(f)
       j = round((z[0]-fz)/dz)
-      copy(n,0,f,j,wa[il][ic]) 
+      copy(n,0,f,j,wa[ic][il]) 
   fileName = welllogDir+basename+".dat"
   aos = ArrayOutputStream(fileName)
   aos.writeFloats(wa)

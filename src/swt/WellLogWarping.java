@@ -406,8 +406,8 @@ public class WellLogWarping {
    */
   public float[][] findShifts(final float[] wm, final float[][][] wl) {
     int nz = wl[0][0].length;
-    final int nm = wl[0].length;
-    int nl = wl.length;
+    int nl = wl[0].length;
+    final int nm = wl.length;
     int[] ls = new int[nl];
     final Pairs[] pt = new Pairs[nl*nm*(nl*nm-1)/2];
     final int[] ils = new int[nl*(nl-1)/2];
@@ -425,8 +425,8 @@ public class WellLogWarping {
         for (int im=0; im<nm; ++im) {
           int il = ils[ip];
           int jl = jls[ip];
-          float[] fi = wl[il][im];
-          float[] gj = wl[jl][im];
+          float[] fi = wl[im][il];
+          float[] gj = wl[im][jl];
           if (wm[im]>0 && wellNotNull(fi) && wellNotNull(gj)) {
             float[][] e = computeErrors(im,fi,gj);
             float[][] d = accumulateErrors(e);
@@ -1442,7 +1442,7 @@ public class WellLogWarping {
   }
 
   private void computeWeights(float[] wm, float[][][] wl, Pairs[] ps, int[] ls) {
-    int  nm = wl[0].length;
+    int  nm = wl.length;
     int nlp = ps.length;
     double[] wsum = new double[nm];
     for (int lp=0; lp<nlp; ++lp) {
@@ -1455,7 +1455,7 @@ public class WellLogWarping {
       double ws = ps[lp].ws;
       float tae = 0;
       for (int kz=0; kz<np; ++kz) 
-        tae += error(wl[il][m][is[kz]],wl[jl][m][js[kz]],m);
+        tae += error(wl[m][il][is[kz]],wl[m][jl][js[kz]],m);
       ws = tae>0 ? np*pow(np/tae,2.0f/_epower[m]) : 1.0f; 
       ps[lp].ws = ws;
       wsum[m] += ws;

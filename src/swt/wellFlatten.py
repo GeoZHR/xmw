@@ -6,9 +6,9 @@ Version: 2015.06.03
 
 from utils import *
 setupForSubset("subw")
-sz,sc,sl = getSamplings()
-nz,nc,nl = sz.count,sc.count,sl.count
-dz,dc,dl = sz.delta,sc.delta,sl.delta
+sz,sl,sc = getSamplings()
+nz,nl,nc = sz.count,sc.count,sl.count
+dz,dl,dc = sz.delta,sc.delta,sl.delta
 
 denWeight = 2.0
 velWeight = 1.0
@@ -29,31 +29,24 @@ pngDir = "../../../png/swt/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goLogArray()
-  #goFlatten()
+  #goLogArray()
+  goFlatten()
 
 def goLogArray():
   logs = getLogs() #get logs with large depth ranges
   writeLogs(wdfile,logs)
   wldata = readLogData(wdfile)
   wx = writeLogDataToArray(wxfile,wldata)
-  wd = zerofloat(nz,nl)
-  wv = zerofloat(nz,nl)
-  for il in range(nl):
-    wd[il] = wx[il][0]
-    wv[il] = wx[il][1]
+  wd,wv = wx[0],wx[1]
+
   dcbar = "Density (g/cc)"
   vcbar = "Velocity (km/s)"
   plot2(wd,wmin=2.0,wmax=3.0,cbar=dcbar,png="den")
   plot2(wv,wmin=2.0,wmax=6.0,cbar=vcbar,png="vel")
 
 def goFlatten():
-  wd = zerofloat(nz,nl)
-  wv = zerofloat(nz,nl)
   wx = readLogArray(wxfile)
-  for il in range(nl):
-    wd[il] = wx[il][0]
-    wv[il] = wx[il][1]
+  wd,wv = wx[0],wx[1]
 
   wlw = WellLogWarping()
   wlw.setMaxShift(ms)
