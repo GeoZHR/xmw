@@ -37,7 +37,8 @@ def goLogArray():
   writeLogs(wdfile,logs)
   wldata = readLogData(wdfile)
   wx = writeLogDataToArray(wxfile,wldata)
-  wd,wv = wx[0],wx[1]
+  wd = wx[0] #array of density logs
+  wv = wx[1] #array of velocity logs
 
   dcbar = "Density (g/cc)"
   vcbar = "Velocity (km/s)"
@@ -46,7 +47,8 @@ def goLogArray():
 
 def goFlatten():
   wx = readLogArray(wxfile)
-  wd,wv = wx[0],wx[1]
+  wd = wx[0] #array of density logs
+  wv = wx[1] #array of velocity logs
 
   wlw = WellLogWarping()
   wlw.setMaxShift(ms)
