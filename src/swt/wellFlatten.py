@@ -33,6 +33,7 @@ def main(args):
   goFlatten()
 
 def goLogArray():
+  print "goLogArray..."
   logs = getLogs() #get logs with large depth ranges
   writeLogs(wdfile,logs)
   wldata = readLogData(wdfile)
@@ -46,6 +47,7 @@ def goLogArray():
   plot2(wv,wmin=2.0,wmax=6.0,cbar=vcbar,png="vel")
 
 def goFlatten():
+  print "goFlatten..."
   wx = readLogArray(wxfile)
   wd = wx[0] #array of density logs
   wv = wx[1] #array of velocity logs
