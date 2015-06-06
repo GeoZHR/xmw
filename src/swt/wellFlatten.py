@@ -6,9 +6,9 @@ Version: 2015.06.03
 
 from utils import *
 setupForSubset("subw")
-s1,s2,s3 = getSamplings()
-nz,nc,nl = s1.count,s2.count,s3.count
-dz,dc,dl = s1.delta,s2.delta,s3.delta
+sz,sc,sl = getSamplings()
+nz,nc,nl = sz.count,sc.count,sl.count
+dz,dc,dl = sz.delta,sc.delta,sl.delta
 
 denWeight = 2.0
 velWeight = 1.0
@@ -30,13 +30,22 @@ pngDir = "../../../png/swt/"
 # can comment out earlier parts that have already written results to files.
 def main(args):
   goLogArray()
-  goFlatten()
+  #goFlatten()
 
 def goLogArray():
   logs = getLogs() #get logs with large depth ranges
   writeLogs(wdfile,logs)
   wldata = readLogData(wdfile)
-  writeLogDataToArray(wldata)
+  wx = writeLogDataToArray(wxfile,wldata)
+  wd = zerofloat(nz,nl)
+  wv = zerofloat(nz,nl)
+  for il in range(nl):
+    wd[il] = wx[il][0]
+    wv[il] = wx[il][1]
+  dcbar = "Density (g/cc)"
+  vcbar = "Velocity (km/s)"
+  plot2(wd,wmin=2.0,wmax=3.0,cbar=dcbar,png="den")
+  plot2(wv,wmin=2.0,wmax=6.0,cbar=vcbar,png="vel")
 
 def goFlatten():
   wd = zerofloat(nz,nl)
@@ -80,7 +89,7 @@ def plot2(w,wmin=0.0,wmax=0.0,vlabel="Depth (km)",cbar=None,png=None):
   sp.setHLabel("Log index")
   sp.addColorBar(cbar)
   sp.plotPanel.setColorBarWidthMinimum(90)
-  pv = sp.addPixels(s1,s3,w)
+  pv = sp.addPixels(sz,sl,w)
   pv.setInterpolation(PixelsView.Interpolation.NEAREST)
   pv.setColorModel(ajet)
   pv.setClips(wmin,wmax)

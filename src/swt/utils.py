@@ -57,10 +57,10 @@ def setupForSubset(name):
     #n3 number of wells
     #n2 number of log curves
     #n1 depth samples of the longest well
-    n1,n2,n3 = 10558,2,12
-    d1,d2,d3 = 0.000152,1.0,1.0 
-    f1,f2,f3 = 0.246278,1.0,1.0
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+    nz,nc,nl = 10558,2,12
+    dz,dc,dl = 0.000152,1.0,1.0 
+    fz,fc,fl = 0.246278,1.0,1.0
+    s1,s2,s3 = Sampling(nz,dz,fz),Sampling(nc,dc,fc),Sampling(nl,dl,fl)
   else:
     print "unrecognized subset:",name
     System.exit
@@ -124,7 +124,7 @@ def readLogData(basename):
   fileName = welllogDir+basename+".dat"
   return WellLog.Data.readBinary(fileName)
 
-def writeLogDataToArray(wldata):
+def writeLogDataToArray(basename,wldata):
   dz = 0.000152
   zf,zl =[],[]
   curves=["den","vel"]
@@ -147,13 +147,14 @@ def writeLogDataToArray(wldata):
       n = len(f)
       j = round((z[0]-fz)/dz)
       copy(n,0,f,j,wa[il][ic]) 
-  fileName = welllogDir+"wx"+".dat"
+  fileName = welllogDir+basename+".dat"
   aos = ArrayOutputStream(fileName)
   aos.writeFloats(wa)
   aos.close()
   print nz
   print dz
   print fz
+  return wa
 
 def readLogArray(basename):
   """ 
