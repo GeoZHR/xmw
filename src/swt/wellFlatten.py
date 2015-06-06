@@ -18,7 +18,8 @@ velPower = 0.250
 ms = 350 # maximum shift
 
 # Names and descriptions of image files used below.
-wxfile  = "wx" # input array of well log curves 
+wdfile  = "wd" # well log data 
+wxfile  = "wx" # array of well log curves 
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -28,7 +29,14 @@ pngDir = "../../../png/swt/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  goLogArray()
   goFlatten()
+
+def goLogArray():
+  logs = getLogs() #get logs with large depth ranges
+  writeLogs(wdfile,logs)
+  wldata = readLogData(wdfile)
+  writeLogDataToArray(wldata)
 
 def goFlatten():
   wd = zerofloat(nz,nl)
