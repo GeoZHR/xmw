@@ -185,6 +185,7 @@ public class Flattener3C {
   public void setSmoothings(double sigma1, double sigma2) {
     _sigma1 = (float)sigma1;
     _sigma2 = (float)sigma2;
+    _sigma3 = (float)sigma2;
   }
 
   /**

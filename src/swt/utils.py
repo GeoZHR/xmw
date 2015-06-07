@@ -38,6 +38,7 @@ def setupForSubset(name):
     seismicDir = _datdir+"seismict/subt/"
     n1,n2,n3 = 1025,240,80
     d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
     d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,d2*29,d3*46
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)

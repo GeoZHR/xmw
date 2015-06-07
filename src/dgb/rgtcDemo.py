@@ -122,8 +122,7 @@ def goFlattenC():
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
-    p2 = mul(d1/d2,p2)
-    p3 = mul(d1/d3,p3)
+
     sc = SetupConstraints()
     kk1 = sc.extend(k11,k12,k13,n2,n3,p2,p3,ep,gx)
     kk2 = sc.extend(k21,k22,k23,n2,n3,p2,p3,ep,gx)
@@ -132,6 +131,9 @@ def goFlattenC():
     k2 = [kk1[1],kk2[1],kk3[1]]
     k3 = [kk1[2],kk2[2],kk3[2]]
     k4 = [kk1[3],kk2[3],kk3[3]]
+
+    p2 = mul(d1/d2,p2)
+    p3 = mul(d1/d3,p3)
     fl = Flattener3C()
     fl.setIterations(0.01,500)
     fl.setSmoothings(6.0,6.0)

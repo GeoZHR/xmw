@@ -29,8 +29,9 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goSlopes()
-  goFlatten()
+  #goSlopes()
+  #goFlatten()
+  goFlattenC()
 def goSlopes():
   print "goSlopes ..."
   if not plotOnly:
@@ -80,8 +81,9 @@ def goFlatten():
     ep = readImage(epfile)
     p2 = mul(d1/d2,p2)
     p3 = mul(d1/d3,p3)
-    ep = pow(ep,6.0)
+    ep = pow(ep,12.0)
     fl = Flattener3()
+    #fl.setWeight1(0.05)
     fl.setIterations(0.01,200)
     fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
     gu = fm.flatten(gx) # flattened image
@@ -99,6 +101,7 @@ def goFlatten():
   plot3(gu,png="flattened")
   plot3(gx,gt,cmin=min(gt),cmax=max(gt),cmap=jetRamp(1.0),
         clab="Relative geologic time",png="rgt")
+  '''
   ha = []
   hs = [800,750,700,650,600,550,500,450,400,350,300]
   hs = mul(hs,0.002)
@@ -106,6 +109,56 @@ def goFlatten():
     print h
     ha.append(h)
     plot3(gx,hs=ha,png="horizon"+str(ih))
+  '''
+def goFlattenC():
+  print "goFlattenC ..."
+  if not plotOnly:
+    k11 = [351,358,328,337]
+    k12 = [ 75,113,199, 19]
+    k13 = [ 68, 68, 24, 29]
+    gx = readImage(gxfile)
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    ep = pow(ep,12.0)
+
+    sc = SetupConstraints()
+    kk1 = sc.extend(k11,k12,k13,n2,n3,p2,p3,ep,gx)
+    k1 = [kk1[0]]
+    k2 = [kk1[1]]
+    k3 = [kk1[2]]
+    k4 = [kk1[3]]
+    #plot3(gx,surf=kk1)
+    p2 = mul(d1/d2,p2)
+    p3 = mul(d1/d3,p3)
+    fl = Flattener3C()
+    fl.setIterations(0.01,200)
+    fl.setSmoothings(6.0,6.0)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep,k4,k1,k2,k3)
+    gu = fm.flatten(gx) # flattened image
+    gt = fm.u1 # rgt volume
+    gh = fm.x1 # horizon volume
+    writeImage(gufile,gu)
+    writeImage(gtfile,gt)
+    writeImage(ghfile,gh)
+  else:
+    gx = readImage(gxfile)
+    gu = readImage(gufile)
+    gt = readImage(gtfile)
+    gh = readImage(ghfile)
+  plot3(gx,png="seismic")
+  plot3(gu,png="flattenedC")
+  plot3(gx,gt,cmin=min(gt),cmax=max(gt),cmap=jetRamp(1.0),
+        clab="Relative geologic time",png="rgtC")
+  '''
+  ha = []
+  hs = [800,750,700,650,600,550,500,450,400,350,300]
+  hs = mul(hs,0.002)
+  for ih, h in enumerate(hs):
+    print h
+    ha.append(h)
+    plot3(gx,hs=ha,png="horizon"+str(ih))
+  '''
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -224,7 +277,8 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
   return pg
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          slices=None,hs=None,logs=None,curve=None,wmin=0,wmax=0,png=None):
+          slices=None,surf=None,hs=None,logs=None,curve=None,
+          wmin=0,wmax=0,png=None):
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
@@ -268,6 +322,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       [xyz,rgb] = hfr.singleHorizon(hi)
       tg = TriangleGroup(True,xyz,rgb)
       sf.world.addChild(tg)
+  if surf:
+    tgs = Triangle()
+    xyz = tgs.trianglesForSurface(surf,0,n1-1)
+    tg  = TriangleGroup(True,xyz)
+    sf.world.addChild(tg)
   ipg.setSlices(924,224,68)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
