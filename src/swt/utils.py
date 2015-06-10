@@ -24,6 +24,8 @@ def setupForSubset(name):
   global welllogDir
   global s1,s2,s3
   global n1,n2,n3
+  global sz,sl,sc
+  global nz,nl,nc
   if name=="seismict":
     print "setupForSubset: seismict"
     seismicDir = _datdir+"seismict/"
@@ -58,16 +60,16 @@ def setupForSubset(name):
     #n3 number of log curves
     #n2 number of wells
     #n1 depth samples of the longest well
-    n1,n2,n3 = 10558,12,2
-    d1,d2,d3 = 0.000152,1.0,1.0 
-    f1,f2,f3 = 0.246278,1.0,1.0
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+    #s1,s2,s3 = sz,sl,sc
   else:
     print "unrecognized subset:",name
     System.exit
 
 def getSamplings():
   return s1,s2,s3
+
+def getWellSamplings():
+  return sz,sl,sc
 
 def getSeismicDir():
   return seismicDir
@@ -125,18 +127,50 @@ def readLogData(basename):
   fileName = welllogDir+basename+".dat"
   return WellLog.Data.readBinary(fileName)
 
-def writeLogDataToArray(basename,wldata):
-  dz = 0.000152
-  zf,zl =[],[]
+def writeLogsToArray(basename,logs):
+  dz = 0
+  nl = len(logs) # number of well logs
+  fzs = zerofloat(nl)
+  lzs = zerofloat(nl)
+  for il, log in enumerate(logs):
+    z  = log.z
+    nz = len(z)
+    fzs[il] = z[0]
+    lzs[il] = z[nz-1]
+    dz = z[1]-z[0]
+    print z[0]
+  fz = min(fzs)
+  nz = round((max(lzs)-fz)/dz)+1
+  nullValue = -999.25
+  nc = 2  # number of log curves
+  wa = fillfloat(nullValue,nz,nl,nc)
+  for il, log in enumerate(logs):
+    d = log.d
+    v = log.v
+    n = len(d)
+    j = round((log.z[0]-fz)/dz)
+    copy(n,0,d,j,wa[0][il]) 
+    copy(n,0,v,j,wa[1][il]) 
+  fileName = welllogDir+basename+".dat"
+  aos = ArrayOutputStream(fileName)
+  aos.writeFloats(wa)
+  aos.close()
+  dz = dz*0.0003048 # ft to km
+  fz = fz*0.0003048 # ft to km
+  return sz,sl,sc,wa
+def logsToArray(basename,logs):
+  fk = 0.0003048
+  dz = 0.5*fk
+  fzs,lzs =[],[]
   curves=["den","vel"]
   for curve in curves:
     for log in wldata.getLogsWith(curve):
       f,z,y,x = log.getSamples(curve)
       nz = len(z)
-      zf.append(z[0])
-      zl.append(z[nz-1])
-  nz = round((max(zl)-min(zf))/dz)
-  fz = round(min(zf)*1000000.0)/1000000.0
+      fzs.append(z[0])
+      lzs.append(z[nz-1])
+  fz = min(fzs)
+  nz = round((max(zl)-fz)/dz)+1
   nullValue = -999.25
   nl = 12 # number of well logs
   nc = 2  # number of log curves
@@ -148,13 +182,7 @@ def writeLogDataToArray(basename,wldata):
       n = len(f)
       j = round((z[0]-fz)/dz)
       copy(n,0,f,j,wa[ic][il]) 
-  fileName = welllogDir+basename+".dat"
-  aos = ArrayOutputStream(fileName)
-  aos.writeFloats(wa)
-  aos.close()
-  print nz
-  print dz
-  print fz
+
   return wa
 
 def readLogArray(basename):

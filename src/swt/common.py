@@ -19,8 +19,8 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from hv import *
+from ipfx import *
 from swt import *
-#from tpd import *
 
 #############################################################################
 # Run the function main on the Swing thread

@@ -6,9 +6,9 @@ Version: 2015.06.03
 
 from utils import *
 setupForSubset("subw")
-sz,sl,sc = getSamplings()
-nz,nl,nc = sz.count,sc.count,sl.count
-dz,dl,dc = sz.delta,sc.delta,sl.delta
+global sz,sl,sc
+global nz,nl,nc
+global dz,dl,dc
 
 denWeight = 2.0
 velWeight = 1.0
@@ -29,26 +29,16 @@ pngDir = "../../../png/swt/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goLogArray()
   goFlatten()
-
-def goLogArray():
-  print "goLogArray..."
-  logs = getLogs() #get logs with large depth ranges
-  writeLogs(wdfile,logs)
-  wldata = readLogData(wdfile)
-  wx = writeLogDataToArray(wxfile,wldata)
-  wd = wx[0] #array of density logs
-  wv = wx[1] #array of velocity logs
-
-  dcbar = "Density (g/cc)"
-  vcbar = "Velocity (km/s)"
-  plot2(wd,wmin=2.0,wmax=3.0,cbar=dcbar,png="den")
-  plot2(wv,wmin=2.0,wmax=6.0,cbar=vcbar,png="vel")
 
 def goFlatten():
   print "goFlatten..."
-  wx = readLogArray(wxfile)
+  logs = getLogs()
+  zs = zerofloat(3)
+  sw = SeismicWellTie()
+  wx = sw.logsToArray(logs,zs)
+  sz = Sampling((int)(zs[0]),zs[1],zs[2])
+  sl = Sampling(len(wx[0]),1,0)
   wd = wx[0] #array of density logs
   wv = wx[1] #array of velocity logs
 
@@ -62,19 +52,19 @@ def goFlatten():
 
   dcbar = "Density (g/cc)"
   vcbar = "Velocity (km/s)"
-  plot2(wd,wmin=2.0,wmax=3.0,cbar=dcbar,png="den")
-  plot2(wv,wmin=2.0,wmax=6.0,cbar=vcbar,png="vel")
+  plot2(wd,sz,sl,wmin=2.0,wmax=3.0,cbar=dcbar,png="den")
+  plot2(wv,sz,sl,wmin=2.0,wmax=6.0,cbar=vcbar,png="vel")
 
   vlabel = "Relative geologic time"
-  plot2(gd,wmin=2.0,wmax=3.0,vlabel=vlabel,cbar=dcbar,png="denFlatten")
-  plot2(gv,wmin=2.0,wmax=6.0,vlabel=vlabel,cbar=vcbar,png="velFlatten")
+  plot2(gd,sz,sl,wmin=2.0,wmax=3.0,vlabel=vlabel,cbar=dcbar,png="denFlatten")
+  plot2(gv,sz,sl,wmin=2.0,wmax=6.0,vlabel=vlabel,cbar=vcbar,png="velFlatten")
 
 ############################################################################
 cjet = ColorMap.JET
 alpha = fillfloat(1.0,256); alpha[0] = 0.0
 ajet = ColorMap.setAlpha(cjet,alpha)
 
-def plot2(w,wmin=0.0,wmax=0.0,vlabel="Depth (km)",cbar=None,png=None):
+def plot2(w,sz,sl,wmin=0.0,wmax=0.0,vlabel="Depth (km)",cbar=None,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sp.setSize(500,900)
   sp.setVLabel(vlabel)

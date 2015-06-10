@@ -116,6 +116,8 @@ public class SetupConstraints {
     int ie3 = (int)max(k3)+w3; if(ie3>n3-1) {ie3=n3-1;} 
     int n2m = ie2-ib2+1;
     int n3m = ie3-ib3+1;
+    int nk = k1.length;
+    for (int ik=0; ik<nk; ++ik) {k1[ik] += 40.0f;}
     float[][][] um  = copy(n1,n2m,n3m,0,ib2,ib3,u );
     float[][][] p2m = copy(n1,n2m,n3m,0,ib2,ib3,p2);
     float[][][] p3m = copy(n1,n2m,n3m,0,ib2,ib3,p3);
@@ -131,8 +133,8 @@ public class SetupConstraints {
     k1 = se.refineConstraints(k1,k2,k3,u);
     float[][] surf = se.surfaceInitialization(n2m,n3m,lmt,k1,k2,k3);
     se.surfaceUpdateFromSlopes(epm,p2m,p3m,k1,k2,k3,surf);
-    //return surf;
     /*
+    return surf;
     SurfaceRefine sr = new SurfaceRefine();
     sr.setExternalIterations(10,100);
     sr.setWeights(0.5,0.5);
