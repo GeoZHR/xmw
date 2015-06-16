@@ -34,6 +34,9 @@ ultfile = "ult" # thinned unconformity likelihood
 uncfile = "unc" # unconformity surface
 fgfile = "fg" #flattened image
 rgtfile = "rgt" #relative geologic time image
+sx1file = "sx1"
+sx2file = "sx2"
+sx3file = "sx3"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -57,7 +60,7 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
 pngDir = "../../../png/ipsi/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -68,9 +71,9 @@ def main(args):
   #goSkin()
   #goReSkin()
   #goSmooth()
-  goSlip()
+  #goSlip()
   #goUnfault()
-  #goUnfaultS()
+  goUnfaultS()
   #goUncScan()
   #goFlatten()
 def goSlopes():
@@ -309,12 +312,21 @@ def goUnfaultS():
     uf.setIters(100)
     uf.setTensors(et)
     mul(sp[3][0],10,sp[3][0])
-    [t1,t2,t3] = uf.findShifts(sp,wp)
+    [x1,x2,x3] = uf.findShifts(sp,wp)
+    [t1,t2,t3] = uf.convertShifts(40,[x1,x2,x3])
     uf.applyShifts([t1,t2,t3],gx,fw)
+    fx = zerofloat(n1,n2,n3)
+    uf.applyShiftsX([x1,x2,x3],fw,fx)
+    '''
     writeImage(fwsfile,fw)
     writeImage(ft1file,t1)
     writeImage(ft2file,t2)
     writeImage(ft3file,t3)
+    '''
+    writeImage(sx1file,x1)
+    writeImage(sx2file,x2)
+    writeImage(sx3file,x3)
+
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
@@ -325,6 +337,7 @@ def goUnfaultS():
   fw = gain(fw)
   plot3(gx)
   plot3(fw,png="unfaulted")
+  plot3(fx,png="faulted")
   plot3(gx,t1,cmin=-5,cmax=5,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,t2,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),

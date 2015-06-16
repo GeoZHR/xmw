@@ -56,8 +56,8 @@ public class UnfaultS {
     cg.solve(ma,vb,vr);
     s3.applyOriginal(r);
     //cleanShifts(wp,r);
-    //return r;
-    return convertShifts(40,r);
+    return r;
+    //return convertShifts(40,r);
   }
 
   public float[][][][] convertShifts(int niter, float[][][][] r) {
@@ -143,6 +143,33 @@ public class UnfaultS {
             ff,i1+r1[i3][i2][i1],i2+r2[i3][i2][i1],i3+r3[i3][i2][i1]);
     }});
   }
+
+  /**
+   * Applies shifts using sinc interpolation.
+   * @param r input array {r1,r2,r3} of shifts.
+   * @param f input image.
+   * @param g output shifted image.
+   */
+  public void applyShiftsX(
+    float[][][][] r, float[][][] f, float[][][] g)
+  {
+    final int n1 = f[0][0].length;
+    final int n2 = f[0].length;
+    final int n3 = f.length;
+    final float[][][] ff = f;
+    final float[][][] gf = g;
+    final float[][][] r1 = r[0], r2 = r[1], r3 = r[2];
+    final SincInterpolator si = new SincInterpolator();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2)
+        for (int i1=0; i1<n1; ++i1)
+          gf[i3][i2][i1] = si.interpolate(
+            n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,
+            ff,i1-r1[i3][i2][i1],i2-r2[i3][i2][i1],i3-r3[i3][i2][i1]);
+    }});
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private

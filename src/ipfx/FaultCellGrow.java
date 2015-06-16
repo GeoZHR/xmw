@@ -414,7 +414,8 @@ public class FaultCellGrow {
     //float dh = 6f;
     //float dv = 5f;
     //float dh = 65f;
-    float dv = 10f;
+    //float dv = 10f;
+    float dv = 20f;
     float dh = 35f;
 
     float x1 = cell.x1;

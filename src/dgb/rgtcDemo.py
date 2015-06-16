@@ -89,14 +89,14 @@ k53 = [ 280, 280, 280, 280, 280, 280, 287, 280, 280, 280, 280, 280, 280, 280, 28
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
+  goSlopes()
   goFlattenC()
 
 def goSlopes():
   print "goSlopes ..."
   if not plotOnly:
     # set half-width of smoother for computing structure tensors
-    sig1 = 2.0 #half-width in vertical direction
+    sig1 = 4.0 #half-width in vertical direction
     sig2 = 1.0 #half-width in one literal direction
     sig3 = 1.0 #half-width in another literal direction
     pmax = 5.0 #maximum slope returned by this slope finder
@@ -161,7 +161,7 @@ def goFlattenC():
     fl.setIterations(0.01,500)
     fl.setSmoothings(6.0,6.0)
     #fl.setWeight1(0.05)  
-    #fl.setScale(0.0001)
+    fl.setScale(0.0001)
     fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep,k4,k1,k2,k3)
     gu = fm.flatten(gx) # flattened image
     gt = fm.u1 # rgt volume

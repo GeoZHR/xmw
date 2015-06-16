@@ -221,9 +221,9 @@ public class FaultSlipConstraints {
         float ds1 = cb.getS1()-sa[0];
         float ds2 = cb.getS2()-sa[1];
         float ds3 = cb.getS3()-sa[2];
-        sa[0] -= ds1;  //not sure
-        sa[1] -= ds2;  //not sure
-        sa[2] -= ds3;  //not sure
+        //sa[0] -= ds1;  //not sure
+        //sa[1] -= ds2;  //not sure
+        //sa[2] -= ds3;  //not sure
       }
       cell.setUnfaultShifts(sa);
     }}

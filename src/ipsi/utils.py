@@ -111,6 +111,16 @@ def writeImage(basename,image):
   aos.close()
   return image
 
+def wellTeapot(np,k2,k3):
+  n1,n2,n3 =401,357,161
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream("../../../data/seis/rgi/tpgd.dat")
+  ais.readFloats(image)
+  ais.close()
+  gp = GetPoints()
+  return gp.getXf(np,k2,k3,image)
+
+
 #############################################################################
 # read/write fault skins
 
