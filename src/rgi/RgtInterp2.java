@@ -26,14 +26,8 @@ public class RgtInterp2 {
     _x2 = copy(x2);
   }
 
-  public void setMappings(Sampling s1, float[][] u1) {
+  public void setRgt(float[][] u1) {
     _u1 = u1;
-    _z1 = convertToDepth(s1,u1);
-  }
-
-  public void setMappings(float[][] u1, float[][] z1) {
-    _u1 = u1;
-    _z1 = z1;
   }
 
   public void setScales(float sv, float sh) {
@@ -170,7 +164,6 @@ public class RgtInterp2 {
   private float[] _x1 = null; // 1st coordinates of scattered points.
   private float[] _x2 = null; // 2nd coordinates of scattered points.
   private float[][] _u1 = null; // array of RGT values.
-  private float[][] _z1 = null; // array of RGT values.
 
   private boolean _blending = true;
   private Tensors2 _tensors;
@@ -178,18 +171,7 @@ public class RgtInterp2 {
   private LocalDiffusionKernel _ldk =
     new LocalDiffusionKernel(LocalDiffusionKernel.Stencil.D22);
 
-  private float[][] convertToDepth(Sampling s1, float[][] u1) {
-    int n2 = u1.length;
-    int n1 = u1[0].length;
-    float[][] x1 = new float[n2][n1];
-    InverseInterpolator ii = new InverseInterpolator(s1,s1);
-    for (int i2=0; i2<n2; ++i2) 
-      ii.invert(u1[i2],x1[i2]);
-    return x1;
-  }
-
   private void convertX1(Sampling s1, Sampling s2) {
-    if (_z1==null) {return;}
     int np = _x1.length;
     SincInterpolator si = new SincInterpolator();
     for (int ip=0; ip<np; ++ip)
