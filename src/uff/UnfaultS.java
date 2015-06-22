@@ -5,6 +5,7 @@ import vec.*;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -169,6 +170,38 @@ public class UnfaultS {
             ff,i1-r1[i3][i2][i1],i2-r2[i3][i2][i1],i3-r3[i3][i2][i1]);
     }});
   }
+
+  public void applyShiftsR(
+    float[][][][] r, float[][] f, float[][] g)
+  {
+    int n3 = r[0].length;
+    int n2 = r[0][0].length;
+    int n1 = r[0][0][0].length;
+    float[][][] r1 = r[0], r2 = r[1], r3 = r[2];
+    final SincInterpolator si1 = new SincInterpolator();
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    Sampling s3 = new Sampling(n3);
+    float[] k1 = new float[n2*n3];
+    float[] k2 = new float[n2*n3];
+    float[] k3 = new float[n2*n3];
+    int k = 0;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float i1  = f[i3][i2];
+      float r1i = si1.interpolate(s1,s2,s3,r1,i1,i2,i3);
+      float r2i = si1.interpolate(s1,s2,s3,r2,i1,i2,i3);
+      float r3i = si1.interpolate(s1,s2,s3,r3,i1,i2,i3);
+      k1[k] = i1+r1i;
+      k2[k] = i2+r2i;
+      k3[k] = i3+r3i;
+      k++;
+    }}
+    NearestGridder2 ng = new NearestGridder2(k1,k2,k3);
+    float[][] fg = ng.grid(s2,s3);
+    copy(fg,g);
+  }
+
 
 
   ///////////////////////////////////////////////////////////////////////////

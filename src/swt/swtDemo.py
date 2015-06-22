@@ -25,12 +25,17 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goDisplay()
-  #goSynSeis()
+  #goDisplay()
+  goSynSeis()
 
 def goSynSeis():
+  simple = True
   logs = getLogs()
-
+  ndf = zerofloat(3)
+  sw = SeismicWellTie()
+  sa = sw.computeSyns(simple,logs,ndf)
+  st = Sampling((int)(ndf[0]),ndf[1],ndf[2])
+  plot1s(st,sa,hlabel="Synthetic seismic traces",vlabel="time (ms)")
 def goDisplay():
   gx = readImage(gxfile)
   gu = readImage(gufile)
@@ -78,6 +83,22 @@ def plot1(s1,ys,hlabel="Seismic traces",vlabel="depth (km)",png=None):
   sp.setVLabel(vlabel)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
+
+def plot1s(s1,ys,hlabel="Synthetic seismic traces",vlabel="time (ms)",png=None):
+  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+  yf = 0.5
+  for y in ys:
+    y = add(y,yf)
+    pv = sp.addPoints(s1,y)
+    pv.setLineColor(Color.BLACK)
+    yf = yf+0.5
+  #sp.setVLimits(0.1,1.1)
+  sp.setSize(800,800)
+  sp.setHLabel(hlabel)
+  sp.setVLabel(vlabel)
+  if png and pngDir:
+    sp.paintToPng(300,7.0,pngDir+png+".png")
+
 
 
 

@@ -62,5 +62,45 @@ public class SeismicWellTie {
     return wa;
   }
 
+  public float[][] computeSyns(boolean simple, WellLog[] logs, float[] ndf) 
+  {
+    float ds = 0.002f;
+    float fpeak = 35f;
+    float q = 100.0f;
+    int nl = logs.length;
+    float fs =  FLT_MAX;
+    float ls = -FLT_MAX;
+    for (WellLog log:logs) {
+      SynSeis.Model md = SynSeis.getModel(log);
+      if (fs>md.tmin()){fs=md.tmin();}
+      if (ls<md.tmax()){ls=md.tmax();}
+    }
+    fs = round(fs/ds)*ds;
+    ls = round(ls/ds)*ds;
+    int ns = round((ls-fs)/ds)+1;
+    ndf[0] = ns;
+    ndf[1] = ds;
+    ndf[2] = fs;
+    int il = 0;
+    float[][] sa = new float[nl][ns];
+    for (WellLog log:logs) {
+      SynSeis.Model md = SynSeis.getModel(log);
+      float fsi = round(md.tmin()/ds)*ds;
+      float lsi = round(md.tmax()/ds)*ds;
+      int nsi = round((lsi-fsi)/ds)+1;
+      Sampling ssi = new Sampling(nsi,ds,fsi);
+      float[] fsyn = new float[nsi];
+      if (simple) {
+        fsyn = SynSeis.makeSimpleSeismogram(md,fpeak,ssi);
+      } else {
+        fsyn = SynSeis.makeBetterSeismogram(md,q,fpeak,ssi);
+      }
+      int j1 = round((fsi-fs)/ds);
+      copy(nsi,0,fsyn,j1,sa[il]);
+      il++;
+    }
+    return sa;
+  }
+
 }
 

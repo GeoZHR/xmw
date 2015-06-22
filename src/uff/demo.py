@@ -354,7 +354,7 @@ def goUnfaultS():
     #mul(sp[3][0],1,sp[3][0])
     [t1,t2,t3] = uf.findShifts(sp,wp)
     uf.applyShifts([t1,t2,t3],gx,fw)
-    #uf.convertShifts(40,[t1,t2,t3])
+    uf.convertShifts(40,[t1,t2,t3])
     plot3(wp)
     print min(t1)
     print max(t1)
@@ -379,6 +379,7 @@ def goUnfaultS():
         clab="Inline shift (samples)",png="gxs2")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3")
+
 def goUnfaultC():
   if not plotOnly:
     gx = readImage(gxfile)

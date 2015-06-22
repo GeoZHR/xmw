@@ -28,8 +28,13 @@ fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
-fwsfile = "fws"
-fwcfile = "fwc"
+fwsfile = "fws" # unfaulted image
+sw1file = "sw1" # 1st component of unfaulting shifts
+sw2file = "sw2" # 2nd component of unfaulting shifts
+sw3file = "sw3" # 3rd component of unfaulting shifts
+gufile = "gu" # flattened image
+x1file = "x1" # horizon volume
+u1file = "u1" # relateive geologic time volume
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -58,6 +63,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  '''
   goFakeData()
   goSlopes()
   goScan()
@@ -66,8 +72,10 @@ def main(args):
   goReSkin()
   goSmooth()
   goSlip()
-  goUnfaultS()
-  #goUnfaultC()
+  '''
+  #goUnfaultS()
+  #goFlatten()
+  goHorizonExtraction()
   #goSubset()
 
 def goSubset():
@@ -341,8 +349,12 @@ def goUnfaultS():
     uf.setTensors(et)
     mul(sp[3][0],10,sp[3][0])
     [t1,t2,t3] = uf.findShifts(sp,wp)
+    uf.convertShifts(40,[t1,t2,t3])
     uf.applyShifts([t1,t2,t3],gx,fw)
-    #writeImage(fwsfile,fw)
+    writeImage(fwsfile,fw)
+    writeImage(sw1file,t1)
+    writeImage(sw2file,t2)
+    writeImage(sw3file,t3)
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
@@ -361,41 +373,56 @@ def goUnfaultS():
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
 
-def goUnfaultC():
+def goFlatten():
+  fw = readImage(fwsfile)
   if not plotOnly:
-    gx = readImage(gxfile)
-    fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,2.0,2.0)
-    et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
+    sig1,sig2,sig3,pmax=4.0,1.0,1.0,5.0
+    p2,p3,ep = FaultScanner.slopes(sig1,sig2,sig3,pmax,fw)
+    wp = pow(ep,6.0)
+    fl = Flattener3()
+    fl.setSmoothings(6.0,6.0)
+    fl.setIterations(0.01,200)
+    mp = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp)
+    gu = mp.flatten(fw)
+    x1 = mp.x1
+    u1 = mp.u1
+    writeImage(gufile,gu)
+    writeImage(x1file,x1)
+    writeImage(u1file,u1)
+  else:
+    gu = readImage(gufile)
+    x1 = readImage(x1file)
+    u1 = readImage(u1file)
+  plot3(fw)
+  plot3(gu,png="gu")
+  plot3(fw,u1,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
+        clab="Relative geologic time (samples)",png="u1")
 
-    wp = fillfloat(1.0,n1,n2,n3)
-    ws = fillfloat(1.0,n1,n2,n3)
-    cp = fillfloat(0.0,n1,n2,n3)
-    skins = readSkins(fslbase)
-    fsc = FaultSlipConstraints(skins)
-    sp = fsc.controlPoints(ws,wp,cp)
-
-    uf = UnfaultC(4.0,4.0)
-    uf.setIters(100)
-    uf.setTensors(et)
-    [t1,t2,t3] = uf.findShifts(sp,wp,ws)
-    uf.applyShifts([t1,t2,t3],gx,fw)
-    writeImage(fwcfile,fw)
-  else :
-    gx = readImage(gxfile)
-    fw = readImage(fwcfile)
-  plot3(gx)
-  plot3(fw,png="unfaultC",slices=[85,5,60])
-  skins = readSkins(fslbase)
-  mark = -999.99
-  s1 = fillfloat(mark,n1,n2,n3)
-  FaultSkin.getThrow(mark,skins,s1)
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",slices=[85,5,60],png="gxs1")
-  plot3(fw,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="fws1")
-
+def goHorizonExtraction():
+  gx = readImage(gxfile)
+  u1 = readImage(u1file)
+  x1 = readImage(x1file)
+  w1 = readImage(sw1file)
+  w2 = readImage(sw2file)
+  w3 = readImage(sw3file)
+  uf = UnfaultS(4.0,2.0)
+  he = HorizonExtraction(s1,s2,s3,u1,x1)
+  # extract a single horizon 
+  u1i = 0.5*(s1.getFirst()+s1.getLast())
+  hi = he.singleHorizon(u1i) # horizon extracted in unfaulted space
+  uf.applyShiftsR([w1,w2,w3],hi,hi)# convert horizon back to original space
+  stgs = he.applyForTgs(u1i,hi)
+  plot3(gx,htgs=[stgs])
+  # extract a set of horizons
+  ft = s1.getFirst()+5
+  dt = 10.0
+  nt = (round((s1.getLast()-ft)/dt)-1)
+  st = Sampling(nt,dt,ft)
+  hs = he.multipleHorizons(st) # horizon extracted in unfaulted space
+  for hk in hs:
+    uf.applyShiftsR([w1,w2,w3],hk,hk)# convert horizon back to original space
+  mtgs = he.applyForTgs(st,hs)
+  plot3(gx,htgs=mtgs)
 
 def goSlices():
   fl = readImage(flfile)
@@ -504,7 +531,7 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,png=None):
+          links=False,curve=False,trace=False,htgs=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -566,6 +593,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
+  if htgs:
+    for htg in htgs:
+      sf.world.addChild(htg)
   if skins:
     sg = Group()
     ss = StateSet()

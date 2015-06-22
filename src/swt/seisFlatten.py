@@ -234,12 +234,14 @@ def goFlattenC():
     gt = readImage(gtfile)
     gh = readImage(ghfile)
     wp = readImage(wpfile)
+  '''
   plot3(gx,png="seismic")
   plot3(gu,png="flattenedC")
   plot3(gx,gt,cmin=min(gt),cmax=max(gt),cmap=jetRamp(1.0),
         clab="Relative geologic time",png="rgtC")
   plot3(gx,wp,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
         clab="Weights",png="weights")
+  '''
 
   logs = getLogs()
   gxs = zerofloat(n1,len(logs))

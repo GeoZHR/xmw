@@ -73,9 +73,28 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
-  goUnfaultS()
+  #goUnfaultS()
   #goUncScan()
+  #goUncConvert()
   #goFlatten()
+  goHorizons()
+def goTest():
+  rgt = readImage(rgtfile)
+  f = zerofloat(n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      f[i3][i2] = rgt[i3][i2][110]
+  #f = rgt[100]
+  rmin = min(f)
+  rmax = max(f)
+  ct = Contours(f)
+  cti = ct.getContour(0.5*(rmin+rmax))
+  cx1 = cti.x1
+  print cti.ns
+  for x1i in cx1:
+    for xk in x1i:
+      print xk
+  
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
@@ -379,34 +398,77 @@ def goUncScan():
     uli = unc.interp(n1,n2,n3,ul)
     writeImage(ulfile,uli)
   fw = gain(fw)
-  ul = readImage(ulfile)
-  #unc = UncSurfer()
-  #ult = like(ul)
-  #unc.thin(0.2,ul,ult)
-  #ul = div(exp(ul),exp(1.0))
-  #sfs = unc.surfer2(n2,n3,0.2,3000,ult)
-  #sfs = unc.extractUncs(sfs,fw)
-  #removeAllUncFiles(uncfile)
-  #writeUncs(uncfile,sfs)
-  ul = gain2(ul,12)
-  ul = sub(ul,min(ul))
-  ul = div(ul,max(ul))
+  uc = readImage(ulfile)
+  ul = zerofloat(n1,n2,n3)
+  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
+  unc = UncSurfer()
+  ult = like(ul)
+  unc.thin(0.2,ul,ult)
+  ul = div(exp(ul),exp(1.0))
+  sfs = unc.surfer2(n2,n3,0.2,3000,ult)
+  sfs = unc.extractUncs(sfs,fw)
+  removeAllUncFiles(uncfile)
+  writeUncs(uncfile,sfs)
+  uc = gain2(uc,12)
+  uc = sub(uc,min(uc))
+  uc = div(uc,max(uc))
+  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
   plot3(fw,ul,cmin=0.3,cmax=1.0,cmap=jetRamp(1.0),
         clab="Unconformity likelihood",png="ul")
-  #plot3(fw,uncs=sfs,png="uncs")
+  plot3(fw,uncs=sfs,png="uncs")
+
+def goUncConvert():
+  gx  = readImage(gxfile)
+  fw  = readImage(fwsfile)
+  rw1 = readImage(ft1file)
+  rw2 = readImage(ft2file)
+  rw3 = readImage(ft3file)
+  rgt = readImage(rgtfile)
+  sks = readSkins(fskgood)
+  uncs = readUncs(uncfile)
+
+  uc = readImage(ulfile)
+  ul = zerofloat(n1,n2,n3)
+  uc = gain2(uc,12)
+  uc = sub(uc,min(uc))
+  uc = div(uc,max(uc))
+  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
+  uf = UnfaultS(4.0,2.0)
+  hfr = HorizonFromRgt(s1,s2,s3,None,rgt)
+  funcs = hfr.ulOnSurface(uncs,ul)
+  fw = gain(fw)
+  plot3(fw,uncs=[uncs[0]],png="unc1")
+  plot3(fw,uncs=[uncs[1]],png="unc2")
+  for unc in uncs:
+    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
+  hs = hfr.trigSurfaces(-1.0,uncs,sks,funcs)
+  gx = gain(gx)
+  plot3(gx,hs=[hs[0]],png="unc1X")
+  plot3(gx,hs=[hs[1]],png="unc2X")
+
 
 def goFlatten():
   fw = readImage(fwsfile)
   if not plotOnly:
-    sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,10.0
+    sigma1,sigma2,sigma3,pmax = 1.0,1.0,1.0,5.0
     p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,fw)
     wp = pow(ep,2.0)
+    lmt = n1-1
+    se = SurfaceExtractorC()
+    se.setWeights(0.0)
+    se.setSmoothings(4.0,4.0)
+    se.setCG(0.01,100)
+    k11 = [ 31, 38, 39, 36]
+    k12 = [ 25, 38,282,290]
+    k13 = [105,249,232,145]
+    surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
+    se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
     uncs = readUncs(uncfile)
     sc = SetupConstraints()
-    cs = sc.constraintsFromSurfaces([add(uncs[1],2.0)])
+    cs = sc.constraintsFromSurfaces([sub(uncs[1],1.0),surf])
     #cs = sc.constraintsFromSurfaces([uncs[0]])
     #cs = sc.constraintsFromSurfaces(uncs)
-    sfs = add(uncs,3.0)
+    sfs = copy(uncs)
     for i3 in range(206,n3):
       for i2 in range(180,n2):
         sfs[0][i3][i2] = -100
@@ -415,11 +477,11 @@ def goFlatten():
         sfs[1][i3][i2] = -100
     sfs = sc.uncConstraints(sfs)
     rs = zerofloat(n1,n2,n3)
-    fl3 = Flattener3()
+    fl3 = Flattener3Unc()
     sig1,sig2=4.0,4.0
     fl3.setSmoothings(sig1,sig2)
-    fl3.setIterations(0.01,200);
-    fl3.computeShifts(p2,p3,ep,cs,sfs,rs)
+    fl3.setIterations(0.01,300);
+    fl3.computeShifts(p2,p3,wp,cs,sfs,rs)
     mp = fl3.getMappingsFromShifts(s1,s2,s3,rs)
     rgt = mp.u1
     fg  = mp.flatten(fw)
@@ -431,13 +493,58 @@ def goFlatten():
   fg = gain(fg)
   plot3(fw)
   plot3(fg,png="fg")
-  uncs = readUncs(uncfile)
-  plot3(fw,uncs=[uncs[0]],png="unc1")
-  plot3(fw,uncs=[uncs[1]],png="unc2")
-  plot3(fw,uncs=uncs,png="uncs")
   plot3(fw,rgt,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
         clab="Relative geologic time (samples)",png="rgt")
 
+def goHorizons():
+  gx  = readImage(gxfile)
+  rgt = readImage(rgtfile)
+  sx1 = readImage(sx1file)
+  sx2 = readImage(sx2file)
+  sx3 = readImage(sx3file)
+  sx1 = readImage(sx1file)
+  sx2 = readImage(sx2file)
+  sx3 = readImage(sx3file)
+  rw1 = readImage(ft1file)
+  rw2 = readImage(ft2file)
+  rw3 = readImage(ft3file)
+
+  sks = readSkins(fslbase)
+  uncs = readUncs(uncfile)
+  rgtx = zerofloat(n1,n2,n3)
+  uf = UnfaultS(4.0,2.0)
+  uf.applyShiftsX([sx1,sx2,sx3],rgt,rgtx)
+  hfr = HorizonFromRgt(s1,s2,s3,None,rgtx)
+  gx = gain(gx)
+  '''
+  fs = [20,58,72]
+  dt = 2
+  ns = ["horizons","horizonsub1","horizonsub2"]
+  for ik, ft in enumerate(fs):
+    name = ns[ik]
+    nt = (round((n1-ft)/dt)-1)
+    st = Sampling(nt,dt,ft)
+    hs = hfr.multipleHorizons(st,sks)
+    plot3(gx,hs=hs,png=name)
+  '''
+  ft=20  
+  dt=2
+  nt = (round((n1-ft)/dt)-1)
+  st = Sampling(nt,dt,ft)
+  '''
+  hs = hfr.multipleHorizons(st,sks)
+  for unc in uncs:
+    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
+  hc = hfr.trigSurfaces(0.1,uncs,sks,None)
+  plot3(gx,skins=sks,hs=hs,uncx=hc,png="surfaces")
+  '''
+  k3,k2=249,25
+  for unc in uncs:
+    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
+  sub(uncs,1,uncs)
+  hls  = hfr.horizonCurves(st,k2,k3,sks,uncs)
+  uls = hfr.horizonCurves(uncs,k2,k3,sks)
+  plot3(gx,curve=True,hs=hls,uncx=uls,png="horizonLines")
 def smoothF(x):
   fsigma = 4.0
   flstop = 0.9
@@ -542,7 +649,7 @@ def rgbFromHeight(h,r,g,b):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,uncs=None,png=None):
+          links=False,curve=False,trace=False,hs=None,uncs=None,uncx=None,png=None):
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
@@ -619,21 +726,55 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ss.add(ms)
     sg.setStates(ss)
     us = UncSurfer()
-    ul=readImage(ulfile)
-    ul = gain2(ul,12)
-    ul = sub(ul,min(ul))
-    ul = div(ul,max(ul))
+    uc=readImage(ulfile)
+    uc = gain2(uc,12)
+    uc = sub(uc,min(uc))
+    uc = div(uc,max(uc))
+    ul = zerofloat(n1,n2,n3)
+    copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
     for unc in uncs:
       [xyz,rgb]=us.buildTrigs(n1,s3,s2,-0.1,unc,ul)
+      #[xyz,rgb]=us.buildTrigs(n1,s3,s2,0.01,unc,ul)
       tg  = TriangleGroup(True,xyz,rgb)
       sg.addChild(tg)
     sf.world.addChild(sg)
+  if uncx:
+    for unc in uncx:
+      if not curve:
+        tg = TriangleGroup(True,unc[0])
+        tg.setColor(Color.MAGENTA)
+        sf.world.addChild(tg)
+      else:
+        lg = LineGroup(unc[0],unc[1])
+        ss = StateSet()
+        lg.setStates(ss)
+        ls = LineState()
+        ls.setWidth(6)
+        ls.setSmooth(False)
+        ss.add(ls)
+        sf.world.addChild(lg)
+
+  if hs:
+    for hi in hs:
+      if not curve:
+        tg = TriangleGroup(True,hi[0],hi[1])
+        sf.world.addChild(tg)
+      else:
+        lg = LineGroup(hi[0],hi[1])
+        ss = StateSet()
+        lg.setStates(ss)
+        ls = LineState()
+        ls.setWidth(2)
+        ls.setSmooth(False)
+        ss.add(ls)
+        sf.world.addChild(lg)
+
   if skins:
     sg = Group()
     ss = StateSet()
     lms = LightModelState()
     lms.setLocalViewer(True)
-    lms.setTwoSide(True)
+    #lms.setTwoSide(True)
     ss.add(lms)
     ms = MaterialState()
     ms.setSpecular(Color.GRAY)
@@ -661,16 +802,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       qg = QuadGroup(xyz,uvw,rgb)
       qg.setStates(None)
       sg.addChild(qg)
-      if curve or trace:
-        cell = skin.getCellNearestCentroid()
-        if curve:
-          xyz = cell.getFaultCurveXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-        if trace:
-          xyz = cell.getFaultTraceXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
       if links:
         if ct==0:
           r,g,b=0,0,0
@@ -706,6 +837,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,0.15,0.05))
   ov.setAzimuthAndElevation(-56.0,35.0)
+  #ov.setAzimuthAndElevation(-56.0,40.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
