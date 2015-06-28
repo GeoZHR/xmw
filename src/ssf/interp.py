@@ -31,7 +31,7 @@ def goSmooth():
   gs = zerofloat(n1,n2,n3)
   lof = LocalOrientFilter(4.0,2.0,2.0)
   et = lof.applyForTensors(gx)
-  et.setEigenValues(0.001,1.0,1.0)
+  et.setEigenvalues(0.001,1.0,1.0)
   cs = 0.5*sigma*sigma
   lsf = LocalSmoothingFilter()
   lsf.apply(et,cs,gx,gs)
