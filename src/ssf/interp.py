@@ -10,6 +10,7 @@ s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
 #gs = copy(375,845,828,156,0,172,gx)
 gxfile = "pnz00" # seismic image
 gxfile = "pnzSub" # seismic image
+gsfile = "gs" # seismic image
 
 pngDir = "../../../png/figi/"
 
@@ -18,11 +19,25 @@ plotOnly = False
 k1,k2,k3,=400,500,500
 clip = 1.0e5
 def main(args):
-  gx = readImage(gxfile) 
+  #gx = readImage(gxfile) 
   #gs = copy(375,845,828,156,0,172,gx)
   #writeImage("pnzSub",gs)
-  plot3(gx,cmin=-clip,cmax=clip)
+  #plot3(gx,cmin=-clip,cmax=clip)
+  goSmooth()
  
+def goSmooth():
+  sigma = 8.0
+  gx = readImage(gxfile) 
+  gs = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(4.0,2.0,2.0)
+  et = lof.applyForTensors(gx)
+  et.setEigenValues(0.001,1.0,1.0)
+  cs = 0.5*sigma*sigma
+  lsf = LocalSmoothingFilter()
+  lsf.apply(et,cs,gx,gs)
+  writeImage(gsfile,gs)
+  plot3(gx,cmin=-clip,cmax=clip)
+  plot3(gs,cmin=-clip,cmax=clip)
 
 def readImage(name):
   """ 
