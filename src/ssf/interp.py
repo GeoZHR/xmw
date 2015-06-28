@@ -36,7 +36,7 @@ def goSmooth():
     lsf = LocalSmoothingFilter()
     lsf.apply(et,cs,gx,gs)
     writeImage(gsfile,gs)
-  gs = zerofloat(n1,n2,n3)
+  gs = readImage(gsfile) 
   plot3(gx,cmin=-clip,cmax=clip)
   plot3(gs,cmin=-clip,cmax=clip)
 
