@@ -29,6 +29,7 @@ def goSmooth():
   sigma = 8.0
   gx = readImage(gxfile) 
   if not plotOnly:
+    gs = zerofloat(n1,n2,n3)
     lof = LocalOrientFilter(4.0,2.0,2.0)
     et = lof.applyForTensors(gx)
     et.setEigenvalues(0.001,0.001,1.0)
