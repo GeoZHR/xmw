@@ -15,7 +15,7 @@ gsfile = "gs" # seismic image
 pngDir = "../../../png/figi/"
 
 
-plotOnly = True
+plotOnly = False
 k1,k2,k3,=115,500,500
 clip = 1.0e5
 def main(args):
@@ -31,7 +31,7 @@ def goSmooth():
   if not plotOnly:
     lof = LocalOrientFilter(4.0,2.0,2.0)
     et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
+    et.setEigenvalues(0.001,0.001,1.0)
     cs = 0.5*sigma*sigma
     lsf = LocalSmoothingFilter()
     lsf.apply(et,cs,gx,gs)
