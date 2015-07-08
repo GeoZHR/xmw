@@ -20,6 +20,9 @@ ms = 350 # maximum shift
 # Names and descriptions of image files used below.
 wdfile  = "wd" # well log data 
 wxfile  = "wx" # array of well log curves 
+wshifts = "wellShifts"
+wshiftd = "wellShiftsDimensions"
+wsample = "wellSampling"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -46,6 +49,13 @@ def goFlatten():
   wlw.setMaxShift(ms)
   wlw.setPowError([denPower,velPower])
   s = wlw.findShifts([denWeight,velWeight],wx)
+
+  sdm = zerofloat(2)
+  sdm[0] = len(s)
+  sdm[1] = len(s[0])
+  writeImage(wshifts,s)
+  writeImage(wsample,zs)
+  writeImage(wshiftd,sdm)
 
   gd = wlw.applyShifts(wd,s)
   gv = wlw.applyShifts(wv,s)

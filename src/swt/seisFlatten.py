@@ -27,7 +27,7 @@ wpfile  = "wp" # weight image for flattening
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/swt/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -37,7 +37,7 @@ def main(args):
   #goSlopes()
   #goFlatten()
   goFlattenC()
-  goFlattenD()
+  #goFlattenD()
 
 def goTest():
   gx = readImage(gxfile)
@@ -221,6 +221,7 @@ def goFlattenC():
     fl.setIterations(0.01,200)
     fl.setSmoothings(8.0,8.0)
     fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp,k4,k1,k2,k3)
+    gx = normalize(gx)
     gu = fm.flatten(gx) # flattened image
     gt = fm.u1 # rgt volume
     gh = fm.x1 # horizon volume
@@ -288,8 +289,7 @@ def goFlattenD():
       if(gus[i2][i1]<-10):
         gus[i2][i1] = 0.0
   plot1(s1,gxs[0],vlabel="depth (km)",png="originalSeisTraces")
-  plot1(s1,gus,vlabel="Relative geologic time",png="seisTracesFlattenD")
-
+  plot1(s1,gus,vlabel="Relative geologic time (D)",png="seisTracesFlattenD")
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -310,6 +310,15 @@ def gain(x):
   y = like(x)
   div(x,sqrt(g),y)
   return y
+
+def normalize(x): 
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(100.0)
+  ref.apply1(g,g)
+  y = like(x)
+  div(x,sqrt(g),y)
+  return y
+
 def array(x1,x2,x3=None,x4=None):
   if x3 and x4:
     return jarray.array([x1,x2,x3,x4],Class.forName('[[[F'))

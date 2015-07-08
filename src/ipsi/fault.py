@@ -71,13 +71,13 @@ def main(args):
   #goSkin()
   #goReSkin()
   #goSmooth()
-  #goSlip()
+  goSlip()
   #goUnfault()
   #goUnfaultS()
   #goUncScan()
   #goUncConvert()
   #goFlatten()
-  goHorizons()
+  #goHorizons()
 def goTest():
   rgt = readImage(rgtfile)
   f = zerofloat(n2,n3)
@@ -285,12 +285,12 @@ def goSlip():
     fsk.setMinMaxThrow(-1.0,maxThrow)
     skins = fsk.reskin(skins)
     '''
-    removeAllSkinFiles(fslbase)
-    writeSkins(fslbase,skins)
-  else:
-    skins = readSkins(fslbase)
-  plot3(gx,skins=skins,png="skinsfl")
-  plot3(gx,skins=skins,smax=6,png="skinss1")
+    #removeAllSkinFiles(fslbase)
+    #writeSkins(fslbase,skins)
+  #else:
+    #skins = readSkins(fslbase)
+  #plot3(gx,skins=skins,png="skinsfl")
+  #plot3(gx,skins=skins,smax=6,png="skinss1")
 
 def goUnfault():
   smark = -999.999

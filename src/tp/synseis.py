@@ -11,7 +11,7 @@ from dnp import *
 #############################################################################
 def main(args):
   wellId = 490252305400
-  #goModel(wellId)
+  goModel(wellId)
   #goSimple(wellId)
   goTie(wellId)
 
@@ -52,8 +52,8 @@ def goTie(wellId):
   fpeak = 35.0
   q = 100.0
   ss = Sampling(ns,ds,fs)
-  #f = SynSeis.makeSimpleSeismogram(model,fpeak,ss)
-  f = SynSeis.makeBetterSeismogram(model,q,fpeak,ss)
+  f = SynSeis.makeSimpleSeismogram(model,fpeak,ss)
+  #f = SynSeis.makeBetterSeismogram(model,q,fpeak,ss)
   f = normalize(f)
   n1,n2,n3 = s1.count,s2.count,s3.count
   ga = zerofloat(n1,n2,n3)
@@ -95,8 +95,8 @@ def goTie(wellId):
   pv.setLineColor(Color.RED)
   sp.setVLimits(0.1,1.1)
   sp.setSize(300,800)
-  plotSynOnSeis(x2,x3,ss,f)
-  plotSynOnSeis(x2,x3,st,h)
+  #plotSynOnSeis(x2,x3,ss,f)
+  #plotSynOnSeis(x2,x3,st,h)
 
 def plotSynOnSeis(x2,x3,ss,f):
   ns = ss.count
@@ -243,7 +243,9 @@ def goModel(wellId):
 
 #############################################################################
 # Files for well logs and seismic images.
-tpDir = "/data/seis/tpd/"
+#tpDir = "/data/seis/tpd/"
+tpDir = "../../../data/seis/swt/"
+
 csmWellLogsDir = tpDir+"csm/welllogs/"
 csmSeismiczDir = tpDir+"csm/seismicz/"
 csmSeismictDir = tpDir+"csm/seismict/"

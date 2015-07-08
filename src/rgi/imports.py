@@ -19,5 +19,7 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from hv import *
+from rgi import *
+from swt import *
 from ipfx import *
-from figi import *

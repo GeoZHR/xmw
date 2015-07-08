@@ -11,7 +11,7 @@ n1,n2,n3 = s1.getCount(),s2.getCount(),s3.getCount()
 method = "b" # blended
 logSet = "d" # deep logs only
 logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax = 2.4,5.6
-logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.0,2.8
+#logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.0,2.8
 #logType = "p"; logLabel = "Porosity"; vmin,vmax = 0.0,0.4
 #logType = "g"; logLabel = "Gamma ray (API units)"; vmin,vmax = 0.0,200.0
 smin,smax = -5.5,5.5
@@ -91,7 +91,7 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goInterp()
+  #goInterp()
   goInterpO()
   #goFigures()
   #goImpedance()

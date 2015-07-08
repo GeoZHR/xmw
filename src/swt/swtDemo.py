@@ -15,27 +15,102 @@ gxfile  = "gx" # input seismic image
 gtfile  = "gt" # RGT volume
 ghfile  = "gh" # horizon volume
 gufile  = "gu" # flattened image 
+wshifts = "wellShifts"
+wshiftd = "wellShiftsDimensions"
+wsample = "wellSampling"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/swt/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goSynSeis()
+  #goSynSeis()
+  goSynSeisFlat()
 
 def goSynSeis():
   simple = True
   logs = getLogs()
-  ndf = zerofloat(3)
+  nl = len(logs)
+  ndft = zerofloat(3,nl)
+  ndfz = zerofloat(3,nl)
   sw = SeismicWellTie()
-  sa = sw.computeSyns(simple,logs,ndf)
-  st = Sampling((int)(ndf[0]),ndf[1],ndf[2])
-  plot1s(st,sa,hlabel="Synthetic seismic traces",vlabel="time (ms)")
+  sa = sw.computeSyns(simple,logs,ndft,ndfz)
+  ss = []
+  for il in range(nl):
+    sa[il] = normalize(sa[il])
+    sl = Sampling((int)(ndft[il][0]),ndft[il][1],ndft[il][2])
+    ss.append(sl)
+  rs = getRealSeis()
+  plot1s(s1,ss,sa,hlabel="Seismic traces",vlabel="time (ms)")
+  plot1s(s1,ss,sa,rs=rs,hlabel="Seismic traces",vlabel="time (ms)")
+
+def goSynSeisFlat():
+  simple = True
+  logs = getLogs()
+  nl = len(logs)
+  ndft = zerofloat(3,nl)
+  ndfz = zerofloat(3,nl)
+  ndfw = zerofloat(3,nl)
+  sw = SeismicWellTie()
+  td = sw.getTimeDepth(logs)
+  sa = sw.computeSyns(simple,logs,ndft,ndfz)
+  sst = []
+  ssz = []
+  ssw = []
+  for il in range(nl):
+    sa[il] = normalize(sa[il])
+    sti = Sampling((int)(ndft[il][0]),ndft[il][1],ndft[il][2])
+    szi = Sampling((int)(ndfz[il][0]),ndfz[il][1],ndfz[il][2])
+    sst.append(sti)
+    ssz.append(szi)
+  zs = readImage1(3,wsample)
+  sn = readImage1(2,wshiftd)
+  ss = readImage2((int)(sn[1]),(int)(sn[0]),wshifts)
+  sz = Sampling((int)(zs[0]),zs[1],zs[2])
+  gw = sw.applySynsFlat(sz,ssz,sst,ndfw,ss,td,sa)
+  for il in range(nl):
+    swi = Sampling((int)(ndfw[il][0]),ndfw[il][1],ndfw[il][2])
+    ssw.append(swi)
+  plot1s(s1,sst,sa,hlabel="Seismic traces",vlabel="time (ms)")
+  plot1s(s1,ssw,gw,vmin=0.2,vmax=1.85,vlabel="Relative geologic time")
+
+def getRealSeis():
+  logs = getLogs()
+  gx = readImage(gxfile)
+  gxs = zerofloat(n1,len(logs))
+  for il, log in enumerate(logs):
+    model = SynSeis.getModel(log)
+    i2 = s2.indexOfNearest(model.x2)
+    i3 = s3.indexOfNearest(model.x3)
+    gxs[il] = gx[i3][i2]
+  return gxs
+
+def getRealSeisFlat():
+  logs = getLogs()
+  gu = readImage(gufile)
+  gus = zerofloat(n1,len(logs))
+  for il, log in enumerate(logs):
+    model = SynSeis.getModel(log)
+    i2 = s2.indexOfNearest(model.x2)
+    i3 = s3.indexOfNearest(model.x3)
+    gus[il] = gu[i3][i2]
+  return gus
+
+def normalize(f):
+  sigma = 100
+  n = len(f)
+  g = zerofloat(n)
+  ref = RecursiveExponentialFilter(sigma)
+  g = mul(f,f)
+  ref.apply(g,g)
+  g = div(f,sqrt(g))
+  return g
+
 def goDisplay():
   gx = readImage(gxfile)
   gu = readImage(gufile)
@@ -84,15 +159,31 @@ def plot1(s1,ys,hlabel="Seismic traces",vlabel="depth (km)",png=None):
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
-def plot1s(s1,ys,hlabel="Synthetic seismic traces",vlabel="time (ms)",png=None):
+def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,
+  hlabel="Seismic traces",vlabel="time (ms)",png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
-  yf = 0.5
-  for y in ys:
+  sf = 10.0
+  yf = sf
+  sp.setVLimits(0.1,1.1)
+  if vmin and vmax:
+    sp.setVLimits(vmin,vmax)
+  sp.setHLimits(6.0,125)
+  for il,y in enumerate(ys):
+    ya = sum(y)/len(y)
+    y = sub(y,ya)
     y = add(y,yf)
-    pv = sp.addPoints(s1,y)
-    pv.setLineColor(Color.BLACK)
-    yf = yf+0.5
-  #sp.setVLimits(0.1,1.1)
+    pv = sp.addPoints(ss[il],y)
+    pv.setLineColor(Color.RED)
+    yf = yf+sf
+  rf = sf
+  if rs:
+    for il,r in enumerate(rs):
+      ra = sum(r)/len(r)
+      r = sub(r,ra)
+      r = add(r,rf)
+      pv = sp.addPoints(s1,r)
+      pv.setLineColor(Color.BLACK)
+      rf = rf+sf
   sp.setSize(800,800)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)

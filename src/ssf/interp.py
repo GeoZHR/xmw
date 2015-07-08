@@ -3,28 +3,31 @@ Interpolates scattered data, such as data from well logs.
 """
 from imports import *
 
-seismicDir = "../../../data/seis/ssf/"
+seismicDir = "../../../data/seis/ssf/sub2/"
 n1,n2,n3=751,1001,1001
 n1,n2,n3=375,845,828
+n1,n2,n3=120,845,828
 s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
 #gs = copy(375,845,828,156,0,172,gx)
-gxfile = "pnz00" # seismic image
+#gxfile = "pnz00" # seismic image
 gxfile = "pnzSub" # seismic image
 gsfile = "gs" # seismic image
 
-pngDir = "../../../png/figi/"
+pngDir = "../../../png/ssf/"
 
 
 plotOnly = False
-k1,k2,k3,=115,500,500
+k1,k2,k3,=115,0,827
 clip = 1.0e5
 def main(args):
-  #gx = readImage(gxfile) 
-  #gs = copy(375,845,828,156,0,172,gx)
-  #writeImage("pnzSub",gs)
-  #plot3(gx,cmin=-clip,cmax=clip)
+  #getSub()
   goSmooth()
- 
+def getSub(): 
+  gx = readImage(gxfile) 
+  gs = copy(120,n2,n3,0,0,0,gx)
+  writeImage("pnzSub2",gs)
+  plot3(gx,cmin=-clip,cmax=clip)
+
 def goSmooth():
   sigma = 8.0
   gx = readImage(gxfile) 
@@ -32,14 +35,14 @@ def goSmooth():
     gs = zerofloat(n1,n2,n3)
     lof = LocalOrientFilter(4.0,2.0,2.0)
     et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,0.001,1.0)
+    et.setEigenvalues(0.001,1.0,1.0)
     cs = 0.5*sigma*sigma
     lsf = LocalSmoothingFilter()
     lsf.apply(et,cs,gx,gs)
     writeImage(gsfile,gs)
   gs = readImage(gsfile) 
-  plot3(gx,cmin=-clip,cmax=clip)
-  plot3(gs,cmin=-clip,cmax=clip)
+  plot3(gx,cmin=-clip,cmax=clip,png="seismic")
+  plot3(gs,cmin=-clip,cmax=clip,png="smooth2")
 
 def readImage(name):
   """ 
@@ -375,18 +378,20 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.setSize(1250,900)
   else:
     sf.setSize(700,700)
-    sf.setSize(1250,900)
+    sf.setSize(700,700)
 
   view = sf.getOrbitView()
-  zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
+  #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   view.setAxesScale(1.0,1.0,zscale)
   view.setScale(1.3)
   #view.setAzimuth(75.0)
   #view.setAzimuth(-75.0)
   view.setAzimuth(-65.0)
+  view.setElevation(45)
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   sf.viewCanvas.setBackground(sf.getBackground())
-  sf.setSize(1250,900)
+  sf.setSize(850,700)
 
   sf.setVisible(True)
   if png and pngDir:

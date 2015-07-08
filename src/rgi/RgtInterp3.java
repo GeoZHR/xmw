@@ -5,6 +5,8 @@ import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+import java.util.*;
+
 /**
  * Interpolation in space-RGT domain.
  * @author Xinming Wu
@@ -12,6 +14,16 @@ import static edu.mines.jtk.util.ArrayMath.*;
  */
 public class RgtInterp3 {
 
+  public RgtInterp3() {
+  }
+
+  public RgtInterp3(float pnull, float[][][] p) {
+    float[][] fxs = getPoints(pnull,p);
+    _fx = copy(fxs[0]);
+    _x1 = copy(fxs[1]);
+    _x2 = copy(fxs[2]);
+    _x3 = copy(fxs[3]);
+  }
   /**
    * Constructs an interpolator.
    * @param fx know values at the known points.
@@ -37,6 +49,36 @@ public class RgtInterp3 {
     _sh = sh;
   }
 
+  public float[][] getPoints(float pnull, float[][][] p) {
+    int n3 = p.length;
+    int n2 = p[0].length;
+    int n1 = p[0][0].length;
+    ArrayList<Float> fx = new ArrayList<Float>();
+    ArrayList<Float> x1 = new ArrayList<Float>();
+    ArrayList<Float> x2 = new ArrayList<Float>();
+    ArrayList<Float> x3 = new ArrayList<Float>();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float pi = p[i3][i2][i1];
+      if (pi!=pnull) {
+        fx.add(pi);
+        x1.add((float)i1);
+        x2.add((float)i2);
+        x3.add((float)i3);
+      }
+    }}}
+    int np = fx.size();
+    float[][] fxs = new float[4][np];
+    for (int ip=0; ip<np; ++ip) {
+      fxs[0][ip] = fx.get(ip);
+      fxs[1][ip] = x1.get(ip);
+      fxs[2][ip] = x2.get(ip);
+      fxs[3][ip] = x3.get(ip);
+    }
+    return fxs;
+  }
+
   /**
    * Computes gridded values using nearest neighbors.
    * Gridded values in the array p are computed for only unknown 
@@ -58,6 +100,8 @@ public class RgtInterp3 {
     short[][][] k1 = new short[n3][n2][n1];
     short[][][] k2 = new short[n3][n2][n1];
     short[][][] k3 = new short[n3][n2][n1];
+    System.out.println("sh="+1.0f/_sh);
+    System.out.println("sv="+1.0f/_sv);
     ClosestPointTransform cpt = 
       new ClosestPointTransform(1.0f/_sv,1.0f/_sh,1.0f/_sh);
     cpt.apply(pnull,p,ds,k1,k2,k3);
@@ -72,6 +116,58 @@ public class RgtInterp3 {
     return ds;
   }
 
+  public float[][][] gridNearestK(float pnull, float[][][] p) {
+    int n3 = p.length;
+    int n2 = p[0].length;
+    int n1 = p[0][0].length;
+    float[][][] ds = new float[n3][n2][n1];
+    ArrayList<Float> fx = new ArrayList<Float>();
+    ArrayList<Float> x1 = new ArrayList<Float>();
+    ArrayList<Float> x2 = new ArrayList<Float>();
+    ArrayList<Float> x3 = new ArrayList<Float>();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float pi = p[i3][i2][i1];
+      if(pi!=pnull) {
+        fx.add(pi);
+        x1.add((float)i1);
+        x2.add((float)i2);
+        x3.add((float)i3);
+      }
+    }}}
+    int np = fx.size();
+    float[] f = new float[np];
+    float[][] x = new float[3][np];
+    for (int ip=0; ip<np; ++ip) {
+      f[ip] = fx.get(ip);
+      x[0][ip] = x1.get(ip);
+      x[1][ip] = x2.get(ip);
+      x[2][ip] = x3.get(ip);
+    }
+    float[] scales = new float[3];
+    scales[0] = 100.0f;
+    scales[1] = 0.001f;
+    scales[2] = 0.001f;
+    KdTree kt = new KdTree(x);
+    kt.setScales(scales);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float pi = p[i3][i2][i1];
+      if(pi!=pnull){continue;}
+      float[] xi = new float[]{i1,i2,i3};
+      int k = kt.findNearest(xi);
+      p[i3][i2][i1] = f[k];
+      float d1 = (x[0][k]-i1)*scales[0];
+      float d2 = (x[1][k]-i2)*scales[1];
+      float d3 = (x[2][k]-i3)*scales[2];
+      ds[i3][i2][i1] = d1*d1+d2*d2+d3*d3;
+    }}}
+    return ds;
+  }
+
+
   public float[][][][] grid(Sampling s1, Sampling s2, Sampling s3) {
     Check.argument(s1.isUniform(),"s1 is uniform");
     Check.argument(s2.isUniform(),"s2 is uniform");
@@ -84,7 +180,7 @@ public class RgtInterp3 {
     int n3 = s3.getCount();
     int n2 = s2.getCount();
     double fu1 = min(_u1);
-    double du1 = s1.getDelta();
+    double du1 = s1.getDelta()*0.5;
     double lu1 = max(_u1);
     int nu1 = (int)((lu1-fu1)/du1)+1;
     Sampling su1 = new Sampling(nu1,du1,fu1);
@@ -93,6 +189,7 @@ public class RgtInterp3 {
     SimpleGridder3 sg = new SimpleGridder3(_fx,_x1,_x2,_x3);
     sg.setNullValue(pnull);
     float[][][] p = sg.grid(su1,s2,s3);
+    checkPoints(pnull,p);
     float[][][] t = new float[n3][n2][nu1];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
@@ -101,22 +198,12 @@ public class RgtInterp3 {
       }
     }}
     t = gridNearest(pnull,p);
-    t = div(t,4.0f);
+    t = mul(sqrt(t),2f);
     float[][][] q = p;
-    /*
     if (_blending) {
       q = new float[n3][n2][nu1];
       gridBlended(t,p,q);
     }
-    */
-    for (int i3=0; i3<n3; ++i3){
-    for (int i2=0; i2<n2; ++i2){
-    for (int i1=0; i1<nu1; ++i1){
-      if(p[i3][i2][i1]==pnull) {
-        p[i3][i2][i1] = 0.f;
-        //System.out.println("test!!!!!!!!!!!");
-      }
-    }}}
     float[][][] ti = unflatten(su1,t);
     float[][][] pi = unflatten(su1,p);
     float[][][] qi = unflatten(su1,q);
@@ -209,6 +296,38 @@ public class RgtInterp3 {
     }
   }
 
+  private void checkPoints(float pnull, float[][][] p) {
+    int n3 = p.length;
+    int n2 = p[0].length;
+    int n1 = p[0][0].length;
+    float[] x1s = new float[n1];
+    float[] fxs = new float[n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int k = 0;
+      int i1e=0;
+      int i1b=n1;
+      for (int i1=0; i1<n1; ++i1) {
+        float pi = p[i3][i2][i1];
+        if (pi!=pnull) {
+          x1s[k] = i1;
+          fxs[k] = pi;
+          if (i1e<i1) {i1e=i1;}
+          if (i1b>i1) {i1b=i1;}
+          k++;
+        }
+      }
+      if(k<=1) {continue;}
+      float[][] x = new float[1][k];
+      copy(k,x1s,x[0]);
+      KdTree kt = new KdTree(x);
+      for (int i1=i1b; i1<=i1e; ++i1) {
+        int xk = kt.findNearest(new float[]{i1});
+        p[i3][i2][i1] = fxs[xk];
+      }
+    }}
+  }
+
   private float[][][] unflatten(Sampling su1, float[][][] f) {
     int n3 = _u1.length;
     int n2 = _u1[0].length;
@@ -230,9 +349,9 @@ public class RgtInterp3 {
     float[][][] u2 = fillfloat(0.0f,n1,n2,n3);
     float[][][] w1 = fillfloat(0.0f,n1,n2,n3);
     float[][][] w2 = fillfloat(0.0f,n1,n2,n3);
-    float[][][] au = fillfloat(_sv/20f,n1,n2,n3);
-    float[][][] av = fillfloat(_sh,n1,n2,n3);
-    float[][][] aw = fillfloat(_sh,n1,n2,n3);
+    float[][][] av = fillfloat(1.0f,n1,n2,n3);
+    float[][][] aw = fillfloat(1.0f,n1,n2,n3);
+    float[][][] au = fillfloat(_sv/_sh,n1,n2,n3);
     _tensors = new EigenTensors3(u1,u2,w1,w2,au,av,aw,true);
   }
 }

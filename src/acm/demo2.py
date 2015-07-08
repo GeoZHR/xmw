@@ -20,8 +20,8 @@ pngDir = "../../../png/acm/"
 
 seismicDir = "../../../data/seis/acm/"
 fxfile = "atwj1s"
-fxfile = "f3d267"
-fxfile = "f3d267Sub"
+#fxfile = "f3d267"
+#fxfile = "f3d267Sub"
 edfile = "edge"
 f1file = "f1"
 f2file = "f2"
@@ -32,8 +32,8 @@ f1,f2 = 0,0
 d1,d2 = 1,1
 n1,n2 = 251,357
 n1,n2 = 500,500
-n1,n2 = 462,951
-n1,n2 = 140,350
+#n1,n2 = 462,951
+#n1,n2 = 140,350
 #n1,n2 = 100,101
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
@@ -45,9 +45,9 @@ def main(args):
   #goPaint()
   #goForce()
   #goContour()
-  #goExForce()
-  #goSnakeReal()
-  goExForceF3d()
+  goExForce()
+  goSnakeReal()
+  #goExForceF3d()
 def goExForceF3d():
   sig,sig1,sig2=1,4,4
   fx = readImage(fxfile)
@@ -82,28 +82,27 @@ def goExForce():
   gs = zerofloat(n1,n2,2)
   gvf = GradientVectorFlow()
   ed = gvf.applyForEdge(sig,sig1,sig2,fx)
-  et = gvf.applyForGV(sig,sig1,sig2,ed,gs) #channel 1
+  et = gvf.applyForGV(sig,sig1,sig2,ed,gs)
+  #et = gvf.applyForGVX(sig,sig1,sig2,ed,gs,ws) #channel 1
   #gvf.setScale(0.01)
   gvf.setScale(0.01)
   wp = pow(ed,1.0)
-  ws = pow(ws,1.0)
-  fs = gvf.applyForGVF(et,gs[0],gs[1],wp)
+  fs = gvf.applyForGVF(et,gs[0],gs[1],wp,None)
   writeImage(edfile,ed)
   writeImage(f1file,fs[0])
   writeImage(f2file,fs[1])
   plot(fx)
   plot(wp)
-  plot(ws)
-  plotVectors(20,5,gs[0],gs[1],fx)
-  plotVectors(20,5,fs[0],fs[1],fx)
+  plotVectors(50,5,gs[0],gs[1],fx)
+  plotVectors(50,5,fs[0],fs[1],fx)
 
 def goSnakeReal():
   fx = readImage(fxfile)
   f1 = readImage(f1file)
   f2 = readImage(f2file)
   fx = div(fx,2000)
-  c1,c2=418,345
-  #c1,c2 = 248,165 # channel 1
+  #c1,c2=418,345
+  c1,c2 = 248,165
   kamma,gamma = 2.0,0.6
   alpha,beta  = 0.1,0.1
   fp = zerofloat(n1,n2,2)
@@ -123,7 +122,7 @@ def goSnakeReal():
   fnn = [f1,f2]
   fnn=mul(fnn,10)
   fpn = mul(fp,0.5)
-  for k in range(30):
+  for k in range(25):
     ac.releaseSnake(fpn,fnn,False)
     x1 = snake.getArrayX1()
     x2 = snake.getArrayX2()
@@ -134,8 +133,7 @@ def goSnakeReal():
       if(x1i>1 and x1i<n1-6):
        k1.append(x1i)
        k2.append(x2i)
-    if(k>20):
-      plot(fx,ap=[k1,k2],png=None)#pngName+str(k))
+    plot(fx,ap=[k1,k2],png=None)#pngName+str(k))
 
 
 def goForce():
@@ -387,8 +385,8 @@ def plot(f,xp=None,pp=None,ap=None,png=None):
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   frame.setTitle("normal vectors")
   frame.setVisible(True);
-  #frame.setSize(890,760)
-  frame.setSize(1190,760)
+  frame.setSize(890,760)
+  #frame.setSize(1190,760)
   frame.setFontSize(36)
   if pngDir and png:
     frame.paintToPng(300,3.333,pngDir+png+".png")

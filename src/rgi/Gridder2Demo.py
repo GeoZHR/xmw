@@ -16,7 +16,8 @@ from DataSinSin import *
 from DataTeapot import *
 
 def main(args):
-  demoTeapot()
+  goImpedance()
+  #demoTeapot()
   #demoBlendedGridder("Saddle")
   #demoSplinesGridder("Saddle")
   #demoTensorGuided("NotreDame")
@@ -24,7 +25,25 @@ def main(args):
   #demoNotreDame()
   #demoSaddle()
   #demoSinSin()
- 
+def goImpedance():
+  t,x,f = wellTeapot()
+  st,sx,s = imageTeapot()
+  n2 = len(s)
+  n1 = len(s[0])
+  el = fillfloat(1.0,n1,n2)
+  plot2Teapot(f,t,x,s,st,sx)
+  ii = ImpedanceInversion2()
+  ii.setWavelet(181,35)
+  ii.setSmoothings(6.0,6.0)
+  p = ii.applyForImpedance(s,el)
+  gx = fillfloat(1.0,n1,n2)
+  for i2 in range(n2):
+    gx[i2] = p[50]
+  fx = ii.applyForSyn(copy(gx))
+  q = ii.applyForImpedance(copy(fx),el)
+  plot2Teapot1(st,sx,gx,gmin=min(gx),gmax=max(gx),label="input")
+  plot2Teapot1(st,sx,fx,gmin=min(fx),gmax=max(fx),label="syn")
+  plot2Teapot1(st,sx,q,gmin=min(q),gmax=max(q),label="output")
 def demoTeapot():
   t,x,f = wellTeapot()
   st,sx,s = imageTeapot()
@@ -36,7 +55,7 @@ def demoTeapot():
   p = sg.grid(st,sx)
   lof = LocalOrientFilter(8.0,2.0)
   tensors = lof.applyForTensors(s)
-  tensors.setEigenvalues(0.002,1.0)
+  tensors.setEigenvalues(0.001,1.0)
   #tensors = makeImageTensors(s)
   plot2Teapot(f,t,x,s,st,sx,None,"Known value","tp2f",et=tensors)
   bg = makeBlendedGridder(f,t,x,smooth=smooth)

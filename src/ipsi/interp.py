@@ -20,6 +20,8 @@ qfile = "blended" # array of density log data
 sx1file = "sx1"
 sx2file = "sx2"
 sx3file = "sx3"
+fslbase = "fsl" # fault skin fault estimating slips(basename only)
+
 
 # Directory for saved png images. If None, png images will not be saved.
 pngDir = None
@@ -29,7 +31,43 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goInterp()
+  #goInterp()
+  #goTest()
+  skins = readSkins(fslbase)
+  for cell in skins[0]:
+    print cell.getSmp()
+def goTest():
+  if not plotOnly:
+    gx = readImage(gxfile)
+
+    lof = LocalOrientFilter(4.0,1.0,1.0)
+    et = lof.applyForTensors(gx)
+    et.setEigenvalues(0.001,1.0,1.0)
+
+    skins = readSkins(fslbase)
+    fmark = fillshort(0,n1,n2,n3)
+    fsc = FaultSlipConstraints(n1,n2,n3,skins)
+    fps = fsc.faultMarks(fmark)
+    x1,x2,x3,fx=wellTeapot(n1,150,150)
+    pnull = -999
+    p = fillfloat(pnull,n1,n2,n3)
+    for k in range(len(x1)):
+      k1 = round(x1[k])
+      k2 = round(x2[k])
+      k3 = round(x3[k])
+      p[k3][k2][k1] = fx[k]
+    #bgx = BlendedGridder3(et,fx,x1,x2,x3)
+    bgx = BlendedGridder3X(et,fx,x1,x2,x3)
+    bgx.setFaults(fmark,fps[0],fps[1])
+    t = bgx.gridNearest(pnull,p)
+    samples = fx,x1,x2,x3
+    print max(t)
+    print max(p)
+    plot3(gx,t,cmin=min(t),cmax=10,cmap=jetFill(0.5),
+      clab="Time (samples)")
+    plot3(gx,p,cmin=2.35,cmax=2.6,cmap=jetFill(0.5),
+      clab="Density (g/cc)",samples=samples)
+
 def goInterp():
   if not plotOnly:
 

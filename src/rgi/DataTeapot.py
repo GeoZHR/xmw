@@ -124,10 +124,10 @@ def wellTeapot():
  
 #############################################################################
 # plotting
-
-def plot2Teapot(f,x1,x2,s,s1,s2,g=None,label=None,png=None,et=None):
-  n1 = len(s[0])
+def plot2Teapot(f,x1,x2,s,s1,s2,g=None,gmin=None,gmax=None,
+                label=None,png=None,et=None):
   n2 = len(s)
+  n1 = len(s[0])
   panel = panel2Teapot()
   #panel.setHInterval(2.0)
   #panel.setVInterval(0.2)
@@ -158,7 +158,10 @@ def plot2Teapot(f,x1,x2,s,s1,s2,g=None,label=None,png=None,et=None):
     pv.setClips(0.0,1000.0)
     pv.setClips(min(g),max(g))
   else:
-    pv.setClips(2.0,2.8)
+    if gmin and gmax:
+      pv.setClips(gmin,gmax)
+    else:
+      pv.setClips(2.0,2.8)
   if et:
     tv = TensorsView(s1,s2,et)
     tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
@@ -178,6 +181,25 @@ def plot2Teapot(f,x1,x2,s,s1,s2,g=None,label=None,png=None,et=None):
       pv.setMarkStyle(PointsView.Mark.FILLED_SQUARE)
       pv.setMarkSize(4)
       pv.setMarkColor(color)
+  frame2Teapot(panel,png)
+
+def plot2Teapot1(s1,s2,g=None,gmin=None,gmax=None,
+                label=None,png=None,et=None):
+  n2 = len(g)
+  n1 = len(g[0])
+  panel = panel2Teapot()
+  if label:
+    panel.addColorBar(label)
+  else:
+    panel.addColorBar()
+  panel.setColorBarWidthMinimum(180)
+  pv = panel.addPixels(s1,s2,g)
+  pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pv.setColorModel(ColorMap.JET)
+  if gmin and gmax:
+    pv.setClips(gmin,gmax)
+  else:
+    pv.setClips(min(g),max(g))
   frame2Teapot(panel,png)
 
 def makePointSets(cmap,f,x1,x2):

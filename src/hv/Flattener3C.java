@@ -188,6 +188,13 @@ public class Flattener3C {
     _sigma3 = (float)sigma2;
   }
 
+  public void setSmoothings(double sigma1, double sigma2, double sigma3) {
+    _sigma1 = (float)sigma1;
+    _sigma2 = (float)sigma2;
+    _sigma3 = (float)sigma3;
+  }
+
+
   /**
    * Sets parameters that control the number of solver iterations.
    * @param small stop iterations when error norm is reduced by this fraction.

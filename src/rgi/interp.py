@@ -91,12 +91,11 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goInterp()
-  goInterpO()
+  #goInterp()
+  #goInterpO()
   #goFigures()
   #goImpedance()
-  #goTest()
-
+  goTest()
 
 def goSlopes():
   print "goSlopes ..."
@@ -322,14 +321,6 @@ def goInterp():
         clab=logLabel,png=logType)
 
 
-def goTest():
-  global k1,k2,k3
-  k1,k2,k3 = 366,15,96
-  s = readImage(sfile); print "s min =",min(s)," max =",max(s)
-  g = readImage(gfile)
-  display(s,g,vmin,vmax,logType)
-
-
 def goInterpO():
   global k1,k2,k3
   k1,k2,k3 = 366,15,96
@@ -538,6 +529,14 @@ def array(x1,x2,x3=None,x4=None):
   else:
     return jarray.array([x1,x2],Class.forName('[[[F'))
 
+def wellTeapot(np,k2,k3):
+  n1,n2,n3 =401,357,161
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream("../../../data/seis/rgi/tpgd.dat")
+  ais.readFloats(image)
+  ais.close()
+  gp = GetPoints()
+  return gp.getXf(np,k2,k3,image)
 
 
 

@@ -57,6 +57,7 @@ def setupForSubset(name):
   elif name=="subw":
     print "setupForSubset: subset of well logs"
     welllogDir = _welldir+"subw/"
+    seismicDir = _datdir+"seismict/subt/"
     #n3 number of log curves
     #n2 number of wells
     #n1 depth samples of the longest well
@@ -83,6 +84,28 @@ def readImage(basename):
   """
   fileName = seismicDir+basename+".dat"
   image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+def readImage1(n1,basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n1)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+def readImage2(n1,n2,basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n1,n2)
   ais = ArrayInputStream(fileName)
   ais.readFloats(image)
   ais.close()

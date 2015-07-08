@@ -28,6 +28,10 @@ public class SetupConstraints {
     _sigma2 = sigma2;
   } 
 
+  public void setMask(float[][][] mask) {
+    _mask = mask;
+  }
+
   public float[][] constraintsFromSurface(float[][] surf) {
     int n3 = surf.length;
     int n2 = surf[0].length;
@@ -116,8 +120,6 @@ public class SetupConstraints {
     int ie3 = (int)max(k3)+w3; if(ie3>n3-1) {ie3=n3-1;} 
     int n2m = ie2-ib2+1;
     int n3m = ie3-ib3+1;
-    int nk = k1.length;
-    for (int ik=0; ik<nk; ++ik) {k1[ik] += 40.0f;}
     float[][][] um  = copy(n1,n2m,n3m,0,ib2,ib3,u );
     float[][][] p2m = copy(n1,n2m,n3m,0,ib2,ib3,p2);
     float[][][] p3m = copy(n1,n2m,n3m,0,ib2,ib3,p3);
@@ -172,6 +174,7 @@ public class SetupConstraints {
     k[1][0] = k[1][ai]; k[1][ai] = t1;
     k[2][0] = k[2][ai]; k[2][ai] = t2;
     k[3][0] = k[3][ai]; k[3][ai] = t3;
+
     return copy(ci,4,0,0,k);
   } 
 
@@ -191,4 +194,5 @@ public class SetupConstraints {
   private float _scale  = 0.0f;
   private float _sigma1 = 6.0f;
   private float _sigma2 = 6.0f;
+  private float[][][] _mask=null;
 }

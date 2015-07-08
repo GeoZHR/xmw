@@ -72,6 +72,18 @@ def getSeismicDir():
 #############################################################################
 # read/write files
 
+def readImage2D(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 def readImage(name):
   """ 
   Reads an image from a file with specified name.
@@ -157,6 +169,35 @@ def readLogSamples(set,type,smooth=0):
       x2l.append(x2)
       x3l.append(x3)
   return fl,x1l,x2l,x3l
+
+def readOneLogSamples(set,type,smooth=0):
+  fileName = wellLogsDir+"tpw"+set[0]+".dat"
+  wdata = WellLog.Data.readBinary(fileName)
+  logs = wdata.getLogsWith(type)
+  f2=s2.getFirst()
+  f3=s3.getFirst()
+  d2=s2.getDelta()
+  d3=s3.getDelta()
+  k2,k3=0,0
+  ds=100000
+  if type=="d":
+    k2=(223*d2+f2)
+    k3=(70*d3+f3)
+  ik=0
+  for log in logs:
+    if smooth: 
+      log.smooth(smooth)
+    samples = log.getSamples(type,s1,s2,s3)
+    if samples:
+      dd=0
+      f,x1,x2,x3 = samples
+      for ip in range(len(x2)):
+        dd = dd+abs(x2[ip]-k2)+abs(x3[ip]-k3)
+      if dd<ds:
+        ds=dd
+        wk=ik
+    ik = ik+1
+  return logs[wk].getSamples(type,s1,s2,s3)
 
 def readLogSamplesMerged(set,type,smooth=0):
   """ 
@@ -263,7 +304,7 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
   copy(n,0,1,x1,2,3,xyz)
   rgb = None
   if cmin<cmax:
-    cmap = ColorMap(cmin,cmax,ColorMap.JET)
+    cmap = ColorMap(cmin,cmax,ColorMap.getJet(0.3))
     if cbar:
       cmap.addListener(cbar)
     rgb = cmap.getRgbFloats(f)

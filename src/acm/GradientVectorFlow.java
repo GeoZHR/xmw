@@ -124,6 +124,19 @@ public class GradientVectorFlow {
     rgf.applyX1(f,g2);
     up[0] = g1;
     up[1] = g2;
+    /*
+    float[][] gs = sqrt(add(pow(g1,2f),pow(g2,2f)));
+    float gsm = max(gs);
+    for(int i2=0; i2<n2; ++i2) {
+    for(int i1=0; i1<n1; ++i1) {
+      float g1i = g1[i2][i1];
+      float g2i = g2[i2][i1];
+      up[0][i2][i1] = g1i/gsm;
+      up[1][i2][i1] = g2i/gsm;
+    }}
+    */
+
+
 
     LocalOrientFilterK lof = new LocalOrientFilterK(sigma1,sigma2);
     lof.applyForNormalLinear(f,u1,u2,eu);
@@ -172,9 +185,9 @@ public class GradientVectorFlow {
     CgSolver cs = new CgSolver(_small,_niter);
     A2 a2 = new A2(_scale,et,smoother,wp);
     makeRhs(wp,u,b);
-    smoother.applyTranspose(b);
+    //smoother.applyTranspose(b);
     cs.solve(a2,vb,vr);
-    smoother.apply(r);
+    //smoother.apply(r);
     return r;
   }
 
@@ -216,7 +229,6 @@ public class GradientVectorFlow {
   //private
 
   private float _scale = 1.0f;
-  private static float _scale2 = 1.0f;
   private float _sigma = 8.0f;
   private float _small = 0.01f;
   private int _niter = 200;
@@ -236,7 +248,7 @@ public class GradientVectorFlow {
       float[][] z = copy(x);
       v2y.zero();
       applyLhs(_scale,_et,_wp,z,y);
-      _smoother.applyTranspose(y);
+      //_smoother.applyTranspose(y);
     }
 
     private float _scale;
@@ -258,7 +270,7 @@ public class GradientVectorFlow {
       float[][][] z = copy(x);
       v3y.zero();
       applyLhs(_wp,z,y);
-      _smoother.applyTranspose(y);
+      //_smoother.applyTranspose(y);
     }
 
     private float[][][] _wp=null;
@@ -404,7 +416,7 @@ public class GradientVectorFlow {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = (wp!=null)?wp[i2][i1]:1.0f;
       float wps = wpi*wpi;
-      y[i2][i1] += wps*x[i2][i1]*_scale2;
+      y[i2][i1] += wps*x[i2][i1];
     }}
   }
 
@@ -490,7 +502,7 @@ public class GradientVectorFlow {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = (wp!=null)?wp[i2][i1]:1.0f;
       float wps = wpi*wpi;
-      y[i2][i1] = wps*u[i2][i1]*_scale2;
+      y[i2][i1] = wps*u[i2][i1];
     }}
   }
 
