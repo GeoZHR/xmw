@@ -134,7 +134,12 @@ def getLogs():
       model = SynSeis.getModel(log)
       if(model!=None and model.nz>2000 and model.x1<0.8):
         welllogs.append(log)
-  return welllogs
+  #return welllogs
+  logs = []
+  for il in range(len(welllogs)):
+    if abs(il-3)>0:
+      logs.append(welllogs[il])
+  return logs
 
 def writeLogs(basename,logs):
   wldata = WellLog.Data()

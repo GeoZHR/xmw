@@ -27,16 +27,16 @@ wpfile  = "wp" # weight image for flattening
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/swt/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDisplay()
+  goDisplay()
   #goFaultLikelihoods()
   #goSlopes()
   #goFlatten()
-  goFlattenC()
+  #goFlattenC()
   #goFlattenD()
 
 def goTest():
@@ -276,9 +276,12 @@ def goFlattenD():
     i2 = s2.indexOfNearest(model.x2)
     i3 = s3.indexOfNearest(model.x3)
     gxs[0][il] = gx[i3][i2]
-  maxShift = 50
-  errorPow = 2.0
+  #maxShift = 50
+  #errorPow = 2.0
   weight = 1.0
+  maxShift = 40
+  errorPow = 0.05
+
   wlw = WellLogWarping()
   wlw.setMaxShift(maxShift)
   wlw.setPowError([errorPow])
@@ -289,7 +292,7 @@ def goFlattenD():
       if(gus[i2][i1]<-10):
         gus[i2][i1] = 0.0
   plot1(s1,gxs[0],vlabel="depth (km)",png="originalSeisTraces")
-  plot1(s1,gus,vlabel="Relative geologic time (D)",png="seisTracesFlattenD")
+  plot1(s1,gus,vlabel="Relative geologic time",png="seisTracesFlattenD")
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -499,8 +502,9 @@ def plot1(s1,ys,hlabel="Seismic traces",vlabel="depth (km)",png=None):
     pv = sp.addPoints(s1,y)
     pv.setLineColor(Color.BLACK)
     yf = yf+10
-  #sp.setVLimits(0.1,1.1)
-  sp.setSize(800,800)
+  sp.setHLimits(5.0,115)
+  sp.setVLimits(0.15,1.5)
+  sp.setSize(600,800)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)
   if png and pngDir:

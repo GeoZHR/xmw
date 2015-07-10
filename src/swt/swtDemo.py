@@ -30,8 +30,9 @@ plotOnly = True
 def main(args):
   #goDisplay()
   #goSynSeis()
-  goSynSeisFlat()
-
+  #goSynSeisFlat()
+  goSynSeisFlatten()
+  #goFlattenD()
 def goSynSeis():
   simple = True
   logs = getLogs()
@@ -48,6 +49,92 @@ def goSynSeis():
   rs = getRealSeis()
   plot1s(s1,ss,sa,hlabel="Seismic traces",vlabel="time (ms)")
   plot1s(s1,ss,sa,rs=rs,hlabel="Seismic traces",vlabel="time (ms)")
+
+def goSynSeisFlatten():
+  simple = True  
+  logs = getLogs()
+  nl = len(logs)
+  ndf = zerofloat(3)
+  sw = SeismicWellTie()
+  gx = sw.computeSyns(simple,logs,ndf)
+  sz = Sampling((int)(ndf[0]),ndf[1],ndf[2])
+  sl = Sampling(nl,1,0)
+  n1 = len(gx)
+  n2 = len(gx[0])
+  ga = zerofloat(n1,n2,1)
+  ga[0] = gx
+
+  #maxShift = 40
+  #errorPow = 0.05
+  weight = 1.0
+  maxShift = 40
+  errorPow = 0.05
+
+  wlw = WellLogWarping()
+  wlw.setMaxShift(maxShift)
+  wlw.setPowError([errorPow])
+  ss = wlw.findShifts([weight],ga)
+  gu = wlw.applyShifts(ga[0],ss)
+
+  cbar   = "Amplitude"
+  vlabel = "Relative geologic time"
+  wmin,wmax = -2.0,2.0
+  plot2(ga[0],sz,sl,wmin=wmin,wmax=wmax,cbar=cbar,png="syns")
+  plot2(gu,sz,sl,wmin=wmin,wmax=wmax,vlabel=vlabel,cbar=cbar,png="synsFlatten")
+
+  ndfx = zerofloat(3,nl)
+  ndfu = zerofloat(3,nl)
+  fx = sw.getValidSamples(sz,ga[0],ndfx)
+  fu = sw.getValidSamples(sz,gu,ndfu)
+  ssx = []
+  ssu = []
+  for il in range(nl):
+    sxi = Sampling((int)(ndfx[il][0]),ndfx[il][1],ndfx[il][2])
+    sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
+    ssx.append(sxi)
+    ssu.append(sui)
+  plot1s(s1,ssx,fx,vmin=0.1,vmax=1.0,vlabel="Time (s)",png="synsX")
+  plot1s(s1,ssu,fu,vmin=0.1,vmax=1.0,vlabel="Relative geologic time",png="synsFlattenX")
+  ndf = zerofloat(3)
+  stv = sw.stack(sz,gu,ndf)
+  szs = Sampling((int)(ndf[0]),ndf[1],ndf[2])
+  plot1X(szs,stv,vmin=0.1,vmax=1.0,color=Color.RED)
+
+def goFlattenD():
+  gx = readImage(gxfile)
+  logs = getLogs()
+  gxs = zerofloat(n1,len(logs),1)
+  for il, log in enumerate(logs):
+    model = SynSeis.getModel(log)
+    i2 = s2.indexOfNearest(model.x2)
+    i3 = s3.indexOfNearest(model.x3)
+    gxs[0][il] = gx[i3][i2]
+  #maxShift = 50
+  #errorPow = 2.0
+  weight = 1.0
+  maxShift = 40
+  errorPow = 0.05
+
+  wlw = WellLogWarping()
+  wlw.setMaxShift(maxShift)
+  wlw.setPowError([errorPow])
+  s = wlw.findShifts([weight],gxs)
+  gus = wlw.applyShifts(gxs[0],s)
+  sst = []
+  for i2 in range(len(gus)):
+    sst.append(s1)
+    for i1 in range(len(gus[0])):
+      if(gus[i2][i1]<-10):
+        gus[i2][i1] = 0.0
+  plot1s(s1,sst,gxs[0],vmin=0.15,vmax=1.5,color=Color.BLACK,
+        vlabel="depth (km)",png="originalSeisTraces")
+  plot1s(s1,sst,gus,vmin=0.15,vmax=1.5,color=Color.BLACK,
+        vlabel="Relative geologic time",png="seisTracesFlattenD")
+  sw = SeismicWellTie()
+  ndf = zerofloat(3)
+  stv = sw.stack(s1,gus,ndf)
+  szs = Sampling((int)(ndf[0]),ndf[1],ndf[2])
+  plot1X(szs,stv,vmin=0.15,vmax=1.5)
 
 def goSynSeisFlat():
   simple = True
@@ -76,8 +163,9 @@ def goSynSeisFlat():
   for il in range(nl):
     swi = Sampling((int)(ndfw[il][0]),ndfw[il][1],ndfw[il][2])
     ssw.append(swi)
-  plot1s(s1,sst,sa,hlabel="Seismic traces",vlabel="time (ms)")
-  plot1s(s1,ssw,gw,vmin=0.2,vmax=1.85,vlabel="Relative geologic time")
+  plot1s(s1,sst,sa,hlabel="Seismic traces",vlabel="time (ms)",png="syns")
+  #plot1s(s1,ssw,gw,vmin=0.25,vmax=1.85,vlabel="Relative geologic time")
+  plot1s(s1,ssw,gw,vmin=0.04,vmax=1.82,vlabel="Relative geologic time",png="synsFlat")
 
 def getRealSeis():
   logs = getLogs()
@@ -159,21 +247,34 @@ def plot1(s1,ys,hlabel="Seismic traces",vlabel="depth (km)",png=None):
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
-def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,
+def plot1X(s1,y,vmin=None,vmax=None, 
+    color=Color.BLACK,hlabel="Stacked trace",vlabel="Time (s)",png=None):
+  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+  pv = sp.addPoints(s1,y)
+  pv.setLineColor(color)
+  sp.setVLimits(vmin,vmax)
+  sp.setHLimits(-3.5,3.5)
+  sp.setSize(190,800)
+  sp.setHLabel(hlabel)
+  sp.setVLabel(vlabel)
+  if png and pngDir:
+    sp.paintToPng(300,7.0,pngDir+png+".png")
+
+def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
   hlabel="Seismic traces",vlabel="time (ms)",png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sf = 10.0
   yf = sf
-  sp.setVLimits(0.1,1.1)
+  sp.setVLimits(0.1,1.0)
   if vmin and vmax:
     sp.setVLimits(vmin,vmax)
-  sp.setHLimits(6.0,125)
+  sp.setHLimits(5.0,115)
   for il,y in enumerate(ys):
     ya = sum(y)/len(y)
     y = sub(y,ya)
     y = add(y,yf)
     pv = sp.addPoints(ss[il],y)
-    pv.setLineColor(Color.RED)
+    pv.setLineColor(color)
     yf = yf+sf
   rf = sf
   if rs:
@@ -184,13 +285,26 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,
       pv = sp.addPoints(s1,r)
       pv.setLineColor(Color.BLACK)
       rf = rf+sf
-  sp.setSize(800,800)
+  sp.setSize(600,800)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
 
+def plot2(w,sz,sl,wmin=0.0,wmax=0.0,vlabel="Time (s)",cbar=None,png=None):
+  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+  sp.setSize(500,900)
+  sp.setVLabel(vlabel)
+  sp.setHLabel("Log index")
+  sp.addColorBar(cbar)
+  sp.plotPanel.setColorBarWidthMinimum(90)
+  pv = sp.addPixels(sz,sl,w)
+  pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pv.setColorModel(ColorMap.GRAY)
+  pv.setClips(wmin,wmax)
+  if png and pngDir:
+    sp.paintToPng(300,7.0,pngDir+png+".png")
 
 
 #############################################################################

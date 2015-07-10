@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.mines.jtk.dsp.RecursiveExponentialFilter;
 import edu.mines.jtk.dsp.Sampling;
+import edu.mines.jtk.dsp.SincInterpolator;
 import edu.mines.jtk.interp.CubicInterpolator;
 import edu.mines.jtk.lapack.DMatrix;
 import edu.mines.jtk.util.MedianFinder;
@@ -481,6 +482,32 @@ public class WellLogWarping {
     return g;
   }
 
+  public float[][] applyShiftsX(float[][] f, float[][] s) {
+    int nl = f.length;
+    int nk = f[0].length;
+    float[][] g = fillfloat(_vnull,nk,nl);
+    SincInterpolator si = new SincInterpolator();
+    Sampling sk = new Sampling(nk);
+    // For all logs, ...
+    for (int il=0; il<nl; ++il) {
+
+      // For all depths, ...
+      for (int ik=0; ik<nk; ++ik) {
+
+        // Depth (in samples) at which to interpolate log.
+        //float zk = tts[ik]-s[il][ik];
+        float zk = ik-s[il][ik];
+
+        int jk = (int)(zk+0.5f);
+        if (0<=jk && jk<nk && f[il][jk]!=_vnull) {
+          g[il][ik] = si.interpolate(sk,f[il],zk);
+        }
+      }
+    }
+    return g;
+  }
+
+
   /**
    * Sorts well indices to approximately minimize distances between wells.
    * Specifically, this method approximately minimizes the total distance
@@ -919,7 +946,7 @@ public class WellLogWarping {
         int jk = js[k];
         int it = (int)(ti[ik]+0.5f);
         int jt = (int)(tj[jk]+0.5f);
-        if (0<it && it<nt && 0<jt && jt<nt) {
+        if (0<=it && it<nt && 0<=jt && jt<nt) {
           float scl = (float)(ws*ws);
           float dif = jk-ik;
           ++ci[it];
@@ -939,6 +966,8 @@ public class WellLogWarping {
     int nl = x.length; // number of logs
     int np = ps.length; // number of log pairs
     zero(y); // zero y before accumulating below
+    SincInterpolator si = new SincInterpolator();
+    Sampling st = new Sampling(nt);
     for (int ip=0; ip<np; ++ip) { // for all log pairs, ...
       Pairs p = ps[ip];
       int il = p.il;
@@ -958,7 +987,7 @@ public class WellLogWarping {
         int jk = js[k];
         int it = (int)(ti[ik]+0.5f);
         int jt = (int)(tj[jk]+0.5f);
-        if (0<it && it<nt && 0<jt && jt<nt) {
+        if (0<=it && it<nt && 0<=jt && jt<nt) {
           float scl = (float)(ws*ws);
           float dif = xi[it]-xj[jt];
           dif *= scl;
@@ -980,6 +1009,8 @@ public class WellLogWarping {
   private float error(float f, float g, int m) {
     float d = f-g;
     float epow = _epower[m];
+    return pow(abs(d),epow);
+    /*
     if (epow==2.0f) {
       return d*d;
     } else if (epow==1.0f) {
@@ -988,6 +1019,7 @@ public class WellLogWarping {
       if (d<0.0f) d = -d;
       return pow(d,epow);
     }
+    */
   }
   private float error(float f, float g) {
     float d = f-g;
@@ -1224,7 +1256,7 @@ public class WellLogWarping {
   // Use CG to solve least-squares equations for shifts s.
   private float[][] computeShifts(int nt, int[] ls, Pairs[] ps) {
    int nl = ls.length;
-   int niter = 5;
+   int niter = 10;
    float[][] r = new float[nl][nt]; // r = s+q
    float[][] q = new float[nl][nt]; // handles shifts for str/sqz
    float[][] tz = new float[nl][nt]; 

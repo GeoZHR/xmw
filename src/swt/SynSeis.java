@@ -177,7 +177,8 @@ public class SynSeis {
 
     // Sampling of depth in km for non-null values; 1 ft = 0.0003048 km
     float dz = (float)(sz.getDelta()*0.0003048);
-    float fz = log.x1[jz];
+    float fz = (float)((sz.getDelta()*jz+z[0])*0.0003048);
+    //float fz = log.x1[jz];
 
     // Two-way time, a sampled function depth.
     float[] t = new float[nz];

@@ -30,7 +30,7 @@ public class SeismicWellTie {
       int lz = nz-1;
       while (jz<nz && d[jz]==_vnull && v[jz]==_vnull)
         ++jz;
-      while (lz>=0 && d[jz]==_vnull && v[jz]==_vnull)
+      while (lz>=0 && d[lz]==_vnull && v[lz]==_vnull)
         --lz;
       fzs[il] = z[jz];
       lzs[il] = z[lz];
@@ -48,10 +48,11 @@ public class SeismicWellTie {
       while (jz<z.length && d[jz]==_vnull && v[jz]==_vnull)
         ++jz;
       int jw = round((z[jz]-fz)/dz);
-      for( ; jz<z.length; jz++) {
+      //for( ; jz<z.length; jz++) {
+      for( ; jw<nz && jz<z.length; jw++) {
         wa[0][il][jw] = d[jz];
         wa[1][il][jw] = v[jz];
-        jw ++;
+        jz ++;
       }
     }
     dz *= fk;
@@ -67,7 +68,6 @@ public class SeismicWellTie {
   {
     float fpeak = 35f;
     float q = 100.0f;
-
     int il = 0;
     float ds = 0.002f;
     int nl = logs.length;
@@ -95,6 +95,112 @@ public class SeismicWellTie {
       il++;
     }
     return sa;
+  }
+
+  public float[][] computeSyns(boolean simple, WellLog[] logs, float[] ndf) 
+  {
+    float ds = 0.002f;
+    float fpeak = 35f;
+    float q = 100.0f;
+    int nl = logs.length;
+    float fs =  FLT_MAX;
+    float ls = -FLT_MAX;
+    for (WellLog log:logs) {
+      SynSeis.Model md = SynSeis.getModel(log);
+      if (fs>md.tmin()){fs=md.tmin();}
+      if (ls<md.tmax()){ls=md.tmax();}
+    }
+    fs = round(fs/ds)*ds;
+    ls = round(ls/ds)*ds;
+    int ns = round((ls-fs)/ds)+1;
+    ndf[0] = ns;
+    ndf[1] = ds;
+    ndf[2] = fs;
+    int il = 0;
+    float[][] sa = fillfloat(_vnull,ns,nl);
+    for (WellLog log:logs) {
+      SynSeis.Model md = SynSeis.getModel(log);
+      float fsi = round(md.tmin()/ds)*ds;
+      float lsi = round(md.tmax()/ds)*ds;
+      int nsi = round((lsi-fsi)/ds)+1;
+      Sampling ssi = new Sampling(nsi,ds,fsi);
+      float[] fsyn = new float[nsi];
+      if (simple) {
+        fsyn = SynSeis.makeSimpleSeismogram(md,fpeak,ssi);
+      } else {
+        fsyn = SynSeis.makeBetterSeismogram(md,q,fpeak,ssi);
+      }
+      fsyn = normalize(fsyn);
+      int j1 = round((fsi-fs)/ds);
+      copy(nsi,0,fsyn,j1,sa[il]);
+      il++;
+    }
+    return sa;
+  }
+
+  public float[][] getValidSamples(Sampling sz, float[][] sa, float[][] ndf) {
+    int nl = sa.length;
+    int nz = sa[0].length;
+    float[][] va = new float[nl][];
+    float dz = (float)sz.getDelta();
+    float fz = (float)sz.getFirst();
+    for (int il=0; il<nl; ++il){
+      int jz = 0;
+      int lz = nz-1;
+      while (jz<nz && sa[il][jz]==_vnull)
+        ++jz;
+      while (lz>=0 && sa[il][lz]==_vnull)
+        --lz;
+      int nzi = lz-jz+1;
+      ndf[il][0] = nzi;
+      ndf[il][1] = dz;
+      ndf[il][2] = jz*dz+fz;
+      va[il] = new float[nzi];
+      copy(nzi,jz,sa[il],0,va[il]);
+    }
+    System.out.println("mva="+min(va));
+    return va;
+  }
+
+  public float[] stack(Sampling sz, float[][] sa, float[] ndf) {
+    int nl = sa.length;
+    int nz = sa[0].length;
+    float[] ss = new float[nz];
+    float[] sc = new float[nz];
+    for (int il=0; il<nl; ++il) {
+    for (int iz=0; iz<nz; ++iz) {
+      float si = sa[il][iz];
+      if (si!=_vnull) {
+        ss[iz] += si;
+        sc[iz] += 1f;
+      }
+    }}
+    for (int iz=0; iz<nz; ++iz) {
+      float ssi = ss[iz];
+      float sci = sc[iz];
+      if (sci!=0.0f) {
+        ss[iz] = ssi/sci;
+      } else {
+        ss[iz] = _vnull;
+      }
+    }
+    float dz = (float)sz.getDelta();
+    float fz = (float)sz.getFirst();
+    int jz = 0;
+    int lz = nz-1;
+    while (jz<nz && ss[jz]==_vnull)
+      ++jz;
+    while (lz>=0 && ss[lz]==_vnull)
+      --lz;
+    int nzi = lz-jz+1;
+    ndf[0] = nzi;
+    ndf[1] = dz;
+    ndf[2] = jz*dz+fz;
+    float[] sv = new float[nzi];
+    for (int ik=0; ik<nzi; ++ik) {
+      sv[ik] = ss[ik+jz];
+    }
+    return sv;
   }
 
   public float[][] getTimeDepth(WellLog[] logs) {
@@ -148,6 +254,14 @@ public class SeismicWellTie {
       ndfw[il][2] = (float)fw;
     }
     return gw;
+  }
+
+  private float[] normalize(float[] x) {
+    float sigma=100.0f;
+    float[] y = mul(x,x);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.apply(y,y);
+    return div(x,sqrt(y));
   }
 
   private float _vnull = -999.2500f;
