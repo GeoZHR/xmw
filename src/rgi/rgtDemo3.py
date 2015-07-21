@@ -48,6 +48,7 @@ wpfile  = "wp" # weight image for flattening
 fqfile = "fq"+logType # output of blended gridder
 fpfile = "fp"+logType # output of blended gridder
 ftfile = "ft"+logType # output of blended gridder
+fqxfile = "fqx"+logType # output of blended gridder
 
 fw1file = "fw1"+logType # one well log data
 fq1file = "fq1"+logType # output of blended gridder
@@ -72,7 +73,8 @@ def main(args):
   #goFaultLikelihoods()
   #goControlSurfs()
   #goRgt()
-  goRgtInterp()
+  #goRgtInterp()
+  goRgtInterpX()
   goInterpO()
   #goOneWell()
   #goRgtInterpOne()
@@ -343,6 +345,30 @@ def goRgtInterp():
   plot3(gx,fq,horizon=horizon,
         cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
   '''
+def goRgtInterpX():
+  print "goRgtInterpX ..."
+  s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
+  if not plotOnly:
+    p  = readImage(gfile)
+    gx = readImage(sfile)
+    gt = readImage(gtfile)
+    ri = RgtInterp3(0.0,p)
+    ri.setScales(0.001,1.0)
+    ri.setRgt(gt)
+    samples=ri.getPoints(0.0,p)
+    fq = ri.gridX(s1,s2,s3,gx)
+    writeImage(fqxfile,fq)
+  else:
+    gx = readImage(sfile)
+    fq = readImage(fqxfile)
+  samples=readLogSamples(logSet,logType,smooth)
+  plot3(gx,samples=samples,clab="Amplitude")
+  plot3(gx,fq,samples=samples,cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
+  '''
+  plot3(gx,samples=samples,horizon=horizon,clab="Amplitude")
+  plot3(gx,fq,samples=samples,horizon=horizon,
+        cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
+  '''
 
 def goRgtInterpOne():
   print "goRgtInterpOne ..."
@@ -397,8 +423,9 @@ def goInterpO():
   #display(s,q,vmin,vmax,logType,png=logType+"Old")
   #display(s,t,0.0,100.0,logType)
   #display(s,q,vmin,vmax,logType,["CrowMountainCRMT"])
-  plot3(s,q,horizon=horizon,
-        cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
+  #plot3(s,q,horizon=horizon,
+  #      cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
+  plot3(s,q,cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
 
   #display(s,q,vmin,vmax,logType,["TensleepASand"])
 def goOneWell():

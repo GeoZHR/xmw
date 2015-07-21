@@ -13,8 +13,8 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
 def main(args):
-  #goTensors()
-  goGradients()
+  goTensors()
+  #goGradients()
 
 def goGradients():
   f,s1,s2 = readAwImage()
@@ -63,6 +63,10 @@ def goTensors():
     d11 = EigenTensors2(s); d11.invertStructure(1.0,1.0)
     d12 = EigenTensors2(s); d12.invertStructure(1.0,2.0)
     d14 = EigenTensors2(s); d14.invertStructure(1.0,4.0)
+    dtx = makeImageTensors(g)
+    plot(g,s1,s2,dtx,dscale=1,png=pref+"00")
+    plot(g,s1,s2,dtx,dscale=2,png=pref+"00")
+    '''
     plot(g,s1,s2,png=pref)
     plot(g,s1,s2,d00,dscale=1,png=pref+"00")
     plot(g,s1,s2,d01,dscale=1,png=pref+"01")
@@ -71,6 +75,73 @@ def goTensors():
     plot(g,s1,s2,d11,dscale=2,png=pref+"11")
     plot(g,s1,s2,d12,dscale=2,png=pref+"12")
     plot(g,s1,s2,d14,dscale=2,png=pref+"14")
+    '''
+
+def makeImageTensors(s):
+  """ 
+  Returns tensors for guiding along features in specified image.
+  """
+  sigma = 4
+  n1,n2 = len(s[0]),len(s)
+  s1 = Sampling(500,0.02,0.0)
+  s2 = Sampling(500,0.02,0.0)
+  lof = LocalOrientFilter(sigma)
+  t = lof.applyForTensors(s) # structure tensors
+  '''
+  c = coherence(sigma,t,s) # structure-oriented coherence c
+  plotAw(c,s1,s2,png="c")
+  c = clip(0.0,0.99,c) # c clipped to range [0,1)
+  t.scale(sub(1.0,c)) # scale structure tensors by 1-c
+  '''
+  eu = fillfloat(1.0,500,500)
+  ev = fillfloat(1.0,500,500)
+  ed=edge(s)
+  t.scale(ed)
+  t.getEigenvalues(eu,ev)
+  #eu = div(eu,max(eu))
+  #ev = div(ev,max(ev))
+  print max(eu)
+  print min(eu)
+  print max(ev)
+  print min(ev)
+  #t.setEigenvalues(ev,eu)
+  t.invert()
+  plotAw(ed,s1,s2,png="ed")
+  #t.invertStructure(1.0,1.0) # invert and normalize
+  return t
+
+def coherence(sigma,t,s):
+  #lsf = LocalSemblanceFilter(sigma,4*sigma)
+  lsf = LocalSemblanceFilter(4,4)
+  return lsf.semblance(LocalSemblanceFilter.Direction2.V,t,s)
+def edge(g):
+  g = gain(g)
+  u1 = zerofloat(500,500)
+  u2 = zerofloat(500,500)
+  g1 = zerofloat(500,500)
+  g2 = zerofloat(500,500)
+  rgf = RecursiveGaussianFilter(1.0)
+  lof = LocalOrientFilter(4.0)
+  lof.applyForNormal(g,u1,u2)
+  rgf.apply10(g,g1)
+  rgf.apply01(g,g2)
+  gu = add(mul(u1,g1),mul(u2,g2))
+  gu = abs(gu)
+  gu = sub(gu,min(gu))
+  gu = div(gu,max(gu))
+  gu = sub(1.0,gu)
+  gu = clip(0.0001,1.0,gu)
+  return gu
+
+def gain(x):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(100.0)
+  ref.apply1(g,g)
+  y = zerofloat(500,500)
+  div(x,sqrt(g),y)
+  return y
+
+
 
 #############################################################################
 # plotting
@@ -101,11 +172,20 @@ def plotAw(g,s1,s2,d=None,dscale=1,cmin=0,cmax=0,png=None):
     tv = TensorsView(s1,s2,d)
     tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
     tv.setLineColor(Color.YELLOW)
+    tv.setLineWidth(2.0)
+    tv.setScale(16.0)
+    sp.plotPanel.getTile(0,0).addTiledView(tv)
+    '''
+    tv = TensorsView(s1,s2,d)
+    tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
+    tv.setLineColor(Color.YELLOW)
     tv.setLineWidth(3)
-    tv.setEllipsesDisplayed(20)
-    tv.setScale(dscale)
+    tv.setScale(2.0)
+    #tv.setEllipsesDisplayed(20)
+    #tv.setScale(dscale)
     tile = sp.plotPanel.getTile(0,0)
     tile.addTiledView(tv)
+    '''
   if pngDir and png:
     sp.paintToPng(360,3.3,pngDir+png+".png")
     #sp.paintToPng(720,3.3,pngDir+png+".png")
@@ -154,7 +234,7 @@ def plotTp(g,s1,s2,d=None,dscale=1,cmin=0,cmax=0,png=None):
 def readAwImage():
   s1 = Sampling(500,0.02,0.0)
   s2 = Sampling(500,0.02,0.0)
-  g = readImage("../../..//data/seis/acm/atwj1s",s1,s2)
+  g = readImage("../../../data/seis/acm/atwj1s",s1,s2)
   return g,s1,s2
 
 def readTpImage():

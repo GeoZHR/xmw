@@ -162,6 +162,62 @@ public class SeismicWellTie {
     return va;
   }
 
+  public float[][] applyShifts(float vnull, Sampling[] sfs,
+    Sampling sfm, float[] u, float[][] f, float[][] ndfs) {
+    int n2 = f.length;
+    float[][] us = invertShifts(vnull,sfs,sfm,u,f,ndfs);
+    SincInterpolator si = new SincInterpolator();
+    float[][] fs = new float[n2][];
+    for (int i2=0; i2<n2; ++i2) {
+      int nt = (int)ndfs[i2][0];
+      float dt = ndfs[i2][1];
+      float ft = ndfs[i2][2];
+      float[] s = new float[nt];
+      for (int i1=0; i1<nt; ++i1) {
+        s[i1] = ft+i1*dt-us[i2][i1];
+      }
+      fs[i2] = new float[nt];
+      int ns2    = sfs[i2].getCount();
+      double ds2 = sfs[i2].getDelta();
+      double fs2 = sfs[i2].getFirst();
+      si.interpolate(ns2,ds2,fs2,f[i2],nt,s,fs[i2]);
+    }
+    return fs;
+  }
+
+  public float[][] invertShifts(float vnull, Sampling[] sfs,
+    Sampling sfm, float[] u, float[][] f, float[][] ndfs) 
+  {
+    int n2 = f.length;
+    float dt = (float)sfm.getDelta();
+    float[][] us = new float[n2][];
+    for (int i2=0; i2<n2; ++i2) {
+      SincInterpolator si = new SincInterpolator();
+      float fs = (float)sfs[i2].getFirst();
+      float ft = fs+si.interpolate(sfm,u,fs);
+      ft = round(ft/dt)*dt;
+      int nt = sfs[i2].getCount();
+      ndfs[i2][0] = nt;
+      ndfs[i2][1] = dt;
+      ndfs[i2][2] = ft;
+      float[] t = new float[nt];
+      for (int i1=0; i1<nt; ++i1) {
+        float x1 = (float)sfs[i2].getValue(i1);
+        t[i1] = x1+si.interpolate(sfm,u,x1);
+      }
+      us[i2] = new float[nt];
+      float[] s = new float[nt];
+      Sampling ss = new Sampling(nt,dt,fs);
+      Sampling st = new Sampling(nt,dt,ft);
+      InverseInterpolator ii = new InverseInterpolator(ss,st);
+      ii.invert(t,s);
+      for (int i1=0; i1<nt; ++i1) {
+        us[i2][i1] = (float)st.getValue(i1)-s[i1];
+      }
+    }
+    return us;
+  }
+
   public float[] stack(Sampling sz, float[][] sa, float[] ndf) {
     int nl = sa.length;
     int nz = sa[0].length;

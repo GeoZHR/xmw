@@ -167,6 +167,67 @@ public class RgtInterp3 {
     return ds;
   }
 
+  public float[][][] gridX(
+    Sampling s1, Sampling s2, Sampling s3, float[][][] f) 
+  {
+    Check.argument(s1.isUniform(),"s1 is uniform");
+    Check.argument(s2.isUniform(),"s2 is uniform");
+    Check.argument(s3.isUniform(),"s2 is uniform");
+    Check.state(_fx!=null,"scattered samples have been set");
+    Check.state(_x1!=null,"scattered samples have been set"); 
+    Check.state(_x2!=null,"scattered samples have been set");
+    Check.state(_x3!=null,"scattered samples have been set");
+    convertX1(s1,s2,s3);
+    int n3 = s3.getCount();
+    int n2 = s2.getCount();
+    double fu1 = min(_u1);
+    double du1 = s1.getDelta()*1.0;
+    double lu1 = max(_u1);
+    int nu1 = (int)((lu1-fu1)/du1)+1;
+    Sampling su1 = new Sampling(nu1,du1,fu1);
+    float pnull = -FLT_MAX;
+    float tnull = -FLT_MAX;
+    SimpleGridder3 sg = new SimpleGridder3(_fx,_x1,_x2,_x3);
+    sg.setNullValue(pnull);
+    float[][][] p1 = sg.grid(su1,s2,s3);
+    checkPoints(pnull,p1);
+    float[][][] p2 = copy(p1);
+    float[][][] t = new float[n3][n2][nu1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<nu1; ++i1) {
+        t[i3][i2][i1] = (p1[i3][i2][i1]!=pnull)?0.0f:tnull;
+      }
+    }}
+    t = gridNearest(pnull,p1);
+    t = mul(sqrt(t),2f);
+    float[][][] g = flatten(s1,su1,f);
+    float[][][] s = coherence(g);
+    float[][] ti1  = new float[n3][n2];
+    float[][] gi1  = new float[n3][n2];
+    float[][] si1  = new float[n3][n2];
+    float[][] p1i1 = new float[n3][n2];
+    float[][] p2i1 = new float[n3][n2];
+    for (int i1=0; i1<nu1; ++i1) {
+      System.out.println("i1="+i1);
+      if(slice(i1,n2,n3,pnull,p2,p2i1)) {
+        slice(i1,n2,n3,g,gi1);
+        slice(i1,n2,n3,s,si1);
+        float[][] q = gridSlice(pnull,p2i1,gi1,si1);
+        setValue(i1,n2,n3,p2,q);
+      } else {
+        slice(i1,n2,n3,s,si1);
+        slice(i1,n2,n3,g,gi1);
+        slice(i1,n2,n3,t,ti1);
+        slice(i1,n2,n3,p1,p1i1);
+        float[][] q = gridSlice(ti1,p1i1,gi1,si1);
+        setValue(i1,n2,n3,p2,q);
+      }
+    }
+    float[][][] q = unflatten(su1,p2);
+    return q;
+  }
+
 
   public float[][][][] grid(Sampling s1, Sampling s2, Sampling s3) {
     Check.argument(s1.isUniform(),"s1 is uniform");
@@ -209,6 +270,8 @@ public class RgtInterp3 {
     float[][][] qi = unflatten(su1,q);
     return new float[][][][]{ti,pi,qi};
   }
+
+
 
     /**
    * Computes gridded values using blended neighbors. 
@@ -354,4 +417,107 @@ public class RgtInterp3 {
     float[][][] au = fillfloat(_sv/_sh,n1,n2,n3);
     _tensors = new EigenTensors3(u1,u2,w1,w2,au,av,aw,true);
   }
+
+  private float[][][] flatten(
+    Sampling sx1, Sampling su1, final float[][][] f) 
+  {
+    final int n3 = f.length;
+    final int n2 = f[0].length;
+    final int nx1 = sx1.getCount();
+    final int nu1 = su1.getCount();
+    final float[][][] x1 = new float[n3][n2][nu1];
+    final InverseInterpolator ii = new InverseInterpolator(sx1,su1);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) 
+        ii.invert(_u1[i3][i2],x1[i3][i2]);
+    }});
+
+    final double d1 = sx1.getDelta();
+    final double f1 = sx1.getFirst();
+    final float[][][] g = new float[n3][n2][nu1];
+    final SincInterpolator si = new SincInterpolator();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2)
+        si.interpolate(nx1,d1,f1,f[i3][i2],nu1,x1[i3][i2],g[i3][i2]);
+    }});
+    return g;
+  }
+
+  private EigenTensors2 makeImageTensors(float[][]f, float[][] s) {
+    float sigma1 = 4.0f;
+    float sigma2 = 4.0f;
+    LocalOrientFilter lof = new LocalOrientFilter(sigma1,sigma2);
+    EigenTensors2 et = lof.applyForTensors(f);
+    s = sub(1.0f,s);
+    s = clip(0.0001f,1.0f,s);
+    et.scale(s);
+    et.invertStructure(1.0,1.0);
+    return et;
+  }
+
+  private float[][][] coherence(float[][][] f) {
+    int sig1 = 2;
+    int sig2 = sig1*4;
+    float sigma1 = 4.0f;
+    float sigma2 = 2.0f;
+    float sigma3 = 2.0f;
+    LocalOrientFilter lof = new LocalOrientFilter(sigma1,sigma2,sigma3);
+    EigenTensors3 et = lof.applyForTensors(f);
+    LocalSemblanceFilter lsf = new LocalSemblanceFilter(sig1,sig2);
+    float[][][] s = lsf.semblance(LocalSemblanceFilter.Direction3.VW,et,f);
+    return s;
+  }
+
+  private float[][] gridSlice(
+    float pnull, float[][] p, float[][] f, float[][] s) 
+  {
+    EigenTensors2 et = makeImageTensors(f,s);
+    BlendedGridder2 bg = new BlendedGridder2(et);
+    float[][] t = bg.gridNearest(pnull,p);
+    float[][] q = copy(p);
+    bg.gridBlended(t,p,q);
+    return q;
+  }
+
+  private float[][] gridSlice(
+    float[][] t, float[][] p, float[][] f, float[][] s) 
+  {
+    EigenTensors2 et = makeImageTensors(f,s);
+    BlendedGridder2 bg = new BlendedGridder2(et);
+    float[][] q = copy(p);
+    bg.gridBlended(t,p,q);
+    return q;
+  }
+
+  private boolean slice(
+    int i1, int n2, int n3, float vnull, float[][][] f, float[][] f1) {
+    boolean valid = false;
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+      float fi = f[i3][i2][i1];
+      if(fi!=vnull){valid=true;}
+      f1[i3][i2] = fi;
+    }}
+    return valid;
+  }
+
+  private void slice(
+    int i1, int n2, int n3, float[][][] f, float[][] f1) {
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+      f1[i3][i2] = f[i3][i2][i1];
+    }}
+  }
+
+  private void setValue(
+    int i1, int n2, int n3, float[][][] f, float[][] f1) {
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+      f[i3][i2][i1]=f1[i3][i2];
+    }}
+  }
+
+
 }

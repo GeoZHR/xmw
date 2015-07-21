@@ -60,7 +60,7 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
 pngDir = "../../../png/ipsi/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -71,8 +71,8 @@ def main(args):
   #goSkin()
   #goReSkin()
   #goSmooth()
-  goSlip()
-  #goUnfault()
+  #goSlip()
+  goUnfault()
   #goUnfaultS()
   #goUncScan()
   #goUncConvert()
@@ -295,23 +295,31 @@ def goSlip():
 def goUnfault():
   smark = -999.999
   gx = readImage(gxfile)
+  gx = gain(gx)
   skins = readSkins(fslbase)
+  '''
   fsl = FaultSlipper(gx,gx,gx)
   s1,s2,s3=fsl.getDipSlips(skins,smark)
   s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
   gw = fsl.unfault([s1,s2,s3],gx)
-  gx = gain(gx)
   gw = gain(gw)
   plot3(gx)
   plot3(gw)
-  mark = -100
+  '''
+  mark = -1000000
   flt = like(gx)
   fss = fillfloat(mark,n1,n2,n3)
-  FaultSkin.getThrow(mark,skins,fss)
+  FaultSkin.getThrowThick(mark,skins,fss)
   FaultSkin.getLikelihood(skins,flt)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        fssi = fss[i3][i2][i1]
+        if fssi<=0.0 and fssi>mark:
+          fss[i3][i2][i1]=0.05
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
-  plot3(gx,fss,cmin=0,cmax=10,cmap=jetFillExceptMin(1.0),
+  plot3(gx,fss,cmin=-0.05,cmax=10,cmap=jetFillExceptMin(1.0),
       slices=[93,180,192],clab="Fault throw (samples)",cint=2,png="throw3D")
 
 def goUnfaultS():

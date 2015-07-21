@@ -93,10 +93,10 @@ def main(args):
 
 def goAll():
   goImage()
-  #goTensors()
-  goSmoothGV()
-  goSmoothHV()
-  goSmoothGSV()
+  goTensors()
+  #goSmoothGV()
+  #goSmoothHV()
+  #goSmoothGSV()
   #goSemblanceV()
   #goSemblanceClassic()
 

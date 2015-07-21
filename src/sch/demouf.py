@@ -73,7 +73,7 @@ maxThrow =38.0
 pngDir = "../../../png/sch/suf/slices/"
 
 # We can avoid most computations entirely be setting plotOnly to True.
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out other parts that have already written results to files.
@@ -85,19 +85,19 @@ def main(args):
   #goUnfaultC()
   #goUnfold()
   #goTeaser()
-  #goSlices()
+  goSlices()
   #goShifts()
   #goHorizon()
   #goView3D()
-  gx = readImage(gxfile)
-  gw = readImage(gwfile)
+  #gx = readImage(gxfile)
+  #gw = readImage(gwfile)
   #plot3f(gx,clab="Amplitude",aint=0.5,png="seismic")
   #plot3f(gw,clab="Amplitude",aint=0.5,png="seismicUf")
-  slices=[93,185,174]
-  gx = gain(gx)
-  gw = gain(gw)
-  plot3(gx,slices=slices)
-  plot3(gw,slices=slices)
+  #slices=[93,185,174]
+  #gx = gain(gx)
+  #gw = gain(gw)
+  #plot3(gx,slices=slices)
+  #plot3(gw,slices=slices)
 
 def goView3D():
   mark = -100
@@ -224,6 +224,7 @@ def goSlices():
   mul(c1,d1*1000,c1)
   print min(c1)
   print max(c1)
+  '''
   plot3(gx,skins=skp,smax=20,png="faults")
   plot3f(gx,a=fls,amin=0.01,amax=0.8,
         amap=jetFillExceptMin(1.0),alab="Fault likelihood",aint=0.1,png="fls")
@@ -237,10 +238,11 @@ def goSlices():
         amap=jetFill(0.3),alab="Vertical shift (ms)",
         #amap=jetFill(0.3),alab="Vertical component of unfaulting shift (ms)",
         aint=5.0,png="unfaultShifts")
+  '''
   plot3f(gx,a=c1,amin=-60,amax=90,
         amap=jetFill(0.3),alab="Vertical component of composite shift (ms)",
         aint=20.0,png="unfoldShifts")
-  plot3f(fw,clab="Amplitude",aint=0.5,png="unfaultSlices")
+  #plot3f(fw,clab="Amplitude",aint=0.5,png="unfaultSlices")
   plot3f(gw,clab="Amplitude",aint=0.5,png="unfoldSlices")
   #plot3(gx,c1,cmin=-60,cmax=80,cmap=jetFill(0.3),slices=[93,190,175],
   #      clab="Vertical shift (samples)", cint=20.0,png="compositeShifts3D")

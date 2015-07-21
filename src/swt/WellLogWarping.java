@@ -461,7 +461,6 @@ public class WellLogWarping {
     int nk = f[0].length;
     int nl = f.length;
     float[][] g = fillfloat(_vnull,nk,nl);
-
     // For all logs, ...
     for (int il=0; il<nl; ++il) {
 
@@ -481,6 +480,37 @@ public class WellLogWarping {
     }
     return g;
   }
+
+  public float[][] applyShiftsW(float[][] f, float[][] s) {
+    int nl = f.length;
+    int n1 = f[0].length;
+    float[][] g = fillfloat(_vnull,n1,nl);
+    SincInterpolator si = new SincInterpolator();
+    for (int il=0; il<nl; ++il) {
+      float[] fl = f[il];
+      int f1 = 0;
+      int l1 = n1-1;
+      while (f1<n1 && fl[f1]==_vnull)
+        ++f1;
+      while (l1>=0 && fl[l1]==_vnull)
+        --l1;
+      int n1i = l1-f1+1;
+      float[] fk = new float[n1i];
+      Sampling sk = new Sampling(n1i,1.0,f1);
+      for (int ik=f1, i1=0; ik<=l1; ++ik,++i1) {
+        fk[i1] = fl[ik];
+      }
+      for (int ik=0; ik<n1; ++ik) {
+        float zk = ik-s[il][ik];
+        int jk = (int)(zk+0.5f);
+        if (0<=jk && jk<n1 && f[il][jk]!=_vnull) {
+          g[il][ik] = si.interpolate(sk,fk,zk);
+        }
+      }
+    }
+    return g;
+  }
+
 
   public float[][] applyShiftsX(float[][] f, float[][] s) {
     int nl = f.length;

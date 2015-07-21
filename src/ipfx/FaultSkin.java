@@ -158,6 +158,40 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     }
   }
 
+  public static void getThrowThick(
+    float mark, FaultSkin[] skins, float[][][] fs) {
+    int n3 = fs.length;
+    int n2 = fs[0].length;
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2 = cell.i2;
+        int i3 = cell.i3;
+        int i2m = cell.i2m;
+        int i2p = cell.i2p;
+        int i3m = cell.i3m;
+        int i3p = cell.i3p;
+        if(i2m<0){i2m=0;}
+        if(i3m<0){i3m=0;}
+        if(i2p<0){i2p=0;}
+        if(i3p<0){i3p=0;}
+        if(i2p>=n2){i2p=n2-1;}
+        if(i3p>=n3){i3p=n3-1;}
+        if(i2m>=n2){i2m=n2-1;}
+        if(i3m>=n3){i3m=n3-1;}
+        float s1 = cell.s1;
+        float si = fs[i3][i2][i1];
+        if(si==mark) {
+          fs[i3m][i2m][i1] = s1;
+          fs[i3p][i2p][i1] = s1;
+        } else if(abs(s1)>abs(si)) {
+          fs[i3m][i2m][i1] = s1;
+          fs[i3p][i2p][i1] = s1;
+        }
+      }
+    }
+  }
+
 
   /**
    * Returns the total number of cells in the specified skins.
