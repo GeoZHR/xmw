@@ -221,6 +221,7 @@ def goFlattenC():
   plot3(gu,png="flattened")
   plot3(gx,gt,cmin=min(gt)+20,cmax=max(gt)-10,cmap=jetRamp(1.0),
         clab="Relative geologic time",png="rgt")
+  '''
   ha = []
   hs = [280,275,270,265,260,255,250,245,240,235,230,225,220,215,
         210,205,200,195,190,185,180,175,170,165,160,155,150,145,
@@ -228,7 +229,9 @@ def goFlattenC():
   for ih, h in enumerate(hs):
     ha.append(h)
     plot3(gx,hs=ha,png="horizon"+str(ih))
-
+  '''
+  for i1 in range(40,280,5):
+    plot3(gx,hs=[i1],png="horizon"+str(i1))
 #############################################################################
 # read/write files
 def readImage(name):

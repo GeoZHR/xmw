@@ -37,7 +37,19 @@ sw3file = "sw3" # 3rd component of unfaulting shifts
 gufile = "gu" # flattened image
 x1file = "x1" # horizon volume
 u1file = "u1" # relateive geologic time volume
+ulfile = "ul"
+uncfile = "unc"
+fgfile = "fg"
+rgtfile = "rgt"
+vqxfile = "vqx"
+dqxfile = "dqx"
+vqwfile = "vqw"
+dqwfile = "dqw"
+vqufile = "vqu"
+dqufile = "dqu"
 
+logType = "vel"
+logType = "den"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -53,63 +65,134 @@ minSkinSize = 2000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
-minThrow = -15.0
-maxThrow =  15.0
+minThrow = 0.0
+maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-#pngDir = "../../../png/ipfx/"
-plotOnly = False
+pngDir = "../../../png/swt/fake/"
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   goFakeData()
-  '''
-  goSlopes()
-  goScan()
-  goThin()
-  goSkin()
-  goReSkin()
-  goSmooth()
-  goSlip()
-  goUnfaultS()
-  '''
+  #goSlopes()
+  #goScan()
+  #goThin()
+  #goSkin()
+  #goReSkin()
+  #goSmooth()
+  #goSlip()
+  #goUnfaultS()
+  #goUncScan()
   #goFlatten()
+  #goInterp()
   #goHorizonExtraction()
-  #goSubset()
+  #goTest()
+  #test()
+def test():
+  fg = readImage(fgfile)
+  ri = RgtInterp3()
+  fk1 = zerofloat(n2,n3)
+  fk2 = zerofloat(n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      fk1[i3][i2] = fg[i3][i2][110]
+      fk2[i3][i2] = fg[i3][i2][111]
+  writeImage("fake110",fk1)
+  writeImage("fake111",fk2)
+  plot3(fg)
+def goTest():
+  uncs = readUncs(uncfile)
+  sc = SetupConstraints()
+  uncs = add(uncs,1.0)
+  cs = sc.uncConstraints(uncs)
+  rgt = readImage(rgtfile)
+  fw  = readImage(fwsfile)
+  fl3 = Flattener3Unc()
+  fus,x1s = fl3.rgtSampling(s1,cs,rgt)
+  for fu in fus:
+    print fu
+  g = fl3.flatten(s1,x1s,fw)
+  n1s = len(g[0][0])
+  dn = (n1s-n1)/2
+  gs = copy(n1,n2,n3,0,0,0,g)
+  fu1 = round(min(fus))
+  lu1 = round(max(fus))
+  nu1 = len(fus)
+  su1 = Sampling(nu1,1.0,fu1)
+  gt = fl3.rgtFromHorizonVolume(n1,su1,x1s)
+  mp = fl3.getMappingsFromRgt(s1,gt)
+  fg = mp.flatten(fw)
+  plot3(gs)
+  plot3(fw)
+  plot3(fg)
+  plot3(fw,rgt,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
+        clab="Relative geologic time (samples)",png="rgt")
+  plot3(fw,gt,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
+        clab="Relative geologic time (samples)",png="rgt")
+  '''
+  gx = readImage(gxfile)
+  gw = readImage(fwsfile)
+  gt = readImage(rgtfile)
+  fg = readImage(fgfile)
+  sw1 = readImage(sw1file)
+  sw2 = readImage(sw2file)
+  sw3 = readImage(sw3file)
+  skins = readSkins(fskgood)
+  logs = getLogs(logType)
+  cp = ConvertPoints()
+  ps = cp.setUnfaultCoord(logs,skins,sw1,sw2,sw3)
+  ps = cp.setFlattenedCoord(x1s,ps)
+  fw,w1,w2,w3=cp.getSamplesW(ps)
+  fx,x1,x2,x3=cp.getSamplesX(ps)
+  fu,u1,u2,u3=cp.getSamplesU(ps)
+  samplesW = fw,w1,w2,w3
+  samplesX = fx,x1,x2,x3
+  samplesU = fu,u1,u2,u3
+  if not plotOnly:
+    ri = RgtInterp3(ps)
+    ri.setScales(0.001,1.0)
+    ri.setRgt(gt)
+    uf  = UnfaultS(4.0,2.0)
+    fqw = ri.gridXX(n1,s2,s3,x1s,g)
+    fqx = zerofloat(n1,n2,n3)
+    uf.applyShiftsX([sw1,sw2,sw3],fqw,fqx)
+    if logType=="vel":
+      writeImage(vqxfile,fqx)
+      writeImage(vqwfile,fqw)
+    if logType=="den":
+      writeImage(dqxfile,fqx)
+      writeImage(dqwfile,fqw)
+  else:
+    if logType=="vel":
+      fqw = writeImage(vqwfile)
+      fqx = writeImage(vqxfile)
+    if logType=="den":
+      fqw = writeImage(dqwfile)
+      fqx = writeImage(dqxfile)
+  if logType=="vel":
+    fqx = div(fqx,1000)
+    fqw = div(fqw,1000)
+    vmin,vmax,vmap= 3.0,5.5,ColorMap.JET
+    clab = "Velocity (km/s)"
+    pngx = "vqx"
+    pngw = "vqw"
+  if logType=="den":
+    vmin,vmax,vmap= 2.2,3.1,ColorMap.JET
+    clab = "Density (g/cc)"
+    pngx = "dqx"
+    pngw = "dqw"
 
-def goSubset():
-  gx  = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  fcs = fs.findCells([fl,fp,ft])
-  #f1,f2,f3=37,15,15
-  #l1,l2,l3=56,35,34
-  f1,f2,f3=37,15,9
-  l1,l2,l3=56,35,28
+  plot3(gx,samples=samplesX)
+  plot3(gw,samples=samplesW)
+  plot3(gs,samples=samplesU)
+  plot3(fqx,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,png=pngx)
+  plot3(fqw,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,png=pngw)
+  '''
 
-  n1 = l1-f1+1
-  n2 = l2-f2+1
-  n3 = l3-f3+1
-  sks = readSkins(fskbase)
-  skg = readSkins(fskgood)
-  gxs = copy(n1,n2,n3,f1,f2,f3,gx)
-  fsb = FaultSkinSub(f1,f2,f3,l1,l2,l3)
-  fcss =fsb.getSubCell(fcs)
-  for fc in fcss:
-    if(fc.fl<0.7):
-      fc.setFl(fc.fl-0.08)
-  skss=fsb.getSubSkin(sks)
-  skgs=fsb.getSubSkinNew(sks,skg)
-  fsb.setForNewCells(0.3,[skss[0]],skgs[0])
-  fsb.setForNewCells(0.6,[skss[1],skss[2]],skgs[1])
-  plot3(gxs,cells=fcss,png="subcells2")
-  plot3(gxs,skins=skss,links=True,png="subskins2")
-  plot3(gxs,skins=skgs,links=True,png="subskinsi2")
 def goFakeData():
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
@@ -118,10 +201,11 @@ def goFakeData():
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.0 # (rms noise)/(rms signal) ratio
+  lateralViriation = True
+  noise = 0.5 # (rms noise)/(rms signal) ratio
   if not plotOnly:
-    gx,p2,p3,vx,dx = FakeData.seismicAndSlopes3d2015A(
-      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
+    gx,p2,p3,vx,dx = FakeData.seismicAndSlopes3d2015A(sequence,
+    nplanar,conjugate,conical,impedance,wavelet,lateralViriation,noise)
     writeImage(gxfile,gx)
     writeImage(vxfile,vx)
     writeImage(dxfile,dx)
@@ -136,18 +220,20 @@ def goFakeData():
   print "gx min =",min(gx)," max =",max(gx)
   print "p2 min =",min(p2)," max =",max(p2)
   print "p3 min =",min(p3)," max =",max(p3)
-  dmin = min(dx)
-  dmax = max(dx)
+  dmin = 2.2
+  dmax = 3.1
+  vmin = 3.0
+  vmax = 5.5
   dmap = ColorMap.JET
+  vmap = ColorMap.JET
   print "dmin=",dmin, "dmax=",dmax
-  gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
-  vmin,vmax,vmap = 2.0,3.5,ColorMap.JET
+  gmin,gmax,gmap = -2.0,1.5,ColorMap.GRAY
   if impedance:
     gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
   vx = div(vx,1000)
   plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-  plot3(vx,cmin=vmin,cmax=vmax,cmap=vmap,clab="Velocity (km/s)",png="gx")
-  plot3(dx,cmin=dmin,cmax=dmax,cmap=dmap,clab="Density (g/cc)",png="gx")
+  plot3(vx,cmin=vmin,cmax=vmax,cmap=vmap,clab="Velocity (km/s)",png="vx")
+  plot3(dx,cmin=dmin,cmax=dmax,cmap=dmap,clab="Density (g/cc)",png="dx")
 
 def goSlopes():
   print "goSlopes ..."
@@ -241,7 +327,7 @@ def goSkin():
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.1)
+  fs.setMaxPlanarDistance(0.2)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   skins = fs.findSkins(cells)
@@ -314,7 +400,7 @@ def goSlip():
   p3 = readImage(p3file)
   skins = readSkins(fskgood)
   fsl = FaultSlipper(gsx,p2,p3)
-  fsl.setOffset(2.0) # the default is 2.0 samples
+  fsl.setOffset(1.0) # the default is 2.0 samples
   fsl.setZeroSlope(False) # True only if we want to show the error
   fsl.computeDipSlips(skins,minThrow,maxThrow)
   print "  dip slips computed, now reskinning ..."
@@ -332,9 +418,10 @@ def goSlip():
   writeImage(fs1file,s1)
   writeImage(fs2file,s2)
   writeImage(fs3file,s3)
-  plot3(gx,skins=skins,smax=10.0,slices=[85,5,60],png="skinss1")
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,skins=skins,smax=15.0,slices=[85,5,60],png="skinss1")
+  plot3(gx,s1,cmin=0,cmax=15.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
+  '''
   s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
@@ -345,6 +432,7 @@ def goSlip():
   gw = fsl.unfault([s1,s2,s3],gx)
   plot3(gx)
   plot3(gw,clab="Amplitude",png="gw")
+  '''
 
 def goUnfaultS():
   if not plotOnly:
@@ -359,7 +447,7 @@ def goUnfaultS():
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
 
-    uf = UnfaultS(4.0,2.0)
+    uf = UnfaultS(8.0,4.0)
     uf.setIters(100)
     uf.setTensors(et)
     mul(sp[3][0],10,sp[3][0])
@@ -371,6 +459,9 @@ def goUnfaultS():
     writeImage(sw2file,t2)
     writeImage(sw3file,t3)
   else :
+    t1 = readImage(sw1file)
+    t2 = readImage(sw2file)
+    t3 = readImage(sw3file)
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
   plot3(gx,png="gxuf")
@@ -379,18 +470,17 @@ def goUnfaultS():
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)
   FaultSkin.getThrow(mark,skins,s1)
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,s1,cmin=0.0,cmax=15.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
-  plot3(gx,t1,cmin=-6.0,cmax=6.0,cmap=jetFill(0.3),
+  plot3(gx,t1,cmin=-10.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+  plot3(gx,t2,cmin=-3.0,cmax=3.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
 
 def goUncScan():
   sig1s,sig2s=1.0,2.0
-  gx = readImage(gxfile)
   fw = readImage(fwsfile)
   if not plotOnly:
     fw = smoothF(fw)
@@ -401,58 +491,239 @@ def goUncScan():
     unc.setSampling(2,2)
     unc.setForLof(sig1s,sig2s)
     ul=unc.likelihood(cs)
-    ult = like(ul)
-    unc.thin(0.1,ul,ult)
-    sfs = unc.surfer(n2,n3,0.1,2000,ult,ul)
-    #unc.surfaceUpdate(2.0,2.0,fw,sfs)
-    removeAllUncFiles(uncfile)
-    writeUncs(uncfile,sfs)
     uli = unc.interp(n1,n2,n3,ul)
+    #ul  = div(exp(uli),exp(1.0))
     writeImage(ulfile,uli)
-  fw = gain(fw)
-  uc = readImage(ulfile)
-  ul = zerofloat(n1,n2,n3)
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
+  ul = readImage(ulfile)
   unc = UncSurfer()
   ult = like(ul)
-  unc.thin(0.2,ul,ult)
-  ul = div(exp(ul),exp(1.0))
+  unc.thin(0.6,ul,ult)
   sfs = unc.surfer2(n2,n3,0.2,3000,ult)
   sfs = unc.extractUncs(sfs,fw)
   removeAllUncFiles(uncfile)
   writeUncs(uncfile,sfs)
-  uc = gain2(uc,12)
-  uc = sub(uc,min(uc))
-  uc = div(uc,max(uc))
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
+  plot3(fw,uncs=sfs,png="uncs")
   plot3(fw,ul,cmin=0.3,cmax=1.0,cmap=jetRamp(1.0),
         clab="Unconformity likelihood",png="ul")
-  plot3(fw,uncs=sfs,png="uncs")
-
 def goFlatten():
-  fw = readImage(fwsfile)
+  gw = readImage(fwsfile)
   if not plotOnly:
-    sig1,sig2,sig3,pmax=4.0,1.0,1.0,5.0
-    p2,p3,ep = FaultScanner.slopes(sig1,sig2,sig3,pmax,fw)
-    wp = pow(ep,6.0)
-    fl = Flattener3()
-    fl.setSmoothings(6.0,6.0)
-    fl.setIterations(0.01,200)
-    mp = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp)
-    gu = mp.flatten(fw)
-    x1 = mp.x1
-    u1 = mp.u1
-    writeImage(gufile,gu)
-    writeImage(x1file,x1)
-    writeImage(u1file,u1)
-  else:
-    gu = readImage(gufile)
-    x1 = readImage(x1file)
-    u1 = readImage(u1file)
-  plot3(fw)
+    sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,5.0
+    ip = InsPhase()
+    cs = like(gw)
+    ip.applyForCosine(gw,cs)
+    p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,cs)
+    zm = ZeroMask(0.2,1.0,1.0,1.0,gw)
+    zero = 0.00;
+    tiny = 0.01;
+    zm.setValue(zero,p2)#set inline slopes for samples above water bottom
+    zm.setValue(zero,p3)#set crossline slopes for samples above water bottom
+    zm.setValue(tiny,ep)#set planarities for samples above water bottom
+    wp = pow(ep,6)
+    uncs = readUncs(uncfile)
+    sc = SetupConstraints()
+    uncs = add(uncs,2.0)
+    cs = sc.constraintsFromSurfaces(uncs)
+    sfs = copy(uncs)
+    for i3 in range(0,35):
+      for i2 in range(115,n2):
+        sfs[0][i3][i2] = -100
+    sfs = sc.uncConstraints(sfs)
+    rs = zerofloat(n1,n2,n3)
+    fl3 = Flattener3Unc()
+    sig1,sig2=10.0,10.0
+    fl3.setSmoothings(sig1,sig2)
+    fl3.setIterations(0.01,300);
+    mp = fl3.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp,None,sfs,rs)
+    gt = mp.u1
+    su1 = Sampling(n1,1,1)
+    #gu  = mp.flatten(gw)
+    gu = fl.flatten(s1,su1,gt,gw)
+    writeImage(fgfile,gu)
+    writeImage(rgtfile,gt)
+  gx  = readImage(gxfile)
+  gt = readImage(rgtfile)
+  su1 = Sampling(n1,1,1)
+  fl = Flattener3Unc()
+  gu = fl.flatten(s1,su1,gt,gw)
+  plot3(gx)
+  plot3(gw)
   plot3(gu,png="gu")
-  plot3(fw,u1,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
-        clab="Relative geologic time (samples)",png="u1")
+  plot3(gw,gt,cmin=10.0,cmax=n1+20,cmap=ColorMap.JET,
+        clab="Relative geologic time (samples)",png="rgt")
+  plot3(gw,gt,cmin=10.0,cmax=n1+20,cmap=jetFill(0.9),
+        clab="Relative geologic time (samples)",png="gwt")
+
+def goInterp():
+  #p=getImageWithLogPoints(logType)
+  #samplesW=getLogPointsW(logType)
+  #samplesX=getLogPointsX(logType)
+  su1 = Sampling(n1,1,1)
+  gx = readImage(gxfile)
+  gw = readImage(fwsfile)
+  gt = readImage(rgtfile)
+  fl = Flattener3Unc()
+  gu = fl.flatten(s1,su1,gt,gw)
+  #gu = readImage(gufile)
+  sw1 = readImage(sw1file)
+  sw2 = readImage(sw2file)
+  sw3 = readImage(sw3file)
+  skins = readSkins(fskgood)
+  logs = getLogs(logType)
+  cp = ConvertPoints()
+  ps = cp.setUnfaultCoord(logs,skins,sw1,sw2,sw3)
+  ps = cp.setFlattenedCoord(s1,s2,s3,gt,ps)
+  fw,w1,w2,w3=cp.getSamplesW(ps)
+  fx,x1,x2,x3=cp.getSamplesX(ps)
+  fu,u1,u2,u3=cp.getSamplesU(ps)
+  samplesW = fw,w1,w2,w3
+  samplesX = fx,x1,x2,x3
+  samplesU = fu,u1,u2,u3
+  if not plotOnly:
+    ri = RgtInterp3(ps)
+    ri.setScales(0.001,1.0)
+    ri.setRgt(gt)
+    uf  = UnfaultS(4.0,2.0)
+    fqu,fqw = ri.gridX(s1,s2,s3,gw)
+    fqu = copy(n1,n2,n3,fqu)
+    fqx = zerofloat(n1,n2,n3)
+    uf.applyShiftsX([sw1,sw2,sw3],fqw,fqx)
+    if logType=="vel":
+      writeImage(vqxfile,fqx)
+      writeImage(vqwfile,fqw)
+      writeImage(vqufile,fqu)
+      fqx = div(fqx,1000)
+      fqw = div(fqw,1000)
+      fqu = div(fqu,1000)
+    if logType=="den":
+      writeImage(dqxfile,fqx)
+      writeImage(dqwfile,fqw)
+      writeImage(dqufile,fqu)
+  else:
+    if logType=="vel":
+      fqu = readImage(vqufile)
+      fqw = readImage(vqwfile)
+      fqx = readImage(vqxfile)
+      fqx = div(fqx,1000)
+      fqw = div(fqw,1000)
+    if logType=="den":
+      fqu = readImage(dqufile)
+      fqw = readImage(dqwfile)
+      fqx = readImage(dqxfile)
+  if logType=="vel":
+    fx = readImage(vxfile)
+    vmin,vmax,vmap= 3.0,5.5,jetFill(0.5)
+    clab = "Velocity (km/s)"
+    pngx = "vqx"
+    pngw = "vqw"
+    pngu = "vqu"
+    pngf = "vgx"
+  if logType=="den":
+    fx = readImage(dxfile)
+    vmin,vmax,vmap= 2.1,3.1,jetFill(0.5)
+    clab = "Density (g/cc)"
+    pngx = "dqx"
+    pngw = "dqw"
+    pngu = "dqu"
+    pngf = "dgx"
+  plot3(gx,samples=samplesX)
+  plot3(gw,samples=samplesW)
+  plot3(gu,samples=samplesU)
+  plot3(gu,fqu,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,samples=samplesU,png=pngu)
+  plot3(gw,fqw,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,samples=samplesW,png=pngw)
+  plot3(gx,fqx,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,samples=samplesX,png=pngx)
+  plot3(gx,fx, cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,png=pngf)
+#def getImageWithLogPoints(logType):
+def getLogPointsW(logType):
+  k1u = [109,109,109,109,109, 21, 21, 21, 21, 21, 21, 21]
+  k2u = [128,100, 81, 59, 21,142, 70, 20,  8, 96, 50,140]
+  k3u = [ 86, 79, 89, 94, 68,145,130,135,  8, 20, 30, 10]
+  np = len(k1u)
+  r1 = readImage(sw1file)
+  r2 = readImage(sw2file)
+  r3 = readImage(sw3file)
+  f = zerofloat(n1,n2,n3)
+  if logType == "vel":
+    f = readImage(vxfile)
+  if logType == "den":
+    f = readImage(dxfile)
+  si = SincInterpolator()
+  si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT)
+  fx,x1,x2,x3=[],[],[],[]
+  #p = zerofloat(n1,n1,n2)
+  for ip in range(np):
+    i1 = round(k1u[ip])
+    i2 = round(k2u[ip])
+    i3 = round(k3u[ip])
+    k2 = round(k2u[ip]+r2[i3][i2][i1])
+    k3 = round(k3u[ip]+r3[i3][i2][i1])
+    for k1 in range(n1):
+      p1 = k1-r1[k3][k2][k1]
+      p2 = k2-r2[k3][k2][k1]
+      p3 = k3-r3[k3][k2][k1]
+      fp = f[k3][k2][k1]
+      x1.append(p1)
+      x2.append(p2)
+      x3.append(p3)
+      fx.append(fp)
+  return fx,x1,x2,x3
+
+def getLogs(logType):
+  k1u = [105,105,105,105,105, 21, 21, 21, 21, 21, 21, 21]
+  k2u = [127,100, 81, 56, 20,142, 70, 20,  8, 96, 50,140]
+  k3u = [ 90, 78, 90, 93, 65,145,130,135,  8, 20, 30, 10]
+  np = len(k1u)
+  r1 = readImage(sw1file)
+  r2 = readImage(sw2file)
+  r3 = readImage(sw3file)
+  f = zerofloat(n1,n2,n3)
+  if logType == "vel":
+    f = readImage(vxfile)
+  if logType == "den":
+    f = readImage(dxfile)
+  fx = zerofloat(n1,np,4)
+  for ip in range(np):
+    i1 = round(k1u[ip])
+    i2 = round(k2u[ip])
+    i3 = round(k3u[ip])
+    k2 = round(k2u[ip]+r2[i3][i2][i1])
+    k3 = round(k3u[ip]+r3[i3][i2][i1])
+    for k1 in range(n1):
+      fx[1][ip][k1]=k1
+      fx[2][ip][k1]=k2
+      fx[3][ip][k1]=k3
+      fx[0][ip][k1]=f[k3][k2][k1]
+  return fx
+
+def getLogPointsX(logType):
+  k1u = [109,109,109,109,109, 21, 21, 21, 21, 21, 21, 21]
+  k2u = [128,100, 81, 59, 21,142, 70, 20,  8, 96, 50,140]
+  k3u = [ 86, 79, 89, 93, 68,145,130,135,  8, 20, 30, 10]
+  np = len(k1u)
+  r1 = readImage(sw1file)
+  r2 = readImage(sw2file)
+  r3 = readImage(sw3file)
+  f = zerofloat(n1,n2,n3)
+  if logType == "vel":
+    f = readImage(vxfile)
+  if logType == "den":
+    f = readImage(dxfile)
+  si = SincInterpolator()
+  si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT)
+  fx,x1,x2,x3=[],[],[],[]
+  #p = zerofloat(n1,n1,n2)
+  for ip in range(np):
+    i1 = round(k1u[ip])
+    i2 = round(k2u[ip])
+    i3 = round(k3u[ip])
+    k2 = round(k2u[ip]+r2[i3][i2][i1])
+    k3 = round(k3u[ip]+r3[i3][i2][i1])
+    for k1 in range(n1):
+      x1.append(k1)
+      x2.append(k2)
+      x3.append(k3)
+      fx.append(f[k3][k2][k1])
+  return fx,x1,x2,x3
 
 def goHorizonExtraction():
   gx = readImage(gxfile)
@@ -533,6 +804,23 @@ def gain(x):
   y = like(x)
   div(x,sqrt(g),y)
   return y
+
+def gain2(x,sigma):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(sigma)
+  ref.apply1(g,g)
+  y = like(x)
+  div(x,sqrt(g),y)
+  return y
+
+def smoothF(x):
+  fsigma = 4.0
+  flstop = 0.9
+  flt = fillfloat(0.0,n1,n2,n3)
+  sigma1,sigma2,sigma3,pmax = 8.0,1.0,1.0,1.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,x)
+  return FaultScanner.smooth(flstop,fsigma,p2,p3,flt,x)
+
 def array(x1,x2,x3=None,x4=None):
   if x3 and x4:
     return jarray.array([x1,x2,x3,x4],Class.forName('[[[F'))
@@ -587,7 +875,8 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,htgs=None,png=None):
+          links=False,curve=False,trace=False,htgs=None,
+          uncs=None,samples=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -678,7 +967,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ct = 0
     for skin in skins:
       if smax>0.0: # show fault throws
-        cmap = ColorMap(-smax,smax,ColorMap.JET)
+        cmap = ColorMap(0.0,smax,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
       else: # show fault likelihood
         cmap = ColorMap(0.0,1.0,ColorMap.JET)
@@ -714,28 +1003,57 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(85,5,56)
-  ipg.setSlices(85,5,43)
-  ipg.setSlices(100,140,59)
+  ipg.setSlices(109,138,59)
+  #ipg.setSlices(92,140,59)
+  if uncs:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setLocalViewer(True)
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ss.add(ms)
+    sg.setStates(ss)
+    us = UncSurfer()
+    ul=readImage(ulfile)
+    #ul = div(exp(ul),exp(1.0))
+    for unc in uncs:
+      [xyz,rgb]=us.buildTrigs(n1,s3,s2,-0.1,unc,ul)
+      #[xyz,rgb]=us.buildTrigs(n1,s3,s2,0.01,unc,ul)
+      tg  = TriangleGroup(True,xyz,rgb)
+      sg.addChild(tg)
+    sf.world.addChild(sg)
+  if samples:
+    fx,x1,x2,x3 = samples
+    if logType=="vel":
+      fx = div(fx,1000)
+      vmin,vmax,vmap= 3.0,5.5,ColorMap.JET
+    if logType=="den":
+      vmin,vmax,vmap= 2.1,3.1,ColorMap.JET
+    pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
+    sf.world.addChild(pg)
   if cbar:
     sf.setSize(887,700)
   else:
-    sf.setSize(700,700)
+    sf.setSize(750,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.48*sqrt(n1*n1+n2*n2+n3*n3)
-  zscale = 0.7*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
   ov = sf.getOrbitView()
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
   ov.setAzimuthAndElevation(120.0,25.0)
-  #ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
-  ov.setTranslate(Vector3(-0.08,0.13,-0.27))
+  ov.setTranslate(Vector3(0.02,0.16,-0.27))
+  ov.setScale(1.25)
   # for subset plots
   #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
   #ov.setAzimuthAndElevation(-40.0,25.0)
   #ov.setTranslate(Vector3(0.0241,-0.0400,0.0103))
-  ov.setScale(1.2)
   #ov.setScale(1.3) #use only for subset plots
   sf.setVisible(True)
   if png and pngDir:

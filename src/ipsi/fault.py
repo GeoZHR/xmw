@@ -60,7 +60,7 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
 pngDir = "../../../png/ipsi/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -72,11 +72,11 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goUnfault()
+  #goUnfault()
   #goUnfaultS()
   #goUncScan()
   #goUncConvert()
-  #goFlatten()
+  goFlatten()
   #goHorizons()
 def goTest():
   rgt = readImage(rgtfile)
@@ -458,9 +458,9 @@ def goUncConvert():
 def goFlatten():
   fw = readImage(fwsfile)
   if not plotOnly:
-    sigma1,sigma2,sigma3,pmax = 1.0,1.0,1.0,5.0
+    sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,5.0
     p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,fw)
-    wp = pow(ep,2.0)
+    wp = pow(ep,8.0)
     lmt = n1-1
     se = SurfaceExtractorC()
     se.setWeights(0.0)
@@ -474,6 +474,7 @@ def goFlatten():
     uncs = readUncs(uncfile)
     sc = SetupConstraints()
     cs = sc.constraintsFromSurfaces([sub(uncs[1],1.0),surf])
+    #cs = sc.constraintsFromSurfaces([surf])
     #cs = sc.constraintsFromSurfaces([uncs[0]])
     #cs = sc.constraintsFromSurfaces(uncs)
     sfs = copy(uncs)
@@ -489,8 +490,9 @@ def goFlatten():
     sig1,sig2=4.0,4.0
     fl3.setSmoothings(sig1,sig2)
     fl3.setIterations(0.01,300);
-    fl3.computeShifts(p2,p3,wp,cs,sfs,rs)
-    mp = fl3.getMappingsFromShifts(s1,s2,s3,rs)
+    #fl3.computeShifts(p2,p3,wp,cs,sfs,rs)
+    mp = fl3.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp,cs,sfs,rs)
+    #mp = fl3.getMappingsFromShifts(s1,s2,s3,rs)
     rgt = mp.u1
     fg  = mp.flatten(fw)
     writeImage(fgfile,fg)
@@ -522,7 +524,7 @@ def goHorizons():
   rgtx = zerofloat(n1,n2,n3)
   uf = UnfaultS(4.0,2.0)
   uf.applyShiftsX([sx1,sx2,sx3],rgt,rgtx)
-  hfr = HorizonFromRgt(s1,s2,s3,None,rgtx)
+  hfr = HorizonExtraction(s1,s2,s3,None,rgtx)
   gx = gain(gx)
   '''
   fs = [20,58,72]
@@ -535,16 +537,15 @@ def goHorizons():
     hs = hfr.multipleHorizons(st,sks)
     plot3(gx,hs=hs,png=name)
   '''
-  ft=20  
-  dt=2
+  ft=60  
+  dt=5
   nt = (round((n1-ft)/dt)-1)
   st = Sampling(nt,dt,ft)
-  '''
   hs = hfr.multipleHorizons(st,sks)
   for unc in uncs:
     uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
   hc = hfr.trigSurfaces(0.1,uncs,sks,None)
-  plot3(gx,skins=sks,hs=hs,uncx=hc,png="surfaces")
+  plot3(gx,hs=hs,png="cwpLettersHorizons")
   '''
   k3,k2=249,25
   for unc in uncs:
@@ -553,6 +554,7 @@ def goHorizons():
   hls  = hfr.horizonCurves(st,k2,k3,sks,uncs)
   uls = hfr.horizonCurves(uncs,k2,k3,sks)
   plot3(gx,curve=True,hs=hls,uncx=uls,png="horizonLines")
+  '''
 def smoothF(x):
   fsigma = 4.0
   flstop = 0.9

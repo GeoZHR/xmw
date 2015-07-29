@@ -212,8 +212,8 @@ public class FakeData {
    */
   public static float[][][][] seismicAndSlopes3d2015A(
       String sequence, int nplanar, boolean conjugate, boolean conical,
-      boolean impedance, boolean wavelet, double noise) {
-    int n1 = 101;
+      boolean impedance, boolean wavelet, boolean lateralViriation, double noise) {
+    int n1 = 121;
     int n2 = 152;
     int n3 = 153;
     int m1 = n1+50;
@@ -263,8 +263,8 @@ public class FakeData {
     PlanarFault3 faultc = new PlanarFault3(r1c,r2c,r3c,phic,thetac,throwc);
 
     // Reflectivity or impedance.
-    float[][][][] vd = makeVelocityAndDensity(m1, n2, n3);
-    addChannelsX(vd);
+    float[][][][] vd = makeVelocityAndDensityX(m1, n2, n3, lateralViriation);
+    addChannelsXX(vd);
     float[][][] v1 = copy(vd[0]);
     float[][][] v2 = copy(vd[0]);
     float[][][] d1 = copy(vd[1]);
@@ -279,14 +279,14 @@ public class FakeData {
       if (sequence.charAt(js)=='O') {
         //p = apply(shear,p);
         q = apply(shearX,q);
-        p = combine(n1/3,p,q);
+        p = combine(32,p,q);
         //v1 = apply(shear,v1);
         v2 = apply(shearX,v2);
-        v1 = combine(n1/3,v1,v2);
+        v1 = combine(32,v1,v2);
         //d1 = apply(shear,d1);
         d2 = apply(shearX,d2);
-        d1 = combine(n1/3,d1,d2);
-        resetVelocityDensity(n1/3,p[0],v1,d1);
+        d1 = combine(32,d1,d2);
+        resetVelocityDensity(lateralViriation,32,p[0],v1,d1);
       } else if (sequence.charAt(js)=='A') {
         if (nplanar>0) {
           p  = apply(faulta,p); 
@@ -1065,6 +1065,85 @@ public class FakeData {
     return new float[][][][]{z,r[1],r[2],r[3]};
   }
 
+  private static float[][][][] makeVelocityAndDensityX(
+    int n1, int n2, int n3, boolean lateralViriation) {
+    int dn1 = 13;
+    int dn2 = 22;
+    int dn3 = 20;
+    Random random = new Random(43);
+    float[] r = randfloat(random,n1);
+    float[][][] v = new float[n3][n2][n1];
+    float[][][] d = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(i1<=dn1) {
+        v[i3][i2][i1] = 0.5f*r[i1]+3.0f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.2f;
+      }
+      if(i1>dn1&&i1<=dn1+dn2) {
+        v[i3][i2][i1] = 0.5f*r[i1]+3.5f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.4f;
+      }
+      if(i1>dn1+dn2&&i1<=dn1+dn2+dn3) {
+        v[i3][i2][i1] = 0.6f*r[i1]+4.0f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.6f;
+      }
+      if(i1>dn1+dn2+dn3) {
+        v[i3][i2][i1] = 0.8f*r[i1]+4.5f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.8f;
+      }
+      v[i3][i2][i1] *= 1000f;
+    }}}
+    if(lateralViriation) {
+      makeLateralViriation(200f,v);
+      makeLateralViriation(.07f,d);
+    }
+    return new float[][][][]{v,d};
+  }
+
+  private static void makeLateralViriation(float df, float[][][] f) {
+    int d1 = 15;
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+    SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=0; i1<n1; i1+=d1*2) {
+      int nk = 7;
+      double dk = 10;
+      double fk = 20;
+      for (int k1=i1; k1<i1+d1 && k1<n1; ++k1) {
+        float fi = f[i3][0][k1];
+        float[] fu = fillfloat(fi,7);
+        fu[0] = fi-df;
+        fu[6] = fi+df;
+        for (int i2=0; i2<n2; ++i2) {
+          f[i3][i2][k1] = si.interpolate(nk,dk,fk,fu,i2);
+        }
+        fk += 2.0;
+      }
+    }}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=d1; i1<n1; i1+=d1*2) {
+      int nk = 7;
+      double dk = 10;
+      double fk = 50;
+      for (int k1=i1; k1<i1+d1 && k1<n1; ++k1) {
+        float fi = f[i3][0][k1];
+        float[] fu = fillfloat(fi,7);
+        fu[0] = fi-df;
+        fu[6] = fi+df;
+        for (int i2=0; i2<n2; ++i2) {
+          f[i3][i2][k1] = si.interpolate(nk,dk,fk,fu,i2);
+        }
+        fk -= 2.0;
+      }
+    }}
+
+  }
+
   private static float[][][][] makeVelocityAndDensity(int n1, int n2, int n3) {
     int dn1 = round((n1-50)/4f)-20;
     int dn2 = dn1+20;
@@ -1108,30 +1187,43 @@ public class FakeData {
     return new float[][][][] {v,d};
   }
 
-  private static void resetVelocityDensity(int dn1,
-    float[][][] r, float[][][] v, float[][][] d) 
+  private static void resetVelocityDensity(boolean lateralViriation,
+    int dn1, float[][][] p, float[][][] v, float[][][] d) 
   {
-    int n3 = r.length;
-    int n2 = r[0].length;
-    int n1 = r[0][0].length;
-    float[] z = fillfloat(6000f,dn1);
-    for (int i1=1; i1<dn1; ++i1) {
-      float ri = r[50][50][i1];
-       z[i1] = z[i1-1]*(1.0f+ri)/(1.0f-ri);
-    }
-    float[] dd1 = new float[dn1];
-    Random random1 = new Random(round((31f*dn1)/n1));
-    float[] dv1 = mul(1000f,mul(0.50f,add(randfloat(random1,dn1),5.0f)));
 
-    for (int i1=0; i1<dn1; ++i1) {
-       dd1[i1] = z[i1]/dv1[i1];
-    }
-
+    Random random = new Random(43);
+    int n3 = v.length;
+    int n2 = v[0].length;
+    int n1 = v[0][0].length;
+    float[] r = randfloat(random,n1);
+    float[][][] ds = new float[n3][n2][dn1];
+    float[][][] vs = new float[n3][n2][dn1];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
-      copy(dn1,0,dv1,0,v[i3][i2]);
-      copy(dn1,0,dd1,0,d[i3][i2]);
-    }}
+    for (int i1=0; i1<dn1; ++i1) {
+      ds[i3][i2][i1] = 0.2f*r[i1]+2.2f;
+      vs[i3][i2][i1] = (0.5f*r[i1]+3.0f)*1000f;
+    }}}
+    if(lateralViriation) {
+      makeLateralViriation(200f,vs);
+      makeLateralViriation(.07f,ds);
+    }
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<dn1; ++i1) {
+      d[i3][i2][i1] = ds[i3][i2][i1];
+      v[i3][i2][i1] = vs[i3][i2][i1];
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<dn1; ++i1) {
+      float vi = v[i3][i2][i1];
+      float di = d[i3][i2][i1];
+      float vp = v[i3][i2][i1+1];
+      float dp = d[i3][i2][i1+1];
+      p[i3][i2][i1] = (vp*dp-vi*di)/(vp*dp+vi*di);
+    }}}
+
   }
 
 
@@ -1199,13 +1291,44 @@ public class FakeData {
         if (0<i2 && i2<n2) {
           float d2 = i2-j2;
           float a = 0.1f*exp(-0.125f*d2*d2);
-          r[0][i3][i2][k1-1] += 2000f*a;
-          r[0][i3][i2][k1  ] += 4000f*a;
-          r[0][i3][i2][k1+1] += 2000f*a;
+          r[0][i3][i2][k1-1] += 4500f*a;
+          r[0][i3][i2][k1  ] += 9000f*a;
+          r[0][i3][i2][k1+1] += 4500f*a;
 
-          r[1][i3][i2][k1-1] += 0.5f*a;
-          r[1][i3][i2][k1  ] += 1.0f*a;
-          r[1][i3][i2][k1+1] += 0.5f*a;
+          r[1][i3][i2][k1-1] += 1.5f*a;
+          r[1][i3][i2][k1  ] += 3.0f*a;
+          r[1][i3][i2][k1+1] += 1.5f*a;
+        }
+      }
+    }
+  }
+
+  private static void addChannelsXX(float[][][][] r) {
+    int n3 = r[0].length;
+    int n2 = r[0][0].length;
+    int k1 = 70;
+    float[] c2 = {0.1f*n2,0.5f*n2,0.7f*n2,0.9f*n2};
+    float[] c3 = {0.4f*n3,0.6f*n3,0.5f*n3,0.7f*n3};
+    CubicInterpolator.Method method = CubicInterpolator.Method.SPLINE;
+    CubicInterpolator ci = new CubicInterpolator(method,c2,c3);
+    for (int i2=0; i2<n2; ++i2) {
+      float x3 = ci.interpolate(i2);
+      int j3 = (int)(x3+0.5);
+      for (int i3=j3-6; i3<j3+6; ++i3) {
+        if (0<i3 && i3<n3) {
+          float d2 = i3-j3;
+          float a = 0.1f*exp(-0.125f*d2*d2);
+          r[0][i3][i2][k1-2] += 5000f*a;
+          r[0][i3][i2][k1-1] += 8000f*a;
+          r[0][i3][i2][k1  ] += 10000f*a;
+          r[0][i3][i2][k1+1] += 8000f*a;
+          r[0][i3][i2][k1+2] += 5000f*a;
+
+          r[1][i3][i2][k1-2] += 2.0f*a;
+          r[1][i3][i2][k1-1] += 3.0f*a;
+          r[1][i3][i2][k1  ] += 4.0f*a;
+          r[1][i3][i2][k1+1] += 3.0f*a;
+          r[1][i3][i2][k1+2] += 2.0f*a;
         }
       }
     }

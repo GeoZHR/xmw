@@ -48,11 +48,11 @@ public class SetupConstraints {
         k1s.add(i1);
         k2s.add(i2);
         k3s.add(i3);
-        int np = k1s.size();
-        unc[0][is] = new int[np];
-        unc[1][is] = new int[np];
-        unc[2][is] = new int[np];
       }}
+      int np = k1s.size();
+      unc[0][is] = new int[np];
+      unc[1][is] = new int[np];
+      unc[2][is] = new int[np];
       int ik = 0;
       for (int k1:k1s) {unc[0][is][ik] = k1;ik++;}
       ik = 0;

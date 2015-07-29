@@ -47,7 +47,8 @@ public class UncSurfer {
     int n2s = reSampling(_dh,n2);
     int nms = n3s;if(nms<n2s){nms=n2s;}
     int nit = nms*2+200;
-    double sig1u = 0.75;
+    double sig1u = 0.95;
+    //double sig1u = 0.75;
     double sig2u = (double)nms*1.0;
     float[][][] uls = likelihood(nit,sig1u,sig2u,f);
     return uls;

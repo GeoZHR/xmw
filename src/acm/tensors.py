@@ -12,6 +12,8 @@ from edu.mines.jtk.mosaic import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from rgi import *
+
 def main(args):
   goTensors()
   #goGradients()
@@ -46,25 +48,29 @@ def goTensors():
   #reads = [readAwImage,readTpImage]
   #plots = [plotAw,plotTp]
   #prefs = ["awe","tpe"]
-  reads = [readAwImage]
+  #reads = [readAwImage]
+  reads = [readFakeImage]
   plots = [plotAw]
   prefs = ["awe"]
   for i,read in enumerate(reads):
     plot = plots[i]
     pref = prefs[i]
     g,s1,s2 = read()
-    plot(g,s1,s2,png=pref)
+    #plot(g,s1,s2,png=pref)
     lof = LocalOrientFilter(4.0)
     s = lof.applyForTensors(g)
     d00 = EigenTensors2(s); d00.invertStructure(0.0,0.0)
     d01 = EigenTensors2(s); d01.invertStructure(0.0,1.0)
     d02 = EigenTensors2(s); d02.invertStructure(0.0,2.0)
-    d04 = EigenTensors2(s); d04.invertStructure(0.0,4.0)
+    d04 = EigenTensors2(s); d04.invertStructure(0.0,16.0)
     d11 = EigenTensors2(s); d11.invertStructure(1.0,1.0)
     d12 = EigenTensors2(s); d12.invertStructure(1.0,2.0)
     d14 = EigenTensors2(s); d14.invertStructure(1.0,4.0)
-    dtx = makeImageTensors(g)
-    plot(g,s1,s2,dtx,dscale=1,png=pref+"00")
+    #dtx = makeImageTensors(g)
+    ri = RgtInterp3()
+    dtx = ri.makeImageTensors(g)
+
+    plot(g,s1,s2,d04,dscale=1,png=pref+"00")
     plot(g,s1,s2,dtx,dscale=2,png=pref+"00")
     '''
     plot(g,s1,s2,png=pref)
@@ -83,18 +89,26 @@ def makeImageTensors(s):
   """
   sigma = 4
   n1,n2 = len(s[0]),len(s)
-  s1 = Sampling(500,0.02,0.0)
-  s2 = Sampling(500,0.02,0.0)
+  s1 = Sampling(n1,0.02,0.0)
+  s2 = Sampling(n2,0.02,0.0)
   lof = LocalOrientFilter(sigma)
   t = lof.applyForTensors(s) # structure tensors
-  '''
-  c = coherence(sigma,t,s) # structure-oriented coherence c
+  ed=edge(s)
+  c = coherence(sigma,t,ed) # structure-oriented coherence c
   plotAw(c,s1,s2,png="c")
-  c = clip(0.0,0.99,c) # c clipped to range [0,1)
-  t.scale(sub(1.0,c)) # scale structure tensors by 1-c
+  c = pow(c,10)
+  c = sub(c,min(c))
+  c = div(c,max(c))
+  for i2 in range(n2):
+    for i1 in range(n1):
+      if c[i2][i1]<0.2:
+        c[i2][i1] = 0.001
+  t.scale(c) # scale structure tensors by 1-c
+  plotAw(c,s1,s2,png="c")
+  t.invertStructure(1.0,1.0)
   '''
-  eu = fillfloat(1.0,500,500)
-  ev = fillfloat(1.0,500,500)
+  eu = fillfloat(1.0,n1,n2)
+  ev = fillfloat(1.0,n1,n2)
   ed=edge(s)
   t.scale(ed)
   t.getEigenvalues(eu,ev)
@@ -108,19 +122,24 @@ def makeImageTensors(s):
   t.invert()
   plotAw(ed,s1,s2,png="ed")
   #t.invertStructure(1.0,1.0) # invert and normalize
+  '''
   return t
 
 def coherence(sigma,t,s):
   #lsf = LocalSemblanceFilter(sigma,4*sigma)
-  lsf = LocalSemblanceFilter(4,4)
+  lsf = LocalSemblanceFilter(32,4)
   return lsf.semblance(LocalSemblanceFilter.Direction2.V,t,s)
 def edge(g):
   g = gain(g)
-  u1 = zerofloat(500,500)
-  u2 = zerofloat(500,500)
-  g1 = zerofloat(500,500)
-  g2 = zerofloat(500,500)
-  rgf = RecursiveGaussianFilter(1.0)
+  n2 = len(g)
+  n1 = len(g[0])
+  print n1
+  print n2
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  g1 = zerofloat(n1,n2)
+  g2 = zerofloat(n1,n2)
+  rgf = RecursiveGaussianFilter(2.0)
   lof = LocalOrientFilter(4.0)
   lof.applyForNormal(g,u1,u2)
   rgf.apply10(g,g1)
@@ -129,15 +148,17 @@ def edge(g):
   gu = abs(gu)
   gu = sub(gu,min(gu))
   gu = div(gu,max(gu))
-  gu = sub(1.0,gu)
-  gu = clip(0.0001,1.0,gu)
+  #gu = sub(1.0,gu)
+  #gu = clip(0.0001,1.0,gu)
   return gu
 
 def gain(x):
+  n2 = len(x)
+  n1 = len(x[0])
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(100.0)
   ref.apply1(g,g)
-  y = zerofloat(500,500)
+  y = zerofloat(n1,n2)
   div(x,sqrt(g),y)
   return y
 
@@ -173,7 +194,8 @@ def plotAw(g,s1,s2,d=None,dscale=1,cmin=0,cmax=0,png=None):
     tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
     tv.setLineColor(Color.YELLOW)
     tv.setLineWidth(2.0)
-    tv.setScale(16.0)
+    #tv.setScale(16.0)
+    tv.setScale(1.0)
     sp.plotPanel.getTile(0,0).addTiledView(tv)
     '''
     tv = TensorsView(s1,s2,d)
@@ -236,6 +258,16 @@ def readAwImage():
   s2 = Sampling(500,0.02,0.0)
   g = readImage("../../../data/seis/acm/atwj1s",s1,s2)
   return g,s1,s2
+
+def readFakeImage():
+  s1 = Sampling(152,0.02,0.0)
+  s2 = Sampling(153,0.02,0.0)
+  g1 = readImage("../../../data/seis/swt/fake/fake110",s1,s2)
+  g2 = readImage("../../../data/seis/swt/fake/fake111",s1,s2)
+  gs = add(g1,g2)
+  gs = div(gs,2)
+  return gs,s1,s2
+
 
 def readTpImage():
   s1 = Sampling(251,0.004,0.500)

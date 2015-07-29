@@ -46,7 +46,7 @@ def setTpd(): # Teapot Dome slice vertical
   halfWidth = 4
   halfWidth1 = 1*halfWidth
   halfWidth2 = 4*halfWidth
-  sigmaTensor = 8.0
+  sigmaTensor = 4.0
   plotWidth,plotHeight = 1035,670
 
 def setAtw(): # Atwater channels slice horizontal
@@ -54,13 +54,18 @@ def setAtw(): # Atwater channels slice horizontal
   global halfWidth,halfWidth1,halfWidth2,sigmaTensor
   global hlabel,vlabel,plotWidth,plotHeight
   n1,n2 = 500,500
+  n1,n2 = 152,153
   fileName = "atwj1s.dat"
   plotPref = "atw"
+  fileName = "fake108.dat"
+  plotPref = "fake"
   #dataDir = "/data/seis/atw/"
   dataDir = "../../../data/seis/acm/"
+  dataDir = "../../../data/seis/swt/fake/"
   hlabel = "crossline (samples)"
   vlabel = "inline (samples)"
   fScale = fClip/15000.0
+  fScale = fClip/4.0
   halfWidth = 4
   halfWidth1 = 1*halfWidth
   halfWidth2 = 1*halfWidth
@@ -253,8 +258,8 @@ def makeImpulses(n1,n2,k1,k2):
   return f
  
 def makeTensorVectors(t):
-  k1 = 30
-  k2 = 30
+  k1 = 10
+  k2 = 10
   s1 = k1/3.0
   s2 = k2/3.0
   m1 = n1/k1

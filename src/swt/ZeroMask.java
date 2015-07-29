@@ -37,19 +37,13 @@ public class ZeroMask {
     _n3 = x.length;
     float[][][] t = abs(x);
     float a = ((sum(t)/_n1)/_n2)/_n3; // global mean absolute amplitude
-    /*
     RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(sigma1);
     RecursiveGaussianFilter rgf2 = new RecursiveGaussianFilter(sigma2);
     RecursiveGaussianFilter rgf3 = new RecursiveGaussianFilter(sigma3);
-    */
-    RecursiveExponentialFilter ref1 = new RecursiveExponentialFilter(sigma1);
-    RecursiveExponentialFilter ref2 = new RecursiveExponentialFilter(sigma2);
-    RecursiveExponentialFilter ref3 = new RecursiveExponentialFilter(sigma3);
-
     float[][][] b = zerofloat(_n1,_n2,_n3);
-    ref1.apply1(t,b);
-    ref2.apply2(b,t);
-    ref3.apply3(t,b); // local mean absolute amplitude
+    rgf1.apply0XX(t,b);
+    rgf2.applyX0X(b,t);
+    rgf3.applyXX0(t,b); // local mean absolute amplitude
     _mask = new boolean[_n3][_n2][_n1];
     for (int i3=0; i3<_n3; ++i3) {
       for (int i2=0; i2<_n2; ++i2) {

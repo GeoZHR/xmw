@@ -70,7 +70,6 @@ def goTest():
 
 def goInterp():
   if not plotOnly:
-
     gx = readImage(gxfile)
     rgt = readImage(rgtfile)
     den = readImage(denfile)
