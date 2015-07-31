@@ -85,9 +85,9 @@ public class UnfaultS {
       int k1 = round(x1);
       int k2 = round(x2);
       int k3 = round(x3);
-      if(k1<0||k1>=n1){continue;}
-      if(k2<0||k2>=n2){continue;}
-      if(k3<0||k3>=n3){continue;}
+      if(k1<0){k1=0;}if(k1>=n1){k1=n1-1;}
+      if(k2<0){k2=0;}if(k2>=n2){k2=n2-1;}
+      if(k3<0){k3=0;}if(k3>=n3){k3=n3-1;}
       ui[i3][i2][i1] = ri[k3][k2][k1];
     }}}
   }

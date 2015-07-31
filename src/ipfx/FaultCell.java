@@ -50,6 +50,13 @@ public class FaultCell implements Serializable {
     setNormalVector(w1,w2,w3);
   }
 
+  public FaultCell getCa() {
+    return this.ca;
+  }
+
+  public FaultCell getCb() {
+    return this.cb;
+  }
 
   public void setFl(float fl) {
     this.fl = fl;

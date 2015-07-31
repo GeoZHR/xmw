@@ -76,14 +76,14 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goFakeData()
-  goSlopes()
-  goScan()
-  goThin()
-  goSkin()
-  goReSkin()
-  goSmooth()
-  goSlip()
+  #goFakeData()
+  #goSlopes()
+  #goScan()
+  #goThin()
+  #goSkin()
+  #goReSkin()
+  #goSmooth()
+  #goSlip()
   goUnfaultS()
   #goUnfaultC()
   #go2dFault()
@@ -319,6 +319,7 @@ def goSlip():
   plot3(gx,s1,cmin=-10,cmax=20.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",cint=5.0,png="gxs1i")
   plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
@@ -347,14 +348,17 @@ def goUnfaultS():
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
 
-    uf = UnfaultS(4.0,2.0)
+    uf = UnfaultS(4.0,4.0)
     uf.setIters(100)
     uf.setTensors(et)
-    mul(sp[3][0],5,sp[3][0])
-    #mul(sp[3][0],1,sp[3][0])
+    np =  len(sp[0][0])
+    scale = (n1*n2*n3/np)
+    print np
+    print scale
+    mul(sp[3][0],scale,sp[3][0])
     [t1,t2,t3] = uf.findShifts(sp,wp)
+    [t1,t2,t3] = uf.convertShifts(40,[t1,t2,t3])
     uf.applyShifts([t1,t2,t3],gx,fw)
-    uf.convertShifts(40,[t1,t2,t3])
     plot3(wp)
     print min(t1)
     print max(t1)

@@ -159,7 +159,7 @@ public class HorizonExtraction {
 
 
   public float[][][] horizonCurves(
-    Sampling t1, int k1, int k2, int k3, FaultSkin[] sks, float[][][] uncs) 
+    Sampling t1, int k2, int k3, FaultSkin[] sks, float[][][] uncs) 
   {
     int n3 = _u1.length;
     int n2 = _u1[0].length;
@@ -172,8 +172,11 @@ public class HorizonExtraction {
     float f1 = (float)_s1.getFirst();
     short[][][] uk = zeroUncs(n1,n2,n3,uncs);
     short[][][] mk = zeroOnFaults(n1,n2,n3,sks);
-    float rgtMin = min(_u1)+5;
-    float rgtMax = max(_u1)-5;
+    //float rgtMin = min(_u1)+5;
+    //float rgtMax = max(_u1)-5;
+    float rgtMin = 10;
+    float rgtMax = n1;
+
     ColorMap cp = new ColorMap(rgtMin,rgtMax,ColorMap.JET);
 
     int k = 0;
@@ -387,8 +390,10 @@ public class HorizonExtraction {
     float[] xyz = buildTrigs(_s3,_s2,sfi,mk);
     int nt = xyz.length;
     float[] u1s = fillfloat(u1i,nt);
-    float rgtMin = min(_u1)+5;
-    float rgtMax = max(_u1)-5;
+    //float rgtMin = min(_u1)+5;
+    //float rgtMax = max(_u1)-5;
+    float rgtMin = 10;
+    float rgtMax = n1-5;
     ColorMap cp = new ColorMap(rgtMin,rgtMax,ColorMap.JET);
     float[] rgb = cp.getRgbFloats(u1s);
     return new float[][]{xyz,rgb};

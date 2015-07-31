@@ -8,6 +8,7 @@ package uff;
 
 import ipfx.*;
 import java.util.*;
+import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -162,11 +163,11 @@ public class FaultSlipConstraints {
         h2[1] = i2p2; f2[1] = i2m2;
         h2[2] = i3p2; f2[2] = i3m2;
 
-        float[] ch = new float[3];
-        float[] cf = new float[3];
         float t1 = fc.getT1();
         float t2 = fc.getT2();
         float t3 = fc.getT3();
+        float[] ch = new float[3];
+        float[] cf = new float[3];
         float[] ts = new float[]{t1,t2,t3};
         c1[0] = fl; c1[1] = fl; c1[2] = fl;
         cl.add(new float[][]{h1,f1,ts,c1});
@@ -199,35 +200,61 @@ public class FaultSlipConstraints {
   }
 
   private void computeUnfaultShifts(int n1, int n2, int n3) {
-    FaultCell[][][] fcg = new FaultCell[n3][n2][n1];
     for (FaultSkin skin:_sks) {
-    for (FaultCell cell:skin) {
-      int i1 = cell.getI1();
-      int i2 = cell.getI2();
-      int i3 = cell.getI3();
-      fcg[i3][i2][i1] = cell;
-    }}
-    for (FaultSkin skin:_sks) {
-    for (FaultCell cell:skin) {
-      float[] sa = cell.getS();
-      float x1 = cell.getX1()+cell.getR1();
-      float x2 = cell.getX2()+cell.getR2();
-      float x3 = cell.getX3()+cell.getR3();
-      int k1 = round(x1);
-      int k2 = round(x2);
-      int k3 = round(x3);
-      FaultCell cb = fcg[k3][k2][k1];
-      if(cb!=null) {
-        float ds1 = cb.getS1()-sa[0];
-        float ds2 = cb.getS2()-sa[1];
-        float ds3 = cb.getS3()-sa[2];
-        //sa[0] -= ds1;  //not sure
-        //sa[1] -= ds2;  //not sure
-        //sa[2] -= ds3;  //not sure
+      FloatList x1l = new FloatList();
+      FloatList x2l = new FloatList();
+      FloatList x3l = new FloatList();
+      FloatList s1l = new FloatList();
+      for (FaultCell cell:skin) {
+        x1l.add(cell.getX1());
+        x2l.add(cell.getX2());
+        x3l.add(cell.getX3());
+        s1l.add(cell.getS1());
       }
-      cell.setUnfaultShifts(sa);
-    }}
-    checkUnfaultShifts();
+      float[] x1a = x1l.trim();
+      float[] x2a = x2l.trim();
+      float[] x3a = x3l.trim();
+      float[] s1a = s1l.trim();
+      float x2min = 0;
+      float x3min = 0;
+      float x2max = n2;
+      float x3max = n3;
+      float x1min = min(x1a);
+      float x1max = max(x1a);
+      SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
+      s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
+      s1i.setGradientPower(2.0);
+      for (FaultCell cell:skin) {
+        float s1 = cell.getS1();
+        float s2 = cell.getS2();
+        float s3 = cell.getS3();
+        float p1 = cell.getX1()+s1;
+        float p2 = cell.getX2()+s2;
+        float p3 = cell.getX3()+s3;
+        float m1 = cell.getX1()-s1;
+        float m2 = cell.getX2()-s2;
+        float m3 = cell.getX3()-s3;
+
+        if(p1>x1max){p1=x1max;}
+        if(p2>x2max){p2=x2max;}
+        if(p3>x3max){p3=x3max;}
+        if(p1<x1min){p1=x1min;}
+        if(p2<x2min){p2=x2min;}
+        if(p3<x3min){p3=x3min;}
+        if(m1>x1max){m1=x1max;}
+        if(m2>x2max){m2=x2max;}
+        if(m3>x3max){m3=x3max;}
+        if(m1<x1min){m1=x1min;}
+        if(m2<x2min){m2=x2min;}
+        if(m3<x3min){m3=x3min;}
+
+        float dp = s1i.interpolate(p1,p2,p3)-s1;
+        float dm = s1-s1i.interpolate(m1,m2,m3);
+        s1 -= (dp+dm)*0.5f;
+        cell.setUnfaultShifts(new float[]{s1,s2,s3});
+      }
+    }
+    //checkUnfaultShifts();
   }
 
   private void checkUnfaultShifts() {
@@ -402,6 +429,32 @@ public class FaultSlipConstraints {
           }
         }
       }
+    }
+  }
+
+
+  private class FloatList {
+    public int n = 0;
+    public float[] a = new float[1024];
+    public void add(float f) {
+      if (n==a.length) {
+        float[] t = new float[2*n];
+        System.arraycopy(a,0,t,0,n);
+        a = t;
+      }
+      a[n++] = f;
+    }
+    public void add(float[] f) {
+      int m = f.length;
+      for (int i=0; i<m; ++i)
+        add(f[i]);
+    }
+    public float[] trim() {
+      if (n==0)
+        return null;
+      float[] t = new float[n];
+      System.arraycopy(a,0,t,0,n);
+      return t;
     }
   }
 

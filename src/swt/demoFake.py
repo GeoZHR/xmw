@@ -72,12 +72,12 @@ maxThrow = 20.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/swt/fake/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goFakeData()
+  #goFakeData()
   #goSlopes()
   #goScan()
   #goThin()
@@ -85,7 +85,7 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  #goUnfaultS()
+  goUnfaultS()
   #goUncScan()
   #goFlatten()
   #goInterp()
@@ -220,10 +220,10 @@ def goFakeData():
   print "gx min =",min(gx)," max =",max(gx)
   print "p2 min =",min(p2)," max =",max(p2)
   print "p3 min =",min(p3)," max =",max(p3)
-  dmin = 2.2
-  dmax = 3.1
-  vmin = 3.0
-  vmax = 5.5
+  dmin = 2.1
+  dmax = 3.2
+  vmin = 2.8
+  vmax = 5.8
   dmap = ColorMap.JET
   vmap = ColorMap.JET
   print "dmin=",dmin, "dmax=",dmax
@@ -452,12 +452,12 @@ def goUnfaultS():
     uf.setTensors(et)
     mul(sp[3][0],10,sp[3][0])
     [t1,t2,t3] = uf.findShifts(sp,wp)
-    uf.convertShifts(40,[t1,t2,t3])
+    #[t1,t2,t3] = uf.convertShifts(40,[t1,t2,t3])
     uf.applyShifts([t1,t2,t3],gx,fw)
-    writeImage(fwsfile,fw)
-    writeImage(sw1file,t1)
-    writeImage(sw2file,t2)
-    writeImage(sw3file,t3)
+    #writeImage(fwsfile,fw)
+    #writeImage(sw1file,t1)
+    #writeImage(sw2file,t2)
+    #writeImage(sw3file,t3)
   else :
     t1 = readImage(sw1file)
     t2 = readImage(sw2file)
@@ -618,20 +618,29 @@ def goInterp():
     pngw = "vqw"
     pngu = "vqu"
     pngf = "vgx"
+    pngxw = "gxvw"
+    pngww = "gwvw"
+    pnguw = "guvw"
+    pngi = "vxi"
   if logType=="den":
     fx = readImage(dxfile)
-    vmin,vmax,vmap= 2.1,3.1,jetFill(0.5)
+    vmin,vmax,vmap= 2.1,3.2,jetFill(0.5)
     clab = "Density (g/cc)"
     pngx = "dqx"
     pngw = "dqw"
     pngu = "dqu"
     pngf = "dgx"
-  plot3(gx,samples=samplesX)
-  plot3(gw,samples=samplesW)
-  plot3(gu,samples=samplesU)
+    pngxw = "gxdw"
+    pngww = "gwdw"
+    pnguw = "gudw"
+    pngi = "dxi"
+  plot3(gx,samples=samplesX,png=pngxw)
+  plot3(gw,samples=samplesW,png=pngww)
+  plot3(gu,samples=samplesU,png=pnguw)
   plot3(gu,fqu,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,samples=samplesU,png=pngu)
   plot3(gw,fqw,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,samples=samplesW,png=pngw)
   plot3(gx,fqx,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,samples=samplesX,png=pngx)
+  plot3(gx,fqx,cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,png=pngi)
   plot3(gx,fx, cmin=vmin,cmax=vmax,cmap=vmap,clab=clab,png=pngf)
 #def getImageWithLogPoints(logType):
 def getLogPointsW(logType):
@@ -1033,7 +1042,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       fx = div(fx,1000)
       vmin,vmax,vmap= 3.0,5.5,ColorMap.JET
     if logType=="den":
-      vmin,vmax,vmap= 2.1,3.1,ColorMap.JET
+      vmin,vmax,vmap= 2.1,3.2,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:

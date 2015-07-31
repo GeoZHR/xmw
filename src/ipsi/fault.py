@@ -3,13 +3,12 @@
 Author: Xinming Wu, Colorado School of Mines
 Version: 2015.05.07
 """
-
 from utils import *
+sys.setrecursionlimit(1500)
 setupForSubset("ufs")
 #setupForSubset("unc")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
-
 # Names and descriptions of image files used below.
 gxfile = "gx" # input image
 gsxfile = "gsx" # image after lsf with fault likelihoods
@@ -73,10 +72,10 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
-  #goUnfaultS()
+  goUnfaultS()
   #goUncScan()
   #goUncConvert()
-  goFlatten()
+  #goFlatten()
   #goHorizons()
 def goTest():
   rgt = readImage(rgtfile)
@@ -349,10 +348,10 @@ def goUnfaultS():
     writeImage(ft1file,t1)
     writeImage(ft2file,t2)
     writeImage(ft3file,t3)
-    '''
     writeImage(sx1file,x1)
     writeImage(sx2file,x2)
     writeImage(sx3file,x3)
+    '''
 
   else :
     gx = readImage(gxfile)
@@ -529,13 +528,14 @@ def goHorizons():
   '''
   fs = [20,58,72]
   dt = 2
-  ns = ["horizons","horizonsub1","horizonsub2"]
+  ns = ["horizonsSlide","horizonsub1Slide","horizonsub2Slide"]
   for ik, ft in enumerate(fs):
     name = ns[ik]
-    nt = (round((n1-ft)/dt)-1)
+    nt = (round((n1-ft)/dt)-10)
     st = Sampling(nt,dt,ft)
     hs = hfr.multipleHorizons(st,sks)
     plot3(gx,hs=hs,png=name)
+  '''
   '''
   ft=60  
   dt=5
@@ -546,7 +546,10 @@ def goHorizons():
     uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
   hc = hfr.trigSurfaces(0.1,uncs,sks,None)
   plot3(gx,hs=hs,png="cwpLettersHorizons")
-  '''
+  ft = 20
+  dt = 2
+  nt = (round((n1-ft)/dt)-1)
+  st = Sampling(nt,dt,ft)
   k3,k2=249,25
   for unc in uncs:
     uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
@@ -555,6 +558,18 @@ def goHorizons():
   uls = hfr.horizonCurves(uncs,k2,k3,sks)
   plot3(gx,curve=True,hs=hls,uncx=uls,png="horizonLines")
   '''
+
+  ft=20  
+  dt=2
+  nt = (round((n1-ft)/dt)-10)
+  st = Sampling(nt,dt,ft)
+  hs = hfr.multipleHorizons(st,sks)
+  for unc in uncs:
+    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
+  sub(uncs,1,uncs)
+  hc = hfr.trigSurfaces(0.1,uncs,sks,None)
+  plot3(gx,skins=sks,hs=hs,uncx=hc,png="allSurfaces")
+
 def smoothF(x):
   fsigma = 4.0
   flstop = 0.9
@@ -763,7 +778,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         ls.setSmooth(False)
         ss.add(ls)
         sf.world.addChild(lg)
-
   if hs:
     for hi in hs:
       if not curve:
