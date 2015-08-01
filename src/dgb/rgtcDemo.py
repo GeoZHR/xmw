@@ -40,12 +40,18 @@ s1 = Sampling(301,1,0)
 s2 = Sampling(351,1,0)
 s3 = Sampling(300,1,0)
 
+s1 = Sampling(400,1,0)
+s2 = Sampling(1670,1,0)
+s3 = Sampling(51,1,0)
+
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
 #pngDir = None
 pngDir = "../../../png/dgb/rgtc/"
 seismicDir = "../../../data/seis/dgb/rgtc/"
+pngDir = "../../../png/dgb/subset/"
+seismicDir = "../../../data/seis/dgb/subset/"
 plotOnly = True
 
 # Three sets of control points, each set 
