@@ -300,7 +300,8 @@ public class RgtInterp3 {
     for (int i2=0; i2<n2; ++i2) {
       float g1 = g[i3][i2][110];
       float g2 = g[i3][i2][111];
-      float ga = (g1+g2)/2.f;
+      float g3 = g[i3][i2][109];
+      float ga = (g1+g2+g3)/3.f;
       g[i3][i2][111]=ga;
       g[i3][i2][110]=ga;
       g[i3][i2][109]=ga;

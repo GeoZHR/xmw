@@ -72,7 +72,7 @@ maxThrow = 20.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/swt/fake/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -85,8 +85,8 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goUnfaultS()
-  #goUncScan()
+  #goUnfaultS()
+  goUncScan()
   #goFlatten()
   #goInterp()
   #goHorizonExtraction()
@@ -454,10 +454,10 @@ def goUnfaultS():
     [t1,t2,t3] = uf.findShifts(sp,wp)
     #[t1,t2,t3] = uf.convertShifts(40,[t1,t2,t3])
     uf.applyShifts([t1,t2,t3],gx,fw)
-    #writeImage(fwsfile,fw)
-    #writeImage(sw1file,t1)
-    #writeImage(sw2file,t2)
-    #writeImage(sw3file,t3)
+    writeImage(fwsfile,fw)
+    writeImage(sw1file,t1)
+    writeImage(sw2file,t2)
+    writeImage(sw3file,t3)
   else :
     t1 = readImage(sw1file)
     t2 = readImage(sw2file)
@@ -483,16 +483,15 @@ def goUncScan():
   sig1s,sig2s=1.0,2.0
   fw = readImage(fwsfile)
   if not plotOnly:
-    fw = smoothF(fw)
+    fws = smoothF(fw)
     ip = InsPhase()
-    cs = like(fw)
-    ip.applyForCosine(fw,cs)
+    cs = like(fws)
+    ip.applyForCosine(fws,cs)
     unc = UncSurfer()
     unc.setSampling(2,2)
     unc.setForLof(sig1s,sig2s)
     ul=unc.likelihood(cs)
     uli = unc.interp(n1,n2,n3,ul)
-    #ul  = div(exp(uli),exp(1.0))
     writeImage(ulfile,uli)
   ul = readImage(ulfile)
   unc = UncSurfer()
@@ -538,14 +537,11 @@ def goFlatten():
     gt = mp.u1
     su1 = Sampling(n1,1,1)
     #gu  = mp.flatten(gw)
-    gu = fl.flatten(s1,su1,gt,gw)
+    gu = fl3.flatten(s1,su1,gt,gw)
     writeImage(fgfile,gu)
     writeImage(rgtfile,gt)
   gx  = readImage(gxfile)
   gt = readImage(rgtfile)
-  su1 = Sampling(n1,1,1)
-  fl = Flattener3Unc()
-  gu = fl.flatten(s1,su1,gt,gw)
   plot3(gx)
   plot3(gw)
   plot3(gu,png="gu")
