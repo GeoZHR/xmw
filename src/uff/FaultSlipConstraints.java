@@ -8,6 +8,7 @@ package uff;
 
 import ipfx.*;
 import java.util.*;
+import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -199,8 +200,12 @@ public class FaultSlipConstraints {
     return cs;
   }
 
-  private void computeUnfaultShifts(int n1, int n2, int n3) {
-    for (FaultSkin skin:_sks) {
+  private void computeUnfaultShifts(
+    final int n1, final int n2, final int n3, final FaultSkin[] skins) {
+    final int nk = skins.length;
+    Parallel.loop(nk,new Parallel.LoopInt() {
+    public void compute(int ik) {
+      FaultSkin skin = skins[ik];
       FloatList x1l = new FloatList();
       FloatList x2l = new FloatList();
       FloatList x3l = new FloatList();
@@ -253,7 +258,7 @@ public class FaultSlipConstraints {
         s1 -= (dp+dm)*0.5f;
         cell.setUnfaultShifts(new float[]{s1,s2,s3});
       }
-    }
+    }});
     //checkUnfaultShifts();
   }
 
