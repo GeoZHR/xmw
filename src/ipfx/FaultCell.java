@@ -156,6 +156,101 @@ public class FaultCell implements Serializable {
     this.t3=ts[2];
   }
 
+  public static void getFlThick(
+    float mark, FaultCell[] cells, float[][][] fs) {
+    int n3 = fs.length;
+    int n2 = fs[0].length;
+    for (FaultCell cell:cells) {
+      int i1 = cell.i1;
+      int i2 = cell.i2;
+      int i3 = cell.i3;
+      int i2m = cell.i2m;
+      int i2p = cell.i2p;
+      int i3m = cell.i3m;
+      int i3p = cell.i3p;
+      if(i2m<0){i2m=0;}
+      if(i3m<0){i3m=0;}
+      if(i2p<0){i2p=0;}
+      if(i3p<0){i3p=0;}
+      if(i2p>=n2){i2p=n2-1;}
+      if(i3p>=n3){i3p=n3-1;}
+      if(i2m>=n2){i2m=n2-1;}
+      if(i3m>=n3){i3m=n3-1;}
+      float fl = cell.fl;
+      float fi = fs[i3][i2][i1];
+      if(fi==mark) {
+        fs[i3m][i2m][i1] = fl;
+        fs[i3p][i2p][i1] = fl;
+      } else if(abs(fl)>abs(fi)) {
+        fs[i3m][i2m][i1] = fl;
+        fs[i3p][i2p][i1] = fl;
+      }
+    }
+  }
+
+  public static void getFpThick(
+    float mark, FaultCell[] cells, float[][][] fs) {
+    int n3 = fs.length;
+    int n2 = fs[0].length;
+    for (FaultCell cell:cells) {
+      int i1 = cell.i1;
+      int i2 = cell.i2;
+      int i3 = cell.i3;
+      int i2m = cell.i2m;
+      int i2p = cell.i2p;
+      int i3m = cell.i3m;
+      int i3p = cell.i3p;
+      if(i2m<0){i2m=0;}
+      if(i3m<0){i3m=0;}
+      if(i2p<0){i2p=0;}
+      if(i3p<0){i3p=0;}
+      if(i2p>=n2){i2p=n2-1;}
+      if(i3p>=n3){i3p=n3-1;}
+      if(i2m>=n2){i2m=n2-1;}
+      if(i3m>=n3){i3m=n3-1;}
+      float fp = cell.fp;
+      float fi = fs[i3][i2][i1];
+      if(fi==mark) {
+        fs[i3m][i2m][i1] = fp;
+        fs[i3p][i2p][i1] = fp;
+      } else if(abs(fp)>abs(fi)) {
+        fs[i3m][i2m][i1] = fp;
+        fs[i3p][i2p][i1] = fp;
+      }
+    }
+  }
+
+  public static void getFtThick(
+    float mark, FaultCell[] cells, float[][][] fs) {
+    int n3 = fs.length;
+    int n2 = fs[0].length;
+    for (FaultCell cell:cells) {
+      int i1 = cell.i1;
+      int i2 = cell.i2;
+      int i3 = cell.i3;
+      int i2m = cell.i2m;
+      int i2p = cell.i2p;
+      int i3m = cell.i3m;
+      int i3p = cell.i3p;
+      if(i2m<0){i2m=0;}
+      if(i3m<0){i3m=0;}
+      if(i2p<0){i2p=0;}
+      if(i3p<0){i3p=0;}
+      if(i2p>=n2){i2p=n2-1;}
+      if(i3p>=n3){i3p=n3-1;}
+      if(i2m>=n2){i2m=n2-1;}
+      if(i3m>=n3){i3m=n3-1;}
+      float ft = cell.ft;
+      float fi = fs[i3][i2][i1];
+      if(fi==mark) {
+        fs[i3m][i2m][i1] = ft;
+        fs[i3p][i2p][i1] = ft;
+      } else if(abs(ft)>abs(fi)) {
+        fs[i3m][i2m][i1] = ft;
+        fs[i3p][i2p][i1] = ft;
+      }
+    }
+  }
 
 
     /**

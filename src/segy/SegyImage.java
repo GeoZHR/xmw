@@ -733,7 +733,7 @@ public class SegyImage {
    */
   public void writeFloats(String fileName) {
     loadTraceHeaderInfo();
-    writeFloats(fileName,1.0,0,_n1-1,_i2min,_i2max,_i3min,_i3max);
+    writeFloats(fileName,1.0,0,_n1-1,_i2min,_i2max,_i3min,_i3max,1,1);
   }
 
   /**
@@ -754,11 +754,13 @@ public class SegyImage {
     double scaleFactor,
     int i1min, int i1max,
     int i2min, int i2max,
-    int i3min, int i3max)
+    int i3min, int i3max,
+    int d2, int d3)
   {
     loadTraceHeaderInfo();
     checkSampleIndex(i1min);
     checkSampleIndex(i1max);
+    System.out.println("i2min="+_i2min);
     checkGridIndices(i2min,i3min);
     checkGridIndices(i2max,i3max);
     Check.argument(i1min<=i1max,"i1min<=i1max");
@@ -767,20 +769,20 @@ public class SegyImage {
     try {
       ArrayOutputStream aos = new ArrayOutputStream(fileName);
       int m1 = 1+i1max-i1min;
-      int m2 = 1+i2max-i2min;
-      int m3 = 1+i3max-i3min;
+      int m2 = 1+(i2max-i2min)/d2;
+      int m3 = 1+(i3max-i3min)/d3;
       int mb = (int)(0.5+4.0*m1*m2*m3/1.0e6);
       System.out.print(
         "writing "+m1+"*"+m2+"*"+m3+" floats ("+mb+" MB) ");
       float[] f = new float[_n1];
       float[] g = new float[m1];
       float s = (float)scaleFactor;
-      for (int i3=i3min; i3<=i3max; ++i3) {
+      for (int i3=i3min; i3<=i3max; i3+=d3) {
         if (i3min<i3max && (i3-i3min)%((i3max-i3min)/10)==0) {
           double perc = (int)((i3-i3min)*100.0/(i3max-i3min));
           System.out.print(".");
         }
-        for (int i2=i2min; i2<=i2max; ++i2) {
+        for (int i2=i2min; i2<=i2max; i2+=d2) {
           getTrace(i2,i3,f);
           copy(m1,i1min,f,0,g);
           if (s!=1.0f) {

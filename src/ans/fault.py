@@ -4,9 +4,7 @@ Author: Xinming Wu, Colorado School of Mines
 Version: 2015.05.07
 """
 from utils import *
-sys.setrecursionlimit(1500)
-setupForSubset("ufs")
-#setupForSubset("unc")
+setupForSubset("sub1")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -40,15 +38,15 @@ sx3file = "sx3"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minPhi,maxPhi = 0,150
-minTheta,maxTheta = 75,80
+minPhi,maxPhi = 0,360
+minTheta,maxTheta = 70,85
 sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.5
-minSkinSize = 1000
+lowerLikelihood = 0.4
+upperLikelihood = 0.6
+minSkinSize = 400
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -58,8 +56,8 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
-pngDir = "../../../png/ipsi/"
-plotOnly = True
+pngDir = "../../../png/ans/sub1/"
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -73,10 +71,10 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
-  #goUnfaultS()
+  goUnfaultS()
   #goUncScan()
   #goUncConvert()
-  goFlatten()
+  #goFlatten()
   #goHorizons()
 def goTest():
   rgt = readImage(rgtfile)
@@ -212,7 +210,7 @@ def goSkin():
     fs = FaultSkinner()
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
+    fs.setMaxPlanarDistance(0.5)
     fs.setMinSkinSize(minSkinSize)
     cells = fs.findCells([fl,fp,ft])
     skins = fs.findSkins(cells)
@@ -223,8 +221,9 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
-    plot3(gx,cells=cells,png="cells")
+    #plot3(gx,cells=cells,png="cells")
   skins = readSkins(fskbase)
+  print len(skins)
   flt = like(gx)
   FaultSkin.getLikelihood(skins,flt)
   plot3(gx,skins=skins)
@@ -268,7 +267,7 @@ def goSmooth():
     flstop = 0.01
     fsigma = 8.0
     gx = readImage(gxfile)
-    sks = readSkins(fskgood)
+    sks = readSkins(fskbase)
     flt = zerofloat(n1,n2,n3)
     FaultSkin.getLikelihood(sks,flt)
     sigma1,sigma2,sigma3,pmax = 8.0,3.0,3.0,5.0
@@ -283,19 +282,17 @@ def goSmooth():
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gsx,clab="Amplitude",png="gsx")
 
-
 def goSlip():
   print "goSlip ..."
   gx = readImage(gxfile)
   gx = gain(gx)
   if not plotOnly:
-    skins = readSkins(fskgood)
-    plot3(gx,skins=skins,png="skinsfl")
+    skins = readSkins(fskbase)
     gsx = readImage(gsxfile)
     sigma1,sigma2,sigma3,pmax = 8.0,3.0,3.0,5.0
     p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
     fsl = FaultSlipper(gsx,p2,p3)
-    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only to show the error
     fsl.computeDipSlips(skins,minThrow,maxThrow)
     '''
@@ -307,12 +304,12 @@ def goSlip():
     fsk.setMinMaxThrow(-1.0,maxThrow)
     skins = fsk.reskin(skins)
     '''
-    #removeAllSkinFiles(fslbase)
-    #writeSkins(fslbase,skins)
-  #else:
-    #skins = readSkins(fslbase)
-  #plot3(gx,skins=skins,png="skinsfl")
-  #plot3(gx,skins=skins,smax=6,png="skinss1")
+    removeAllSkinFiles(fslbase)
+    writeSkins(fslbase,skins)
+  else:
+    skins = readSkins(fslbase)
+  plot3(gx,skins=skins,png="skinsfl")
+  plot3(gx,skins=skins,smax=6,png="skinss1")
 
 def goUnfault():
   smark = -999.999
@@ -365,9 +362,8 @@ def goUnfaultS():
     [x1,x2,x3] = uf.findShifts(sp,wp)
     [t1,t2,t3] = uf.convertShifts(40,[x1,x2,x3])
     uf.applyShifts([t1,t2,t3],gx,fw)
-    fx = zerofloat(n1,n2,n3)
-    uf.applyShiftsX([x1,x2,x3],fw,fx)
-    '''
+    #fx = zerofloat(n1,n2,n3)
+    #uf.applyShiftsX([x1,x2,x3],fw,fx)
     writeImage(fwsfile,fw)
     writeImage(ft1file,t1)
     writeImage(ft2file,t2)
@@ -375,7 +371,6 @@ def goUnfaultS():
     writeImage(sx1file,x1)
     writeImage(sx2file,x2)
     writeImage(sx3file,x3)
-    '''
 
   else :
     gx = readImage(gxfile)
@@ -409,76 +404,6 @@ def goUnfaultS():
       slices=[93,180,192],clab="Fault throw (ms)",cint=5,png="throw3D")
   '''
 
-def goUncScan():
-  sig1s,sig2s=1.0,2.0
-  gx = readImage(gxfile)
-  fw = readImage(fwsfile)
-  if not plotOnly:
-    fw = smoothF(fw)
-    ip = InsPhase()
-    cs = like(fw)
-    ip.applyForCosine(fw,cs)
-    unc = UncSurfer()
-    unc.setSampling(2,2)
-    unc.setForLof(sig1s,sig2s)
-    ul=unc.likelihood(cs)
-    ult = like(ul)
-    unc.thin(0.1,ul,ult)
-    sfs = unc.surfer(n2,n3,0.1,2000,ult,ul)
-    #unc.surfaceUpdate(2.0,2.0,fw,sfs)
-    removeAllUncFiles(uncfile)
-    writeUncs(uncfile,sfs)
-    uli = unc.interp(n1,n2,n3,ul)
-    writeImage(ulfile,uli)
-  fw = gain(fw)
-  uc = readImage(ulfile)
-  ul = zerofloat(n1,n2,n3)
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
-  unc = UncSurfer()
-  ult = like(ul)
-  unc.thin(0.2,ul,ult)
-  ul = div(exp(ul),exp(1.0))
-  sfs = unc.surfer2(n2,n3,0.2,3000,ult)
-  sfs = unc.extractUncs(sfs,fw)
-  removeAllUncFiles(uncfile)
-  writeUncs(uncfile,sfs)
-  uc = gain2(uc,12)
-  uc = sub(uc,min(uc))
-  uc = div(uc,max(uc))
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
-  plot3(fw,ul,cmin=0.3,cmax=1.0,cmap=jetRamp(1.0),
-        clab="Unconformity likelihood",png="ul")
-  plot3(fw,uncs=sfs,png="uncs")
-
-def goUncConvert():
-  gx  = readImage(gxfile)
-  fw  = readImage(fwsfile)
-  rw1 = readImage(ft1file)
-  rw2 = readImage(ft2file)
-  rw3 = readImage(ft3file)
-  rgt = readImage(rgtfile)
-  sks = readSkins(fskgood)
-  uncs = readUncs(uncfile)
-
-  uc = readImage(ulfile)
-  ul = zerofloat(n1,n2,n3)
-  uc = gain2(uc,12)
-  uc = sub(uc,min(uc))
-  uc = div(uc,max(uc))
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
-  uf = UnfaultS(4.0,2.0)
-  hfr = HorizonFromRgt(s1,s2,s3,None,rgt)
-  funcs = hfr.ulOnSurface(uncs,ul)
-  fw = gain(fw)
-  #plot3(fw,uncs=[uncs[0]],png="unc1")
-  #plot3(fw,uncs=[uncs[1]],png="unc2")
-  for unc in uncs:
-    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
-  hs = hfr.trigSurfaces(-1.0,uncs,sks,funcs)
-  gx = gain(gx)
-  #plot3(gx,hs=[hs[0]],png="unc1X")
-  #plot3(gx,hs=[hs[1]],png="unc2X")
-  plot3(gx,hs=hs,png="uncsX")
 def goFlatten():
   fw = readImage(fwsfile)
   if not plotOnly:
@@ -869,22 +794,20 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(117,40,220)
-  ipg.setSlices(110,25,249)
-  #ipg.setSlices(115,25,167)
+  ipg.setSlices(98,72,346)
   if cbar:
-    sf.setSize(987,720)
+    sf.setSize(987,620)
   else:
-    sf.setSize(850,720)
+    sf.setSize(850,620)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.3)
+  ov.setScale(1.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.15,0.05))
+  ov.setTranslate(Vector3(0.0,-0.002,0.05))
   ov.setAzimuthAndElevation(-56.0,35.0)
   #ov.setAzimuthAndElevation(-56.0,40.0)
   sf.setVisible(True)

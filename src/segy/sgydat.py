@@ -11,13 +11,67 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-  goSch()
-  #goPnz()
-  #goGbc()
-  #goMbs()
-  #goNorne()
-  #goSino()
-  #goF3d()
+  goAns()
+
+def goAns():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/ans/seismic.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 2367279210
+  number of traces = 1587710
+  format = 8 (1-byte two's complement integer)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   976, i2max =  5370 (inline indices)
+    i3min =  1001, i3max =  1800 (crossline indices)
+    xmin =  161.359300, xmax =  217.928500 (x coordinates, in km)
+    ymin = 7806.933400, ymax = 7851.231100 (y coordinates, in km)
+  grid sampling:
+    n1 =  1251 (number of samples per trace)
+    n2 =  4395 (number of traces in inline direction)
+    n3 =   800 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.012500 (inline sampling interval, in km)
+    d3 = 0.025000 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   976, i3min =  1001, x =  172.507956, y = 7805.807225
+    i2max =  5370, i3min =  1001, x =  218.005273, y = 7836.576535
+    i2min =   976, i3max =  1800, x =  161.317772, y = 7822.353566
+    i2max =  5370, i3max =  1800, x =  206.815090, y = 7853.122876
+  grid azimuth: 55.93 degrees
+  ****** end of SEG-Y file info ******
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/ans/"
+  sgyfile = basedir+"seismic.sgy"
+  datfile = basedir+"gxSub.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 455,655,3836,5210,1065,1700
+  n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min)/2,1+i3max-i3min
+  print n1
+  print n2
+  print n3
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 0.02
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,2,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=1.0)
 
 def goGbc():
   """
@@ -443,12 +497,11 @@ def goSch():
   secondLook = False # slow, must read all trace headers
   writeImage = True # reads all traces, writes an image
   showImage = True # displays the image
-  #basedir = "/data/dhale/sch/"
-  basedir = "../../../data/seis/sch/dat/"
-  sgyfile = basedir+"all/pack_0.sgy"
+  basedir = "/data/dhale/sch/"
+  sgyfile = basedir+"sgy/pack_0.sgy"
   #datfile = basedir+"dat/s1/g0.dat" # subset 1
   #i1min,i1max,i2min,i2max,i3min,i3max = 0,900,1000,1550,1220,1646
-  datfile = basedir+"all/gx.dat" # subset 2
+  datfile = basedir+"dat/s2/g0.dat" # subset 2
   i1min,i1max,i2min,i2max,i3min,i3max = 0,900,1000,1375,1100,1646
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
