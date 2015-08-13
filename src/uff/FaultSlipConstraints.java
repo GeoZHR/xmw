@@ -205,6 +205,7 @@ public class FaultSlipConstraints {
     final int nk = skins.length;
     Parallel.loop(nk,new Parallel.LoopInt() {
     public void compute(int ik) {
+      System.out.println("skin="+ik);
       FaultSkin skin = skins[ik];
       FloatList x1l = new FloatList();
       FloatList x2l = new FloatList();
