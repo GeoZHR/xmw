@@ -59,7 +59,7 @@ public class FaultSlipConstraints {
     int n3 = ws.length;
     int n2 = ws[0].length;
     int n1 = ws[0][0].length;
-    computeUnfaultShifts(n1,n2,n3);
+    computeUnfaultShifts(n1,n2,n3,_sks);
     setCellsC(n1,n2,n3);
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
     for (FaultSkin fs:_sks) {
@@ -120,7 +120,7 @@ public class FaultSlipConstraints {
     int n3 = wp.length;
     int n2 = wp[0].length;
     int n1 = wp[0][0].length;
-    computeUnfaultShifts(n1,n2,n3);
+    computeUnfaultShifts(n1,n2,n3,_sks);
     setCells(n1,n2,n3);
     flNormalization();
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
