@@ -265,7 +265,7 @@ def goSmooth():
   gx = readImage(gxfile)
   if not plotOnly:
     flstop = 0.01
-    fsigma = 8.0
+    fsigma = 2.0
     gx = readImage(gxfile)
     sks = readSkins(fskbase)
     flt = zerofloat(n1,n2,n3)
@@ -288,10 +288,11 @@ def goSlip():
   gx = gain(gx)
   if not plotOnly:
     skins = readSkins(fskbase)
-    gsx = readImage(gsxfile)
     sigma1,sigma2,sigma3,pmax = 8.0,3.0,3.0,5.0
     p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-    fsl = FaultSlipper(gsx,p2,p3)
+    #gsx = readImage(gsxfile)
+    #fsl = FaultSlipper(gsx,p2,p3)
+    fsl = FaultSlipper(gx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only to show the error
     fsl.computeDipSlips(skins,minThrow,maxThrow)
