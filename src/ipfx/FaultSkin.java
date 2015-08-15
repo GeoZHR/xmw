@@ -95,6 +95,7 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
       }
     }
   }
+
   public static void setValuesOnFaults(float v, 
     FaultSkin[] skins, float[][][] fl) 
   {
@@ -110,6 +111,30 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
       }
     }
   }
+
+  public static void setValuesAwayFromFaults(
+    FaultSkin[] skins, float[][][] f, float[][][] g) 
+  {
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2m = cell.i2m;
+        int i3m = cell.i3m;
+        int i2p = cell.i2p;
+        int i3p = cell.i3p;
+        if(i2m<0){i2m=0;}if(i2m>=n2){i2m=n2-1;}
+        if(i2p<0){i2p=0;}if(i2p>=n2){i2p=n2-1;}
+        if(i3m<0){i3m=0;}if(i3m>=n3){i3m=n3-1;}
+        if(i3p<0){i3p=0;}if(i3p>=n3){i3p=n3-1;}
+        g[i3m][i2m][i1] = f[i3m][i2m][i1];
+        g[i3p][i2p][i1] = f[i3p][i2p][i1];
+      }
+    }
+  }
+
 
   public static void getLikelihoods(FaultSkin[] skins, float[][][] fl) {
     int n3 = fl.length;

@@ -85,8 +85,9 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  #goUnfaultS()
-  goUncScan()
+  goUnfaultS()
+  #goUnfaultX()
+  #goUncScan()
   #goFlatten()
   #goInterp()
   #goHorizonExtraction()
@@ -478,6 +479,23 @@ def goUnfaultS():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+
+def goUnfaultX():
+  gx = readImage(gxfile)
+  skins = readSkins(fslbase)
+  mark = -999.99
+  ufx = UnfaultX()
+  t1,t2,t3 = ufx.getDipSlips(n1,n2,n3,skins,mark)
+  x1,x2,x3 = ufx.interpolateDipSlips([t1,t2,t3],mark)
+  fw = ufx.unfault([x1,x2,x3],gx)
+  plot3(gx)
+  plot3(fw)
+  plot3(gx,x1,cmin=-10.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)")#,png="gxs1i")
+  plot3(gx,x2,cmin=-3.0,cmax=3.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)")#,png="gxs2i")
+  plot3(gx,x3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)")#,png="gxs3i")
 
 def goUncScan():
   sig1s,sig2s=1.0,2.0

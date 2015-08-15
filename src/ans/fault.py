@@ -26,6 +26,7 @@ ft1file = "ft1" # fault slip interpolated (1st component)
 ft2file = "ft2" # fault slip interpolated (2nd component)
 ft3file = "ft3" # fault slip interpolated (3rd component)
 fwsfile = "fws" # image after unfaulting
+fwxfile = "fwx" # image after unfaulting
 ulfile  = "ul" # unconformity likelihood
 ultfile = "ult" # thinned unconformity likelihood
 uncfile = "unc" # unconformity surface
@@ -34,6 +35,9 @@ rgtfile = "rgt" #relative geologic time image
 sx1file = "sx1"
 sx2file = "sx2"
 sx3file = "sx3"
+x1file = "x1"
+x2file = "x2"
+x3file = "x3"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -68,31 +72,28 @@ def main(args):
   #goThinImages()
   #goSkin()
   #goReSkin()
-  #goSmooth()
-  #goSlip()
+  goSmooth()
+  goSlip()
   #goUnfault()
-  goUnfaultS()
+  #goUnfaultS()
+  goUnfaultX()
   #goUncScan()
   #goUncConvert()
   #goFlatten()
   #goHorizons()
+  #goTest()
+
 def goTest():
-  rgt = readImage(rgtfile)
-  f = zerofloat(n2,n3)
-  for i3 in range(n3):
-    for i2 in range(n2):
-      f[i3][i2] = rgt[i3][i2][110]
-  #f = rgt[100]
-  rmin = min(f)
-  rmax = max(f)
-  ct = Contours(f)
-  cti = ct.getContour(0.5*(rmin+rmax))
-  cx1 = cti.x1
-  print cti.ns
-  for x1i in cx1:
-    for xk in x1i:
-      print xk
-  
+  gx  = readImage(gxfile)
+  sx1 = readImage(sx1file)
+  sxa = zerofloat(n1,n2,n3)
+  sks = readSkins(fskbase)
+  FaultSkin.setValuesAwayFromFaults(sks,sx1,sxa)
+  plot3(gx,sx1,cmin=-5,cmax=5,cmap=jetFill(0.3),
+        clab="Vertical shift (ms)")
+  plot3(gx,sxa,cmin=-5,cmax=5,cmap=jetFill(0.3),
+        clab="Vertical shift (ms)")
+
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
@@ -265,7 +266,7 @@ def goSmooth():
   gx = readImage(gxfile)
   if not plotOnly:
     flstop = 0.01
-    fsigma = 2.0
+    fsigma = 6.0
     gx = readImage(gxfile)
     sks = readSkins(fskbase)
     flt = zerofloat(n1,n2,n3)
@@ -290,9 +291,9 @@ def goSlip():
     skins = readSkins(fskbase)
     sigma1,sigma2,sigma3,pmax = 8.0,3.0,3.0,5.0
     p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-    #gsx = readImage(gsxfile)
-    #fsl = FaultSlipper(gsx,p2,p3)
-    fsl = FaultSlipper(gx,p2,p3)
+    gsx = readImage(gsxfile)
+    fsl = FaultSlipper(gsx,p2,p3)
+    #fsl = FaultSlipper(gx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only to show the error
     fsl.computeDipSlips(skins,minThrow,maxThrow)
@@ -404,6 +405,35 @@ def goUnfaultS():
   plot3(gx,fss,cmin=-0.5,cmax=10,cmap=jetFillExceptMin(1.0),
       slices=[93,180,192],clab="Fault throw (ms)",cint=5,png="throw3D")
   '''
+def goUnfaultX():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    skins = readSkins(fslbase)
+    mark = -999.99
+    ufx = UnfaultX()
+    t1,t2,t3 = ufx.getDipSlips(n1,n2,n3,skins,mark)
+    x1,x2,x3 = ufx.interpolateDipSlips([t1,t2,t3],mark)
+    fw = ufx.unfault([x1,x2,x3],gx)
+    writeImage(x1file,x1)
+    writeImage(x2file,x2)
+    writeImage(x3file,x3)
+    writeImage(fwxfile,fw)
+  else:
+    fw = readImage(fwxfile)
+    x1 = readImage(x1file)
+    x2 = readImage(x2file)
+    x3 = readImage(x3file)
+  gx = gain(gx)
+  fw = gain(fw)
+  plot3(gx)
+  plot3(fw)
+  x1 = mul(x1,4)
+  plot3(gx,x1,cmin=-10.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)")#,png="gxs1i")
+  plot3(gx,x2,cmin=-3.0,cmax=3.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)")#,png="gxs2i")
+  plot3(gx,x3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)")#,png="gxs3i")
 
 def goFlatten():
   fw = readImage(fwsfile)
