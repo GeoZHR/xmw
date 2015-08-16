@@ -123,6 +123,7 @@ public class UnfaultX {
       bg.gridBlended(st,sp,sq[is]);
     }
     return sq;
+    //return convertShifts(40, sq);
   }
 
     /**
@@ -157,6 +158,39 @@ public class UnfaultX {
     }});
     return gs;
   }
+
+  public static float[][][][] convertShifts(int niter, float[][][][] r) {
+    float[][][][] u = scopy(r);
+    for (int iter=0; iter<niter; ++iter) {
+      float[][][][] t = scopy(u);
+      for (int i=0; i<3; ++i)
+        nearestInterp(t,r[i],u[i]);
+    }
+    return u;
+  }
+
+  private static void nearestInterp(
+    float[][][][] r, float[][][] ri, float[][][] ui) {
+    int n3 = ri.length;
+    int n2 = ri[0].length;
+    int n1 = ri[0][0].length;
+    float[][][] r1 = r[0], r2 = r[1], r3 = r[2];
+    for (int i3=0; i3<n3; ++i3) { 
+    for (int i2=0; i2<n2; ++i2) { 
+    for (int i1=0; i1<n1; ++i1) { 
+      float x1 = i1+r1[i3][i2][i1];
+      float x2 = i2+r2[i3][i2][i1];
+      float x3 = i3+r3[i3][i2][i1];
+      int k1 = round(x1);
+      int k2 = round(x2);
+      int k3 = round(x3);
+      if(k1<0){k1=0;}if(k1>=n1){k1=n1-1;}
+      if(k2<0){k2=0;}if(k2>=n2){k2=n2-1;}
+      if(k3<0){k3=0;}if(k3>=n3){k3=n3-1;}
+      ui[i3][i2][i1] = ri[k3][k2][k1];
+    }}}
+  }
+
 
   private void computeUnfaultShifts(
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
@@ -250,6 +284,23 @@ public class UnfaultX {
       return t;
     }
   }
+
+  private static float[][][][] scopy(float[][][][] x) {
+    int n1 = x[0][0][0].length;
+    int n2 = x[0][0].length;
+    int n3 = x[0].length;
+    int n4 = x.length;
+    float[][][][] y = new float[n4][n3][n2][n1];
+    scopy(x,y);
+    return y;
+  }
+
+  private static void scopy(float[][][][] x, float[][][][] y) {
+    int n4 = x.length;
+    for (int i4=0; i4<n4; i4++)
+      copy(x[i4],y[i4]);
+  }
+
 
 }
 
