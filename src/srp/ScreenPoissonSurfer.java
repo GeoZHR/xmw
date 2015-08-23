@@ -445,7 +445,8 @@ public class ScreenPoissonSurfer {
     }
   }
   private static void applyLhs(
-    final float[][][] wp, final float[][][] mk, final float[][][] x, final float[][][] y) 
+    final float[][][] wp, final float[][][] mk, 
+    final float[][][] x, final float[][][] y) 
   {
     final int n3 = x.length;
     Parallel.loop(1,n3,2,new Parallel.LoopInt() { // i3 = 1, 3, 5, ...
