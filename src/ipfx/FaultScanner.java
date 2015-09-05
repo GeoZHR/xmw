@@ -223,6 +223,8 @@ public class FaultScanner {
       float[][][] p2, float[][][] p3, float[][][] g) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    System.out.println("np="+sp.getCount());
+    System.out.println("nt="+st.getCount());
     return scan(sp,st,p2,p3,g);
   }
 

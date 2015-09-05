@@ -406,8 +406,8 @@ public class WellLogWarping {
    * @return array[nl][nz] of shifts.
    */
   public float[][] findShifts(final float[] wm, final float[][][] wl) {
-    int nz = wl[0][0].length;
     int nl = wl[0].length;
+    int nz = wl[0][0].length;
     final int nm = wl.length;
     int[] ls = new int[nl];
     final Pairs[] pt = new Pairs[nl*nm*(nl*nm-1)/2];

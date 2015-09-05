@@ -98,7 +98,7 @@ plotOnly = False
 def main(args):
   #goDisplay()
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goSkin()
   #goReskin()
@@ -108,7 +108,7 @@ def main(args):
   #goUnfaultS()
   #goUnfaultC()
   #goTeaser()
-  goSlices()
+  #goSlices()
 
 def goSlices():
   fl = readImage(flfile)

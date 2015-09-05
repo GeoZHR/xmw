@@ -26,7 +26,7 @@ wsample = "wellSampling"
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/swt/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -35,8 +35,8 @@ def main(args):
   #goSynSeis()
   #goSynSeisFlat()
   #goSynSeisFlatten()
-  #goFlattenD()
-  goTie()
+  goFlattenD()
+  #goTie()
 
 def goTie():
   vnull = -999.25
@@ -190,13 +190,17 @@ def goFlattenD():
     gxs[0][il] = gx[i3][i2]
   weight = 1.0
   maxShift = 40
-  errorPow = 0.05
+  errorPow = 0.125
 
-  wlw = WellLogWarping()
+  #wlw = WellLogWarping()
+  #wlw.setMaxShift(maxShift)
+  #wlw.setPowError([errorPow])
+  #s = wlw.findShifts([weight],gxs)
+  wlw = WellLogWarpingD()
   wlw.setMaxShift(maxShift)
-  wlw.setPowError([errorPow])
-  s = wlw.findShifts([weight],gxs)
-  gus = wlw.applyShiftsX(gxs[0],s)
+  wlw.setPowError(errorPow)
+  s = wlw.findShifts(gxs[0])
+  gus = wlw.applyShifts(gxs[0],s)
   sst = []
   for i2 in range(len(gus)):
     sst.append(s1)

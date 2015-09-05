@@ -73,10 +73,10 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
-  #goUnfaultS()
+  goUnfaultS()
   #goUncScan()
   #goUncConvert()
-  goFlatten()
+  #goFlatten()
   #goHorizons()
 def goTest():
   rgt = readImage(rgtfile)
@@ -388,14 +388,20 @@ def goUnfaultS():
   plot3(gx)
   plot3(fw,png="unfaulted")
   t1 = mul(t1,4) # convert to ms
-  t2 = mul(t2,4) # convert to ms
-  t3 = mul(t3,4) # convert to ms
+  t2 = mul(t2,25) # convert to m
+  t3 = mul(t3,25) # convert to m
+  print min(t2) 
+  print max(t2)
+  print min(t3) 
+  print max(t3)
+  '''
   plot3(gx,t1,cmin=-20,cmax=20,cmap=jetFill(0.3),
         clab="Vertical shift (ms)",png="gxs1i")
-  plot3(gx,t2,cmin=-4.0,cmax=4.0,cmap=jetFill(0.3),
-        clab="Inline shift (ms)",png="gxs2i")
-  plot3(gx,t3,cmin=-4.0,cmax=4.0,cmap=jetFill(0.3),
-        clab="Crossline shift (ms)",png="gxs3i")
+  '''
+  plot3(gx,t2,cmin=-30,cmax=30,cmap=jetFill(0.3),
+        clab="Inline shift (m)",png="gxs2i")
+  plot3(gx,t3,cmin=-30,cmax=30,cmap=jetFill(0.3),
+        clab="Crossline shift (m)",png="gxs3i")
   '''
   skins = readSkins(fslbase)
   mark = -100

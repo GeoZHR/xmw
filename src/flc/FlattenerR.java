@@ -16,25 +16,44 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * @version 2015.08.17
  */
 public class FlattenerR {
-  public void setMaxShift(int smax) {
-    _smax = smax;
-  }
-  public void setPowError(float epow) {
-    _epow = epow;
-  }
 
-  public float[][] alignTraces(float[][] ts) {
-    float[] ws  = new float[1];
-    double[] ps = new double[1];
-    ws[0] = 1.0f; ps[0] = _epow;
-    float[][][] tss = new float[][][]{ts};
-    WellLogWarping wlw = new WellLogWarping();
-    wlw.setPowError(ps);
-    wlw.setMaxShift(_smax);
-    float[][] sx = wlw.findShifts(ws,tss);
+
+  public float[][] alignTraces(int smax, float epow, float[][] ts) {
+    WellLogWarpingD wlw = new WellLogWarpingD();
+    wlw.setPowError(epow);
+    wlw.setMaxShift(smax);
+    float[][] sx = wlw.findShifts(ts);
     float[][] gs = wlw.applyShiftsX(ts,sx);
     return gs;
   }
+
+  public float[][][] flattenImage(int smax, 
+    float r1min, float r1max, float r2min, 
+    float r2max, float r3min, float r3max, 
+    float[][][] fx) {
+    int n1 = fx.length;
+    int n2 = fx[0].length;
+    int n3 = fx[0][0].length;
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    Sampling s3 = new Sampling(n3);
+    DynamicWarpingK dwk = new DynamicWarpingK(8,-smax,smax,s1,s2,s3);
+    dwk.setStrainLimits(r1min,r1max,r2min,r2max,r3min,r3max);
+    dwk.setSmoothness(4,2,2);
+    float[][][] gx = getReferImage(fx);
+    float[][][] fs = dwk.findShifts(s1,gx,s1,fx);
+    return dwk.applyShifts(s1,fx,fs);
+  }
+
+  public float[][][] interpReferImage(
+    Sampling si2, Sampling si3, Sampling so2, Sampling so3, float[][][] fx) {
+    int n1 = fx.length;
+    int n2 = so2.getCount();
+    int n3 = so3.getCount();
+    float[][][] gx = new float[n1][n2][n3];
+    return gx;
+  }
+
 
   public float[][] getReferImage(float[][] f) {
     int n2 = f.length;
@@ -150,9 +169,5 @@ public class FlattenerR {
     }}
     return g;
   }
-
-
-  private int _smax=100;
-  private float _epow = 1.0f;
 
 }
