@@ -45,15 +45,75 @@ public class FlattenerR {
     return dwk.applyShifts(s1,fx,fs);
   }
 
-  public float[][][] interpReferImage(
+  public float[][][] sincInterp(
     Sampling si2, Sampling si3, Sampling so2, Sampling so3, float[][][] fx) {
     int n1 = fx.length;
     int n2 = so2.getCount();
     int n3 = so3.getCount();
-    float[][][] gx = new float[n1][n2][n3];
+    double f2 = so2.getFirst();
+    double f3 = so3.getFirst();
+    double d2 = so2.getDelta();
+    double d3 = so3.getDelta();
+    Sampling s1 = new Sampling(n1);
+    float[][][] gx = new float[n3][n2][n1];
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      double x1 = i1;
+      double x2 = f2+i2*d2;
+      double x3 = f3+i3*d3;
+      gx[i3][i2][i1] = si.interpolate(s1,si2,si3,fx,x1,x2,x3);
+    }}}
     return gx;
   }
 
+  public float[][] imageToTraces(float[][][] fx) {
+    int n1 = fx.length;
+    int n2 = fx[0].length;
+    int n3 = fx[0][0].length;
+    float[][] gx = new float[n2*n3][n1];
+    int k = 0;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      gx[k] = copy(fx[i3][i2]);
+      k++;
+    }}
+    return gx;
+  }
+
+  public float[][][] tracesToImage(int n2, int n3, float[][] gx) {
+    int n1 = gx.length;
+    float[][][] fx = new float[n3][n2][n1];
+    int k = 0;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      fx[i2][i3] = copy(gx[k]);
+      k++;
+    }}
+    return fx;
+  }
+
+  public float[][][] resample(
+    Sampling si2, Sampling si3, 
+    Sampling so2, Sampling so3, float[][][] fx) 
+  {
+    int n1 = fx.length;
+    int n2 = so2.getCount();
+    int n3 = so3.getCount();
+    double f2 = si2.getFirst();
+    double f3 = si3.getFirst();
+    double d2 = si2.getDelta();
+    double d3 = si3.getDelta();
+    float[][][] gx = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int k2 = (int)((so2.getValue(i2)-f2)/d2); 
+      int k3 = (int)((so3.getValue(i3)-f3)/d3); 
+      gx[i3][i2] = fx[k3][k2];
+    }}
+    return gx;
+  }
 
   public float[][] getReferImage(float[][] f) {
     int n2 = f.length;

@@ -62,13 +62,14 @@ pngDir = "../../../png/flc/fake/"
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  goFlatten2d()
+  #goFlatten2d()
   #goFlatten3d()
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
   #goRefine3d()
+  goReferImage()
 def goFlatten2d():
   gx = readImage(gxfile)
   gx = gain(gx)
@@ -117,6 +118,19 @@ def goFlatten3d():
   writeImage(gffile,gf)
   plot3(gx)
   plot3(gf)
+def goReferImage():
+  gf = readImage(gffile)
+  flr = FlattenerR()
+  dr2,dr3 = 20,20
+  fr2,fr3 = 10,10
+  nr2 = (n2-fr2)/dr2
+  nr3 = (n3-fr3)/dr3
+  sr2 = Sampling(nr2,dr2,fr2)
+  sr3 = Sampling(nr3,dr3,fr3)
+  gr = resample(s2,s3,sr2,sr3,gf)
+  g2 = imageToTraces(gr)
+  sx2 = Sampling(len(g2[0])) 
+  plot2(s1,sx2,g2,clab="Amplitude",cmin=-2,cmax=2,png="gx")
 def goRefine3d():
   gf = readImage(gffile)
   if not plotOnly:
