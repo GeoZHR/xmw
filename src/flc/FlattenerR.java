@@ -31,18 +31,44 @@ public class FlattenerR {
     float r1min, float r1max, float r2min, 
     float r2max, float r3min, float r3max, 
     float[][][] fx) {
-    int n1 = fx.length;
+    int n3 = fx.length;
     int n2 = fx[0].length;
-    int n3 = fx[0][0].length;
+    int n1 = fx[0][0].length;
     Sampling s1 = new Sampling(n1);
     Sampling s2 = new Sampling(n2);
     Sampling s3 = new Sampling(n3);
     DynamicWarpingK dwk = new DynamicWarpingK(8,-smax,smax,s1,s2,s3);
     dwk.setStrainLimits(r1min,r1max,r2min,r2max,r3min,r3max);
     dwk.setSmoothness(4,2,2);
-    float[][][] gx = getReferImage(fx);
+    float[][][] gx = getReferImageX(n2/2,n3/2,fx);
     float[][][] fs = dwk.findShifts(s1,gx,s1,fx);
     return dwk.applyShifts(s1,fx,fs);
+  }
+
+  public float[][] flattenTraces(
+    int smax, float r1min, float r1max, float[][] fx) 
+  {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    Sampling s1 = new Sampling(n1);
+    float[][] gx = new float[n2][n1];
+    DynamicWarpingK dwk = new DynamicWarpingK(8,-smax,smax,s1);
+    dwk.setStrainLimits(r1min,r1max);
+    dwk.setSmoothness(2);
+    /*
+    float sc = 1.0f/n2;
+    float[] fr = new float[n1];
+    for (int i1=0; i1<n1; ++i1) {
+    for (int i2=0; i2<n2; ++i2) {
+      fr[i1] += fx[i2][i1]*sc;
+    }}
+    */
+    float[] fr = getMedianTrace(fx);
+    for (int i2=0; i2<n2; ++i2) {
+      float[] fs = dwk.findShifts(s1,fr,s1,fx[i2]);
+      gx[i2] = dwk.applyShifts(s1,fx[i2],fs);
+    }
+    return gx;
   }
 
   public float[][][] sincInterp(
@@ -69,11 +95,11 @@ public class FlattenerR {
   }
 
   public float[][] imageToTraces(float[][][] fx) {
-    int n1 = fx.length;
-    int n2 = fx[0].length;
-    int n3 = fx[0][0].length;
-    float[][] gx = new float[n2*n3][n1];
     int k = 0;
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][] gx = new float[n2*n3][n1];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
       gx[k] = copy(fx[i3][i2]);
@@ -83,12 +109,12 @@ public class FlattenerR {
   }
 
   public float[][][] tracesToImage(int n2, int n3, float[][] gx) {
-    int n1 = gx.length;
-    float[][][] fx = new float[n3][n2][n1];
     int k = 0;
+    int n1 = gx[0].length;
+    float[][][] fx = new float[n3][n2][n1];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
-      fx[i2][i3] = copy(gx[k]);
+      fx[i3][i2] = copy(gx[k]);
       k++;
     }}
     return fx;
@@ -110,7 +136,7 @@ public class FlattenerR {
     for (int i2=0; i2<n2; ++i2) {
       int k2 = (int)((so2.getValue(i2)-f2)/d2); 
       int k3 = (int)((so3.getValue(i3)-f3)/d3); 
-      gx[i3][i2] = fx[k3][k2];
+      gx[i3][i2] = copy(fx[k3][k2]);
     }}
     return gx;
   }
@@ -154,6 +180,20 @@ public class FlattenerR {
     return g;
   }
 
+  public float[] getMedianTrace(float[][] f) {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    float[] fm = new float[n1];
+    float[] f1 = new float[n2];
+    MedianFinder mf = new MedianFinder(n2);
+    for (int i1=0; i1<n1; ++i1) {
+      for (int i2=0; i2<n2; ++i2) {
+        f1[i2] = f[i2][i1];
+      }
+      fm[i1] = mf.findMedian(f1);
+    }
+    return fm;
+  }
 
 
   public float[][] getReferImageM(float[][] f) {
@@ -218,14 +258,14 @@ public class FlattenerR {
   }
 
 
-  public float[][][] getReferImageX(float[][][] f) {
+  public float[][][] getReferImageX(int k2, int k3, float[][][] f) {
     int n3 = f.length;
     int n2 = f[0].length;
     int n1 = f[0][0].length;
     float[][][] g = new float[n3][n2][n1];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
-      g[i3][i2] = f[98][175];
+      g[i3][i2] = f[k3][k2];
     }}
     return g;
   }

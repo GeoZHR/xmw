@@ -495,7 +495,6 @@ public class WellLogWarpingD {
     for (int il=0; il<nl; ++il) { // for all logs, ...
       for (int it=0; it<nt; ++it) { // for all times, ...
         float zi = it-r[il][it]; // depth at which to interpolate
-        System.out.println("zi="+zi);
         g[il][it]=si.interpolate(nz,1.0,0.0,f[il],zi);
       }
     }

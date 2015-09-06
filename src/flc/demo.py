@@ -5,8 +5,8 @@ Version: 2015.02.09
 """
 
 from fakeutils import *
-#setupForSubset("tp")
-setupForSubset("fake")
+setupForSubset("tp")
+#setupForSubset("fake")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -121,23 +121,41 @@ def goFlatten3d():
 def goReferImage():
   gf = readImage(gffile)
   flr = FlattenerR()
-  dr2,dr3 = 20,20
-  fr2,fr3 = 10,10
-  nr2 = (n2-fr2)/dr2
-  nr3 = (n3-fr3)/dr3
+  dr2,dr3 = 15,15
+  fr2,fr3 = 20,40
+  nr2 = (n2-fr2-20)/dr2
+  nr3 = (n3-fr3-30)/dr3
   sr2 = Sampling(nr2,dr2,fr2)
   sr3 = Sampling(nr3,dr3,fr3)
-  gr = resample(s2,s3,sr2,sr3,gf)
-  g2 = imageToTraces(gr)
-  sx2 = Sampling(len(g2[0])) 
-  plot2(s1,sx2,g2,clab="Amplitude",cmin=-2,cmax=2,png="gx")
+  gr = flr.resample(s2,s3,sr2,sr3,gf)
+  g2 = flr.imageToTraces(gr)
+  sx2 = Sampling(len(g2)) 
+  wlw = WellLogWarpingD()
+  wlw.setMaxShift(10)
+  wlw.setPowError(0.05)
+  g2s = wlw.findShifts(g2)
+  g2d = wlw.applyShiftsX(g2,g2s)
+  '''
+  smax = 10
+  r1min,r1max = -0.2,0.2
+  r2min,r2max = -0.2,0.2
+  r3min,r3max = -0.2,0.2
+  g3d = flr.tracesToImage(nr2,nr3,g2d)
+  g3f = flr.flattenImage(smax,r1min,r1max,r2min,r2max,r3min,r3max,g3d)
+  g2f = flr.imageToTraces(g3f)
+  '''
+  g2f = flr.flattenTraces(10,-0.2,0.2,g2d)
+  plot2(s1,sx2,g2,clab="Amplitude",cmin=-2,cmax=2,png="g2")
+  plot2(s1,sx2,g2d,clab="Amplitude",cmin=-2,cmax=2,png="g2d")
+  plot2(s1,sx2,g2f,clab="Amplitude",cmin=-2,cmax=2,png="g2f")
 def goRefine3d():
   gf = readImage(gffile)
   if not plotOnly:
     sk = readSkins(fskbase)
     flr = FlattenerR()
     #gr = flr.getReferImage(gf)
-    gr = flr.getReferImageX(gf)
+    k2,k3=98,175
+    gr = flr.getReferImageX(k2,k3,gf)
     smin,smax = -10.0,10.0
     r1mins = fillfloat(-0.2,n1,n2,n3)
     r1maxs = fillfloat( 0.2,n1,n2,n3)

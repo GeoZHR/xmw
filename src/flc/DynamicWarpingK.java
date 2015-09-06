@@ -523,7 +523,8 @@ public class DynamicWarpingK {
   private int _k1min,_k2min,_k3min;
   private int _esmooth = 1;
   private SincInterpolator _si;
-  private float _epow = 1.00f;
+  //private float _epow = 1.00f;
+  private float _epow = 4.00f;
 
   private static CubicInterpolator makeInterpolator1(
     float[] x, float[] y) 
@@ -531,6 +532,7 @@ public class DynamicWarpingK {
     //return new CubicInterpolator(CubicInterpolator.Method.LINEAR,x,y);
     return new CubicInterpolator(CubicInterpolator.Method.SPLINE,x,y);
   }
+
   private static CubicInterpolator makeInterpolator2(
     float[] x, float[] y) 
   {
