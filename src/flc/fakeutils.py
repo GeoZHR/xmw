@@ -36,6 +36,14 @@ def setupForSubset(name):
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="pnz":
+    """ subset of Teapot dome """
+    print "setupForSubset: tp"
+    seismicDir = _datdir+"pnz/"
+    n1,n2,n3 = 300,450,450
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="tp1":
     print "setupForSubset: subt"
     seismicDir = _datdir+"tp1/"

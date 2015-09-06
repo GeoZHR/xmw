@@ -9,6 +9,7 @@ package swt;
 import java.util.Random;
 
 import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.CubicInterpolator;
 import edu.mines.jtk.util.MedianFinder;
 import static edu.mines.jtk.util.ArrayMath.*;
@@ -389,8 +390,8 @@ public class WellLogWarpingD {
    * @param fs array[nl][nz] of log values, nz values for each of nl logs.
    * @return array[nl][nt] of shifts, where nt = nz is the number of RGTs.
    */
-  public float[][] findShifts(float[][] fs) {
-    int nl = fs.length;
+  public float[][] findShifts(final float[][] fs) {
+    final int nl = fs.length;
     int nz = fs[0].length;
     int nt = nz;
 
@@ -419,9 +420,14 @@ public class WellLogWarpingD {
 
     // Use dynamic warping to find pairs of corresponding log samples.
     int np = nl*(nl-1)/2; // number of pairs of logs
-    Pairs[] ps = new Pairs[np];
-    for (int il=0,ip=0; il<nl; ++il) {
-      for (int jl=il+1; jl<nl; ++jl,++ip) {
+    final Pairs[] ps = new Pairs[np];
+    //int ip = 0;
+    Parallel.loop(nl,new Parallel.LoopInt() {
+      public void compute(int il) {
+    //for (int il=0,ip=0; il<nl; ++il) {
+      //for (int jl=il+1; jl<nl; ++jl,++ip) {
+      for (int jl=il+1; jl<nl; ++jl) {
+        int ip = il*nl+jl;
         float[] fi = fs[il];
         float[] gj = fs[jl];
         float[][] e = computeErrors(fi,gj);
@@ -430,7 +436,7 @@ public class WellLogWarpingD {
         int[][] ij = convertWarping(kl,fi,gj);
         ps[ip] = new Pairs(il,jl,ij[0],ij[1]);
       }
-    }
+    }});
 
     // Initial mapping t[il][iz] from depth z to time t for shifts r = 0.
     float[][] r = new float[nl][nt];

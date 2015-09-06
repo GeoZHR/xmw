@@ -9,6 +9,7 @@ package flc;
 import java.util.Random;
 
 import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.CubicInterpolator;
 import edu.mines.jtk.util.MedianFinder;
 import static edu.mines.jtk.util.ArrayMath.*;
@@ -16,6 +17,7 @@ import static edu.mines.jtk.util.ArrayMath.*;
 // TESTING ONLY!
 import java.awt.*;
 import edu.mines.jtk.awt.*;
+import edu.mines.jtk.lapack.*;
 import edu.mines.jtk.mosaic.*;
 
 import dnp.CgSolver;
@@ -485,19 +487,20 @@ public class WellLogWarpingD {
     return g;
   }
 
-  public float[][] applyShiftsX(float[][] f, float[][] r) {
-    int nl = f.length;
-    int nz = f[0].length;
-    int nt = r[0].length;
-    float[][] g = fillfloat(_vnull,nt,nl);
-    SincInterpolator si = new SincInterpolator();
-    for (int il=0; il<nl; ++il) { // for all logs, ...
+  public float[][] applyShiftsX(final float[][] f, final float[][] r) {
+    final int nl = f.length;
+    final int nz = f[0].length;
+    final int nt = r[0].length;
+    final float[][] g = fillfloat(_vnull,nt,nl);
+    final SincInterpolator si = new SincInterpolator();
+    Parallel.loop(nl,new Parallel.LoopInt() {
+    public void compute(int il) {
+    //for (int il=0; il<nl; ++il) { // for all logs, ...
       for (int it=0; it<nt; ++it) { // for all times, ...
         float zi = it-r[il][it]; // depth at which to interpolate
-        System.out.println("zi="+zi);
         g[il][it]=si.interpolate(nz,1.0,0.0,f[il],zi);
       }
-    }
+    }});
     return g;
   }
 

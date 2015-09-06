@@ -5,8 +5,9 @@ Version: 2015.02.09
 """
 
 from fakeutils import *
-setupForSubset("tp")
 #setupForSubset("fake")
+#setupForSubset("tp")
+setupForSubset("pnz")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -70,7 +71,19 @@ def main(args):
   #goThin()
   #goSkin()
   goReferImage()
-  goRefine3d()
+  #goRefine3d()
+  '''
+  gx = readImage(gxfile)
+  plot3p(gx)
+  gx = readImage("pnz00")
+  n1,n2,n3=300,450,450
+  j1,j2,j3=120,0 ,400
+  gxs = copy(n1,n2,n3,j1,j2,j3,gx)
+  gxs = div(gxs,50000)
+  writeImage("gx",gxs)
+  #plot3(gx)
+  '''
+
 def goFlatten2d():
   gx = readImage(gxfile)
   gx = gain(gx)
@@ -117,15 +130,15 @@ def goFlatten3d():
   fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
   gf = fm.flatten(gx)
   writeImage(gffile,gf)
-  plot3(gx)
-  plot3(gf)
+  plot3p(gx)
+  plot3p(gf)
 def goReferImage():
   gf = readImage(gffile)
   flr = FlattenerR()
   dr2,dr3 = 10,10
-  fr2,fr3 = 20,40
-  nr2 = (n2-fr2-20)/dr2
-  nr3 = (n3-fr3-30)/dr3
+  fr2,fr3 = 10,10
+  nr2 = (n2-fr2-10)/dr2
+  nr3 = (n3-fr3-10)/dr3
   sr2 = Sampling(nr2,dr2,fr2)
   sr3 = Sampling(nr3,dr3,fr3)
   gr = flr.resample(s2,s3,sr2,sr3,gf)
@@ -151,9 +164,32 @@ def goReferImage():
   plot2(s1,sx2,g2f,clab="Amplitude",cmin=-2,cmax=2,png="g2f")
   g3f = flr.tracesToImage(nr2,nr3,g2f)
   g3r = flr.sincInterp(sr2,sr3,s2,s3,g3f)
-  plot3(g3r,clab="Amplitude",png="g3r")
+  plot3p(g3r,clab="Amplitude",png="g3r")
   writeImage(grifile,g3r)
 def goRefine3d():
+  gf = readImage(gffile)
+  if not plotOnly:
+    flr = FlattenerR()
+    gr = readImage(grifile)
+    smin,smax = -10.0,10.0
+    dwk = DynamicWarpingK(4,smin,smax,s1,s2,s3)
+    dwk.setStrainLimits(-0.2,0.2,-0.2,0.2,-0.2,0.2)
+    dwk.setSmoothness(4,2,2)
+    dw = dwk.findShifts(s1,gr,s1,gf)
+    gh = dwk.applyShifts(s1,gf,dw)
+    writeImage(dwfile,dw)
+    writeImage(ghfile,gh)
+    writeImage(grfile,gr)
+  else:
+    gh = readImage(ghfile)
+    gr = readImage(grfile)
+    dw = readImage(dwfile)
+  plot3p(gf,clab="Amplitude",png="gf1")
+  plot3p(gh,clab="Amplitude",png="gh1")
+  plot3p(gr,clab="Amplitude",png="gr1")
+  plot3p(gf,dw,cmin=-8,cmax=6,clab="Shifts (samples)",cmap=jetFill(1.0),png="dw1")
+
+def goRefine3dV():
   gf = readImage(gffile)
   if not plotOnly:
     sk = readSkins(fskbase)
@@ -636,6 +672,148 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setAzimuthAndElevation(-55.0,25.0)
   ov.setTranslate(Vector3(0.03,0.33,0.15))
   ov.setScale(1.4)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(137,1,pngDir+png+"cbar.png")
+
+def plot3p(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          xyz=None,cells=None,skins=None,fbs=None,smax=0.0,
+          links=False,curve=False,trace=False,png=None):
+  n1 = len(f[0][0])
+  n2 = len(f[0])
+  n3 = len(f)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      ipg.setClips(-3.0,3.0)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-3.0,3.0)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120)
+  if xyz:
+    pg = PointGroup(0.2,xyz)
+    ss = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.YELLOW)
+    ss.add(cs)
+    pg.setStates(ss)
+    #ss = StateSet()
+    #ps = PointState()
+    #ps.setSize(5.0)
+    #ss.add(ps)
+    #pg.setStates(ss)
+    sf.world.addChild(pg)
+  if cells:
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    cmap = ColorMap(0.0,1.0,ColorMap.JET)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.5,cmap,cells,False)
+    qg = QuadGroup(xyz,uvw,rgb)
+    qg.setStates(ss)
+    sf.world.addChild(qg)
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if skins:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    if not smax:
+      ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    sg.setStates(ss)
+    size = 2.0
+    if links:
+      size = 0.5 
+    for skin in skins:
+      if smax>0.0: # show fault throws
+        cmap = ColorMap(0.0,smax,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
+      else: # show fault likelihood
+        cmap = ColorMap(0.0,1.0,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
+      qg = QuadGroup(xyz,uvw,rgb)
+      qg.setStates(None)
+      sg.addChild(qg)
+      if curve or trace:
+        cell = skin.getCellNearestCentroid()
+        if curve:
+          xyz = cell.getFaultCurveXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+        if trace:
+          xyz = cell.getFaultTraceXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+      if links:
+        xyz = skin.getCellLinksXyz()
+        lg = LineGroup(xyz)
+        sg.addChild(lg)
+    sf.world.addChild(sg)
+  #ipg.setSlices(198,0,89)
+  ipg.setSlices(198,0,58)
+  if cbar:
+    sf.setSize(937,600)
+  else:
+    sf.setSize(800,600)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
+  ov = sf.getOrbitView()
+  ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
+  ov.setAzimuthAndElevation(55.0,25.0)
+  ov.setTranslate(Vector3(0.7,0.33,0.7))
+  ov.setScale(1.1)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

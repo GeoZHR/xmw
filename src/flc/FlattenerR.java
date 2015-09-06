@@ -72,26 +72,28 @@ public class FlattenerR {
   }
 
   public float[][][] sincInterp(
-    Sampling si2, Sampling si3, Sampling so2, Sampling so3, float[][][] fx) {
+    final Sampling si2, final Sampling si3, 
+    final Sampling so2, final Sampling so3, final float[][][] fx) {
     int n3 = so3.getCount();
-    int n2 = so2.getCount();
-    int n1 = fx[0][0].length;
-    double f2 = so2.getFirst();
-    double f3 = so3.getFirst();
-    double d2 = so2.getDelta();
-    double d3 = so3.getDelta();
-    Sampling s1 = new Sampling(n1);
-    float[][][] gx = new float[n3][n2][n1];
-    SincInterpolator si = new SincInterpolator();
+    final int n2 = so2.getCount();
+    final int n1 = fx[0][0].length;
+    final double f2 = so2.getFirst();
+    final double f3 = so3.getFirst();
+    final double d2 = so2.getDelta();
+    final double d3 = so3.getDelta();
+    final Sampling s1 = new Sampling(n1);
+    final float[][][] gx = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    for (int i3=0; i3<n3; ++i3) {
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       double x1 = i1;
       double x2 = f2+i2*d2;
       double x3 = f3+i3*d3;
       gx[i3][i2][i1] = si.interpolate(s1,si2,si3,fx,x1,x2,x3);
-    }}}
+    }}}});
     return gx;
   }
 
