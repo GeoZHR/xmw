@@ -73,9 +73,9 @@ public class FlattenerR {
 
   public float[][][] sincInterp(
     Sampling si2, Sampling si3, Sampling so2, Sampling so3, float[][][] fx) {
-    int n1 = fx.length;
-    int n2 = so2.getCount();
     int n3 = so3.getCount();
+    int n2 = so2.getCount();
+    int n1 = fx[0][0].length;
     double f2 = so2.getFirst();
     double f3 = so3.getFirst();
     double d2 = so2.getDelta();
@@ -83,6 +83,7 @@ public class FlattenerR {
     Sampling s1 = new Sampling(n1);
     float[][][] gx = new float[n3][n2][n1];
     SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {

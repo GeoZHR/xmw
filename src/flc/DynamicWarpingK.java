@@ -524,7 +524,7 @@ public class DynamicWarpingK {
   private int _esmooth = 1;
   private SincInterpolator _si;
   //private float _epow = 1.00f;
-  private float _epow = 4.00f;
+  private float _epow = 2.00f;
 
   private static CubicInterpolator makeInterpolator1(
     float[] x, float[] y) 

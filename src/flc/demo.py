@@ -33,6 +33,7 @@ gsfile = "gs"
 ghfile = "gh"
 grfile = "gr"
 dwfile = "dw"
+grifile = "gri"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -54,7 +55,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = True
+plotOnly = False
 pngDir = "../../../png/flc/tp/"
 pngDir = "../../../png/flc/fake/"
 
@@ -68,8 +69,8 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  #goRefine3d()
   goReferImage()
+  goRefine3d()
 def goFlatten2d():
   gx = readImage(gxfile)
   gx = gain(gx)
@@ -121,7 +122,7 @@ def goFlatten3d():
 def goReferImage():
   gf = readImage(gffile)
   flr = FlattenerR()
-  dr2,dr3 = 15,15
+  dr2,dr3 = 10,10
   fr2,fr3 = 20,40
   nr2 = (n2-fr2-20)/dr2
   nr3 = (n3-fr3-30)/dr3
@@ -148,6 +149,10 @@ def goReferImage():
   plot2(s1,sx2,g2,clab="Amplitude",cmin=-2,cmax=2,png="g2")
   plot2(s1,sx2,g2d,clab="Amplitude",cmin=-2,cmax=2,png="g2d")
   plot2(s1,sx2,g2f,clab="Amplitude",cmin=-2,cmax=2,png="g2f")
+  g3f = flr.tracesToImage(nr2,nr3,g2f)
+  g3r = flr.sincInterp(sr2,sr3,s2,s3,g3f)
+  plot3(g3r,clab="Amplitude",png="g3r")
+  writeImage(grifile,g3r)
 def goRefine3d():
   gf = readImage(gffile)
   if not plotOnly:
@@ -155,7 +160,8 @@ def goRefine3d():
     flr = FlattenerR()
     #gr = flr.getReferImage(gf)
     k2,k3=98,175
-    gr = flr.getReferImageX(k2,k3,gf)
+    #gr = flr.getReferImageX(k2,k3,gf)
+    gr = readImage(grifile)
     smin,smax = -10.0,10.0
     r1mins = fillfloat(-0.2,n1,n2,n3)
     r1maxs = fillfloat( 0.2,n1,n2,n3)
@@ -179,12 +185,13 @@ def goRefine3d():
     #dwk.setSmoothness(4,2,2)
     #dw = dwk.findShifts(s1,gr,s1,gf)
     #gh = dwk.applyShifts(s1,gf,dw)
-    writeImage(dwfile,dw)
-    writeImage(ghfile,gh)
-    writeImage(grfile,gr)
-  gh = readImage(ghfile)
-  gr = readImage(grfile)
-  dw = readImage(dwfile)
+    #writeImage(dwfile,dw)
+    #writeImage(ghfile,gh)
+    #writeImage(grfile,gr)
+  else:
+    gh = readImage(ghfile)
+    gr = readImage(grfile)
+    dw = readImage(dwfile)
   plot3(gf,clab="Amplitude",png="gf1")
   plot3(gh,clab="Amplitude",png="gh1")
   plot3(gr,clab="Amplitude",png="gr1")
