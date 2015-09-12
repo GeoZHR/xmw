@@ -32,6 +32,8 @@ seismicDir = "../../../data/unc/"
 #############################################################################
 
 def main(args):
+  goTestX()
+  '''
   f = readImage("f3d148")
   u1  = zerofloat(n1,n2)
   u2  = zerofloat(n1,n2)
@@ -54,6 +56,21 @@ def main(args):
   
   #plotVectors2(f,u1,u2,u1m,u2m,"normalVectors")
   flatten(f,us,ut2,u1m,u2m)
+  '''
+def goTest():
+  f = readImage("f3d148")
+  f = gain(f)
+  lof = LocalOrientFilter(2.0,1.0)
+  ets = lof.applyForTensors(f)
+  lsf = LocalSemblanceFilter(2,32)
+  use = lsf.semblance(LocalSemblanceFilter.Direction2.U,ets,f)
+  #gs1 = lsf.smooth1(LocalSemblanceFilter.Direction2.U,ets,f)
+  #gs2 = lsf.smooth2(LocalSemblanceFilter.Direction2.U,ets,f)
+  plot2(s1,s2,f)
+  plot2(s1,s2,f,g=use)
+  #plot2(s1,s2,gs1)
+  #plot2(s1,s2,gs2)
+
 def unc(f,ut1,ut2,us):
   u  = zerofloat(n1,n2)
   uc1 = zerofloat(n1,n2)
@@ -282,12 +299,13 @@ def plot2(s1,s2,f,g=None,gmin=None,gmax=None,
   #pv = panel.addPixels(f)
   pv.setInterpolation(PixelsView.Interpolation.LINEAR)
   pv.setColorModel(ColorMap.GRAY)
-  pv.setClips(-2.0,2.0)
+  pv.setClips(-1.5,1.5)
   if g:
     alpha = 0.0
     pv = panel.addPixels(s1,s2,g)
     #pv = panel.addPixels(g)
-    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    #pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    pv.setInterpolation(PixelsView.Interpolation.LINEAR)
     if gmin==None: gmin = min(g)
     if gmax==None: gmax = max(g)
     pv.setClips(gmin,gmax)

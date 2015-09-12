@@ -6,9 +6,13 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package flc;
 
+import java.util.*;
+
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+
 
 /**
  * Flattens and unflattens locally planar features in a 3D image.
@@ -250,6 +254,191 @@ public class Flattener3 {
 
     return new Mappings(s1,s2,s3,u1,x1);
   }
+
+  public float[][][] flatten(
+    Sampling sx1, Sampling su1, final float[][][] u1, final float[][][] f) 
+  {
+    final int n3 = f.length;
+    final int n2 = f[0].length;
+    final int nx1 = sx1.getCount();
+    final int nu1 = su1.getCount();
+    final float[][][] x1 = new float[n3][n2][nu1];
+    cleanRGT(0.0f, 1.0f, u1);
+    final InverseInterpolator ii = new InverseInterpolator(sx1,su1);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) 
+        ii.invert(u1[i3][i2],x1[i3][i2]);
+    }});
+
+    final double d1 = sx1.getDelta();
+    final double f1 = sx1.getFirst();
+    final float[][][] g = new float[n3][n2][nu1];
+    final SincInterpolator si = new SincInterpolator();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2)
+        si.interpolate(nx1,d1,f1,f[i3][i2],nu1,x1[i3][i2],g[i3][i2]);
+    }});
+    return g;
+  }
+
+  public float[][][] resampleRgt(
+    Sampling s1, int[][][] uc, float[][][] u1) {
+    Object[] ob = rgtSampling(s1,uc,u1);
+    int n1 = s1.getCount();
+    double d1 = s1.getDelta();
+    float[] fus = (float[])ob[0];
+    float[][][] x1s = (float[][][])ob[1];
+    int nu1 = fus.length;
+    double fu1 = round(min(fus));
+    Sampling su1 = new Sampling(nu1,d1,fu1);
+    return rgtFromHorizonVolume(n1,su1,x1s);
+  }
+
+  public Object[] rgtSampling(
+    Sampling s1, int[][][] uc, final float[][][] u1) 
+  {
+    final int n3 = u1.length;
+    final int n2 = u1[0].length;
+    final int n1 = u1[0][0].length;
+    double fu1 = min(u1);
+    double lu1 = max(u1);
+    double du1 = s1.getDelta();
+    int nu1 = (int)((lu1-fu1)/du1)+1;
+    Sampling su1 = new Sampling(nu1,du1,fu1);
+    final float[][][] x1 = new float[n3][n2][nu1];
+    final InverseInterpolator ii = new InverseInterpolator(s1,su1);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) 
+        ii.invert(u1[i3][i2],x1[i3][i2]);
+    }});
+    float l1 = (float)s1.getLast();
+    float f1 = (float)s1.getFirst();
+    float d1 = (float)s1.getDelta();
+    FloatList fu = new FloatList();
+    short[][][] uk = new short[n3][n2][n1];
+    if(uc!=null) {uncMark(uc,uk);}
+    float ui = (float)fu1;
+    ArrayList<float[][]> x1a = new ArrayList<float[][]>();
+    while(ui<lu1-du1) {
+      float up = ui+(float)du1;
+      float[][] x1i = contour(ui,su1,x1);
+      float[][] x1p = contour(up,su1,x1);
+      float npi = 0.0f;
+      float ndx = 0.0f;
+      float dx1 = 0.0f;
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float xi = x1i[i3][i2];
+        float xp = x1p[i3][i2];
+        if(xi<=f1||xi>=l1) {continue;}
+        npi +=1.0f;
+        if(xp<=f1||xp>=l1) {continue;}
+        int i1i = round((xi-f1)/d1);
+        int i1p = round((xp-f1)/d1);
+        if(i1i<0){i1i=0;} if(i1i>=n1){i1i=n1-1;}
+        if(i1p<0){i1p=0;} if(i1p>=n1){i1p=n1-1;}
+        if(uk[i3][i2][i1i]==1){continue;}
+        if(uk[i3][i2][i1p]==1){continue;}
+        if(xp-xi<0.0f){continue;}
+        ndx += 1.0f;
+        dx1 += xp-xi;
+      }}
+      if(npi<0.01f*n2*n3||ndx<0.00001*n2*n3) {
+        ui += du1*0.5f;
+        continue;
+      } else {
+        fu.add(ui);
+        dx1 /= ndx;
+        //ui += (0.9f*du1)/dx1;
+        ui += (1.0f*du1)/dx1;
+        x1a.add(x1i);
+      }
+      System.out.println("ui="+ui);
+    }
+    int nk = x1a.size();
+    float[][][] x1s = new float[n3][n2][nk];
+    for (int ik=0; ik<nk; ++ik) {
+      float[][] x1i = x1a.get(ik);
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        x1s[i3][i2][ik] = x1i[i3][i2];
+      }}
+    }
+    return new Object[] {fu.trim(),x1s};
+  }
+
+  public float[][][] rgtFromHorizonVolume(
+    int m1, Sampling su1, float[][][] x1s) 
+  {
+    int n3 = x1s.length;
+    int n2 = x1s[0].length;
+    int n1 = x1s[0][0].length;
+    double[] u1s = su1.getValues();
+    float[][][] f = new float[n3][n2][m1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float x1m = x1s[i3][i2][0];
+      float yxm = (float)u1s[0];
+      FloatList xl = new FloatList();
+      FloatList yl = new FloatList();
+      xl.add(x1m);
+      yl.add(yxm);
+      for (int i1=1; i1<n1; ++i1) {
+        float x1i = x1s[i3][i2][i1];
+        float yxi = (float)u1s[i1];
+        if(x1i>x1m) {
+          xl.add(x1i);
+          yl.add(yxi);
+          x1m = x1i;
+          yxm = yxi;
+        }
+      }
+      float[] x = xl.trim();
+      float[] y = yl.trim();
+      CubicInterpolator ci = new CubicInterpolator(x,y);
+      for (int i1=0; i1<m1; ++i1) {
+        f[i3][i2][i1] = ci.interpolate(i1);
+      }
+    }}
+    return f;
+  }
+
+
+  private float[][] contour(float ui, Sampling s1, float[][][] x1) {
+    int n3 = x1.length;
+    int n2 = x1[0].length;
+    float[][] x1i = new float[n3][n2];
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      x1i[i3][i2] = si.interpolate(s1,x1[i3][i2],ui);
+    }}
+    return x1i;
+  }
+
+  private void uncMark(int[][][] uc, short[][][] uk) {
+    int nc = uc[0].length;
+    int n1 = uk[0][0].length;
+    for (int ic=0; ic<nc; ++ic) {
+      int np = uc[0][ic].length;
+      for (int ip=0; ip<np; ++ip) {
+        int i1 = uc[0][ic][ip];
+        int i2 = uc[1][ic][ip];
+        int i3 = uc[2][ic][ip];
+        int ib = i1-1;
+        int ie = i1+1;
+        if(ib<0){ib=0;}
+        if(ie>=n1){ie=n1-1;}
+        for (int k1=ib; k1<=ie; ++k1) {
+          uk[i3][i2][k1] = 1;
+        }
+      }
+    } 
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private
@@ -599,4 +788,55 @@ public class Flattener3 {
       }
     }
   }
+
+  private void cleanRGT(float f1, float d1, float[][][] u1) {
+    int n3 = u1.length;
+    int n2 = u1[0].length;
+    int n1 = u1[0][0].length;
+    float[][][] r = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float x1i = f1+i1*d1;
+          r[i3][i2][i1] = (u1[i3][i2][i1]-x1i)/d1;
+        }
+      }
+    }
+    cleanShifts(r);
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float x1i = f1+i1*d1;
+          u1[i3][i2][i1] = x1i+r[i3][i2][i1]*d1;
+        }
+      }
+    }
+  }
+
+
+  private class FloatList {
+    public int n = 0;
+    public float[] a = new float[1024];
+    public void add(float f) {
+      if (n==a.length) {
+        float[] t = new float[2*n];
+        System.arraycopy(a,0,t,0,n);
+        a = t;
+      }
+      a[n++] = f;
+    }
+    public void add(float[] f) {
+      int m = f.length;
+      for (int i=0; i<m; ++i)
+        add(f[i]);
+    }
+    public float[] trim() {
+      if (n==0)
+        return null;
+      float[] t = new float[n];
+      System.arraycopy(a,0,t,0,n);
+      return t;
+    }
+  }
+
 }

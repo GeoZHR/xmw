@@ -57,23 +57,25 @@ maxThrow =  15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-#pngDir = "../../../png/ipfx/"
-plotOnly = False
+pngDir = "../../../png/ipfx/"
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goFakeData()
-  goSlopes()
-  goScan()
+  #goFakeData()
+  #goSlopes()
+  #goScan()
   goThin()
   goSkin()
   goReSkin()
+  '''
   goSmooth()
   goSlip()
   goUnfaultS()
   goFlatten()
   goHorizonExtraction()
+  '''
   #goSubset()
 
 def goSubset():
@@ -261,8 +263,8 @@ def goReSkin():
   skins = readSkins(fskgood)
   for skin in skins:
     skin.smoothCellNormals(4)
-  plot3(gx,skins=skins,png="skinsNew")
-  #plot3(gx,skins=skins,links=True,png="skinsNew")
+  #plot3(gx,skins=skins,png="skinsNew")
+  plot3(gx,skins=skins,links=True,png="skinsNewLinks")
   #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
   '''
   for iskin,skin in enumerate(skins):
@@ -649,9 +651,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           r,g,b=1,1,1
         r,g,b=0,0,1
         xyz = skin.getCellLinksXyz()
-        rgb = skin.getCellLinksRgb(r,g,b,xyz)
-        lg = LineGroup(xyz,rgb)
-        #lg = LineGroup(xyz)
+        #rgb = skin.getCellLinksRgb(r,g,b,xyz)
+        #lg = LineGroup(xyz,rgb)
+        lg = LineGroup(xyz)
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)

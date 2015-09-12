@@ -7,7 +7,7 @@ Version: 2015.02.09
 from fakeutils import *
 #setupForSubset("fake")
 #setupForSubset("tp")
-setupForSubset("pnz")
+setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -29,8 +29,11 @@ fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
+u1file = "u1"
 gffile = "gf"
+gufile = "gu"
 gsfile = "gs"
+gcfile = "gc"
 ghfile = "gh"
 grfile = "gr"
 dwfile = "dw"
@@ -70,19 +73,13 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goReferImage()
-  #goRefine3d()
-  '''
-  gx = readImage(gxfile)
-  plot3p(gx)
-  gx = readImage("pnz00")
-  n1,n2,n3=300,450,450
-  j1,j2,j3=120,0 ,400
-  gxs = copy(n1,n2,n3,j1,j2,j3,gx)
-  gxs = div(gxs,50000)
-  writeImage("gx",gxs)
-  #plot3(gx)
-  '''
+  #goReferImage()
+  goRefine3d()
+  #goTest()
+  #gx = readImage("f3draw")
+  #gx = gain(gx)
+  #plot3p(gx)
+
 
 def goFlatten2d():
   gx = readImage(gxfile)
@@ -117,64 +114,112 @@ def goFlatten2d():
 
 def goFlatten3d():
   gx = readImage(gxfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(4.0,2.0,2.0,5.0)
-  lsf.findSlopes(gx,p2,p3,ep)
-  ep = pow(ep,8)
-  fl = Flattener3()
-  fl.setWeight1(0.02)
-  fl.setIterations(0.001,200)
-  fl.setSmoothings(6.0,6.0)
-  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-  gf = fm.flatten(gx)
-  writeImage(gffile,gf)
+  if not plotOnly:
+    p2 = zerofloat(n1,n2,n3)
+    p3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lsf = LocalSlopeFinder(4.0,2.0,2.0,5.0)
+    lsf.findSlopes(gx,p2,p3,ep)
+    ep = pow(ep,8)
+    fl = Flattener3()
+    fl.setWeight1(0.04)
+    fl.setIterations(0.001,200)
+    fl.setSmoothings(6.0,6.0)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+    u1 = fm.u1
+    writeImage(u1file,u1)
+    gf = fm.flatten(gx)
+    gf = readImage(gffile)
+    fl = Flattener3()
+    u1 = readImage(u1file)
+    u1 = sub(u1,min(u1))
+    u1 = fl.resampleRgt(s1,None,u1)
+    du,fu,lu = 1.0,21,210
+    nu = round((lu-fu)/du)+1
+    print nu
+    su = Sampling(nu,du,fu)
+    gu = fl.flatten(s1,su,u1,gx)
+    gx = gain(gx)
+    gf = gain(gf)
+    gu = gain(gu)
+    writeImage(gffile,gf)
+    writeImage(gufile,gu)
+  else:
+    gf = readImage(gffile)
+    gu = readImage(gufile)
   plot3p(gx)
   plot3p(gf)
+  plot3p(gu)
+def goTest():
+  gf = readImage(gufile)
+  flr = FlattenerR()
+  dr2,dr3 = 20,20
+  fr2,fr3 = 10,10
+  nr2 = (n2-fr2)/dr2
+  nr3 = (n3-fr3)/dr3
+  sr2 = Sampling(nr2,dr2,fr2)
+  sr3 = Sampling(nr3,dr3,fr3)
+  grs = flr.resample(s2,s3,sr2,sr3,gf)
+  grt = flr.imageToTraces(grs)
+  grr = flr.tracesToImage(nr2,nr3,grt)
+  grf = flr.sincInterp(sr2,sr3,s2,s3,grr)
+  plot3p(gf,clab="Amplitude")
+  plot3p(grf,clab="Amplitude")
 def goReferImage():
   gf = readImage(gffile)
   flr = FlattenerR()
-  dr2,dr3 = 10,10
-  fr2,fr3 = 10,10
-  nr2 = (n2-fr2-10)/dr2
-  nr3 = (n3-fr3-10)/dr3
+  dr2,dr3 = 20,20
+  fr2,fr3 = 50,50
+  nr2 = (n2-fr2)/dr2
+  nr3 = (n3-fr3)/dr3
   sr2 = Sampling(nr2,dr2,fr2)
   sr3 = Sampling(nr3,dr3,fr3)
   gr = flr.resample(s2,s3,sr2,sr3,gf)
   g2 = flr.imageToTraces(gr)
-  sx2 = Sampling(len(g2)) 
+  m2 = len(g2)
+  sx2 = Sampling(m2) 
+  '''
   wlw = WellLogWarpingD()
   wlw.setMaxShift(10)
-  wlw.setPowError(0.05)
-  g2s = wlw.findShifts(g2)
-  g2d = wlw.applyShiftsX(g2,g2s)
-  '''
+  wlw.setPowError(1.0)
+  g2s = wlw.findShifts(s1,g2)
+  g2d = wlw.applyShifts(g2,g2s)
   smax = 10
-  r1min,r1max = -0.2,0.2
+  r1min,r1max = -0.5,0.5
   r2min,r2max = -0.2,0.2
   r3min,r3max = -0.2,0.2
-  g3d = flr.tracesToImage(nr2,nr3,g2d)
+  g3d = flr.tracesToImage(nr2,nr3,g2)
   g3f = flr.flattenImage(smax,r1min,r1max,r2min,r2max,r3min,r3max,g3d)
   g2f = flr.imageToTraces(g3f)
   '''
-  g2f = flr.flattenTraces(10,-0.2,0.2,g2d)
-  plot2(s1,sx2,g2,clab="Amplitude",cmin=-2,cmax=2,png="g2")
-  plot2(s1,sx2,g2d,clab="Amplitude",cmin=-2,cmax=2,png="g2d")
-  plot2(s1,sx2,g2f,clab="Amplitude",cmin=-2,cmax=2,png="g2f")
-  g3f = flr.tracesToImage(nr2,nr3,g2f)
-  g3r = flr.sincInterp(sr2,sr3,s2,s3,g3f)
-  plot3p(g3r,clab="Amplitude",png="g3r")
-  writeImage(grifile,g3r)
+  g2s = zerofloat(n1,m2)
+  g2d = flr.flattenTraces(15,-0.2,0.2,g2,g2s)
+  m2 = len(g2)
+  plot2(s1,sx2,g2,clab="Amplitude",cmin=-2,cmax=2)
+  plot2(s1,sx2,g2d,clab="g2d",cmin=-2,cmax=2)
+  plot2(s1,sx2,g2s,clab="g2d",cmin=-15,cmax=15)
+  #plot2(s1,sx2,g2f,clab="g2f",cmin=-2,cmax=2)
+  g3f = flr.tracesToImage(nr2,nr3,g2d)
+  #g3s = flr.tracesToImage(nr2,nr3,g2s)
+
+  g3r = flr.linearInterp(sr2,sr3,s2,s3,g3f)
+  #g3t = flr.linearInterp(sr2,sr3,s2,s3,g3s)
+  #dwk = DynamicWarpingK(8,-10,10,s1);
+  #gfc = dwk.applyShifts(s1,gf,g3t)
+  #writeImage(grifile,g3r)
+  #plot3p(gf,clab="Amplitude")
+  #plot3p(gfc,clab="Amplitude")
+  plot3p(g3r,clab="Amplitude")
 def goRefine3d():
-  gf = readImage(gffile)
+  gf = readImage(gufile)
   if not plotOnly:
     flr = FlattenerR()
-    gr = readImage(grifile)
-    smin,smax = -10.0,10.0
+    #gr = readImage(grifile)
+    gr = flr.getReferImageA(gf)
+    smin,smax = -15.0,15.0
     dwk = DynamicWarpingK(4,smin,smax,s1,s2,s3)
-    dwk.setStrainLimits(-0.2,0.2,-0.2,0.2,-0.2,0.2)
-    dwk.setSmoothness(4,2,2)
+    dwk.setStrainLimits(-0.3,0.3,-0.1,0.1,-0.1,0.1)
+    dwk.setSmoothness(3,16,16)
     dw = dwk.findShifts(s1,gr,s1,gf)
     gh = dwk.applyShifts(s1,gf,dw)
     writeImage(dwfile,dw)
@@ -187,7 +232,7 @@ def goRefine3d():
   plot3p(gf,clab="Amplitude",png="gf1")
   plot3p(gh,clab="Amplitude",png="gh1")
   plot3p(gr,clab="Amplitude",png="gr1")
-  plot3p(gf,dw,cmin=-8,cmax=6,clab="Shifts (samples)",cmap=jetFill(1.0),png="dw1")
+  plot3p(gf,dw,cmin=-15,cmax=15,clab="Shifts (samples)",cmap=jetFill(1.0),png="dw1")
 
 def goRefine3dV():
   gf = readImage(gffile)
@@ -801,7 +846,7 @@ def plot3p(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
     sf.world.addChild(sg)
   #ipg.setSlices(198,0,89)
-  ipg.setSlices(198,0,58)
+  ipg.setSlices(189,0,0)
   if cbar:
     sf.setSize(937,600)
   else:
@@ -810,10 +855,11 @@ def plot3p(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
+  ov.setAxesScale(1.0,1.0,1.3)
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  ov.setAzimuthAndElevation(55.0,25.0)
-  ov.setTranslate(Vector3(0.7,0.33,0.7))
-  ov.setScale(1.1)
+  ov.setAzimuthAndElevation(50,35.0)
+  ov.setTranslate(Vector3(-0.2,-0.3,0.3))
+  ov.setScale(1.3)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

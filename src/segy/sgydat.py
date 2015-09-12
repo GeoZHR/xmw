@@ -51,6 +51,7 @@ def goAns():
   sgyfile = basedir+"seismic.sgy"
   datfile = basedir+"gxSub.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 455,655,3836,5210,1065,1700
+  #i1min,i1max,i2min,i2max,i3min,i3max = 655,955,3836,5210,1065,1700
   n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min)/2,1+i3max-i3min
   print n1
   print n2

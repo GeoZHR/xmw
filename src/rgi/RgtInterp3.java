@@ -13,6 +13,7 @@ import java.util.*;
  * @author Xinming Wu
  * @version 2015.06.13
  */
+
 public class RgtInterp3 {
 
   public RgtInterp3() {

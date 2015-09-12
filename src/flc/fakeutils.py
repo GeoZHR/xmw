@@ -38,12 +38,27 @@ def setupForSubset(name):
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="pnz":
     """ subset of Teapot dome """
-    print "setupForSubset: tp"
+    print "setupForSubset: pnz"
     seismicDir = _datdir+"pnz/"
     n1,n2,n3 = 300,450,450
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="f3d":
+    """ subset of F3 """
+    print "setupForSubset: f3d"
+    seismicDir = _datdir+"f3d/"
+    #n1,n2,n3 = 462,951,591
+    n1,n2,n3 = 190,480,500
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+    '''
+    gx = readImage("f3draw")
+    n1,n2,n3=190,480,500
+    j1,j2,j3=210,0  ,0
+    gxs = copy(n1,n2,n3,j1,j2,j3,gx)
+    '''
   elif name=="tp1":
     print "setupForSubset: subt"
     seismicDir = _datdir+"tp1/"

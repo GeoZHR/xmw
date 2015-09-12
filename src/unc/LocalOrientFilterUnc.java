@@ -77,7 +77,6 @@ public class LocalOrientFilterUnc {
     causal2(_sigma1,g11a,g11a);
     causal2(_sigma1,g12a,g12a);
     causal2(_sigma1,g22a,g22a);
-
   }
   /**
    * Applies this filter to estimate normal vectors (1st eigenvectors).
