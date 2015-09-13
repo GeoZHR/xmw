@@ -448,7 +448,9 @@ public class WellLogWarping {
       ps[ip] = pt[ip];
     computeWeights(wm,wl,ps,ls);
 
-   return computeShifts(nz,ls,ps);
+   float[][] r = computeShifts(nz,ls,ps);
+   refineShifts(10,-0.2f,0.2f,wl[0],r);
+   return r;
  }
 
   /**
@@ -480,6 +482,57 @@ public class WellLogWarping {
     }
     return g;
   }
+
+  public void refineShifts(
+    int smax, float r1min, float r1max,
+    final float[][] fx, final float[][] fs) 
+  {
+    final int n2 = fx.length;
+    final int n1 = fx[0].length;
+    final Sampling s1 = new Sampling(n1);
+    final float[][] gx = applyShiftsW(fx,fs);
+    final DynamicWarpingK dwk = new DynamicWarpingK(8,-smax,smax,s1);
+    dwk.setStrainLimits(r1min,r1max);
+    dwk.setSmoothness(4);
+    //final float[] fr = getMedianTrace(max(fx)+1,gx);
+    final float[] fr = getMedianTrace(_vnull,gx);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[] gxi = copy(gx[i2]);
+      for (int i1=0; i1<n1; ++i1) {
+        if(gxi[i1]==_vnull) {
+          gxi[i1] = fr[i1];
+        }
+      }
+      float[] fsi = dwk.findShifts(s1,fr,s1,gxi);
+      fs[i2] = sub(fs[i2],fsi);
+    }});
+  }
+
+  public float[] getMedianTrace(float vnull, float[][] f) {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    float[] fm = new float[n1];
+    float[] f1 = new float[n2];
+    for (int i1=0; i1<n1; ++i1) {
+      int k = 0;
+      for (int i2=0; i2<n2; ++i2) {
+        float fi = f[i2][i1];
+        if(fi!=vnull) {
+          f1[k] = f[i2][i1];
+          k++;
+        }
+      }
+      if(k==0) {fm[i1]=f[0][i1];}
+      else {
+        float[] fi = copy(k,f1);
+        MedianFinder mf = new MedianFinder(k);
+        fm[i1] = mf.findMedian(fi);
+      }
+    }
+    return fm;
+  }
+
 
   public float[][] applyShiftsW(float[][] f, float[][] s) {
     int nl = f.length;

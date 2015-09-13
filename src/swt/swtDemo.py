@@ -35,8 +35,8 @@ def main(args):
   #goSynSeis()
   #goSynSeisFlat()
   #goSynSeisFlatten()
-  goFlattenD()
-  #goTie()
+  #goFlattenD()
+  goTie()
 
 def goTie():
   vnull = -999.25
@@ -58,7 +58,7 @@ def goTie():
 
 def findShifts(sfm,sfs,fu,gu):
   vnull = -999.25
-  umin,umax = -0.00,0.30
+  umin,umax = -0.10,0.30
   #rmin,rmax = -0.02,0.02
   rmin,rmax = -0.15,0.15
   dmin = 0.1
@@ -190,26 +190,26 @@ def goFlattenD():
     gxs[0][il] = gx[i3][i2]
   weight = 1.0
   maxShift = 40
-  errorPow = 0.125
+  errorPow = 0.05
 
-  #wlw = WellLogWarping()
-  #wlw.setMaxShift(maxShift)
-  #wlw.setPowError([errorPow])
-  #s = wlw.findShifts([weight],gxs)
+  wlw = WellLogWarping()
+  wlw.setNullValue(0.0)
+  wlw.setMaxShift(maxShift)
+  wlw.setPowError([errorPow])
+  s = wlw.findShifts([weight],gxs)
+  '''
   wlw = WellLogWarpingD()
   wlw.setMaxShift(maxShift)
   wlw.setPowError(errorPow)
-  s = wlw.findShifts(gxs[0])
-  gus = wlw.applyShifts(gxs[0],s)
+  s = wlw.findShifts(s1,gxs)
+  '''
+  gus = wlw.applyShiftsX(gxs[0],s)
   sst = []
   for i2 in range(len(gus)):
     sst.append(s1)
-    for i1 in range(len(gus[0])):
-      if(gus[i2][i1]<-10):
-        gus[i2][i1] = 0.0
   writeImage(tsfile,s)
   writeImage(tufile,gus)
-  writeImage(txfile,gxs[0])
+  writeImage(txfile,gxs)
   plot1s(s1,sst,gxs[0],vmin=0.15,vmax=1.5,color=Color.BLACK,
         vlabel="depth (km)",png="originalSeisTraces")
   plot1s(s1,sst,gus,vmin=0.15,vmax=1.5,color=Color.BLACK,

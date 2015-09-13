@@ -390,7 +390,7 @@ public class WellLogWarpingD {
    * @param fs array[nl][nz] of log values, nz values for each of nl logs.
    * @return array[nl][nt] of shifts, where nt = nz is the number of RGTs.
    */
-  public float[][] findShifts(final float[][] fs) {
+  public float[][] findShifts(Sampling s1, float[][] fs) {
     final int nl = fs.length;
     int nz = fs[0].length;
     int nt = nz;
@@ -421,22 +421,27 @@ public class WellLogWarpingD {
     // Use dynamic warping to find pairs of corresponding log samples.
     int np = nl*(nl-1)/2; // number of pairs of logs
     final Pairs[] ps = new Pairs[np];
-    //int ip = 0;
+    final float[][] fsi = copy(fs);
+    final float[][] fsj = copy(fs);
     Parallel.loop(nl,new Parallel.LoopInt() {
-      public void compute(int il) {
-    //for (int il=0,ip=0; il<nl; ++il) {
-      //for (int jl=il+1; jl<nl; ++jl,++ip) {
+    public void compute(int il) {
+      System.out.println("il="+il);
+      float[] fi = fsi[il];
       for (int jl=il+1; jl<nl; ++jl) {
-        int ip = il*nl+jl;
-        float[] fi = fs[il];
-        float[] gj = fs[jl];
+        float[] gj = fsj[jl];
+        int ip = 0;
+        for (int ik=0; ik<il;++ik) {
+          ip += nl-ik-1;
+        }
+        ip += jl-il-1;
         float[][] e = computeErrors(fi,gj);
         float[][] d = accumulateErrors(e);
         int[][] kl = findWarping(d);
         int[][] ij = convertWarping(kl,fi,gj);
-        ps[ip] = new Pairs(il,jl,ij[0],ij[1]);
+        ps[ip] = new Pairs(il,jl,ij[0],ij[1],null);
       }
     }});
+    //Pairs[] ps = findPairs(-0.2f,0.2f,s1,fs);
 
     // Initial mapping t[il][iz] from depth z to time t for shifts r = 0.
     float[][] r = new float[nl][nt];
@@ -447,6 +452,7 @@ public class WellLogWarpingD {
     int maxouter = 10;
     boolean converged = false;
     for (int nouter=0; nouter<maxouter && !converged; ++nouter) {
+      System.out.println("iter="+nouter);
       //zero(r); // zero shifts before each set of inner CG iterations?
 
       // Inner preconditioned conjugate-gradient iterations.
@@ -466,9 +472,53 @@ public class WellLogWarpingD {
       // Update t[il][iz] by inverse interpolation of z[il][it].
       computeTzFromShifts(r,t);
     }
-
+    //refineShifts(10,-0.1f,0.1f,fs,r);
     return r;
   }
+
+  public Pairs[] findPairs(
+    float r1min, float r1max, final Sampling s1, final float[][] fs) 
+  {
+    final int nl = fs.length;
+    final int nz = fs[0].length;
+    int np = nl*(nl-1)/2; // number of pairs of logs
+    final Pairs[] ps = new Pairs[np];
+    final float[][] fsi = copy(fs);
+    final float[][] fsj = copy(fs);
+    final DynamicWarpingK dwk = new DynamicWarpingK(8,-_lmax,_lmax,s1);
+    dwk.setStrainLimits(r1min,r1max);
+    dwk.setSmoothness(4);
+    Parallel.loop(nl,new Parallel.LoopInt() {
+    public void compute(int il) {
+    //for (int il=0; il<nl; ++il) {
+      System.out.println("il="+il);
+      float[] fi = fsi[il];
+      for (int jl=il+1; jl<nl; ++jl) {
+        int ip = jl-il-1;
+        for (int ik=0; ik<il;++ik){ip += nl-ik-1;}
+        float[] gj = fsj[jl];
+        float[] gs = dwk.findShifts(s1,fi,s1,gj);
+        int k = 0;
+        int[] is = new int[nz];
+        int[] js = new int[nz];
+        float[] rs = new float[nz];
+        for (int iz=0; iz<nz; ++iz) {
+          float jk = iz+gs[iz];
+          int jz = round(jk);
+          if(jz>=0 && jz<nz) {
+            rs[k] = jk-jz;
+            is[k] = iz; 
+            js[k] = jz;
+            k++;
+          }
+        }
+        ps[ip] = new Pairs(il,jl,copy(k,is),copy(k,js),copy(k,rs));
+      }
+    }});
+    return ps;
+  }
+
+
   /**
    * Applies specified shifts to specified logs.
    * @param f array[nl][nz] of log values.
@@ -492,20 +542,68 @@ public class WellLogWarpingD {
     return g;
   }
 
-  public float[][] applyShiftsX(float[][] f, float[][] r) {
-    int nl = f.length;
-    int nz = f[0].length;
-    int nt = r[0].length;
-    float[][] g = fillfloat(_vnull,nt,nl);
-    SincInterpolator si = new SincInterpolator();
-    for (int il=0; il<nl; ++il) { // for all logs, ...
+  public float[][] applyShiftsX(final float[][] f, final float[][] r) {
+    final int nl = f.length;
+    final int nz = f[0].length;
+    final int nt = r[0].length;
+    final float[][] g = fillfloat(_vnull,nt,nl);
+    final SincInterpolator si = new SincInterpolator();
+    Parallel.loop(nl,new Parallel.LoopInt() {
+    public void compute(int il) {
+    //for (int il=0; il<nl; ++il) { // for all logs, ...
       for (int it=0; it<nt; ++it) { // for all times, ...
         float zi = it-r[il][it]; // depth at which to interpolate
         g[il][it]=si.interpolate(nz,1.0,0.0,f[il],zi);
       }
-    }
+    }});
     return g;
   }
+
+  public void refineShifts(
+    int smax, float r1min, float r1max,
+    final float[][] fx, final float[][] fs) 
+  {
+    final int n2 = fx.length;
+    final int n1 = fx[0].length;
+    final Sampling s1 = new Sampling(n1);
+    final float[][] gx = applyShifts(fx,fs);
+    final DynamicWarpingK dwk = new DynamicWarpingK(8,-smax,smax,s1);
+    dwk.setStrainLimits(r1min,r1max);
+    dwk.setSmoothness(4);
+    //final float[] fr = getMedianTrace(max(fx)+1,gx);
+    final float[] fr = getMedianTrace(_vnull,gx);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[] fsi = dwk.findShifts(s1,fr,s1,gx[i2]);
+      fs[i2] = sub(fs[i2],fsi);
+    }});
+  }
+
+  public float[] getMedianTrace(float vnull, float[][] f) {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    float[] fm = new float[n1];
+    float[] f1 = new float[n2];
+    for (int i1=0; i1<n1; ++i1) {
+      int k = 0;
+      for (int i2=0; i2<n2; ++i2) {
+        float fi = f[i2][i1];
+        if(fi!=vnull) {
+          f1[k] = f[i2][i1];
+          k++;
+        }
+      }
+      if(k==0) {fm[i1]=f[0][i1];}
+      else {
+        float[] fi = copy(k,f1);
+        MedianFinder mf = new MedianFinder(k);
+        fm[i1] = mf.findMedian(fi);
+      }
+    }
+    return fm;
+  }
+
+
 
   /**
    * Sorts well indices to approximately minimize distances between wells.
@@ -733,18 +831,20 @@ public class WellLogWarpingD {
    * with indices (il,jl). All weights are initialized to one.
    */
   private static class Pairs {
-    Pairs(int il, int jl, int[] izs, int[] jzs) {
+    Pairs(int il, int jl, int[] izs, int[] jzs, float[] rs) {
       this.il = il;
       this.jl = jl;
       this.nzp = izs.length;
       this.izs = izs;
       this.jzs = jzs;
+      if(rs!=null) {this.rs  = rs;}
       this.ws = fillfloat(1.0f,nzp);
     }
     int il,jl; // a pair of log indices
     int nzp; // number of depth index pairs
     int[] izs,jzs; // arrays of pairs of depth indices
     float[] ws; // array of weights
+    float[] rs; // residues
   }
 
   /**
@@ -797,19 +897,21 @@ public class WellLogWarpingD {
     }
   }
 
-  private static float[][] makeRhs(Pairs[] ps, int[][] t) {
-    int np = ps.length; // number of log pairs
-    int nl = t.length; // number of logs
-    int nz = t[0].length; // number of depths (and times)
-    int nt = nz;
-    float[][] y = new float[nl][nt]; // output rhs
-    for (int ip=0; ip<np; ++ip) { // for all log pairs, ...
+  private static float[][] makeRhs(final Pairs[] ps, final int[][] t) {
+    final int np = ps.length; // number of log pairs
+    final int nl = t.length; // number of logs
+    final int nz = t[0].length; // number of depths (and times)
+    final int nt = nz;
+    final float[][] y = new float[nl][nt]; // output rhs
+    Parallel.loop(np,new Parallel.LoopInt() {
+    public void compute(int ip) {
       Pairs p = ps[ip];
       int il = p.il;
       int jl = p.jl;
       int nzp = p.nzp;
       int[] izs = p.izs;
       int[] jzs = p.jzs;
+      float[] rs = p.rs;
       float[] ws = p.ws;
       float[] yi = y[il];
       float[] yj = y[jl];
@@ -819,25 +921,29 @@ public class WellLogWarpingD {
         int it = t[il][iz];
         int jt = t[jl][jz];
         if (0<=it && it<nt && 0<=jt && jt<nt) {
+          if(rs!=null){float rk = rs[kzp];}
           float wk = ws[kzp];
           float scl = wk*wk;
-          float dif = jz-iz;
+          float dif = jz-iz;//+rk;
           dif *= scl;
           yi[it] += dif;
           yj[jt] -= dif;
         }
       }
-    }
+    }});
     return y;
   }
 
   private static void applyLhs(
-      Pairs[] ps, int[][] t, float eps, float[][] x, float[][] y) {
+      final Pairs[] ps, final int[][] t, final float eps, 
+      final float[][] x, final float[][] y) {
     int np = ps.length; // number of log pairs
-    int nl = x.length; // number of logs
-    int nt = x[0].length; // number of times (and depths)
+    final int nl = x.length; // number of logs
+    final int nt = x[0].length; // number of times (and depths)
     zero(y); // zero y before accumulating below
-    for (int ip=0; ip<np; ++ip) { // for all log pairs, ...
+    Parallel.loop(np,new Parallel.LoopInt() {
+    public void compute(int ip) {
+    //for (int ip=0; ip<np; ++ip) { // for all log pairs, ...
       Pairs p = ps[ip];
       int il = p.il;
       int jl = p.jl;
@@ -876,7 +982,7 @@ public class WellLogWarpingD {
           y[kl][kt-1] -= dif;
         }
       }
-    }
+    }});
   }
 
   private static float dmin(float a, float b, float c) {
