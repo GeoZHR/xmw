@@ -2,7 +2,6 @@ package swt;
 
 import java.util.*;
 import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -13,7 +12,6 @@ import static edu.mines.jtk.util.ArrayMath.*;
  */
 
 public class SeismicWellTie {
-
 
   public float[][][] logsToArray(WellLog[] logs, float[] zs) {
     int nc = 2;
@@ -98,10 +96,12 @@ public class SeismicWellTie {
     return sa;
   }
 
-  public float[][] computeSyns(boolean simple, WellLog[] logs, float[] ndf) {
+  public float[][] computeSyns(
+    boolean simple, WellLog[] logs, float[] ndf) 
+  {
     float ds = 0.002f;
     float fpeak = 35f;
-    float q = 100.0f;
+    float q = 100.00f;
     int nl = logs.length;
     float fs =  FLT_MAX;
     float ls = -FLT_MAX;
@@ -137,6 +137,76 @@ public class SeismicWellTie {
     }
     return sa;
   }
+
+  public float[][][] synsFlatten(boolean simple, 
+    int smax, float epow, WellLog[] logs,float[][] ndfx,float[][] ndfu) 
+  {
+    float[] ndf = new float[3];
+    float[][] wx = computeSyns(simple,logs,ndf);
+    Sampling st = new Sampling((int)ndf[0],ndf[1],ndf[2]);
+    MultiTraceWarping mtw = new MultiTraceWarping();
+    mtw.setMaxShift(smax);
+    mtw.setPowError(epow);
+    float[][] ws = mtw.findShifts(wx);
+    float[][] wu = mtw.applyShiftsW(wx,ws);
+    float[][] vx = getValidSamples(st,wx,ndfx);
+    float[][] vu = getValidSamples(st,wu,ndfu);
+    return new float[][][]{vx,vu};
+  }
+
+  public float[][] seisFlatten(int smax, float epow, float[][] gx) {
+    MultiTraceWarping mtw = new MultiTraceWarping();
+    mtw.setMaxShift(smax);
+    mtw.setPowError(epow);
+    mtw.setNullValue(max(gx)+10f);
+    float[][] gs = mtw.findShifts(gx);
+    float[][] gu = mtw.applyShiftsX(gx,gs);
+    return gu;
+  }
+
+
+  public float[][] synsFlatten(
+    Sampling sz, Sampling sm[], Sampling[] st, float[][] ndfw, 
+    float[][] ss, float[][] tz, float[][] gt) 
+  {
+    int nl = sm.length;
+    float[][] gw = new float[nl][];
+    for (int il=0; il<nl; ++il) {
+      int nz    = sz.getCount();
+      double fz = sz.getFirst();
+      double dz = sz.getDelta();
+      double lm = sm[il].getLast();
+      double fm = sm[il].getFirst();
+      double dm = sm[il].getDelta();
+      int nw = 0;
+      double fw = 0.0;
+      ArrayList<Float> gl = new ArrayList<Float>();
+      SincInterpolator sit = new SincInterpolator();
+      SincInterpolator sig = new SincInterpolator();
+      for (int ik=0; ik<nz; ++ik) {
+        float s = ss[il][ik]; 
+        double w = ik*dz+fz;
+        double z = w-s*dz;
+        if(s!=_vnull && z>fm+dm && z<lm-2*dm) {
+          if(nw==0){fw=w;}
+          float t = sit.interpolate(sm[il],tz[il],z);
+          float g = sig.interpolate(st[il],gt[il],t);
+          gl.add(g);
+          nw++;
+        }
+      }
+      gw[il] = new float[nw];
+      for (int iw=0; iw<nw; ++iw) {
+        gw[il][iw] = gl.get(iw);
+      }
+      ndfw[il][0] = nw;
+      ndfw[il][1] = (float)dz;
+      ndfw[il][2] = (float)fw;
+    }
+    return gw;
+  }
+
+
 
   public float[][] getValidSamples(Sampling sz, float[][] sa, float[][] ndf) {
     int nl = sa.length;
@@ -271,46 +341,6 @@ public class SeismicWellTie {
     return td;
   }
 
-  public float[][] applySynsFlat(
-    Sampling sz, Sampling sm[], Sampling[] st, float[][] ndfw, 
-    float[][] ss, float[][] tz, float[][] gt) 
-  {
-    int nl = sm.length;
-    float[][] gw = new float[nl][];
-    for (int il=0; il<nl; ++il) {
-      int nz    = sz.getCount();
-      double fz = sz.getFirst();
-      double dz = sz.getDelta();
-      double lm = sm[il].getLast();
-      double fm = sm[il].getFirst();
-      double dm = sm[il].getDelta();
-      int nw = 0;
-      double fw = 0.0;
-      ArrayList<Float> gl = new ArrayList<Float>();
-      SincInterpolator sit = new SincInterpolator();
-      SincInterpolator sig = new SincInterpolator();
-      for (int ik=0; ik<nz; ++ik) {
-        float s = ss[il][ik]; 
-        double w = ik*dz+fz;
-        double z = w-s*dz;
-        if(s!=_vnull && z>fm+dm && z<lm-2*dm) {
-          if(nw==0){fw=w;}
-          float t = sit.interpolate(sm[il],tz[il],z);
-          float g = sig.interpolate(st[il],gt[il],t);
-          gl.add(g);
-          nw++;
-        }
-      }
-      gw[il] = new float[nw];
-      for (int iw=0; iw<nw; ++iw) {
-        gw[il][iw] = gl.get(iw);
-      }
-      ndfw[il][0] = nw;
-      ndfw[il][1] = (float)dz;
-      ndfw[il][2] = (float)fw;
-    }
-    return gw;
-  }
 
   private float[] normalize(float[] x) {
     float sigma=100.0f;

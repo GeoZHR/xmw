@@ -35,8 +35,10 @@ def main(args):
   #goSynSeis()
   #goSynSeisFlat()
   #goSynSeisFlatten()
+  #goSynsFlatten()
+  goSeisFlatten()
   #goFlattenD()
-  goTie()
+  #goTie()
 
 def goTie():
   vnull = -999.25
@@ -125,6 +127,26 @@ def goSynSeis():
   plot1s(s1,ss,sa,hlabel="Seismic traces",vlabel="time (ms)")
   plot1s(s1,ss,sa,rs=rs,hlabel="Seismic traces",vlabel="time (ms)")
 
+def goSynsFlatten():
+  smax = 40
+  epow = 0.125
+  simple = True
+  logs = getLogs()
+  nl = len(logs)
+  ndfx = zerofloat(3,nl)
+  ndfu = zerofloat(3,nl)
+  swt = SeismicWellTie()
+  wx,wu = swt.synsFlatten(simple,smax,epow,logs,ndfx,ndfu)
+  ssx = []
+  ssu = []
+  for il in range(nl):
+    sxi = Sampling((int)(ndfx[il][0]),ndfx[il][1],ndfx[il][2])
+    sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
+    ssx.append(sxi)
+    ssu.append(sui)
+  plot1s(s1,ssx,wx,vmin=0.1,vmax=1.0,vlabel="Time (s)",png="synsX")
+  plot1s(s1,ssu,wu,vmin=0.1,vmax=1.0,vlabel="Relative geologic time",
+         png="synsFlattenX")
 def goSynSeisFlatten():
   simple = True  
   logs = getLogs()
@@ -179,40 +201,27 @@ def goSynSeisFlatten():
          png="synsFlattenX")
   return smu,ssu,fu
 
-def goFlattenD():
-  gx = readImage(gxfile)
+def goSeisFlatten():
   logs = getLogs()
-  gxs = zerofloat(n1,len(logs),1)
+  nl = len(logs)
+  gx = readImage(gxfile)
+  fx = zerofloat(n1,nl)
   for il, log in enumerate(logs):
     model = SynSeis.getModel(log)
     i2 = s2.indexOfNearest(model.x2)
     i3 = s3.indexOfNearest(model.x3)
-    gxs[0][il] = gx[i3][i2]
-  weight = 1.0
-  maxShift = 40
-  errorPow = 0.05
-
-  wlw = WellLogWarping()
-  wlw.setNullValue(0.0)
-  wlw.setMaxShift(maxShift)
-  wlw.setPowError([errorPow])
-  s = wlw.findShifts([weight],gxs)
-  '''
-  wlw = WellLogWarpingD()
-  wlw.setMaxShift(maxShift)
-  wlw.setPowError(errorPow)
-  s = wlw.findShifts(s1,gxs)
-  '''
-  gus = wlw.applyShiftsX(gxs[0],s)
+    fx[il] = gx[i3][i2]
+  smax,epow = 40,0.125
+  swt = SeismicWellTie()
+  fu = swt.seisFlatten(smax,epow,fx)
   sst = []
-  for i2 in range(len(gus)):
+  for il in range(nl):
     sst.append(s1)
-  writeImage(tsfile,s)
-  writeImage(tufile,gus)
-  writeImage(txfile,gxs)
-  plot1s(s1,sst,gxs[0],vmin=0.15,vmax=1.5,color=Color.BLACK,
+  writeImage(tufile,fu)
+  writeImage(txfile,fx)
+  plot1s(s1,sst,fx,vmin=0.15,vmax=1.5,color=Color.BLACK,
         vlabel="depth (km)",png="originalSeisTraces")
-  plot1s(s1,sst,gus,vmin=0.15,vmax=1.5,color=Color.BLACK,
+  plot1s(s1,sst,fu,vmin=0.15,vmax=1.5,color=Color.BLACK,
         vlabel="Relative geologic time",png="seisTracesFlattenD")
   return gus
 
@@ -239,7 +248,7 @@ def goSynSeisFlat():
   sn = readImage1(2,wshiftd)
   ss = readImage2((int)(sn[1]),(int)(sn[0]),wshifts)
   sz = Sampling((int)(zs[0]),zs[1],zs[2])
-  gw = sw.applySynsFlat(sz,ssz,sst,ndfw,ss,td,sa)
+  gw = sw.synsFlatten(sz,ssz,sst,ndfw,ss,td,sa)
   for il in range(nl):
     swi = Sampling((int)(ndfw[il][0]),ndfw[il][1],ndfw[il][2])
     ssw.append(swi)
