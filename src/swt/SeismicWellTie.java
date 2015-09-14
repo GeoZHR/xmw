@@ -164,6 +164,30 @@ public class SeismicWellTie {
     return gu;
   }
 
+  public float[][] synsToSeis(Sampling[] sw, Sampling sg, 
+    float smin, float smax, float rmin, float rmax, 
+    float dmin, float[][] wu, float[][] gu, float[][] ndf) 
+  {
+    int nl = sw.length;
+    double[] fs = new double[nl];
+    double[] ls = new double[nl];
+    for (int il=0; il<nl; ++il) {
+      ls[il] = sw[il].getLast();
+      fs[il] = sw[il].getFirst();
+    }
+    double fw = min(fs);
+    double lw = max(ls);
+    double dw = sw[0].getDelta();
+    int nw = (int)((lw-fw)/dw)+1; 
+    Sampling swm = new Sampling(nw,dw,fw);
+    DynamicWarpingX dwx = new DynamicWarpingX(smin,smax,swm);
+    dwx.setStrainLimits(rmin,rmax);
+    dwx.setSmoothness(dmin);
+    float[][] es = dwx.computeErrorsX(sw,wu,sg,gu);
+    float[]   ws = dwx.findShifts(es);
+    float[][] wsu = applyShifts(_vnull,sw,swm,ws,wu,ndf);
+    return wsu;
+  }
 
   public float[][] synsFlatten(
     Sampling sz, Sampling sm[], Sampling[] st, float[][] ndfw, 
@@ -254,6 +278,16 @@ public class SeismicWellTie {
     }
     return fs;
   }
+
+  /*
+  Given a uniformly sampled u(s) such that s+u(s) increases monotonically, 
+  computes a uniformly sampled r(t) = u(t-r(t)) such that t-r(t) increases 
+  monotonically. Uses the following 3-step algorithm:
+  (1) computes t(s) = s+u(s)
+  (2) computes s(t) = by inverse linear interpolation of t(s)
+  (3) computes r(t) = t-s(t)
+  Returns the sampling of time st and the sequence of sampled r(t).
+  */
 
   public float[][] invertShifts(float vnull, Sampling[] sfs,
     Sampling sfm, float[] u, float[][] f, float[][] ndfs) 

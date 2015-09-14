@@ -33,82 +33,9 @@ plotOnly = False
 def main(args):
   #goDisplay()
   #goSynSeis()
-  #goSynSeisFlat()
-  #goSynSeisFlatten()
   #goSynsFlatten()
-  goSeisFlatten()
-  #goFlattenD()
-  #goTie()
-
-def goTie():
-  vnull = -999.25
-  #gu=goFlattenD()
-  gu = readImage2(n1,11,tufile)
-  sfm,sfs,fu=goSynSeisFlatten()
-  esum,e,u=findShifts(sfm,sfs,fu,gu)
-  sw = SeismicWellTie()
-  ndfs = zerofloat(3,len(fu))
-  fus = sw.applyShifts(vnull,sfs,sfm,u,fu,ndfs)
-  sss = []
-  for il in range(len(fu)):
-    ssi = Sampling((int)(ndfs[il][0]),ndfs[il][1],ndfs[il][2])
-    sss.append(ssi)
-  plot1s(s1,sfs,fu,rs=gu,vmin=0.1,vmax=1.2,vlabel="Relative geologic time",
-         png="synsFlattenXR")
-  plot1s(s1,sss,fus,rs=gu,vmin=0.1,vmax=1.2,vlabel="Relative geologic time",
-         png="synsFlattenXS")
-
-def findShifts(sfm,sfs,fu,gu):
-  vnull = -999.25
-  umin,umax = -0.10,0.30
-  #rmin,rmax = -0.02,0.02
-  rmin,rmax = -0.15,0.15
-  dmin = 0.1
-  dw = DynamicWarpingX(umin,umax,sfm)
-  dw.setStrainLimits(rmin,rmax)
-  dw.setSmoothness(dmin)
-  ss = dw.samplingS
-  e = zerofloat(ss.count,sfm.count)
-  e = add(e,dw.computeErrorsX(sfs,fu,s1,gu))
-  u = dw.findShifts(e)
-  esum = 0.0
-  si = SincInterpolator()
-  for jf in range(sfm.count):
-    esum += si.interpolate(ss,e[jf],u[jf])
-  plot = True
-  if plot:
-    sp = SimplePlot(SimplePlot.Origin.LOWER_LEFT)
-    pv = sp.addPixels(sfm,ss,pow(transpose(e),0.5))
-    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
-    pv = sp.addPoints(sfm,u)
-    pv.setLineColor(Color.WHITE)
-    sp.paintToPng(300,7.0,pngDir+"alignError.png")
-  return esum,e,u
-
-def invertShifts(ss,u):
-  """ 
-  Given a uniformly sampled u(s) such that s+u(s) increases monotonically, 
-  computes a uniformly sampled r(t) = u(t-r(t)) such that t-r(t) increases 
-  monotonically. Uses the following 3-step algorithm:
-  (1) computes t(s) = s+u(s)
-  (2) computes s(t) = by inverse linear interpolation of t(s)
-  (3) computes r(t) = t-s(t)
-  Returns the sampling of time st and the sequence of sampled r(t).
-  """
-  ns,ds,fs,ls = ss.count,ss.delta,ss.first,ss.last
-  dt = ds # make sampling intervals equal
-  ft = fs+u[0] # ft = time t of first sample
-  lt = ls+u[ns-1] # lt = time of last sample
-  ft = int(ft/dt)*dt # force ft to be a multiple of interval dt
-  nt = 1+int((lt-ft)/dt) # number of t samples
-  st = Sampling(nt,dt,ft) # sampling of t
-  t = add(rampfloat(fs,ds,ns),u) # t(s) = s+u(s)
-  s = zerofloat(nt)
-  ii = InverseInterpolator(ss,st)
-  ii.invert(t,s) # both t(s) and s(t) increase monotonically
-  r = sub(rampfloat(ft,dt,nt),s) # r(t) = t-s(t)
-  return st,r
-
+  #goSeisFlatten()
+  goSynsSeisTie()
 
 def goSynSeis():
   simple = True
@@ -147,59 +74,7 @@ def goSynsFlatten():
   plot1s(s1,ssx,wx,vmin=0.1,vmax=1.0,vlabel="Time (s)",png="synsX")
   plot1s(s1,ssu,wu,vmin=0.1,vmax=1.0,vlabel="Relative geologic time",
          png="synsFlattenX")
-def goSynSeisFlatten():
-  simple = True  
-  logs = getLogs()
-  nl = len(logs)
-  ndf = zerofloat(3)
-  sw = SeismicWellTie()
-  gx = sw.computeSyns(simple,logs,ndf)
-  sz = Sampling((int)(ndf[0]),ndf[1],ndf[2])
-  sl = Sampling(nl,1,0)
-  n1 = len(gx)
-  n2 = len(gx[0])
-  ga = zerofloat(n1,n2,1)
-  ga[0] = gx
-
-  #maxShift = 40
-  #errorPow = 0.05
-  weight = 1.0
-  maxShift = 40
-  errorPow = 0.05
-
-  wlw = WellLogWarping()
-  wlw.setMaxShift(maxShift)
-  wlw.setPowError([errorPow])
-  ss = wlw.findShifts([weight],ga)
-  gu = wlw.applyShiftsW(ga[0],ss)
-
-  cbar   = "Amplitude"
-  vlabel = "Relative geologic time"
-  wmin,wmax = -2.0,2.0
-  #plot2(ga[0],sz,sl,wmin=wmin,wmax=wmax,cbar=cbar,png="syns")
-  #plot2(gu,sz,sl,wmin=wmin,wmax=wmax,vlabel=vlabel,cbar=cbar,png="synsFlatten")
-
-  ndfx = zerofloat(3,nl)
-  ndfu = zerofloat(3,nl)
-  fx = sw.getValidSamples(sz,ga[0],ndfx)
-  fu = sw.getValidSamples(sz,gu,ndfu)
-  mk = 0
-  nu = 0
-  ssx = []
-  ssu = []
-  for il in range(nl):
-    sxi = Sampling((int)(ndfx[il][0]),ndfx[il][1],ndfx[il][2])
-    sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
-    ssx.append(sxi)
-    ssu.append(sui)
-    if ndfx[il][0]>nu:
-      nu=ndfx[il][0]
-      mk=il
-  smu = Sampling((int)(ndfu[mk][0]),ndfu[mk][1],ndfu[mk][2])
-  plot1s(s1,ssx,fx,vmin=0.1,vmax=1.0,vlabel="Time (s)",png="synsX")
-  plot1s(s1,ssu,fu,vmin=0.1,vmax=1.0,vlabel="Relative geologic time",
-         png="synsFlattenX")
-  return smu,ssu,fu
+  return wu,ssu
 
 def goSeisFlatten():
   logs = getLogs()
@@ -223,60 +98,25 @@ def goSeisFlatten():
         vlabel="depth (km)",png="originalSeisTraces")
   plot1s(s1,sst,fu,vmin=0.15,vmax=1.5,color=Color.BLACK,
         vlabel="Relative geologic time",png="seisTracesFlattenD")
-  return gus
+  return fu
 
-def goSynSeisFlat():
-  simple = True
-  logs = getLogs()
-  nl = len(logs)
-  ndft = zerofloat(3,nl)
-  ndfz = zerofloat(3,nl)
-  ndfw = zerofloat(3,nl)
-  sw = SeismicWellTie()
-  td = sw.getTimeDepth(logs)
-  sa = sw.computeSyns(simple,logs,ndft,ndfz)
-  sst = []
-  ssz = []
-  ssw = []
-  for il in range(nl):
-    sa[il] = normalize(sa[il])
-    sti = Sampling((int)(ndft[il][0]),ndft[il][1],ndft[il][2])
-    szi = Sampling((int)(ndfz[il][0]),ndfz[il][1],ndfz[il][2])
-    sst.append(sti)
-    ssz.append(szi)
-  zs = readImage1(3,wsample)
-  sn = readImage1(2,wshiftd)
-  ss = readImage2((int)(sn[1]),(int)(sn[0]),wshifts)
-  sz = Sampling((int)(zs[0]),zs[1],zs[2])
-  gw = sw.synsFlatten(sz,ssz,sst,ndfw,ss,td,sa)
-  for il in range(nl):
-    swi = Sampling((int)(ndfw[il][0]),ndfw[il][1],ndfw[il][2])
-    ssw.append(swi)
-  plot1s(s1,sst,sa,hlabel="Seismic traces",vlabel="time (ms)",png="syns")
-  #plot1s(s1,ssw,gw,vmin=0.25,vmax=1.85,vlabel="Relative geologic time")
-  plot1s(s1,ssw,gw,vmin=0.04,vmax=1.82,vlabel="Relative geologic time",png="synsFlat")
-
-def getRealSeis():
-  logs = getLogs()
-  gx = readImage(gxfile)
-  gxs = zerofloat(n1,len(logs))
-  for il, log in enumerate(logs):
-    model = SynSeis.getModel(log)
-    i2 = s2.indexOfNearest(model.x2)
-    i3 = s3.indexOfNearest(model.x3)
-    gxs[il] = gx[i3][i2]
-  return gxs
-
-def getRealSeisFlat():
-  logs = getLogs()
-  gu = readImage(gufile)
-  gus = zerofloat(n1,len(logs))
-  for il, log in enumerate(logs):
-    model = SynSeis.getModel(log)
-    i2 = s2.indexOfNearest(model.x2)
-    i3 = s3.indexOfNearest(model.x3)
-    gus[il] = gu[i3][i2]
-  return gus
+def goSynsSeisTie():
+  gu=goSeisFlatten() 
+  wu,sw=goSynsFlatten()
+  dmin = 0.1
+  smin,smax = -0.10,0.30
+  rmin,rmax = -0.15,0.15
+  swt = SeismicWellTie()
+  ndf = zerofloat(3,len(wu))
+  wgu = swt.synsToSeis(sw,s1,smin,smax,rmin,rmax,dmin,wu,gu,ndf)
+  swg = []
+  for il in range(len(wu)):
+    si = Sampling((int)(ndf[il][0]),ndf[il][1],ndf[il][2])
+    swg.append(si)
+  plot1s(s1,sw,wu,rs=gu,vmin=0.1,vmax=1.2,vlabel="Relative geologic time",
+         png="synsFlattenXR")
+  plot1s(s1,swg,wgu,rs=gu,vmin=0.1,vmax=1.2,vlabel="Relative geologic time",
+         png="synsFlattenXS")
 
 def normalize(f):
   sigma = 100
