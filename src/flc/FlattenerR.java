@@ -245,6 +245,48 @@ public class FlattenerR {
     return fm;
   }
 
+  public float[][][] applyForRefer(
+    int smax, float r1min, float r1max, final float[][][] f) {
+    final int n3 = f.length;
+    final int n2 = f[0].length;
+    final int n1 = f[0][0].length;
+    final float[][][] g = new float[n3][n2][n1];
+    final float[] fr = getMedianTrace(f);
+    final Sampling s1 = new Sampling(n1);
+    final DynamicWarpingK dwk = new DynamicWarpingK(8,-smax,smax,s1);
+    dwk.setStrainLimits(r1min,r1max);
+    dwk.setSmoothness(4);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] fsi = dwk.findShifts(s1,fr,s1,f[i3][i2]);
+        g[i3][i2] = dwk.applyShifts(s1,f[i3][i2],fsi);
+      }
+    }});
+    return g;
+  }
+
+  public float[] getMedianTrace(float[][][] f) {
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+    float[] fa = new float[n1];
+    float[] f1 = new float[n3*n2];
+    for (int i1=0; i1<n1; ++i1) {
+      int k = 0;
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i3=0; i3<n3; ++i3) {
+        float fi = f[i3][i2][i1];
+        if(fi!=0.0f) {f1[k] = fi;k++;}
+      }}
+      float[] ft = copy(k,f1);
+      MedianFinder mf = new MedianFinder(k);
+      fa[i1] = mf.findMedian(ft);
+    }
+    return fa;
+  }
+
+
 
   public float[][] getReferImageM(float[][] f) {
     int n2 = f.length;

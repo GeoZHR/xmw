@@ -74,11 +74,32 @@ def main(args):
   #goThin()
   #goSkin()
   #goReferImage()
-  goRefine3d()
+  #goRefine3d()
   #goTest()
-  #gx = readImage("f3draw")
+  #gx = readImage(gufile)
   #gx = gain(gx)
   #plot3p(gx)
+  goSeisFlatten()
+
+def goSeisFlatten():
+  gf = readImage(gufile)
+  flr = FlattenerR()
+  g3f = flr.applyForRefer(15,-0.2,0.2,gf)
+  plot3p(gf,clab="Amplitude")
+  plot3p(g3f,clab="Amplitude")
+  g3s = zerofloat(n1,n2,n3)
+  ref = RecursiveExponentialFilter(4)
+  ref.apply2(g3f,g3s)
+  ref.apply3(g3s,g3s)
+  plot3p(g3s,clab="Amplitude")
+  smin,smax = -20.0,20.0
+  dwk = DynamicWarpingK(4,smin,smax,s1,s2,s3)
+  dwk.setStrainLimits(-0.3,0.3,-0.2,0.2,-0.2,0.2)
+  dwk.setSmoothness(4,8,8)
+  dw = dwk.findShifts(s1,g3s,s1,gf)
+  gh = dwk.applyShifts(s1,gf,dw)
+  plot3p(gh,clab="corrected")
+
 
 
 def goFlatten2d():
@@ -540,7 +561,7 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
   sp.setVLimits(0,n1)
   if vmin and vmax:
     sp.setVLimits(vmin,vmax)
-  sp.setHLimits(5.0,115)
+  sp.setHLimits(5,5+len(ys)*10)
   for il,y in enumerate(ys):
     ya = sum(y)/len(y)
     y = sub(y,ya)
@@ -557,7 +578,7 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
       pv = sp.addPoints(s1,r)
       pv.setLineColor(Color.BLACK)
       rf = rf+sf
-  sp.setSize(600,800)
+  sp.setSize(600,500)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)
   if png and pngDir:
