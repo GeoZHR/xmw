@@ -31,11 +31,19 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDisplay()
   #goSynSeis()
   #goSynsFlatten()
   #goSeisFlatten()
   goSynsSeisTie()
+  goTimeUpdate()
+
+def goTimeUpdate():
+  logs = getLogs()
+  gx = readImage(gxfile)
+  swt = SeismicWellTie()
+  fx,wx,wft,swx,sft=swt.updateTimeDepth(s1,s2,s3,logs,gx)
+  plot1s(s1,swx,wx,rs=fx,vmin=0.1,vmax=1.2,vlabel="Time (s)",png="synsSeis")
+  plot1s(s1,sft,wft,rs=fx,vmin=0.1,vmax=1.2,vlabel="Time (s)",png="synsSeisAlign")
 
 def goSynSeis():
   simple = True
@@ -50,9 +58,15 @@ def goSynSeis():
     sa[il] = normalize(sa[il])
     sl = Sampling((int)(ndft[il][0]),ndft[il][1],ndft[il][2])
     ss.append(sl)
-  rs = getRealSeis()
+  gx = readImage(gxfile)
+  fx = zerofloat(n1,nl)
+  for il, log in enumerate(logs):
+    model = SynSeis.getModel(log)
+    i2 = s2.indexOfNearest(model.x2)
+    i3 = s3.indexOfNearest(model.x3)
+    fx[il] = gx[i3][i2]
   plot1s(s1,ss,sa,hlabel="Seismic traces",vlabel="time (ms)")
-  plot1s(s1,ss,sa,rs=rs,hlabel="Seismic traces",vlabel="time (ms)")
+  plot1s(s1,ss,sa,rs=fx,hlabel="Seismic traces",vlabel="time (ms)")
 
 def goSynsFlatten():
   smax = 40
@@ -60,10 +74,10 @@ def goSynsFlatten():
   simple = True
   logs = getLogs()
   nl = len(logs)
-  ndfx = zerofloat(3,nl)
-  ndfu = zerofloat(3,nl)
+  ndfx = zerodouble(3,nl)
+  ndfu = zerodouble(3,nl)
   swt = SeismicWellTie()
-  wx,wu = swt.synsFlatten(simple,smax,epow,logs,ndfx,ndfu)
+  wx,ws,wu = swt.synsFlatten(simple,smax,epow,logs,ndfx,ndfu)
   ssx = []
   ssu = []
   for il in range(nl):
@@ -71,9 +85,12 @@ def goSynsFlatten():
     sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
     ssx.append(sxi)
     ssu.append(sui)
-  plot1s(s1,ssx,wx,vmin=0.1,vmax=1.0,vlabel="Time (s)",png="synsX")
-  plot1s(s1,ssu,wu,vmin=0.1,vmax=1.0,vlabel="Relative geologic time",
-         png="synsFlattenX")
+  hlabel = "Synthetic seismic traces"
+  vlabel1 = "Time (ms)"
+  vlabel2 = "Relative geologic time"
+  png1,png2="synsX","synsFlattenX"
+  plot1s(s1,ssx,wx,vmin=0.1,vmax=1.0,hlabel=hlabel,vlabel=vlabel1,png=png1)
+  plot1s(s1,ssu,wu,vmin=0.1,vmax=1.0,hlabel=hlabel,vlabel=vlabel2,png=png2)
   return wu,ssu
 
 def goSeisFlatten():
@@ -88,16 +105,19 @@ def goSeisFlatten():
     fx[il] = gx[i3][i2]
   smax,epow = 40,0.125
   swt = SeismicWellTie()
-  fu = swt.seisFlatten(smax,epow,fx)
+  fu,fs = swt.seisFlatten(smax,epow,fx)
   sst = []
   for il in range(nl):
     sst.append(s1)
   writeImage(tufile,fu)
   writeImage(txfile,fx)
+  hlabel = "Real seismic traces"
+  vlabel1 = "Time (s)"
+  vlabel2 = "Relative geologic time"
   plot1s(s1,sst,fx,vmin=0.15,vmax=1.5,color=Color.BLACK,
-        vlabel="depth (km)",png="originalSeisTraces")
+        hlabel=hlabel,vlabel=vlabel1,png="originalSeisTraces")
   plot1s(s1,sst,fu,vmin=0.15,vmax=1.5,color=Color.BLACK,
-        vlabel="Relative geologic time",png="seisTracesFlattenD")
+        hlabel=hlabel,vlabel=vlabel2,png="seisTracesFlattenD")
   return fu
 
 def goSynsSeisTie():
@@ -113,10 +133,9 @@ def goSynsSeisTie():
   for il in range(len(wu)):
     si = Sampling((int)(ndf[il][0]),ndf[il][1],ndf[il][2])
     swg.append(si)
-  plot1s(s1,sw,wu,rs=gu,vmin=0.1,vmax=1.2,vlabel="Relative geologic time",
-         png="synsFlattenXR")
-  plot1s(s1,swg,wgu,rs=gu,vmin=0.1,vmax=1.2,vlabel="Relative geologic time",
-         png="synsFlattenXS")
+  vlabel = "Relative geologic time"
+  plot1s(s1,sw,wu,rs=gu,vmin=0.1,vmax=1.2,vlabel=vlabel,png="synsFlattenXR")
+  plot1s(s1,swg,wgu,rs=gu,vmin=0.1,vmax=1.2,vlabel=vlabel,png="synsFlattenXS")
 
 def normalize(f):
   sigma = 100
@@ -190,7 +209,7 @@ def plot1X(s1,y,vmin=None,vmax=None,
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
 def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
-  hlabel="Seismic traces",vlabel="time (ms)",png=None):
+  hlabel="Seismic traces",vlabel="Time (s)",png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sf = 10.0
   yf = sf

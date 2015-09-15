@@ -549,7 +549,7 @@ public class MultiTraceWarping {
   public float[][] applyShiftsX(float[][] f, float[][] s) {
     int nl = f.length;
     int nk = f[0].length;
-    float[][] g = fillfloat(_vnull,nk,nl);
+    float[][] g = fillfloat(0.0f,nk,nl);
     SincInterpolator si = new SincInterpolator();
     Sampling sk = new Sampling(nk);
     // For all logs, ...
