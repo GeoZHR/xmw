@@ -27,6 +27,9 @@ public class SynSeis {
     public float tmax() {
       return t[nz-1];
     }
+    public void updateTime(float[] t) {
+      this.t = t;
+    }
   }
 
   public static class RickerWavelet {
@@ -88,7 +91,6 @@ public class SynSeis {
     float dt = (float)(st.getDelta());
     float ft = (float)(st.getFirst());
     float[] f = new float[nt];
-    float[] v = model.v;
     float[] r = model.r;
     float[] t = model.t;
     RickerWavelet rw = new RickerWavelet(fpeak);

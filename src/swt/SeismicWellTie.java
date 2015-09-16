@@ -18,103 +18,161 @@ public class SeismicWellTie {
   public Object[] updateTimeDepth(Sampling s1, Sampling s2, Sampling s3, 
     WellLog[] logs, float[][][] gx) 
   {
-    // flatten synthetic seismograms
+    // flatten real seismic traces
     int smax = 40;
     float epow = 0.125f;
     int nl = logs.length;
-    boolean simple = true; //use simple model
-    double[][] ndfwx = new double[nl][3];
-    double[][] ndfwu = new double[nl][3];
-    float[][][] wrs = synsFlatten(simple,smax,epow,logs,ndfwx,ndfwu);
-    Sampling[] swx = new Sampling[nl];
-    for(int il=0; il<nl; ++il) {
-      swx[il] = new Sampling((int)ndfwx[il][0],ndfwx[il][1],ndfwx[il][2]);
-    }
-
-    // flatten real seismic traces
     int n1 = s1.getCount();
     double f1 = s1.getFirst();
     double d1 = s1.getDelta();
     float[][] fx = new float[nl][n1];
+    SynSeis.Model[] models = new SynSeis.Model[nl];
     for (int il=0; il<nl; ++il) {
       WellLog log = logs[il];
       SynSeis.Model md = SynSeis.getModel(log);
       int i2 = s2.indexOfNearest(md.x2);
       int i3 = s3.indexOfNearest(md.x3);
       fx[il] = gx[i3][i2];
+      models[il] = md;
     }
     float[][][] frs = seisFlatten(smax,epow,fx);
 
-    // align flattened syns to flattened seis
-    float dmin =  0.10f;
-    float umin = -0.10f;
+    float[][] r1 = null;
+    float[][] r2 = null;
+    float[][] r3 = null;
+    float[][] r6 = null;
+    Sampling[] r4 = null;
+    Sampling[] r5 = null;
+    Sampling[] r7 = null;
+
+    float umin = -0.30f;
     float umax =  0.30f;
     float rmin = -0.15f;
     float rmax =  0.15f;
-    float[][] wu = wrs[2];
-    float[][] fu = frs[0];
-    Sampling[] sw = new Sampling[nl];
-    for (int il=0; il<nl; ++il) {
-      double[] ndfi = ndfwu[il];
-      sw[il] = new Sampling((int)ndfi[0],ndfi[1],ndfi[2]);
-    }
-    float[] ndfwm = new float[3];
-    float[] ws = synsToSeisShift(sw,s1,umin,umax,rmin,rmax,dmin,wu,fu,ndfwm); 
-    Sampling sws = new Sampling((int)ndfwm[0],ndfwm[1],ndfwm[2]);
+    float dmin =  (float)(10*d1);
+    int n = 2;
+    for (int k=0; k<n; ++k) {
+      umin += k*abs(umin)/(2f*n);
+      umax -= k*abs(umax)/(2f*n);
+    // flatten synthetic seismograms
+      boolean simple = true; //use simple model
+      double[][] ndfwx = new double[nl][3];
+      double[][] ndfwu = new double[nl][3];
+      float[][][] wrs = synsFlatten(models,simple,smax,epow,logs,ndfwx,ndfwu);
+      Sampling[] swx = new Sampling[nl];
+      Sampling[] swu = new Sampling[nl];
+      for(int il=0; il<nl; ++il) {
+        swx[il] = new Sampling((int)ndfwx[il][0],ndfwx[il][1],ndfwx[il][2]);
+        swu[il] = new Sampling((int)ndfwu[il][0],ndfwu[il][1],ndfwu[il][2]);
+      }
+
+    // align flattened syns to flattened seis
+      float[][] wu = wrs[2];
+      float[][] fu = frs[0];
+      Sampling[] sw = new Sampling[nl];
+      for (int il=0; il<nl; ++il) {
+        double[] ndfi = ndfwu[il];
+        sw[il] = new Sampling((int)ndfi[0],ndfi[1],ndfi[2]);
+      }
+      float[] ndfwm = new float[3];
+      float[] ws = synsToSeisShift(sw,s1,umin,umax,rmin,rmax,dmin,wu,fu,ndfwm); 
+      Sampling sws = new Sampling((int)ndfwm[0],ndfwm[1],ndfwm[2]);
+      System.out.println("wgs="+sum(abs(ws)));
 
     // update time depth
-    float[][] wfs = wrs[1]; // shifts for syns flattening
-    float[][] ffs = frs[1]; // shifts for seis flattening
-    double[][] wts = new double[nl][];
-    SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    for (int il=0; il<nl; ++il) {
-      float[] fxt = new float[n1];
-      float[] fxu = new float[n1];
-      for (int i1=0; i1<n1; ++i1) {
-        double fxti = f1+i1*d1;
-        double fxui = fxti+ffs[il][i1]*d1;
-        fxt[i1] = (float)fxti;
-        fxu[i1] = (float)fxui;
-        if(i1>0 && fxu[i1]<=fxu[i1-1]) {
-          fxu[i1] = fxu[i1-1]+0.000001f;
+      float[][] wfs = wrs[1]; // shifts for syns flattening
+      float[][] ffs = frs[1]; // shifts for seis flattening
+      double[][] wts = new double[nl][];
+      SincInterpolator si = new SincInterpolator();
+      si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+      for (int il=0; il<nl; ++il) {
+        float[] fxt = new float[n1];
+        float[] fxu = new float[n1];
+        for (int i1=0; i1<n1; ++i1) {
+          double fxti = f1+i1*d1;
+          double fxui = fxti+ffs[il][i1]*d1;
+          fxt[i1] = (float)fxti;
+          fxu[i1] = (float)fxui;
+          if(i1>0 && fxu[i1]<=fxu[i1-1]) {
+            fxu[i1] = fxu[i1-1]+0.000001f;
+          }
+        }
+
+        double fwt = ndfwx[il][2];
+        double dwt = ndfwx[il][1];
+        int nwt = (int)ndfwx[il][0];
+        wts[il] = new double[nwt];
+        CubicInterpolator.Method method = CubicInterpolator.Method.LINEAR;
+        CubicInterpolator ci = new CubicInterpolator(method,fxu,fxt);
+        for (int iwt=0; iwt<nwt; ++iwt) {
+          double wti = fwt+iwt*dwt;
+          double wui = wti+wfs[il][iwt]*dwt;   // shift to RGT of syns
+          double fui = wui+si.interpolate(sws,ws,wui); // shift to RGT of seis
+          double fti = ci.interpolate((float)fui);    // convert to time of seis
+          wts[il][iwt] = fti;
         }
       }
 
-      int   nwt = (int)ndfwx[il][0];
-      double dwt = ndfwx[il][1];
-      double fwt = ndfwx[il][2];
-      wts[il] = new double[nwt];
-      CubicInterpolator.Method method = CubicInterpolator.Method.LINEAR;
-      CubicInterpolator ci = new CubicInterpolator(method,fxu,fxt);
-      for (int iwt=0; iwt<nwt; ++iwt) {
-        double wti = fwt+iwt*dwt;
-        double wui = wti+wfs[il][iwt]*dwt;   // shift to RGT of syns
-        double fui = wui+si.interpolate(sws,ws,wui); // shift to RGT of seis
-        double fti = ci.interpolate((float)fui);    // convert to time of seis
-        wts[il][iwt] = fti;
-      }
-    }
-
     // compute syns in time of seis 
-    float[][] wft = new float[nl][];
-    Sampling[] sft = new Sampling[nl];
-    for (int il=0; il<nl; ++il) {
-      int nt = wts[il].length;
-      float[] x = new float[nt];
-      float[] y = new float[nt];
-      float[] z = new float[nt];
-      for (int it=0; it<nt; ++it) {
-        y[it] = wrs[0][il][it];
-        x[it] = (float)wts[il][it];
-        z[it] = (float)(wts[il][0]+it*d1);
+      float[][] wft = new float[nl][];
+      Sampling[] sft = new Sampling[nl];
+      for (int il=0; il<nl; ++il) {
+        int nt = wts[il].length;
+        float[] x = new float[nt];
+        float[] y = new float[nt];
+        float[] z = new float[nt];
+        for (int it=0; it<nt; ++it) {
+          y[it] = wrs[0][il][it];
+          x[it] = (float)wts[il][it];
+          z[it] = (float)(wts[il][0]+it*d1);
+          if(it>0 && x[it]<=x[it-1]) {
+            x[it] = x[it-1]+0.000001f;
+          }
+        }
+        CubicInterpolator.Method method = CubicInterpolator.Method.LINEAR;
+        CubicInterpolator ci = new CubicInterpolator(method,x,y);
+        wft[il] = ci.interpolate(z);
+        sft[il] = new Sampling(nt,d1,wts[il][0]);
       }
-      CubicInterpolator.Method method = CubicInterpolator.Method.LINEAR;
-      CubicInterpolator ci = new CubicInterpolator(method,x,y);
-      wft[il] = ci.interpolate(z);
-      sft[il] = new Sampling(nt,d1,wts[il][0]);
+      r1 = fx;
+      r2 = wrs[0];
+      r3 = wft;
+      r4 = swx;
+      r5 = sft;
+      r6 = wrs[2];
+      r7 = swu;
+      updateModels(models,swx,wts);
     }
-    return new Object[]{fx,wrs[0],wft,swx,sft};
+    return new Object[]{r1,r2,r3,r4,r5,r6,r7};
+  }
+
+  private void updateModels(
+    SynSeis.Model[] models, Sampling[] swx, double[][] wts) 
+  {
+    int nl = models.length;
+    SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    for (int il=0; il<nl; ++il) {
+      SynSeis.Model model = models[il];
+      float[] t1 = model.t;
+      float[] t2 = copy(t1);
+      /*
+      int nt = t1.length;
+      float[] t2 = new float[nt];
+      int nx = swx[il].getCount();
+      double dx = swx[il].getDelta();
+      double fx = swx[il].getFirst();
+      float[] fa = new float[nx];
+      for (int ix=0; ix<nx; ++ix) {
+        fa[ix] = (float)wts[il][ix];
+      }
+      si.interpolate(nx,dx,fx,fa,nt,t1,t2);
+      */
+      double dt = wts[il][0]-swx[il].getFirst();
+      t2 = add(t1,(float)dt);
+      model.updateTime(t2);
+      models[il] = model;
+    }
   }
 
   public float[][] synsToSeis(Sampling[] sw, Sampling sg, 
@@ -178,14 +236,15 @@ public class SeismicWellTie {
     mtw.setNullValue(max(gx)+10f);
     float[][] gs = mtw.findShifts(gx);
     float[][] gu = mtw.applyShiftsX(gx,gs);
+    System.out.println("gs="+sum(abs(gs)));
     return new float[][][]{gu,gs};
   }
 
-  public float[][][] synsFlatten(boolean simple, 
+  public float[][][] synsFlatten(SynSeis.Model[] models, boolean simple,  
     int smax, float epow, WellLog[] logs,double[][] ndfx,double[][] ndfu) 
   {
     double[] ndf = new double[3];
-    float[][] wx = computeSyns(simple,logs,ndf);
+    float[][] wx = computeSyns(models,simple,logs,ndf);
     Sampling st = new Sampling((int)ndf[0],ndf[1],ndf[2]);
     MultiTraceWarping mtw = new MultiTraceWarping();
     mtw.setMaxShift(smax);
@@ -194,6 +253,7 @@ public class SeismicWellTie {
     float[][] wu = mtw.applyShiftsW(wx,ws);
     float[][] vu = getValidSamples(st,wu,ndfu);
     float[][][] xs = getValidSamples(st,wx,ws,ndfx);
+    System.out.println("ws="+sum(abs(ws)));
     return new float[][][]{xs[0],xs[1],vu};
   }
 
@@ -243,11 +303,11 @@ public class SeismicWellTie {
   {
     float fpeak = 35f;
     float q = 100.0f;
-    int il = 0;
     float ds = 0.002f;
     int nl = logs.length;
     float[][] sa = new float[nl][];
-    for (WellLog log:logs) {
+    for (int il=0; il<nl; ++il) {
+      WellLog log = logs[il];
       SynSeis.Model md = SynSeis.getModel(log);
       float fsi = md.tmin();
       float lsi = md.tmax();
@@ -267,22 +327,21 @@ public class SeismicWellTie {
       } else {
         sa[il] = SynSeis.makeBetterSeismogram(md,q,fpeak,ssi);
       }
-      il++;
     }
     return sa;
   }
 
-  public float[][] computeSyns(
-    boolean simple, WellLog[] logs, double[] ndf) 
-  {
+  public float[][] computeSyns(SynSeis.Model[] models,
+    boolean simple, WellLog[] logs, double[] ndf) {
     float fpeak = 35f;
     float q = 100.00f;
     double ds = 0.002f;
     int nl = logs.length;
     double fs =  FLT_MAX;
     double ls = -FLT_MAX;
-    for (WellLog log:logs) {
-      SynSeis.Model md = SynSeis.getModel(log);
+    for (int il=0; il<nl; ++il) {
+      WellLog log=logs[il];
+      SynSeis.Model md = (models!=null)?models[il]:SynSeis.getModel(log);
       if (fs>md.tmin()){fs=md.tmin();}
       if (ls<md.tmax()){ls=md.tmax();}
     }
@@ -292,10 +351,10 @@ public class SeismicWellTie {
     ndf[0] = ns;
     ndf[1] = ds;
     ndf[2] = fs;
-    int il = 0;
     float[][] sa = fillfloat(_vnull,ns,nl);
-    for (WellLog log:logs) {
-      SynSeis.Model md = SynSeis.getModel(log);
+    for (int il=0; il<nl; ++il) {
+      WellLog log=logs[il];
+      SynSeis.Model md = (models!=null)?models[il]:SynSeis.getModel(log);
       double fsi = round(md.tmin()/ds)*ds;
       double lsi = round(md.tmax()/ds)*ds;
       int nsi = (int)((lsi-fsi)/ds)+1;
@@ -309,7 +368,6 @@ public class SeismicWellTie {
       fsyn = normalize(fsyn);
       int j1 = (int)((fsi-fs)/ds);
       copy(nsi,0,fsyn,j1,sa[il]);
-      il++;
     }
     return sa;
   }

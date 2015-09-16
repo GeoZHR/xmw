@@ -1304,7 +1304,7 @@ public class MultiTraceWarping {
    
    for (int iter=0; iter<niter; ++iter) {
      innerLoop(iter,s,ls,ps,tz,q);
-     trace("outer it="+iter);
+     //trace("outer it="+iter);
 
      for (int il=0; il<nl; ++il) 
        add(q[il],s[il],r[il]);

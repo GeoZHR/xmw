@@ -34,16 +34,21 @@ def main(args):
   #goSynSeis()
   #goSynsFlatten()
   #goSeisFlatten()
-  goSynsSeisTie()
+  #goSynsSeisTie()
   goTimeUpdate()
 
 def goTimeUpdate():
   logs = getLogs()
   gx = readImage(gxfile)
   swt = SeismicWellTie()
-  fx,wx,wft,swx,sft=swt.updateTimeDepth(s1,s2,s3,logs,gx)
+  fx,wx,wft,swx,sft,wu,swu=swt.updateTimeDepth(s1,s2,s3,logs,gx)
   plot1s(s1,swx,wx,rs=fx,vmin=0.1,vmax=1.2,vlabel="Time (s)",png="synsSeis")
   plot1s(s1,sft,wft,rs=fx,vmin=0.1,vmax=1.2,vlabel="Time (s)",png="synsSeisAlign")
+  hlabel = "Synthetic seismic traces"
+  vlabel1 = "Time (s)"
+  vlabel2 = "RGT"
+  plot1s(s1,swx,wx,vmin=0.1,vmax=1.2,hlabel=hlabel,vlabel=vlabel1)
+  plot1s(s1,swu,wu,vmin=0.1,vmax=1.2,hlabel=hlabel,vlabel=vlabel2)
 
 def goSynSeis():
   simple = True
@@ -77,7 +82,7 @@ def goSynsFlatten():
   ndfx = zerodouble(3,nl)
   ndfu = zerodouble(3,nl)
   swt = SeismicWellTie()
-  wx,ws,wu = swt.synsFlatten(simple,smax,epow,logs,ndfx,ndfu)
+  wx,ws,wu = swt.synsFlatten(None,simple,smax,epow,logs,ndfx,ndfu)
   ssx = []
   ssu = []
   for il in range(nl):
@@ -123,8 +128,8 @@ def goSeisFlatten():
 def goSynsSeisTie():
   gu=goSeisFlatten() 
   wu,sw=goSynsFlatten()
-  dmin = 0.1
-  smin,smax = -0.10,0.30
+  dmin = 10*d1
+  smin,smax = -0.30,0.30
   rmin,rmax = -0.15,0.15
   swt = SeismicWellTie()
   ndf = zerofloat(3,len(wu))
