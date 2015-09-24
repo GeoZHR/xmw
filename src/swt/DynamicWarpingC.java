@@ -6,16 +6,14 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package swt;
 
-import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.dsp.Sampling;
+import edu.mines.jtk.dsp.SincInterpolator;
 import edu.mines.jtk.interp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import dnp.*;
-import interp.*;
 
 // FOR DEVELOPMENT ONLY
-import edu.mines.jtk.mosaic.*;
 
 /**
  * Dynamic warping to find shifts between two sequences or images.
@@ -48,50 +46,54 @@ import edu.mines.jtk.mosaic.*;
  * times more finely. After initially computing shifts on the coarse grid,
  * shifts are interpolated onto the finer grid.
  *
- * Modified from Dave's DynamicWarpingR
+ * @author Dave Hale, Colorado School of Mines
  * @author Xinming Wu, Colorado School of Mines
- * @version 2015.07.10
+ * @version 2015.08.18
  */
-public class DynamicWarpingX {
+public class DynamicWarpingC {
 
   /**
    * Constructs a dynamic warping.
    * If this warping is used for 2D or 3D images, then default unit samplings
    * are assumed for 2nd and 3rd dimensions.
+   * @param k discretization value for shift sampling interval.
    * @param smin lower bound on shift.
    * @param smax upper bound on shift.
    * @param s1 sampling of shifts for 1st dimension.
    */
-  public DynamicWarpingX(double smin, double smax, Sampling s1) {
-    this(smin,smax,s1,null,null);
+  public DynamicWarpingC(int k, double smin, double smax, Sampling s1) {
+    this(k,smin,smax,s1,null,null);
   }
 
   /**
    * Constructs a dynamic warping.
    * If this warping is used for 3D images, then default unit samplings
    * are assumed for the 3rd dimensions.
+   * @param k discretization value for shift sampling interval.
    * @param smin lower bound on shift.
    * @param smax upper bound on shift.
    * @param s1 sampling of shifts for 1st dimension.
    * @param s2 sampling of shifts for 2nd dimension.
    */
-  public DynamicWarpingX(double smin, double smax, Sampling s1, Sampling s2) {
-    this(smin,smax,s1,s2,null);
+  public DynamicWarpingC(
+    int k, double smin, double smax, Sampling s1, Sampling s2) {
+    this(k,smin,smax,s1,s2,null);
   }
 
   /**
    * Constructs a dynamic warping.
+   * @param k discretization value for shift sampling interval.
    * @param smin lower bound on shift.
    * @param smax upper bound on shift.
    * @param s1 sampling of shifts for 1st dimension.
    * @param s2 sampling of shifts for 2nd dimension.
    * @param s3 sampling of shifts for 3rd dimension.
    */
-  public DynamicWarpingX(
-    double smin, double smax, 
+  public DynamicWarpingC(
+    int k, double smin, double smax, 
     Sampling s1, Sampling s2, Sampling s3) 
   {
-    double ds = s1.getDelta(); // shift sampling interval
+    double ds = s1.getDelta()/k; // shift sampling interval
     int ismin = (int) ceil(smin/ds);
     int ismax = (int)floor(smax/ds);
     _ss = new Sampling(1+ismax-ismin,ds,ismin*ds);
@@ -188,6 +190,38 @@ public class DynamicWarpingX {
     _r3min = r3min; _r3max = r3max;
   }
 
+  public void setStrains(
+    float[][][] r1mins, float[][][] r2mins, float[][][] r3mins,
+    float[][][] r1maxs, float[][][] r2maxs, float[][][] r3maxs) 
+  {
+    _r1mins = r1mins; _r1maxs = r1maxs;
+    _r2mins = r2mins; _r2maxs = r2maxs;
+    _r3mins = r3mins; _r3maxs = r3maxs;
+  }
+
+  public void setSmooth(
+    int[][][] k1mins, int[][][] k2mins, int[][][] k3mins) 
+  {
+    _k1mins = k1mins;
+    _k2mins = k2mins;
+    _k3mins = k3mins;
+  }
+
+  /**
+   * Sets the number of nonlinear smoothings of alignment errors.
+   * In dynamic warping, alignment errors are smoothed the specified 
+   * number of times, along all dimensions (in order 1, 2, ...), 
+   * before estimating shifts by accumulating and backtracking along 
+   * only the 1st dimension. 
+   * <p> 
+   * The default number of smoothings is zero, which is best for 1D
+   * sequences. For 2D and 3D images, two smoothings are recommended.
+   * @param esmooth number of nonlinear smoothings.
+   */
+  public void setErrorSmoothing(int esmooth) {
+    _esmooth = esmooth;
+  }
+
   /**
    * Sets the smoothness of shifts computed by this dynamic warping.
    * <em>
@@ -242,9 +276,9 @@ public class DynamicWarpingX {
 
   /**
    * Returns shifts computed for specified 1D sequences.
-   * @param sf sampling of 1st dimension for the seqeunce f.
+   * @param sf sampling of 1st dimension for the sequence f.
    * @param f array of values for sequence f.
-   * @param sg sampling of 1st dimension for the seqeunce g.
+   * @param sg sampling of 1st dimension for the sequence g.
    * @param g array of values for sequence g.
    * @return array of shifts.
    */
@@ -272,7 +306,6 @@ public class DynamicWarpingX {
     final Sampling ss = _ss;
     final Sampling s1 = _s1;
     final Sampling s2 = sampling2(f);
-    final int ns = ss.getCount();
     final int n1 = s1.getCount();
     final int n2 = s2.getCount();
 
@@ -281,8 +314,6 @@ public class DynamicWarpingX {
     final int[] k2s = subsample(n2,_k2min);
     final int nk1 = k1s.length;
     final int nk2 = k2s.length;
-    trace("k1s:"); dump(k1s);
-    trace("k2s:"); dump(k2s);
 
     trace("findShifts: smoothing in 1st dimension ...");
     final float[][][] ek = new float[n2][][];
@@ -294,26 +325,14 @@ public class DynamicWarpingX {
     normalizeErrors(ek);
 
     trace("findShifts: smoothing in 2nd dimension ...");
-    final float[][][] ekk = new float[nk2][nk1][ns];
-    Parallel.loop(nk1,new Parallel.LoopInt() {
-    public void compute(int ik1) {
-      float[][] e2 = new float[n2][ns];
-      for (int i2=0; i2<n2; ++i2)
-        for (int is=0; is<ns; ++is)
-          e2[i2][is] = ek[i2][ik1][is];
-      float[][] ek2 = subsampleErrors(_r2min,_r2max,k2s,ss,s2,e2);
-      for (int ik2=0; ik2<nk2; ++ik2)
-        for (int is=0; is<ns; ++is)
-          ekk[ik2][ik1][is] = ek2[ik2][is];
-    }});
+    float[][][] ekk = smoothErrors2(_r2min,_r2max,k2s,ss,s2,ek);
     normalizeErrors(ekk);
 
-    //trace("findShifts: smoothing subsampled errors ...");
-    //smoothSubsampledErrors(_r1min,_r1max,k1s,_r2min,_r2max,k2s,ss,s1,s2,ekk);
-    //normalizeErrors(ekk);
-
-    //SimpleFrame frame = new SimpleFrame();
-    //frame.addImagePanels(pow(ekk,0.1f)).setPercentiles(2,98);
+    for (int is=0; is<_esmooth-1; ++is) {
+      smoothSubsampledErrors(_r1min,_r1max,k1s,
+                                   _r2min,_r2max,k2s,ss,s1,s2,ekk);
+      normalizeErrors(ekk);
+    }
 
     trace("findShifts: finding shifts ...");
     float[][] ukk = new float[nk2][];
@@ -322,9 +341,81 @@ public class DynamicWarpingX {
         _r1min,_r1max,k1s,ss,s1,ekk[ik2]);
     }
     trace("findShifts: interpolating shifts ...");
-    //float[][] u = interpolateShifts(s1,s2,k1s,k2s,ukk);
-    float[][] u = interpolateShiftsBl(s1,s2,k1s,k2s,ukk);
-    //float[][] u = interpolateShiftsIg(s1,s2,f,k1s,k2s,ukk);
+    float[][] u = interpolateShifts(s1,s2,k1s,k2s,ukk);
+    trace("findShifts: ... done");
+    return u;
+  }
+
+  /**
+   * Returns shifts computed for specified 2D images.
+   * @param sf sampling of 1st dimension for the image f.
+   * @param f array of values for image f.
+   * @param sg sampling of 1st dimension for the image g.
+   * @param g array of values for image g.
+   * @return array of shifts.
+   */
+  public float[][][] findShifts(
+    final Sampling sf, final float[][][] f,
+    final Sampling sg, final float[][][] g)
+  {
+    // Samplings.
+    final Sampling ss = _ss;
+    final Sampling s1 = _s1;
+    final Sampling s2 = sampling2(f);
+    final Sampling s3 = sampling3(f); 
+    final int n1 = s1.getCount();
+    final int n2 = s2.getCount();
+    final int n3 = s3.getCount();
+
+    // Quasi-uniform subsamplings.
+    final int[] k1s = subsample(n1,_k1min);
+    final int[] k2s = subsample(n2,_k2min);
+    final int[] k3s = subsample(n3,_k3min);
+    final int nk2 = k2s.length;
+    final int nk3 = k3s.length;
+
+    trace("findShifts: smoothing in 1st dimension ...");
+    final float[][][][] ek = new float[n3][n2][][]; 
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      float[] r1min = _r1mins[i3][i2];
+      float[] r1max = _r1maxs[i3][i2];
+      float[][] e1 = computeErrors(sf,f[i3][i2],sg,g[i3][i2]);
+      ek[i3][i2] = subsampleErrors(r1min,r1max,k1s,ss,s1,e1);
+    }}});
+    normalizeErrors(ek);
+
+    trace("findShifts: smoothing in 2nd dimension ...");
+    float[][][][] ekk = smoothErrors2(_r2mins,_r2maxs,k1s,k2s,ss,s2,ek);
+    normalizeErrors(ekk);
+
+    trace("findShifts: smoothing in 3rd dimension ...");
+    final float[][][][] ekkk = 
+    smoothErrors3(_r3mins,_r3maxs,k1s,k2s,k3s,ss,s3,ekk);
+    normalizeErrors(ekkk);
+
+    for (int is=0; is<_esmooth-1; ++is) {
+      smoothSubsampledErrors(_r1mins,_r1maxs,k1s,
+                             _r2mins,_r2maxs,k2s,
+                             _r3mins,_r3maxs,k3s,ss,s1,s2,s3,ekkk);
+      normalizeErrors(ekkk);
+    }
+    final float[][][][] e = ekkk;
+
+    trace("findShifts: finding shifts ...");
+    final float[][][] ukk = new float[nk3][nk2][];
+    Parallel.loop(nk3,new Parallel.LoopInt() {
+    public void compute(int ik3) {
+      int i3 = k3s[ik3];
+      for (int ik2=0; ik2<nk2; ++ik2) {
+      int i2 = k2s[ik2];
+      ukk[ik3][ik2] = findShiftsFromSubsampledErrors(
+        _r1mins[i3][i2],_r1maxs[i3][i2],k1s,ss,s1,e[ik3][ik2]);
+    }}});
+
+    trace("findShifts: interpolating shifts ...");
+    float[][][] u = interpolateShifts(s1,s2,s3,k1s,k2s,k3s,ukk);
     trace("findShifts: ... done");
     return u;
   }
@@ -341,10 +432,11 @@ public class DynamicWarpingX {
     Sampling sf, float[] f,
     Sampling sg, float[] g)
   {
-    Sampling se = sf;
     Sampling ss = _ss;
+    Sampling se = _s1;
     int ns = ss.getCount();
     int ne = se.getCount();
+    int nf = sf.getCount();
     int ng = sg.getCount();
     float[][] e = new float[ne][ns];
     float[] fi = new float[ne];
@@ -354,76 +446,12 @@ public class DynamicWarpingX {
       _si.interpolate(
         ng,sg.getDelta(),sg.getFirst(),g,
         ne,se.getDelta(),se.getFirst()+ss.getValue(is),gi);
-      for (int ie=0; ie<ne; ++ie)
+      for (int ie=0; ie<ne; ++ie) {
         e[ie][is] = error(fi[ie],gi[ie]);
+      }
     }
     return e;
   }
-
-  public float[][] computeErrorsX(
-    Sampling[] sfs, float[][] f,
-    Sampling sg, float[][] g)
-  {
-    int n2 = f.length;
-    Sampling s1 = _s1;
-    Sampling ss = _ss;
-    int n1 = s1.getCount();
-    int ns = ss.getCount();
-    double d1 = s1.getDelta();
-    double f1 = s1.getFirst();
-    float[][] e = new float[n1][ns];
-    float[][] s = new float[n1][ns];
-    for (int i2=0; i2<n2; ++i2) {
-      int nk = sfs[i2].getCount();
-      int j1 = (int)round((sfs[i2].getFirst()-f1)/d1);
-      float[][] e2 = computeErrors(sfs[i2],f[i2],sg,g[i2]);
-      for (int i1=j1, k1=0; k1<nk; ++i1,++k1) {
-        for (int is=0; is<ns; ++is) {
-          s[i1][is] += 1.0f;
-          e[i1][is] += e2[k1][is];
-        }
-      }
-    }
-    /*
-    for (int i1=0; i1<n1; ++i1) {
-    for (int is=0; is<ns; ++is) {
-      e[i1][is] /= s[i1][is];
-    }}
-    */
-    return e;
-  }
-
-  public float[][] computeErrorsW(
-    Sampling[] sfs, float[][] f,
-    Sampling sg, float[][] g)
-  {
-    int n2 = f.length;
-    Sampling s1 = _s1;
-    int ng = sg.getCount();
-    int n1 = s1.getCount();
-    double d1 = s1.getDelta();
-    double f1 = s1.getFirst();
-    float[] fscs = new float[n1];
-    float[] fsum = new float[n1];
-    float[] gsum = new float[ng];
-    for (int i2=0; i2<n2; ++i2) {
-      int nk = sfs[i2].getCount();
-      int j1 = (int)round((sfs[i2].getFirst()-f1)/d1);
-      for (int k1=0; k1<nk; ++k1) {
-        int i1 = j1+k1;
-        fsum[i1] += f[i2][k1];
-        fscs[i1] += 1.0f;
-      }
-      for (int i1=ng; i1<ng; ++i1) {
-        gsum[i1] += g[i2][i1];
-      }
-    }
-    gsum = div(gsum,n2);
-    fsum = div(fsum,fscs);
-    float[][] e = computeErrors(_s1,fsum,sg,gsum);
-    return e;
-  }
-
 
   /**
    * Normalizes alignment errors, in place.
@@ -456,7 +484,6 @@ public class DynamicWarpingX {
     double d1 = _s1.getDelta();
     int k1min = min(_k1min,n1-1);
     int[] i1k = subsample(n1,k1min);
-    //dump(i1k);
     int n1k = i1k.length;
     return findShiftsFromErrors(_r1min,_r1max,i1k,_ss,_s1,e);
   }
@@ -470,7 +497,6 @@ public class DynamicWarpingX {
    */
   public float[] applyShifts(Sampling sg, float[] g, float[] u) {
     Sampling s1 = _s1;
-    int ng = sg.getCount();
     int n1 = s1.getCount();
     float[] h = new float[n1];
     for (int i1=0; i1<n1; ++i1) {
@@ -495,19 +521,48 @@ public class DynamicWarpingX {
     return h;
   }
 
+  public float[][][] applyShifts(Sampling sg, float[][][] g, float[][][] u) {
+    int n3 = g.length;
+    float[][][] h = new float[n3][][];
+    for (int i3=0; i3<n3; ++i3)
+      h[i3] = applyShifts(sg,g[i3],u[i3]);
+    return h;
+  }
+
+  public float[][][] combineShifts(final float[][][] r1, final float[][][] r2) {
+    final int n3 = r1.length;
+    final int n2 = r1[0].length;
+    final int n1 = r1[0][0].length;
+    final float[][][] rc = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] u1 = new float[n1];
+        for (int i1=0; i1<n1; ++i1) {
+          u1[i1] = i1+r1[i3][i2][i1];
+        }
+        si.interpolate(n1,1.0,0.0,r2[i3][i2],n1,u1,rc[i3][i2]);
+        rc[i3][i2] = sub(r1[i3][i2],rc[i3][i2]);
+      }
+    }});
+    return rc;
+  }
+
+
   ///////////////////////////////////////////////////////////////////////////
   // private
 
   private Sampling _ss,_s1,_s2,_s3;
-  private double _r1min;
-  private double _r1max;
-  private int _k1min;
-  private double _r2min,_r3min;
-  private double _r2max,_r3max;
-  private int _k2min,_k3min;
+  private double _r1min,_r2min,_r3min;
+  private double _r1max,_r2max,_r3max;
+  private int _k1min,_k2min,_k3min;
+  private int _esmooth = 1;
   private SincInterpolator _si;
-  //private float _epow = 0.125f;
-  private float _epow = 2.0f;
+  private float _epow = 1.00f;
+  private float[][][] _r1mins, _r2mins, _r3mins;
+  private float[][][] _r1maxs, _r2maxs, _r3maxs;
+  private int[][][] _k1mins, _k2mins, _k3mins;
 
   private static CubicInterpolator makeInterpolator1(
     float[] x, float[] y) 
@@ -586,36 +641,6 @@ public class DynamicWarpingX {
   }
 
   /**
-   * Smooths alignment errors.
-   * @param rmin lower bound on strain.
-   * @param rmax upper bound on strain.
-   * @param me number of errors summed per smoothed error.
-   * @param ss uniform sampling of ns shifts.
-   * @param se uniform sampling of ne errors.
-   * @param e input array[ne][ns] of alignment errors.
-   * @return array[ne][ns] of subsampled errors.
-   */
-  private static float[][] smoothErrors(
-    double rmin, double rmax, int me, 
-    Sampling ss, Sampling se, float[][] e) 
-  {
-    int ns = ss.getCount();
-    int ne = se.getCount();
-    float[][] df = new float[ne][ns];
-    float[][] dr = new float[ne][ns];
-    accumulate( 1,rmin,rmax,me,ss,se,e,df);
-    accumulate(-1,rmin,rmax,me,ss,se,e,dr);
-    float[][] d = df;
-    float scale = 1.0f/ne;
-    for (int ie=0; ie<ne; ++ie) {
-      for (int is=0; is<ns; ++is) {
-        d[ie][is] = scale*(df[ie][is]+dr[ie][is]-e[ie][is]);
-      }
-    }
-    return d;
-  }
-
-  /**
    * Subsamples alignment errors.
    * @param rmin lower bound on strain.
    * @param rmax upper bound on strain.
@@ -647,6 +672,193 @@ public class DynamicWarpingX {
     return d;
   }
 
+  private static float[][] subsampleErrors(
+    float[] rmin, float[] rmax, int[] kes, 
+    Sampling ss, Sampling se, float[][] e) 
+  {
+    int ns = ss.getCount();
+    int ne = se.getCount();
+    int nke = kes.length;
+    float[][] df = new float[nke][ns];
+    float[][] dr = new float[nke][ns];
+    accumulate( 1,rmin,rmax,kes,ss,se,e,df,null);
+    accumulate(-1,rmin,rmax,kes,ss,se,e,dr,null);
+    float[][] d = df;
+    float scale = 1.0f/ne;
+    for (int ike=0; ike<nke; ++ike) {
+      int ke = kes[ike];
+      for (int is=0; is<ns; ++is) {
+        d[ike][is] = scale*(df[ike][is]+dr[ike][is]-e[ke][is]);
+      }
+    }
+    return d;
+  }
+
+
+  /**
+   * Returns alignment errors smoothed in the second dimension.
+   * Returned errors are sparse in the second dimension, and
+   * unchanged in the first dimension.
+   * @param r2min minimum strain the second dimension.
+   * @param r2max maximum strain in the second dimension.
+   * @param k2s second dimension sparse grid indices.
+   * @param ss uniform sampling of ns shifts.
+   * @param se uniform sampling of ne errors.
+   * @param e alignment errors.
+   * @return smoothed alignment errors with size
+   *  [k2s.length][e[0].length][e[0][0].length].
+   */
+  private static float[][][] smoothErrors2(
+      final double r2min, final double r2max, final int[] k2s, 
+      final Sampling ss, final Sampling se, final float[][][] e) {
+    final int ns = ss.getCount();
+    final int n2 = e.length;
+    final int nk1 = e[0].length;
+    final int nk2 = k2s.length;
+    final float[][][] es = new float[nk2][nk1][ns]; // smoothed errors
+    Parallel.loop(nk1,new Parallel.LoopInt() {
+    public void compute(int ik1) {
+      float[][]  e2 = new float[n2][ns]; // errors at index ik1
+      for (int i2=0; i2<n2; ++i2)
+        e2[i2] = e[i2][ik1];
+      float[][] es2 = subsampleErrors(r2min,r2max,k2s,ss,se,e2);
+      for (int ik2=0; ik2<nk2; ++ik2)
+        es[ik2][ik1] = es2[ik2];
+    }});
+    return es;
+  }
+
+  private static float[][][] smoothErrors2(
+      final float[][] r2min, final float[][] r2max, 
+      final int[] k1s, final int[] k2s, 
+      final Sampling ss, final Sampling se, final float[][][] e) {
+    final int ns = ss.getCount();
+    final int n2 = e.length;
+    final int nk1 = e[0].length;
+    final int nk2 = k2s.length;
+    final float[][][] es = new float[nk2][nk1][ns]; // smoothed errors
+    Parallel.loop(nk1,new Parallel.LoopInt() {
+    public void compute(int ik1) {
+      float[][]  e2 = new float[n2][ns]; // errors at index ik1
+      int i1 = k1s[ik1];
+      float[] r2mini = new float[n2];
+      float[] r2maxi = new float[n2];
+      for (int i2=0; i2<n2; ++i2) {
+        e2[i2] = e[i2][ik1];
+        r2mini[i2] = r2min[i2][i1];
+        r2maxi[i2] = r2max[i2][i1];
+      }
+      float[][] es2 = subsampleErrors(r2mini,r2maxi,k2s,ss,se,e2);
+      for (int ik2=0; ik2<nk2; ++ik2)
+        es[ik2][ik1] = es2[ik2];
+    }});
+    return es;
+  }
+
+
+  /**
+   * Returns alignment errors smoothed in the second dimension.
+   * Returned errors are sparse in the second dimension, and
+   * unchanged in the first dimension and third dimension.
+   * @param r2Min minimum strain in the second dimension.
+   * @param r2Max maximum strain in the second dimension.
+   * @param k2s second dimension sparse grid indices.
+   * @param ss uniform sampling of ns shifts.
+   * @param se uniform sampling of ne errors.
+   * @param e alignment errors.
+   * @return smoothed alignment errors with size
+   *  [e.length][k2s.length][e[0][0].length][e[0][0][0].length].
+   */
+  private static float[][][][] smoothErrors2(
+      final double r2min, final double r2max, final int[] k2s, 
+      final Sampling ss, final Sampling se, final float[][][][] e) {
+    final int n3 = e.length;
+    final float[][][][] es = new float[n3][][][]; // smoothed errors
+    for (int i3=0; i3<n3; ++i3)
+      es[i3] = smoothErrors2(r2min,r2max,k2s,ss,se,e[i3]);
+    return es;
+  }
+
+  private static float[][][][] smoothErrors2(
+      final float[][][] r2min, final float[][][] r2max, 
+      final int[] k1s, final int[] k2s, 
+      final Sampling ss, final Sampling se, final float[][][][] e) {
+    final int n3 = e.length;
+    final float[][][][] es = new float[n3][][][]; // smoothed errors
+    for (int i3=0; i3<n3; ++i3)
+      es[i3] = smoothErrors2(r2min[i3],r2max[i3],k1s,k2s,ss,se,e[i3]);
+    return es;
+  }
+
+
+  /**
+   * Returns alignment errors smoothed in the third dimension.
+   * Returned errors are sparse in the third dimension, and
+   * unchanged in the first and second dimension.
+   * @param r3Min minimum strain in the third dimension.
+   * @param r3Max maximum strain in the third dimension.
+   * @param k3s third dimension sparse grid indices.
+   * @param ss uniform sampling of ns shifts.
+   * @param se uniform sampling of ne errors.
+   * @param e alignment errors.
+   * @return smoothed alignment errors with size
+   *  [k3s.length][e[0].length][e[0][0].length][e[0][0][0].length].
+   */
+  private static float[][][][] smoothErrors3(
+      final double r3min, final double r3max, final int[] k3s, 
+      final Sampling ss, final Sampling se, final float[][][][] e) {
+    final int ns = e[0][0][0].length;
+    final int nk1 = e[0][0].length;
+    final int nk2 = e[0].length;
+    final int n3 = e.length;
+    final int nk3 = k3s.length;
+    final float[][][][] es = new float[nk3][nk2][nk1][ns]; // smoothed errors
+    Parallel.loop(nk1,new Parallel.LoopInt() {
+    public void compute(int ik1) {
+      for (int ik2=0; ik2<nk2; ++ik2) {
+        float[][] e3 = new float[n3][ns]; // smooth errors at index i1,i2
+        for (int i3=0; i3<n3; ++i3)
+          e3[i3] = e[i3][ik2][ik1];
+        float[][] es3 = subsampleErrors(r3min,r3max,k3s,ss,se,e3);
+        for (int ik3=0; ik3<nk3; ++ik3)
+          es[ik3][ik2][ik1] = es3[ik3];
+      }
+    }});
+    return es;
+  }
+
+  private static float[][][][] smoothErrors3(
+      final float[][][] r3min, final float[][][] r3max, 
+      final int k1s[], final int[] k2s, final int[] k3s, 
+      final Sampling ss, final Sampling se, final float[][][][] e) {
+    final int ns = e[0][0][0].length;
+    final int nk1 = e[0][0].length;
+    final int nk2 = e[0].length;
+    final int n3 = e.length;
+    final int nk3 = k3s.length;
+    final float[][][][] es = new float[nk3][nk2][nk1][ns]; // smoothed errors
+    Parallel.loop(nk1,new Parallel.LoopInt() {
+    public void compute(int ik1) {
+      int i1 = k1s[ik1];
+      for (int ik2=0; ik2<nk2; ++ik2) {
+        int i2 = k2s[ik2];
+        float[][] e3 = new float[n3][ns]; // smooth errors at index i1,i2
+        float[] r3mini = new float[n3];
+        float[] r3maxi = new float[n3];
+        for (int i3=0; i3<n3; ++i3) {
+          e3[i3] = e[i3][ik2][ik1];
+          r3mini[i3] = r3min[i3][i2][i1];
+          r3maxi[i3] = r3max[i3][i2][i1];
+        }
+        float[][] es3 = subsampleErrors(r3mini,r3maxi,k3s,ss,se,e3);
+        for (int ik3=0; ik3<nk3; ++ik3)
+          es[ik3][ik2][ik1] = es3[ik3];
+      }
+    }});
+    return es;
+  }
+
+
   private static void smoothSubsampledErrors(
     double rmin, double rmax, int[] kes, 
     Sampling ss, Sampling se, float[][] e) 
@@ -665,6 +877,26 @@ public class DynamicWarpingX {
       }
     }
   }
+
+  private static void smoothSubsampledErrors(
+    float[] rmin, float[] rmax, int[] kes, 
+    Sampling ss, Sampling se, float[][] e) 
+  {
+    int ns = ss.getCount();
+    int nke = kes.length;
+    float[][] ef = new float[nke][ns];
+    float[][] er = new float[nke][ns];
+    accumulateSubsampled( 1,rmin,rmax,kes,ss,se,e,ef,null);
+    accumulateSubsampled(-1,rmin,rmax,kes,ss,se,e,er,null);
+    float scale = 1.0f/nke;
+    for (int ike=0; ike<nke; ++ike) {
+      int ke = kes[ike];
+      for (int is=0; is<ns; ++is) {
+        e[ike][is] = scale*(ef[ike][is]+er[ike][is]-e[ike][is]);
+      }
+    }
+  }
+
 
   private static void smoothSubsampledErrors(
     double r1min, double r1max, int[] k1s,
@@ -686,6 +918,98 @@ public class DynamicWarpingX {
       smoothSubsampledErrors(r1min,r1max,k1s,ss,s1,e[ik2]);
     }
   }
+
+  private static void smoothSubsampledErrors(
+    float[][] r1min, float[][] r1max, int[] k1s,
+    float[][] r2min, float[][] r2max, int[] k2s,
+    Sampling ss, Sampling s1, Sampling s2, float[][][] e) 
+  {
+    int ns = ss.getCount();
+    int nk1 = k1s.length;
+    int nk2 = k2s.length;
+    int n2 = s2.getCount();
+    float[][] e2 = new float[nk2][];
+    for (int ik1=0; ik1<nk1; ++ik1) {
+      int i1 = k1s[ik1];
+      float[] r2mini = new float[n2];
+      float[] r2maxi = new float[n2];
+      for (int i2=0; i2<n2; ++i2){
+        r2mini[i2] = r2min[i2][i1];
+        r2maxi[i2] = r2max[i2][i1];
+      }
+      for (int ik2=0; ik2<nk2; ++ik2)
+        e2[ik2] = e[ik2][ik1];
+      smoothSubsampledErrors(r2mini,r2maxi,k2s,ss,s2,e2);
+      for (int ik2=0; ik2<nk2; ++ik2)
+        e[ik2][ik1] = e2[ik2];
+    }
+    for (int ik2=0; ik2<nk2; ++ik2) {
+      int i2 = k2s[ik2];
+      smoothSubsampledErrors(r1min[i2],r1max[i2],k1s,ss,s1,e[ik2]);
+    }
+  }
+
+
+  private static void smoothSubsampledErrors(
+    double r1min, double r1max, int[] k1s,
+    double r2min, double r2max, int[] k2s,
+    double r3min, double r3max, int[] k3s,
+    Sampling ss, Sampling s1, Sampling s2, Sampling s3, float[][][][] e) 
+  {
+    int ns = ss.getCount();
+    int nk1 = k1s.length;
+    int nk2 = k2s.length;
+    int nk3 = k3s.length;
+    float[][] e3 = new float[nk3][];
+    for (int ik1=0; ik1<nk1; ++ik1) {
+      for (int ik2=0; ik2<nk2; ++ik2) {
+        for (int ik3=0; ik3<nk3; ++ik3)
+          e3[ik3] = e[ik3][ik2][ik1];
+        smoothSubsampledErrors(r3min,r3max,k3s,ss,s3,e3);
+        for (int ik3=0; ik3<nk3; ++ik3)
+          e[ik3][ik2][ik1] = e3[ik3];
+      }
+    }
+    for (int ik3=0; ik3<nk3; ++ik3) {
+      smoothSubsampledErrors(r1min,r1max,k1s,r2min,r2max,k2s,ss,s1,s2,e[ik3]);
+    }
+  }
+
+  private static void smoothSubsampledErrors(
+    float[][][] r1min, float[][][] r1max, int[] k1s,
+    float[][][] r2min, float[][][] r2max, int[] k2s,
+    float[][][] r3min, float[][][] r3max, int[] k3s,
+    Sampling ss, Sampling s1, Sampling s2, Sampling s3, float[][][][] e) 
+  {
+    int nk1 = k1s.length;
+    int nk2 = k2s.length;
+    int nk3 = k3s.length;
+    float[][] e3 = new float[nk3][];
+    int n3 = s3.getCount();
+    for (int ik1=0; ik1<nk1; ++ik1) {
+      for (int ik2=0; ik2<nk2; ++ik2) {
+        int i1 = k1s[ik1];
+        int i2 = k2s[ik2];
+        float[] r3mini = new float[n3];
+        float[] r3maxi = new float[n3];
+        for (int i3=0; i3<n3; ++i3) {
+          r3mini[i3] = r3min[i3][i2][i1];
+          r3maxi[i3] = r3max[i3][i2][i1];
+        }
+        for (int ik3=0; ik3<nk3; ++ik3)
+          e3[ik3] = e[ik3][ik2][ik1];
+        smoothSubsampledErrors(r3mini,r3maxi,k3s,ss,s3,e3);
+        for (int ik3=0; ik3<nk3; ++ik3)
+          e[ik3][ik2][ik1] = e3[ik3];
+      }
+    }
+    for (int ik3=0; ik3<nk3; ++ik3) {
+      int i3 = k3s[ik3];
+      smoothSubsampledErrors(
+        r1min[i3],r1max[i3],k1s,r2min[i3],r2max[i3],k2s,ss,s1,s2,e[ik3]);
+    }
+  }
+
 
   /**
    * Finds shifts from alignment errors.
@@ -731,6 +1055,19 @@ public class DynamicWarpingX {
     accumulateSubsampled(1,rmin,rmax,kes,ss,se,e,d,m);
     return backtrackForShifts(kes,ss,se,d[nke-1],m);
   }
+
+  private static float[] findShiftsFromSubsampledErrors(
+    float[] rmin, float[] rmax, int[] kes,
+    Sampling ss, Sampling se, float[][] e) 
+  {
+    int nke = kes.length;
+    int ns = ss.getCount();
+    float[][] d = new float[nke][ns];
+    int[][] m = new int[nke][ns];
+    accumulateSubsampled(1,rmin,rmax,kes,ss,se,e,d,m);
+    return backtrackForShifts(kes,ss,se,d[nke-1],m);
+  }
+
 
   /**
    * Accumulates alignment errors in forward or reverse direction.
@@ -787,6 +1124,53 @@ public class DynamicWarpingX {
       }
     }
   }
+
+  private static void accumulate(
+    int dir, float[] rmin, float[] rmax, int[] kes, 
+    Sampling ss, Sampling se, float[][] e, float[][] d, int[][] m) 
+  {
+    int ns = ss.getCount();
+    double ds = ss.getDelta();
+    double de = se.getDelta();
+    int nke = kes.length;
+    int iked = dir>0?1:-1;
+    int ikeb = dir>0?0:nke-1;
+    int ikee = dir>0?nke:-1;
+    for (int is=0; is<ns; ++is)
+      d[ikeb][is] = e[kes[ikeb]][is];
+    float[] dprev = new float[ns];
+    for (int ike=ikeb+iked; ike!=ikee; ike+=iked) {
+      int je = kes[ike-iked];
+      int ie = kes[ike];
+      int me = ie-je;
+      int msmin,msmax;
+      float rmini = (rmin[je]+rmin[ie])*0.5f;
+      float rmaxi = (rmax[je]+rmax[ie])*0.5f;
+      if (me>0) {
+        msmin = (int) ceil(-rmaxi*me*de/ds);
+        msmax = (int)floor(-rmini*me*de/ds);
+      } else {
+        msmin = (int) ceil(-rmini*me*de/ds);
+        msmax = (int)floor(-rmaxi*me*de/ds);
+      }
+      if (msmin>msmax) {
+        trace("ie="+ie+" je="+je+" me="+me+" msmin="+msmin+" msmax="+msmax);
+      }
+      assert msmin<=msmax:"msmin<=msmax";
+      fill(Float.MAX_VALUE,d[ike]);
+      for (int ms=msmin; ms<=msmax; ++ms) {
+        int islo = max(0,-ms);
+        int ishi = min(ns,ns-ms);
+        for (int is=islo; is<ishi; ++is)
+          dprev[is] = d[ike-iked][is+ms];
+        if (m!=null)
+          updateSumsOfErrors(ie,je,ms,e,dprev,d[ike],m[ike]);
+        else
+          updateSumsOfErrors(ie,je,ms,e,dprev,d[ike],null);
+      }
+    }
+  }
+
 
   /**
    * Accumulates alignment errors in forward or reverse direction.
@@ -918,8 +1302,9 @@ public class DynamicWarpingX {
     int ikee = dir>0?nke:-1;
     for (int is=0; is<ns; ++is)
       d[ikeb][is] = e[ikeb][is];
+    float[] dprev = new float[ns]; //CHECK HERE IF ERRORS
     for (int ike=ikeb+iked; ike!=ikee; ike+=iked) {
-      float[] dprev = d[ike-iked];
+      dprev = d[ike-iked];
       int me = kes[ike]-kes[ike-iked];
       int msmin,msmax;
       if (me>0) {
@@ -948,6 +1333,56 @@ public class DynamicWarpingX {
       }
     }
   }
+
+  private static void accumulateSubsampled(
+    int dir, float[] rmin, float[] rmax, int[] kes, 
+    Sampling ss, Sampling se, float[][] e, float[][] d, int[][] m) 
+  {
+    int ns = ss.getCount();
+    double ds = ss.getDelta();
+    double de = se.getDelta();
+    int nke = kes.length;
+    int iked = dir>0?1:-1;
+    int ikeb = dir>0?0:nke-1;
+    int ikee = dir>0?nke:-1;
+    for (int is=0; is<ns; ++is)
+      d[ikeb][is] = e[ikeb][is];
+    float[] dprev = new float[ns]; //CHECK HERE IF ERRORS
+    for (int ike=ikeb+iked; ike!=ikee; ike+=iked) {
+      dprev = d[ike-iked];
+      int je = kes[ike];
+      int ie = kes[ike-iked];
+      int me = je-ie;//kes[ike]-kes[ike-iked];
+      float rmini = (rmin[je]+rmin[ie])*0.5f;
+      float rmaxi = (rmax[je]+rmax[ie])*0.5f;
+      int msmin,msmax;
+      if (me>0) {
+        msmin = (int) ceil(-rmaxi*me*de/ds);
+        msmax = (int)floor(-rmini*me*de/ds);
+      } else {
+        msmin = (int) ceil(-rmini*me*de/ds);
+        msmax = (int)floor(-rmaxi*me*de/ds);
+      }
+      for (int is=0; is<ns; ++is) {
+        float dmin = Float.MAX_VALUE;
+        int mmin = -1;
+        for (int ms=msmin; ms<=msmax; ++ms) {
+          int js = is+ms;
+          if (0<=js && js<ns) {
+            float dj = dprev[js];
+            if (dj<dmin) {
+              dmin = dj;
+              mmin = ms;
+            }
+          }
+          d[ike][is] = dmin+e[ike][is];
+          if (m!=null)
+            m[ike][is] = mmin;
+        }
+      }
+    }
+  }
+
 
   /**
    * Returns shifts found by backtracking with precomputed moves.
@@ -999,61 +1434,8 @@ public class DynamicWarpingX {
     }
     return u;
   }
+  
   private static float[][] interpolateShifts(
-    Sampling s1, Sampling s2, int[] k1s, int[] k2s, float[][] ukk) 
-  {
-    //trace("ukk:"); dump(ukk);
-    int n1 = s1.getCount();
-    int n2 = s2.getCount();
-    int nk1 = k1s.length;
-    int nk2 = k2s.length;
-
-    // Coarse sampling of 1st and 2nd dimensions.
-    float[] xk1 = new float[nk1];
-    for (int jk1=0; jk1<nk1; ++jk1)
-      xk1[jk1] = (float)s1.getValue(k1s[jk1]);
-    float[] xk2 = new float[nk2];
-    for (int jk2=0; jk2<nk2; ++jk2)
-      xk2[jk2] = (float)s2.getValue(k2s[jk2]);
-
-    // Compute 1st derivatives in 1st dimension.
-    float[][] vkk = new float[nk2][nk1];
-    for (int jk2=0; jk2<nk2; ++jk2) {
-      CubicInterpolator ci = makeInterpolator1(xk1,ukk[jk2]);
-      ci.interpolate1(xk1,vkk[jk2]);
-    }
-      
-    // Interpolate in 2nd dimension.
-    float[] uk2 = new float[nk2];
-    float[] vk2 = new float[nk2];
-    float[][] uk = new float[n2][nk1];
-    float[][] vk = new float[n2][nk1];
-    for (int jk1=0; jk1<nk1; ++jk1) {
-      for (int jk2=0; jk2<nk2; ++jk2) {
-        uk2[jk2] = ukk[jk2][jk1];
-        vk2[jk2] = vkk[jk2][jk1];
-      }
-      CubicInterpolator ciu = makeInterpolator2(xk2,uk2);
-      CubicInterpolator civ = makeInterpolator2(xk2,vk2);
-      for (int j2=0; j2<n2; ++j2) {
-        float x2 = (float)s2.getValue(j2);
-        uk[j2][jk1] = ciu.interpolate(x2);
-        vk[j2][jk1] = civ.interpolate(x2);
-      }
-    }
-
-    // Interpolate 1st dimension.
-    float[][] u = new float[n2][n1];
-    for (int j2=0; j2<n2; ++j2) {
-      CubicInterpolator ci = makeCubicInterpolator(xk1,uk[j2],vk[j2]);
-      for (int j1=0; j1<n1; ++j1) {
-        float x1 = (float)s1.getValue(j1);
-        u[j2][j1] = ci.interpolate(x1);
-      }
-    }
-    return u;
-  }
-  private static float[][] interpolateShiftsBl(
     Sampling s1, Sampling s2, int[] k1s, int[] k2s, float[][] ukk) 
   {
     int n1 = s1.getCount();
@@ -1070,8 +1452,8 @@ public class DynamicWarpingX {
       xk2[jk2] = (float)s2.getValue(k2s[jk2]);
 
     // Interpolate.
-    BilinearInterpolator2 bl = new BilinearInterpolator2(xk1,xk2,ukk);
-    //BicubicInterpolator2 bl = new BicubicInterpolator2(
+    BilinearInterpolator2 bc = new BilinearInterpolator2(xk1,xk2,ukk);
+    //BicubicInterpolator2 bc = new BicubicInterpolator2(
     //  BicubicInterpolator2.Method.MONOTONIC,
     //  BicubicInterpolator2.Method.SPLINE,
     //  xk1,xk2,ukk);
@@ -1080,7 +1462,74 @@ public class DynamicWarpingX {
       float x2 = (float)s2.getValue(j2);
       for (int j1=0; j1<n1; ++j1) {
         float x1 = (float)s1.getValue(j1);
-        u[j2][j1] = bl.interpolate(x1,x2);
+        u[j2][j1] = bc.interpolate(x1,x2);
+      }
+    }
+    return u;
+  }
+
+  /**
+   * Added by Elias Arias, slightly modified from DynamicWarpingC 
+   * by Stefan Compton.
+   */
+  private static float[][][] interpolateShifts(
+      Sampling s1, Sampling s2, Sampling s3,
+      int[] k1s, int[] k2s, int[] k3s, float[][][] ukk)
+  {
+    int n1 = s1.getCount();
+    int n2 = s2.getCount();
+    int n3 = s3.getCount();
+    int nk1 = k1s.length;
+    int nk2 = k2s.length;
+    int nk3 = k3s.length;
+    double d1 = s1.getDelta();
+    double d2 = s2.getDelta();
+    double d3 = s3.getDelta();
+    double f1 = s1.getFirst();
+    double f2 = s2.getFirst();
+    double f3 = s3.getFirst();
+
+     // Coarse sampling of 1st and 2nd dimensions.
+    float[] xk1 = new float[nk1];
+    for (int jk1=0; jk1<nk1; ++jk1)
+      xk1[jk1] = (float)s1.getValue(k1s[jk1]);
+    float[] xk2 = new float[nk2];
+    for (int jk2=0; jk2<nk2; ++jk2)
+      xk2[jk2] = (float)s2.getValue(k2s[jk2]);
+    float[] xk3 = new float[nk3];
+    for (int jk3=0; jk3<nk3; ++jk3)
+      xk3[jk3] = (float)s3.getValue(k3s[jk3]);
+
+    // Interpolate along the second and third dimension.
+    float[][] uk23 = new float[nk3][nk2];
+    float[][][] u23 = new float[n3][n2][nk1];
+    for (int ik1=0; ik1<nk1; ++ik1) {
+      for (int ik3=0; ik3<nk3; ++ik3)
+        for (int ik2=0; ik2<nk2; ++ik2)
+          uk23[ik3][ik2] = ukk[ik3][ik2][ik1];
+      BicubicInterpolator2 bc = new BicubicInterpolator2(
+        BicubicInterpolator2.Method.MONOTONIC,
+        BicubicInterpolator2.Method.MONOTONIC,
+        xk2,xk3,uk23);
+      double v3 = f3;
+      for (int i3=0; i3<n3; ++i3, v3=f3+i3*d3) {
+        float v3f = (float)v3;
+        double v2 = f2;
+        for (int i2=0; i2<n2; ++i2, v2=f2+i2*d2)
+          u23[i3][i2][ik1] = bc.interpolate((float)v2,v3f);
+      }
+    }
+
+    // Interpolate along the first dimension.
+    float[][][] u = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        CubicInterpolator ci = 
+          new CubicInterpolator(CubicInterpolator.Method.MONOTONIC,
+                xk1,u23[i3][i2]);
+        double v1 = f1;
+        for (int i1=0; i1<n1; ++i1, v1=f1+i1*d1)
+          u[i3][i2][i1] = ci.interpolate((float)v1);
       }
     }
     return u;
@@ -1138,13 +1587,45 @@ public class DynamicWarpingX {
     }});
     shiftAndScale(mm.emin,mm.emax,e);
   }
-  private static class MinMax {
-    float emin,emax;
-    MinMax(float emin, float emax) {
-      this.emin = emin;
-      this.emax = emax;
+
+  /**
+   * Normalizes alignment errors to be in range [0,1].
+   * @param e input/output array of alignment errors.
+   */
+  private static void normalizeErrors(float[][][][] e) {
+    final int ns = e[0][0][0].length;
+    final int n1 = e[0][0].length;
+    final int n2 = e[0].length;
+    final int n3 = e.length;
+    final float[][][][] ef = e;
+    MinMax mm = Parallel.reduce(n3,new Parallel.ReduceInt<MinMax>() {
+      public MinMax compute(int i3) {
+        float emin =  Float.MAX_VALUE;
+        float emax = -Float.MAX_VALUE;
+        for (int i2=0; i2<n2; ++i2) {
+          for (int i1=0; i1<n1; ++i1) {
+            for (int is=0; is<ns; ++is) {
+              float ei = ef[i3][i2][i1][is];
+              if (ei<emin) emin = ei;
+              if (ei>emax) emax = ei;
+            }
+          }
+        }
+        return new MinMax(emin,emax);
+      }
+      public MinMax combine(MinMax mm1, MinMax mm2) {
+        return new MinMax(min(mm1.emin,mm2.emin),max(mm1.emax,mm2.emax));
+      }});
+      shiftAndScale(mm.emin,mm.emax,e);
     }
-  }
+
+    private static class MinMax {
+      float emin,emax;
+      MinMax(float emin, float emax) {
+        this.emin = emin;
+        this.emax = emax;
+      }
+    }
 
   /**
    * Shifts and scales alignment errors to be in range [0,1].
@@ -1170,188 +1651,30 @@ public class DynamicWarpingX {
     }});
   }
 
-  private static float[][] interpolateShiftsIg(
-    Sampling s1, Sampling s2, float[][] f,
-    int[] k1s, int[] k2s, float[][] ukk)
-  {
-    //trace("ukk:"); dump(ukk);
-    int n1 = s1.getCount();
-    int n2 = s2.getCount();
-    int nk1 = k1s.length;
-    int nk2 = k2s.length;
-
-    // Interpolate 1st derivatives of u at coarsely-sampled x2.
-    float[] x1k = new float[nk1];
-    for (int ik1=0; ik1<nk1; ++ik1)
-      x1k[ik1] = (float)s1.getValue(k1s[ik1]);
-    int nk = n1*nk2;
-    float[] x1s = new float[nk];
-    float[] x2s = new float[nk];
-    float[] vs = new float[nk];
-    for (int ik2=0,ik=0; ik2<nk2; ++ik2) {
-      CubicInterpolator ci = 
-        new CubicInterpolator(CubicInterpolator.Method.LINEAR,x1k,ukk[ik2]);
-      for (int i1=0; i1<n1; ++i1,++ik) {
-        x1s[ik] = (float)s1.getValue(i1);
-        x2s[ik] = (float)s2.getValue(k2s[ik2]);
-        vs[ik] = ci.interpolate1(x1s[ik]);
-      }
-    }
-
-    // Tensor-guided interpolation of 1st derivatives.
-    LocalOrientFilter lof = new LocalOrientFilter(8.0,2.0);
-    EigenTensors2 et = lof.applyForTensors(f);
-    et.invertStructure(0.0,8.0);
-    SimplePlot sp = new SimplePlot(SimplePlot.Origin.UPPER_LEFT);
-    sp.addPixels(f);
-    TensorsView tv = new TensorsView(s1,s2,et);
-    tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT);
-    sp.getPlotPanel().addTiledView(tv);
-    BlendedGridder2 bg = new BlendedGridder2(vs,x1s,x2s);
-    bg.setSmoothness(0.5);
-    float[][] v = bg.grid(s1,s2);
-
-    // Integrate 1st derivatives to find shifts.
-    float[][] u = new float[n2][n1];
-    float d1 = (float)s1.getDelta();
-    for (int i2=0; i2<n2; ++i2) {
-      u[i2][0] = 0.0f;
-      for (int i1=1; i1<n1; ++i1) {
-        u[i2][i1] = u[i2][i1-1]+v[i2][i1-1]*d1;
-      }
-    }
-    return u;
-  }
-
-  private static class Cm implements LeastSquaresSolver.CovarianceOperator {
-    Cm(SmoothCovariance sc, Sampling s1, Sampling s2, Tensors2 t) {
-      _sc = sc;
-      _s1 = s1;
-      _s2 = s2;
-      _t = t;
-    }
-    public Vec apply(Vec x) {
-      VecArrayFloat2 vx = (VecArrayFloat2)x;
-      float[][] ay = copy(vx.getArray());
-      _sc.apply(_s1,_s2,_t,ay);
-      return new VecArrayFloat2(ay);
-    }
-    private SmoothCovariance _sc;
-    private Sampling _s1,_s2;
-    private Tensors2 _t;
-  }
-  private static class G implements LeastSquaresSolver.LinearOperator {
-    G(Sampling s1, Sampling s2, int[] k1s, int[] k2s) {
-      _s1 = s1;
-      _s2 = s2;
-      _k1s = k1s;
-      _k2s = k2s;
-      _nk1 = k1s.length;
-      _nk2 = k2s.length;
-      _n1 = s1.getCount();
-      _n2 = s2.getCount();
-      _nk = _nk1*_nk2;
-    }
-    public Vec apply(Vec x) {
-      VecArrayFloat2 vx = (VecArrayFloat2)x;
-      float[][] ax = vx.getArray();
-      ax = integrateForward((float)_s1.getDelta(),ax);
-      float[] ay = new float[_nk];
-      for (int ik2=0,ik=0; ik2<_nk2; ++ik2) {
-        int i2 = _k2s[ik2];
-        for (int ik1=0; ik1<_nk1; ++ik1,++ik) {
-          int i1 = _k1s[ik1];
-          ay[ik] = ax[i2][i1];
+  /**
+   * Shifts and scales alignment errors to be in range [0,1].
+   * @param emin minimum alignment error before normalizing.
+   * @param emax maximum alignment error before normalizing.
+   * @param e input/output array of alignment errors.
+   */
+  private static void shiftAndScale(float emin, float emax, float[][][][] e) {
+    trace("shiftAndScale: emin="+emin+" emax="+emax);
+    final int ns = e[0][0][0].length;
+    final int n1 = e[0][0].length;
+    final int n2 = e[0].length;
+    final int n3 = e.length;
+    final float eshift = emin;
+    final float escale = (emax>emin)?1.0f/(emax-emin):1.0f;
+    final float[][][][] ef = e;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          for (int is=0; is<ns; ++is) {
+            ef[i3][i2][i1][is] = (ef[i3][i2][i1][is]-eshift)*escale;
+          }
         }
       }
-      return new VecArrayFloat1(ay);
-    }
-    public Vec applyTranspose(Vec x) {
-      VecArrayFloat1 vx = (VecArrayFloat1)x;
-      float[] ax = vx.getArray();
-      float[][] ay = new float[_n2][_n1];
-      for (int ik2=0,ik=0; ik2<_nk2; ++ik2) {
-        int i2 = _k2s[ik2];
-        for (int ik1=0; ik1<_nk1; ++ik1,++ik) {
-          int i1 = _k1s[ik1];
-          ay[i2][i1] = ax[ik];
-        }
-      }
-      ay = integrateReverse((float)_s1.getDelta(),ay);
-      return new VecArrayFloat2(ay);
-    }
-    private float[][] integrateForward(final float d1, final float[][] x) {
-      final float[][] y = new float[_n2][_n1];
-      Parallel.loop(_n2,new Parallel.LoopInt() {
-      public void compute(int i2) {
-        float[] x2 = x[i2];
-        float[] y2 = y[i2];
-        y2[0] = x2[0]*d1;
-        for (int i1=1; i1<_n1; ++i1)
-          y2[i1] = y2[i1-1]+d1*x2[i1];
-      }});
-      return y;
-    }
-    private float[][] integrateReverse(final float d1, final float[][] x) {
-      final float[][] y = new float[_n2][_n1];
-      Parallel.loop(_n2,new Parallel.LoopInt() {
-      public void compute(int i2) {
-        float[] x2 = x[i2];
-        float[] y2 = y[i2];
-        y2[_n1-1] = x2[_n1-1]*d1;
-        for (int i1=_n1-2; i1>=0; --i1)
-          y2[i1] = y2[i1+1]+d1*x2[i1];
-      }});
-      return y;
-    }
-    private Sampling _s1,_s2;
-    private int[] _k1s,_k2s;
-    private int _nk1,_nk2,_n1,_n2,_nk;
-  }
-
-  private static float[][] interpolateShiftsLs(
-    Sampling s1, Sampling s2, float[][] f,
-    int[] k1s, int[] k2s, float[][] ukk)
-  {
-    //trace("ukk:"); dump(ukk);
-    int n1 = s1.getCount();
-    int n2 = s2.getCount();
-    int nk1 = k1s.length;
-    int nk2 = k2s.length;
-
-    LocalOrientFilter lof = new LocalOrientFilter(8.0);
-    EigenTensors2 et = lof.applyForTensors(f);
-    et.invertStructure(0.0,2.0);
-    SimplePlot sp = new SimplePlot(SimplePlot.Origin.UPPER_LEFT);
-    sp.addPixels(f);
-    TensorsView tv = new TensorsView(s1,s2,et);
-    tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT);
-    sp.getPlotPanel().addTiledView(tv);
-    double range = 100.0; // TODO: compute this!
-    SmoothCovariance sc = new SmoothCovariance(1.0,1.0,range,2);
-    Cm cm = new Cm(sc,s1,s2,et);
-    G g = new G(s1,s2,k1s,k2s);
-    LeastSquaresSolver lss = new LeastSquaresSolver();
-    lss.setLinearOperator(g);
-    lss.setModelCovariance(cm);
-    int nk = nk1*nk2;
-    float[] au = new float[nk];
-    for (int ik2=0,ik=0; ik2<nk2; ++ik2) {
-      for (int ik1=0; ik1<nk1; ++ik1,++ik) {
-        au[ik] = ukk[ik2][ik1];
-      }
-    }
-    VecArrayFloat1 vu = new VecArrayFloat1(au);
-    VecArrayFloat2 vv = (VecArrayFloat2)lss.solve(vu);
-    float[][] av = vv.getArray();
-    float[][] u = new float[n2][n1];
-    float d1 = (float)s1.getDelta();
-    for (int i2=0; i2<n2; ++i2) {
-      u[i2][0] = av[i2][0];
-      for (int i1=1; i1<n1; ++i1) {
-        u[i2][i1] = u[i2][i1-1]+av[i2][i1-1]*d1;
-      }
-    }
-    return u;
+    }});
   }
 }

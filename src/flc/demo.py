@@ -6,8 +6,8 @@ Version: 2015.02.09
 
 from fakeutils import *
 #setupForSubset("fake")
-#setupForSubset("tp")
-setupForSubset("f3d")
+setupForSubset("tp")
+#setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -75,11 +75,12 @@ def main(args):
   #goSkin()
   #goReferImage()
   #goRefine3d()
+  goRefine3dV()
   #goTest()
   #gx = readImage(gufile)
   #gx = gain(gx)
   #plot3p(gx)
-  goSeisFlatten()
+  #goSeisFlatten()
 
 def goSeisFlatten():
   gf = readImage(gufile)
@@ -261,9 +262,9 @@ def goRefine3dV():
     sk = readSkins(fskbase)
     flr = FlattenerR()
     #gr = flr.getReferImage(gf)
-    k2,k3=98,175
-    #gr = flr.getReferImageX(k2,k3,gf)
-    gr = readImage(grifile)
+    k2,k3=98,105
+    gr = flr.getReferImageX(k2,k3,gf)
+    #gr = readImage(grifile)
     smin,smax = -10.0,10.0
     r1mins = fillfloat(-0.2,n1,n2,n3)
     r1maxs = fillfloat( 0.2,n1,n2,n3)

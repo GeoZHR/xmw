@@ -5,8 +5,6 @@ the Common Public License - v1.0, which accompanies this distribution, and is
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package swt;
-
-import java.awt.*;
 import java.util.Random;
 import javax.swing.*;
 

@@ -298,8 +298,8 @@ public class MultiTraceWarping {
       int l = ls[ikl];
       int i = (k-l)/2;
       int j = (k+l)/2;
-      //if (0<=i && i<ni && 0<=j && j<nj) {
-      if (0<=i && i<ni && 0<=j && j<nj && f[i]!=_vnull && g[j]!=_vnull) {
+      if (0<=i && i<ni && 0<=j && j<nj) {
+      //if (0<=i && i<ni && 0<=j && j<nj && f[i]!=_vnull && g[j]!=_vnull) {
         is[nij] = i;
         js[nij] = j;
         ++nij;
@@ -406,9 +406,10 @@ public class MultiTraceWarping {
         jls[nlp] = jl;
       }
     }
-    final AtomicInteger nij = new AtomicInteger(0);
-    Parallel.loop(nlp,new Parallel.LoopInt() {
-    public void compute(int ip) {
+    //final AtomicInteger nij = new AtomicInteger(0);
+    //Parallel.loop(nlp,new Parallel.LoopInt() {
+    //public void compute(int ip) {
+    for (int ip=0; ip<nlp; ++ip) {
       int il = ils[ip];
       int jl = jls[ip];
       float[] fi = wl[il];
@@ -421,18 +422,118 @@ public class MultiTraceWarping {
         int[] is = ij[0];
         int[] js = ij[1];
         int np = is.length;
-        if(np>0){pt[nij.getAndIncrement()] = new Pairs(il,jl,is,js,np);}
+        //if(np>0){pt[nij.getAndIncrement()] = new Pairs(il,jl,is,js,np);}
+        if(np>0){pt[ip] = new Pairs(il,jl,is,js,np);}
       }
-    }});
-    nlp = nij.get();
+    }
+    //}});
+    //nlp = nij.get();
     Pairs[] ps = new Pairs[nlp];
     for (int ip=0; ip<nlp; ++ip)
       ps[ip] = pt[ip];
+    //Pairs[] ps = findPairs(-0.1f,0.1f,wl);
     computeWeights(wl,ps,ls);
     float[][] r = computeShifts(nz,ls,ps);
-    refineShifts(10,-0.2f,0.2f,wl,r);
+    refineShifts(10,-0.05f,0.05f,wl,r);
     return r;
  }
+
+ public Pairs[] findPairs(
+    final float r1min, final float r1max, final float[][] fs) 
+  {
+    final int nl = fs.length;
+    final int np = nl*(nl-1)/2; // number of pairs of logs
+    final Pairs[] ps = new Pairs[np];
+    final float[][] fsi = copy(fs);
+    final float[][] fsj = copy(fs);
+    Parallel.loop(nl,new Parallel.LoopInt() {
+    public void compute(int il) {
+      System.out.println("il="+il);
+      float[] fi = fsi[il];
+      Sampling sfi = getValidSampling(fi);
+      for (int jl=il+1; jl<nl; ++jl) {
+        int ip = jl-il-1;
+        for (int ik=0; ik<il;++ik){ip += nl-ik-1;}
+        float[] gj = fsj[jl];
+        Sampling sgj = getValidSampling(gj);
+        float[] f = copy(fi);
+        float[] g = copy(gj);
+        Sampling sf=sfi, sg=sgj;
+        if(sg.getCount()>sf.getCount()) {
+          DynamicWarpingK dwk = new DynamicWarpingK(8,-_lmax,_lmax,sf);
+          dwk.setStrainLimits(r1min,r1max);
+          dwk.setSmoothness(2);
+          float[] fs = dwk.findShifts(sg,g,sf,f);
+          int[][] jis = findValidPairs(sg,sf,fs);
+          int kp = jis[0].length;
+          ps[ip] = new Pairs(il,jl,jis[1],jis[0],kp);
+        } else {
+          DynamicWarpingK dwk = new DynamicWarpingK(8,-_lmax,_lmax,sg);
+          dwk.setStrainLimits(r1min,r1max);
+          dwk.setSmoothness(4);
+          float[] gs = dwk.findShifts(sf,f,sg,g);
+          int[][] ijs = findValidPairs(sf,sg,gs);
+          int kp = ijs[0].length;
+          ps[ip] = new Pairs(il,jl,ijs[0],ijs[1],kp);
+        }
+        /*
+        int k = 0;
+        int[] is = new int[nz];
+        int[] js = new int[nz];
+        float[] rs = new float[nz];
+        int ffz = (int)sfi.getFirst();
+        int lfz = (int)sfi.getLast();
+        int fgz = (int)sgj.getFirst();
+        int lgz = (int)sgj.getLast();
+        for (int iz=0; iz<nz; ++iz) {
+          float jk = iz+gs[iz];
+          int jz = round(jk);
+          if(iz>=ffz &&iz<=lfz && jz>=fgz && jz<=lgz) {
+            rs[k] = jk-jz;
+            is[k] = iz; 
+            js[k] = jz;
+            k++;
+          }
+        }
+        ps[ip] = new Pairs(il,jl,copy(k,is),copy(k,js),np);
+        */
+      }
+    }});
+    return ps;
+  }
+
+ private int[][] findValidPairs(Sampling sf, Sampling sg, float[] gs) {
+   int p = 0;
+   int n = sg.getCount();
+   int[] is = new int[n];
+   int[] js = new int[n];
+   int ffz = (int)sf.getFirst();
+   int lfz = (int)sf.getLast();
+   int fgz = (int)sg.getFirst();
+   int lgz = (int)sg.getLast();
+   for (int k=0; k<n; ++k) {
+     int iz = k+(int)sg.getFirst();
+     int jz = round(iz+gs[k]);
+     if(iz>=ffz &&iz<=lfz && jz>=fgz && jz<=lgz) {
+       is[p] = iz; 
+       js[p] = jz;
+       p++;
+     }
+   }
+   return new int[][]{copy(p,is),copy(p,js)};
+ }
+
+  private Sampling getValidSampling(float[] f) {
+    int nz = f.length;
+    int jz = 0;
+    int lz = nz-1;
+    while (jz<nz && f[jz]==_vnull)
+      ++jz;
+    while (lz>=0 && f[lz]==_vnull)
+      --lz;
+    int nzi = lz-jz+1;
+    return new Sampling(nzi,1,jz);
+  }
 
   /**
    * Applies the specified shifts to the specified logs.
@@ -476,17 +577,23 @@ public class MultiTraceWarping {
     dwk.setStrainLimits(r1min,r1max);
     dwk.setSmoothness(4);
     //final float[] fr = getMedianTrace(max(fx)+1,gx);
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     final float[] fr = getMedianTrace(_vnull,gx);
     Parallel.loop(n2,new Parallel.LoopInt() {
     public void compute(int i2) {
       float[] gxi = copy(gx[i2]);
+      float[] fsr = new float[n1];
+      float[] fsc = new float[n1];
       for (int i1=0; i1<n1; ++i1) {
         if(gxi[i1]==_vnull) {
           gxi[i1] = fr[i1];
         }
+        fsc[i1] = i1+fs[i2][i1];
       }
       float[] fsi = dwk.findShifts(s1,fr,s1,gxi);
-      fs[i2] = sub(fs[i2],fsi);
+      si.interpolate(n1,1.0,0.0,fsi,n1,fsc,fsr);
+      fs[i2] = sub(fs[i2],fsr);
     }});
   }
 

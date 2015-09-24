@@ -48,11 +48,10 @@ import edu.mines.jtk.mosaic.*;
  * times more finely. After initially computing shifts on the coarse grid,
  * shifts are interpolated onto the finer grid.
  *
- * Modified from Dave's DynamicWarpingR
- * @author Xinming Wu, Colorado School of Mines
- * @version 2015.07.10
+ * @author Dave Hale, Colorado School of Mines
+ * @version 2012.12.18
  */
-public class DynamicWarpingX {
+public class DynamicWarpingR {
 
   /**
    * Constructs a dynamic warping.
@@ -62,7 +61,7 @@ public class DynamicWarpingX {
    * @param smax upper bound on shift.
    * @param s1 sampling of shifts for 1st dimension.
    */
-  public DynamicWarpingX(double smin, double smax, Sampling s1) {
+  public DynamicWarpingR(double smin, double smax, Sampling s1) {
     this(smin,smax,s1,null,null);
   }
 
@@ -75,7 +74,7 @@ public class DynamicWarpingX {
    * @param s1 sampling of shifts for 1st dimension.
    * @param s2 sampling of shifts for 2nd dimension.
    */
-  public DynamicWarpingX(double smin, double smax, Sampling s1, Sampling s2) {
+  public DynamicWarpingR(double smin, double smax, Sampling s1, Sampling s2) {
     this(smin,smax,s1,s2,null);
   }
 
@@ -87,7 +86,7 @@ public class DynamicWarpingX {
    * @param s2 sampling of shifts for 2nd dimension.
    * @param s3 sampling of shifts for 3rd dimension.
    */
-  public DynamicWarpingX(
+  public DynamicWarpingR(
     double smin, double smax, 
     Sampling s1, Sampling s2, Sampling s3) 
   {
@@ -341,10 +340,11 @@ public class DynamicWarpingX {
     Sampling sf, float[] f,
     Sampling sg, float[] g)
   {
-    Sampling se = sf;
     Sampling ss = _ss;
+    Sampling se = _s1;
     int ns = ss.getCount();
     int ne = se.getCount();
+    int nf = sf.getCount();
     int ng = sg.getCount();
     float[][] e = new float[ne][ns];
     float[] fi = new float[ne];
@@ -359,71 +359,6 @@ public class DynamicWarpingX {
     }
     return e;
   }
-
-  public float[][] computeErrorsX(
-    Sampling[] sfs, float[][] f,
-    Sampling sg, float[][] g)
-  {
-    int n2 = f.length;
-    Sampling s1 = _s1;
-    Sampling ss = _ss;
-    int n1 = s1.getCount();
-    int ns = ss.getCount();
-    double d1 = s1.getDelta();
-    double f1 = s1.getFirst();
-    float[][] e = new float[n1][ns];
-    float[][] s = new float[n1][ns];
-    for (int i2=0; i2<n2; ++i2) {
-      int nk = sfs[i2].getCount();
-      int j1 = (int)round((sfs[i2].getFirst()-f1)/d1);
-      float[][] e2 = computeErrors(sfs[i2],f[i2],sg,g[i2]);
-      for (int i1=j1, k1=0; k1<nk; ++i1,++k1) {
-        for (int is=0; is<ns; ++is) {
-          s[i1][is] += 1.0f;
-          e[i1][is] += e2[k1][is];
-        }
-      }
-    }
-    /*
-    for (int i1=0; i1<n1; ++i1) {
-    for (int is=0; is<ns; ++is) {
-      e[i1][is] /= s[i1][is];
-    }}
-    */
-    return e;
-  }
-
-  public float[][] computeErrorsW(
-    Sampling[] sfs, float[][] f,
-    Sampling sg, float[][] g)
-  {
-    int n2 = f.length;
-    Sampling s1 = _s1;
-    int ng = sg.getCount();
-    int n1 = s1.getCount();
-    double d1 = s1.getDelta();
-    double f1 = s1.getFirst();
-    float[] fscs = new float[n1];
-    float[] fsum = new float[n1];
-    float[] gsum = new float[ng];
-    for (int i2=0; i2<n2; ++i2) {
-      int nk = sfs[i2].getCount();
-      int j1 = (int)round((sfs[i2].getFirst()-f1)/d1);
-      for (int k1=0; k1<nk; ++k1) {
-        int i1 = j1+k1;
-        fsum[i1] += f[i2][k1];
-        fscs[i1] += 1.0f;
-      }
-      for (int i1=ng; i1<ng; ++i1) {
-        gsum[i1] += g[i2][i1];
-      }
-    }
-    gsum = div(gsum,n2);
-    fsum = div(fsum,fscs);
-    float[][] e = computeErrors(_s1,fsum,sg,gsum);
-    return e;
-  }
-
 
   /**
    * Normalizes alignment errors, in place.
@@ -499,15 +434,11 @@ public class DynamicWarpingX {
   // private
 
   private Sampling _ss,_s1,_s2,_s3;
-  private double _r1min;
-  private double _r1max;
-  private int _k1min;
-  private double _r2min,_r3min;
-  private double _r2max,_r3max;
-  private int _k2min,_k3min;
+  private double _r1min,_r2min,_r3min;
+  private double _r1max,_r2max,_r3max;
+  private int _k1min,_k2min,_k3min;
   private SincInterpolator _si;
-  //private float _epow = 0.125f;
-  private float _epow = 2.0f;
+  private float _epow = 2.f;
 
   private static CubicInterpolator makeInterpolator1(
     float[] x, float[] y) 

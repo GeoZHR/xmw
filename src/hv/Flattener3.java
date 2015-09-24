@@ -251,6 +251,45 @@ public class Flattener3 {
     return new Mappings(s1,s2,s3,u1,x1);
   }
 
+  public float[][][][] flattenWithShifts(
+    final Sampling s1, final float[][][] r, final float[][][] f) 
+  {
+    cleanShifts(r);
+    final int n3 = r.length;
+    final int n2 = r[0].length;
+    final int n1 = r[0][0].length;
+    // Compute u1(x1,x2,x3).
+    final double f1 = s1.getFirst();
+    final double d1 = s1.getDelta();
+    final float[][][] u1 = r;
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float x1i = (float)(f1+i1*d1);
+          u1[i3][i2][i1] = (float)(x1i+r[i3][i2][i1]*d1);
+        }
+      }
+    }
+
+    // Compute x1(u1,u2).
+    final float[][][] x1 = new float[n3][n2][n1];
+    final InverseInterpolator ii = new InverseInterpolator(s1,s1);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) 
+        ii.invert(u1[i3][i2],x1[i3][i2]);
+    }});
+
+    final SincInterpolator si = new SincInterpolator();
+    final float[][][] g = new float[n3][n2][n1];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2)
+        si.interpolate(n1,d1,f1,f[i3][i2],n1,x1[i3][i2],g[i3][i2]);
+    }});
+    return new float[][][][]{g,u1};
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // private
 
