@@ -62,7 +62,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-pngDir = "../../../png/swt/"
+pngDir = "../../../png/swt/print/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -74,24 +74,12 @@ def main(args):
   #goSeisFlatten()
   #goSynsSeisTie()
   goTimeUpdate()
-  #gx = readImage(gxfile)
-  #fx = copy(590,n2,n3,gx)
-  #writeImage("gxsub",fx)
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
   #goImageFlatten()
   #goRefine3dV()
-  '''
-  gx  = readImage(gxfile)
-  fpw = readImage("fpiw")
-  fps = readImage("fpis")
-  plot3(gx,fpw,cmin=2.0,cmax=5.5,cmap=jetRamp(1.0),
-        clab="Velocity (km/s)",png="fpw")
-  plot3(gx,fps,cmin=2.0,cmax=5.5,cmap=jetRamp(1.0),
-        clab="Velocity (km/s)",png="fps")
-  '''
   #goTest()
 def goTest():
   gx = readImage(gxfile)
@@ -116,33 +104,35 @@ def goTest():
     sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
     swx.append(sxi)
     swu.append(sui)
-  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.2, 
-         vlabel="Original Time (s)",png="synsSeisS")
-  plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.2,
-         vlabel="Time (s)",png="synsSeisS")
+  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15, 
+         vlabel="Time (s)",png="synsSeisBS")
+  plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.15,
+         vlabel="Time (s)",png="synsSeisAS")
   svw,sdw=swt.getSamples(s1,lgs)
   svs,sds=swt.getSamples(s1,mds)
   vlabel2 = "RGT"
   vlabel1 = "Time (s)"
   hlabel = "Synthetic seismic traces"
-  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.5,png="seisVelB")
-  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.5,png="seisVelA")
-  goRgtInterp(swt.convertPoints(svw),"w")
-  goRgtInterp(swt.convertPoints(svs),"s")
+  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.0,png="seisVelBS")
+  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelAS")
+  goRgtInterp(svw,"wS")
+  goRgtInterp(svs,"sS")
 
 def goRgtInterp(sps,fname):
   gx = readImage(gxfile)
   gt = readImage(gtcfile)
-  ri = RgtInterp3(sps[0],sps[1],sps[2],sps[3])
+  swt = SeismicWellTie()
+  spc = swt.convertPoints(sps)
+  ri = RgtInterp3(spc[0],spc[1],spc[2],spc[3])
   ri.setRgt(gt)
   ri.setScales(0.001,1.0)
   fti,fpi,fqi = ri.grid(s1,s2,s3)
   writeImage(fpifile+fname,fpi)
-  writeImage(fqifile+fname,fqi)
-  plot3(gx,fpi,cmin=2.3,cmax=5.4,cmap=jetRamp(1.0),
+  #writeImage(fqifile+fname,fqi)
+  plot3(gx,fpi,cmin=2.4,cmax=5.0,cmap=jetRamp(1.0),
         clab="Velocity (km/s)",png=fpifile+fname)
-  plot3(gx,fqi,cmin=2.3,cmax=5.4,cmap=jetRamp(1.0),
-        clab="Velocity (km/s)",png=fqifile+fname)
+  plot3(gx,fpi,sps=sps,cmin=2.4,cmax=5.0,wmin=2.4,wmax=5.0,cmap=jetRamp(1.0),
+        clab="Velocity (km/s)",png=fpifile+fname+"Wells")
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -157,32 +147,31 @@ def goTimeUpdate():
   lgs = getLogs()
   nl = len(lgs)
   swt = SeismicWellTie()
-  ndfx = zerodouble(3,nl)
-  ndfu = zerodouble(3,nl)
+  ndfs = zerodouble(3,nl)
+  ndfw = zerodouble(3,nl)
   fx,fs,fu=goSeisFlatten()
-  mds = swt.updateTimeDepthM(s1,lgs,fx,fs,fu)
-  wxs = swt.getSyns(True,lgs,ndfx)
-  wus = swt.getSyns(True,mds,ndfu)
-  swx = []
-  swu = []
+  swsu,wsu,mds= swt.updateTimeDepthM(5,s1,lgs,fx,fs,fu)
+  wwx = swt.getSyns(True,lgs,ndfw)
+  wsx = swt.getSyns(True,mds,ndfs)
+  swsx = []
+  swwx = []
   for il in range(nl):
-    sxi = Sampling((int)(ndfx[il][0]),ndfx[il][1],ndfx[il][2])
-    sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
-    swx.append(sxi)
-    swu.append(sui)
+    swi = Sampling((int)(ndfw[il][0]),ndfw[il][1],ndfw[il][2])
+    ssi = Sampling((int)(ndfs[il][0]),ndfs[il][1],ndfs[il][2])
+    swwx.append(swi)
+    swsx.append(ssi)
   svw,sdw=swt.getSamples(s1,lgs)
   svs,sds=swt.getSamples(s1,mds)
-  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.2, 
-         vlabel="Original Time (s)",png="synsSeis")
-  plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.2,
-         vlabel="Time (s)",png="synsSeis")
-  vlabel2 = "RGT"
+  hlabel = "Log index"
   vlabel1 = "Time (s)"
-  hlabel = "Synthetic seismic traces"
-  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.5,png="seisVelB")
-  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.5,png="seisVelA")
-  goRgtInterp(swt.convertPoints(svw),"w")
-  goRgtInterp(swt.convertPoints(svs),"s")
+  vlabel2 = "Relative geologic time (s)"
+  plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
+  plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
+  plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
+  plot3(gx,sps=svw,curve="vel",wmin=2.3,wmax=5.4,png="seisVelB")
+  plot3(gx,sps=svs,curve="vel",wmin=2.3,wmax=5.4,png="seisVelA")
+  goRgtInterp(svw,"w")
+  goRgtInterp(svs,"s")
 
 
 def goSynSeis():
@@ -225,12 +214,12 @@ def goSynsFlatten():
     sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
     ssx.append(sxi)
     ssu.append(sui)
-  hlabel = "Synthetic seismic traces"
+  hlabel = "Log index"
   vlabel1 = "Time (s)"
-  vlabel2 = "Relative geologic time"
-  png1,png2="synsX","synsFlattenX"
-  plot1s(s1,ssx,wx,vmin=0.1,vmax=1.2,hlabel=hlabel,vlabel=vlabel1,png=png1)
-  plot1s(s1,ssu,wu,vmin=0.1,vmax=1.2,hlabel=hlabel,vlabel=vlabel2,png=png2)
+  vlabel2 = "Relative geologic time (s)"
+  png1,png2="syns","synsF"
+  plot1s(s1,ssx,wx,vmin=0.1,vmax=1.15,hlabel=hlabel,vlabel=vlabel1,png=png1)
+  plot1s(s1,ssu,wu,vmin=0.1,vmax=1.15,hlabel=hlabel,vlabel=vlabel2,png=png2)
   return wu,ssu
 
 def goSeisFlatten():
@@ -251,21 +240,21 @@ def goSeisFlatten():
     sst.append(s1)
   writeImage(tufile,fu)
   writeImage(txfile,fx)
-  hlabel = "Real seismic traces"
+  hlabel = "Log index"
   vlabel1 = "Time (s)"
-  vlabel2 = "Relative geologic time"
-  plot1s(s1,sst,fx,vmin=0.1,vmax=1.2,color=Color.BLACK,
-        hlabel=hlabel,vlabel=vlabel1,png="originalSeisTraces")
-  plot1s(s1,sst,fu,vmin=0.1,vmax=1.2,color=Color.BLACK,
-        hlabel=hlabel,vlabel=vlabel2,png="seisTracesFlattenD")
+  vlabel2 = "Relative geologic time (s)"
+  plot1s(s1,sst,fx,vmin=0.1,vmax=1.15,color=Color.BLACK,
+        hlabel=hlabel,vlabel=vlabel1,png="seis")
+  plot1s(s1,sst,fu,vmin=0.1,vmax=1.15,color=Color.BLACK,
+        hlabel=hlabel,vlabel=vlabel2,png="seisF")
   return fx,fs,fu
 
 def goSynsSeisTie():
-  gu=goSeisFlatten() 
+  gx,gs,gu=goSeisFlatten() 
   wu,sw=goSynsFlatten()
-  dmin = 10*d1
-  smin,smax = -0.30,0.30
-  rmin,rmax = -0.15,0.15
+  dmin = 20*d1
+  smin,smax = -0.10,0.30
+  rmin,rmax = -0.05,0.05
   swt = SeismicWellTie()
   ndf = zerofloat(3,len(wu))
   wgu = swt.synsToSeis(sw,s1,smin,smax,rmin,rmax,dmin,wu,gu,ndf)
@@ -273,9 +262,9 @@ def goSynsSeisTie():
   for il in range(len(wu)):
     si = Sampling((int)(ndf[il][0]),ndf[il][1],ndf[il][2])
     swg.append(si)
-  vlabel = "Relative geologic time"
-  plot1s(s1,sw,wu,rs=gu,vmin=0.1,vmax=1.2,vlabel=vlabel,png="synsFlattenXR")
-  plot1s(s1,swg,wgu,rs=gu,vmin=0.1,vmax=1.2,vlabel=vlabel,png="synsFlattenXS")
+  vlabel = "Relative geologic time (s)"
+  plot1s(s1,sw,wu,rs=gu,vmin=0.1,vmax=1.15,vlabel=vlabel,png="synSeisFB")
+  plot1s(s1,swg,wgu,rs=gu,vmin=0.1,vmax=1.15,vlabel=vlabel,png="synSeisFA")
 
 def goImageFlatten():
   gx = readImage(gxfile)
@@ -494,34 +483,39 @@ def plot1X(s1,y,vmin=None,vmax=None,
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
 def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
-  hlabel="Seismic traces",vlabel="Time (s)",png=None):
+  hlabel="Log index",vlabel="Time (s)",png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
-  sf = 10.0
+  sf = 1.0
   yf = sf
   sp.setVLimits(0.1,1.0)
   if vmin and vmax:
     sp.setVLimits(vmin,vmax)
-  sp.setHLimits(5.0,115)
+  sp.setHLimits(0.5,11.5)
+  sp.setHInterval(2)
   for il,y in enumerate(ys):
     ya = sum(y)/len(y)
     y = sub(y,ya)
+    y = div(y,10)
     y = add(y,yf)
     pv = sp.addPoints(ss[il],y)
     pv.setLineColor(color)
+    pv.setLineWidth(1.5)
     yf = yf+sf
   rf = sf
   if rs:
     for il,r in enumerate(rs):
       ra = sum(r)/len(r)
       r = sub(r,ra)
+      r = div(r,10)
       r = add(r,rf)
       pv = sp.addPoints(s1,r)
       pv.setLineColor(Color.BLACK)
+      pv.setLineWidth(1.5)
       rf = rf+sf
-  sp.setSize(600,800)
+  sp.setSize(600,650)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)
-  sp.setFontSize(30)
+  sp.setFontSize(20)
   sp.setVInterval(0.2)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
@@ -548,10 +542,16 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
+  f1 = f1+d1*50
+  s1s = Sampling(n1-50,d1,f1)
+  f = copy(n1-50,n2,n3,50,0,0,f)
+  if g!=None:
+    g = copy(n1-50,n2,n3,50,0,0,g)
+
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
-    ipg = sf.addImagePanels(s1,s2,s3,f)
+    ipg = sf.addImagePanels(s1s,s2,s3,f)
     if cmap!=None:
       ipg.setColorModel(cmap)
     if wmin!=0 and wmax!=0:
@@ -565,7 +565,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
-    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg = ImagePanelGroup2(s1s,s2,s3,f,g)
     ipg.setClips1(-2.0,1.5)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
@@ -577,7 +577,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
   if cbar:
-    cbar.setWidthMinimum(120)
+    #cbar.setWidthMinimum(120) # for slides
+    cbar.setWidthMinimum(80)
   if logs:
     wg = wellGroup(logs,curve,wmin,wmax)
     sf.world.addChild(wg)
@@ -588,7 +589,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if hs:
     x1 = readImage(ghfile)
     u1 = readImage(gtfile)
-    hfr = HorizonFromRgt(s1,s2,s3,x1,u1)
+    hfr = HorizonFromRgt(s1s,s2,s3,x1,u1)
     for hi in hs:
       [xyz,rgb] = hfr.singleHorizon(hi)
       tg = TriangleGroup(True,xyz,rgb)
@@ -603,21 +604,24 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     sf.setSize(837,700)
   else:
-    sf.setSize(700,700)
+    #sf.setSize(700,700) # for slides
+    sf.setSize(740,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   ov = sf.getOrbitView()
   zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.1)
-  ov.setAzimuthAndElevation(230,25)
+  ov.setAzimuthAndElevation(235,25)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.02,0.05))
+  ov.setTranslate(Vector3(0.0,0.05,0.08))
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
-      cbar.setFont(Font("Arial", Font.PLAIN, 36))
+      #cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
+      cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
+      cbar.setInterval(0.5)
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 def plot3F(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,

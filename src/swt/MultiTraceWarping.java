@@ -8,15 +8,16 @@ package swt;
 
 import java.util.Arrays;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.mines.jtk.dsp.RecursiveExponentialFilter;
 import edu.mines.jtk.dsp.Sampling;
+import edu.mines.jtk.mesh.TriMesh;
 import edu.mines.jtk.dsp.SincInterpolator;
 import edu.mines.jtk.interp.CubicInterpolator;
 import edu.mines.jtk.lapack.DMatrix;
 import edu.mines.jtk.util.MedianFinder;
 import edu.mines.jtk.util.Parallel;
+import edu.mines.jtk.util.Check;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 
@@ -436,6 +437,58 @@ public class MultiTraceWarping {
     float[][] r = computeShifts(nz,ls,ps);
     refineShifts(10,-0.05f,0.05f,wl,r);
     return r;
+ }
+
+ public float[][] findShifts(float[] x2, float[] x3, float[][] wl) {
+   int np = x2.length;
+   int nz = wl[0].length;
+   int[] ls = new int[np];
+   TriMesh mesh = new TriMesh();
+   TriMesh.Node[] nds = new TriMesh.Node[np];
+   for (int ip=0; ip<np; ++ip) {
+     TriMesh.Node node = new TriMesh.Node(x2[ip],x3[ip]);
+     nds[ip] = node;
+     node.index = ip;
+     boolean added = mesh.addNode(node);
+     Check.argument(added,"samples have unique coordinates (x2,x3)");
+   }
+   int nlp = 0;
+   int[] ils = new int[np*(np-1)/2];
+   int[] jls = new int[np*(np-1)/2];
+   Pairs[] pt = new Pairs[np*(np-1)/2];
+   for (int ip=0; ip<np; ++ip) {
+     TriMesh.Node ndi = nds[ip];
+     TriMesh.Node[] ndn = mesh.getNodeNabors(ndi);
+     int nc = ndn.length;
+     for (int ic=0; ic<nc; ++ic,++nlp) {
+       ils[nlp] = ip;
+       jls[nlp] = ndn[ic].index;
+     }
+   }
+   for (int ip=0; ip<nlp; ++ip) {
+     int il = ils[ip];
+     int jl = jls[ip];
+     float[] fi = wl[il];
+     float[] gj = wl[jl];
+     if (wellNotNull(fi) && wellNotNull(gj)) {
+       float[][] e = computeErrors(fi,gj);
+       float[][] d = accumulateErrors(e);
+       int[][] kl = findWarping(d);
+       int[][] ij = convertWarping(kl,fi,gj);
+       int[] is = ij[0];
+       int[] js = ij[1];
+       int nk = is.length;
+       if(np>0){pt[ip] = new Pairs(il,jl,is,js,nk);}
+     }
+   }
+   Pairs[] ps = new Pairs[nlp];
+   for (int ip=0; ip<nlp; ++ip)
+     ps[ip] = pt[ip];
+   //computeWeights(x2,x3,wl,ps,ls);
+   computeWeights(wl,ps,ls);
+   float[][] r = computeShifts(nz,ls,ps);
+   //refineShifts(10,-0.05f,0.05f,wl,r);
+   return r;
  }
 
  public Pairs[] findPairs(
@@ -1638,6 +1691,40 @@ public class MultiTraceWarping {
     }
   }
 
+  private void computeWeights(
+    float[] x2, float[] x3, float[][] wl, Pairs[] ps, int[] ls) 
+  {
+    int nlp = ps.length;
+    float wsum = 0.0f;
+    for (int lp=0; lp<nlp; ++lp) {
+      int np = ps[lp].np;
+      int il = ps[lp].il;
+      int jl = ps[lp].jl;
+      int[] is = ps[lp].is;
+      int[] js = ps[lp].js;
+      double ws = ps[lp].ws;
+      float tae = 0;
+      float x2i = x2[il];
+      float x3i = x3[il];
+      float x2j = x2[jl];
+      float x3j = x3[jl];
+      float dx2 = x2j-x2i;
+      float dx3 = x3j-x3i;
+      float dsx = dx2*dx2+dx3*dx3;
+      for (int kz=0; kz<np; ++kz) 
+        tae += error(wl[il][is[kz]],wl[jl][js[kz]]);
+      ws = tae>0 ? np*pow(np/tae,2.0f/_epow) : 1.0f; 
+      ps[lp].ws = ws/dsx;
+      ls[il] += 1;
+      ls[jl] += 1;
+      wsum += ws;
+    }
+    for (int lp=0; lp<nlp; ++lp) {
+      double ws = ps[lp].ws;
+      ws /= wsum;
+      ps[lp].ws = ws;
+    }
+  }
 
   private static void trace(String s) {
     System.out.println(s);

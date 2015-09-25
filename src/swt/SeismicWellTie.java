@@ -78,23 +78,28 @@ public class SeismicWellTie {
    * @param fu array of flattened seismic traces.
    * @return array for the updated models of the multiple well logs.
    */
-  public SynSeis.Model[] updateTimeDepthM(
-    Sampling s1, WellLog[] logs, float[][] fx, float[][] fs, float[][] fu) 
+  public Object[] updateTimeDepthM(
+    int niter, Sampling s1, WellLog[] logs, 
+    float[][] fx, float[][] fs, float[][] fu) 
   {
     int nl = logs.length;
     double d1 = s1.getDelta();
-    SynSeis.Model[] models = new SynSeis.Model[nl];
-    for (int il=0; il<nl; ++il) {
-      WellLog log = logs[il];
-      models[il] = SynSeis.getModel(log);
-    }
+    SynSeis.Model[] mds = new SynSeis.Model[nl];
+    for (int il=0; il<nl; ++il) 
+      mds[il] = SynSeis.getModel(logs[il]);
 
     int k = 0;
     float wgs = 1.0f;
     float dmin= (float)(20*d1);
     float umin=-0.10f, umax=0.30f;
     float rmin=-0.05f, rmax=0.05f;
-    while(k<5 && wgs>0.0f) {
+    float[][] wws = new float[nl][];
+    float[][] wwu = new float[nl][];
+    float[][] wsu = new float[nl][];
+    Sampling[] swwx = new Sampling[nl];
+    Sampling[] swwu = new Sampling[nl];
+    Sampling[] swsu = new Sampling[nl];
+    while(k<niter && wgs>0.0f) {
       // flatten synthetic seismograms
       int smax = 40;
       float epow = 0.0625f;
@@ -103,31 +108,33 @@ public class SeismicWellTie {
       double[][] ndfwu = new double[nl][3];
       float[][][] wrs = null;
       if(k==0)
-        wrs=synsFlatten(simple,smax,epow,models,ndfwx,ndfwu);
+        wrs=synsFlatten(simple,smax,epow,mds,ndfwx,ndfwu);
       else
-        wrs=synsFlatten(simple,smax,epow,s1,models,fx,ndfwx,ndfwu);
-      Sampling[] swx = new Sampling[nl];
-      Sampling[] swu = new Sampling[nl];
+        wrs=synsFlatten(simple,smax,epow,s1,mds,fx,ndfwx,ndfwu);
+      wws = wrs[1]; // shifts for syns flattening
+      wwu = wrs[2]; // flattened syns
       for(int il=0; il<nl; ++il) {
-        swx[il] = new Sampling((int)ndfwx[il][0],ndfwx[il][1],ndfwx[il][2]);
-        swu[il] = new Sampling((int)ndfwu[il][0],ndfwu[il][1],ndfwu[il][2]);
+        swwx[il] = new Sampling((int)ndfwx[il][0],ndfwx[il][1],ndfwx[il][2]);
+        swwu[il] = new Sampling((int)ndfwu[il][0],ndfwu[il][1],ndfwu[il][2]);
       }
 
       // align flattened syns to flattened seis
-      float[][] wu = wrs[2];
       float[] ndfwm = new float[3];
-      float[] wus = synsToSeisShift(swu,s1,umin,umax,rmin,rmax,dmin,wu,fu,ndfwm); 
+      float[] wus = synsToSeisShift(swwu,s1,umin,umax,rmin,rmax,dmin,wwu,fu,ndfwm); 
       Sampling sws = new Sampling((int)ndfwm[0],ndfwm[1],ndfwm[2]);
       wgs = sum(abs(wus));
       System.out.println("wgs="+wgs);
+      float[][] ndf = new float[nl][3];
+      wsu = applyShifts(_vnull,swwu,sws,wus,wwu,ndf);
+      for(int il=0; il<nl; ++il)
+        swsu[il] = new Sampling((int)ndf[il][0],ndf[il][1],ndf[il][2]);
 
       // update time depth
-      float[][] wxs = wrs[1]; // shifts for syns flattening
-      double[][] wts = compositeShifts(s1,sws,wus,ndfwx,wxs,fs);
-      updateModels(models,swx,wts);
+      double[][] wts = compositeShifts(s1,sws,wus,ndfwx,wws,fs);
+      updateModels(mds,swwx,wts);
       k++;
     }
-    return models;
+    return new Object[]{swsu,wsu,mds};
   }
 
   public double[][] compositeShifts(
@@ -220,15 +227,11 @@ public class SeismicWellTie {
         int im = sz.indexOfNearest(zm);
         int ip = sz.indexOfNearest(zp);
         int np = ip-im+1;
-        float[] ws = new float[np];
-        ws[round(np/2f)-1] =1.0f; 
-        RecursiveExponentialFilter ref = new RecursiveExponentialFilter(np/2f);
-        ref.apply(ws,ws);
         float[] fv = copy(np,im,fvs); 
         float[] fd = copy(np,im,fds); 
         MedianFinder mf = new MedianFinder(np);
-        float fvm = mf.findMedian(ws,fv);
-        float fdm = mf.findMedian(ws,fd);
+        float fvm = mf.findMedian(fv);
+        float fdm = mf.findMedian(fd);
         svs[0][il][it] = fvm;
         svs[1][il][it] = (float)st.getValue(it);
         svs[2][il][it] = (float)md.x2;
@@ -432,7 +435,6 @@ public class SeismicWellTie {
     float[]   ws = dwx.findShifts(es);
     float[][] wsu = applyShifts(_vnull,sw,swm,ws,wu,ndf);
     System.out.println("nw="+nw);
-    System.out.println("ns="+ws.length);
     return wsu;
   }
 
@@ -443,12 +445,14 @@ public class SeismicWellTie {
     int nl = sw.length;
     double[] fs = new double[nl];
     double[] ls = new double[nl];
+    float[][] wuc = copy(wu);
+    float[][] guc = copy(gu);
     for (int il=0; il<nl; ++il) {
       ls[il] = sw[il].getLast();
       fs[il] = sw[il].getFirst();
       float sig = (wu[il].length/20f);
-      wu[il] = gain(sig,wu[il]);
-      gu[il] = gain(sig,gu[il]);
+      wuc[il] = gain(sig,wu[il]);
+      guc[il] = gain(sig,gu[il]);
     }
     double fw = min(fs);
     double lw = max(ls);
@@ -461,7 +465,7 @@ public class SeismicWellTie {
     DynamicWarpingX dwx = new DynamicWarpingX(smin,smax,swm);
     dwx.setStrainLimits(rmin,rmax);
     dwx.setSmoothness(dmin);
-    float[][] es = dwx.computeErrorsX(sw,wu,sg,gu);
+    float[][] es = dwx.computeErrorsX(sw,wuc,sg,guc);
     return dwx.findShifts(es);
   }
 
@@ -520,6 +524,7 @@ public class SeismicWellTie {
     mtw.setMaxShift(smax);
     mtw.setPowError(epow);
     float[][] ws = mtw.findShifts(wx);
+    //float[][] ws = mtw.findShifts(x2,x3,wx);
     float[][] wu = mtw.applyShiftsW(wx,ws);
     float[][] vu = getValidSamples(st,wu,ndfu);
     float[][][] xs = getValidSamples(st,wx,ws,ndfx);
