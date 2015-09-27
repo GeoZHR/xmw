@@ -62,7 +62,8 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-pngDir = "../../../png/swt/print/"
+#pngDir = "../../../png/swt/print/"
+pngDir = "../../../png/swt/slides/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -72,16 +73,16 @@ def main(args):
   #goSynSeis()
   #goSynsFlatten()
   #goSeisFlatten()
-  #goSynsSeisTie()
-  goTimeUpdate()
+  goSynsSeisTie()
+  #goTimeUpdateS()
+  #goTimeUpdateM()
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
   #goImageFlatten()
   #goRefine3dV()
-  #goTest()
-def goTest():
+def goTimeUpdateS():
   gx = readImage(gxfile)
   lgs = getLogs()
   nl = len(lgs)
@@ -140,9 +141,9 @@ def goDisplay():
   swt = SeismicWellTie()
   sps = swt.getSamples(s1,lgs)
   plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
-  plot3(gx,sps=sps[0],wmin=2.3,wmax=5.4,clab="Velocity (km/s)",png="seisVel")
+  plot3(gx,sps=sps[0],wmin=2.4,wmax=5.0,clab="Velocity (km/s)",png="seisVel")
 
-def goTimeUpdate():
+def goTimeUpdateM():
   gx = readImage(gxfile)
   lgs = getLogs()
   nl = len(lgs)
@@ -150,7 +151,7 @@ def goTimeUpdate():
   ndfs = zerodouble(3,nl)
   ndfw = zerodouble(3,nl)
   fx,fs,fu=goSeisFlatten()
-  swsu,wsu,mds= swt.updateTimeDepthM(5,s1,lgs,fx,fs,fu)
+  swsu,wsu,mds= swt.updateTimeDepthM(1,s1,lgs,fx,fs,fu)
   wwx = swt.getSyns(True,lgs,ndfw)
   wsx = swt.getSyns(True,mds,ndfs)
   swsx = []
@@ -168,8 +169,8 @@ def goTimeUpdate():
   plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
   plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
   plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
-  plot3(gx,sps=svw,curve="vel",wmin=2.3,wmax=5.4,png="seisVelB")
-  plot3(gx,sps=svs,curve="vel",wmin=2.3,wmax=5.4,png="seisVelA")
+  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.0,png="seisVelB")
+  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelA")
   goRgtInterp(svw,"w")
   goRgtInterp(svs,"s")
 
@@ -515,7 +516,8 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
   sp.setSize(600,650)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)
-  sp.setFontSize(20)
+  #sp.setFontSize(20) #for print
+  sp.setFontSize(30) #for slides
   sp.setVInterval(0.2)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
@@ -577,8 +579,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
   if cbar:
-    #cbar.setWidthMinimum(120) # for slides
-    cbar.setWidthMinimum(80)
+    cbar.setWidthMinimum(120) # for slides
+    #cbar.setWidthMinimum(80)
   if logs:
     wg = wellGroup(logs,curve,wmin,wmax)
     sf.world.addChild(wg)
@@ -604,8 +606,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     sf.setSize(837,700)
   else:
-    #sf.setSize(700,700) # for slides
-    sf.setSize(740,700)
+    sf.setSize(700,700) # for slides
+    #sf.setSize(740,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   ov = sf.getOrbitView()
@@ -619,8 +621,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
-      #cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
-      cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
+      cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
+      #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
       cbar.setInterval(0.5)
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
