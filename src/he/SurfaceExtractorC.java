@@ -345,7 +345,7 @@ public class SurfaceExtractorC {
       VecArrayFloat2 vsurf = new VecArrayFloat2(surf);
       updateSlopesAndWeights(p,q,w,surf,pi1,qi1,wi1);
       A2 a2 = new A2(wi1,_weight);
-      M2 m2 = new M2(_sigma1,_sigma2,wi1,k2,k2);
+      M2 m2 = new M2(_sigma1,_sigma2,wi1,k2,k3);
       CgSolver cs = new CgSolver(_small, _niter);
       vb.zero();
       makeRhs(wi1,pi1,qi1,b);

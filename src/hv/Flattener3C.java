@@ -6,8 +6,10 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package hv;
 
+import java.util.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 
@@ -238,7 +240,8 @@ public class Flattener3C {
     initializeShifts(rd,k1,k2,k3,r); // initial shifts to satisfy constraints
     VecArrayFloat3 vb = new VecArrayFloat3(b);
     VecArrayFloat3 vr = new VecArrayFloat3(r);
-    setWeightsForSmoothing(wp);
+    //setWeights(k1,k2,k3,wp);
+    clip(0.0005f,1.0f,wp);
     A3 a3 = new A3(_scale,_weight1,wp,p2,p3);
     M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,k1,k2,k3);
     //testSpd("a2",n1,n2,a2);
@@ -273,6 +276,133 @@ public class Flattener3C {
     return new Mappings(s1,s2,s3,u1,x1,r);
   }
 
+
+  public float[][][] resampleRgt(Sampling s1, float[][][] u1) {
+    Object[] ob = rgtSampling(s1,u1);
+    int n1 = s1.getCount();
+    double d1 = s1.getDelta();
+    float[] fus = (float[])ob[0];
+    float[][][] x1s = (float[][][])ob[1];
+    int nu1 = fus.length;
+    double fu1 = round(min(fus));
+    Sampling su1 = new Sampling(nu1,d1,fu1);
+    return rgtFromHorizonVolume(n1,su1,x1s);
+  }
+
+  public Object[] rgtSampling(
+    Sampling s1, final float[][][] u1) 
+  {
+    final int n3 = u1.length;
+    final int n2 = u1[0].length;
+    double fu1 = min(u1);
+    double lu1 = max(u1);
+    double du1 = s1.getDelta();
+    int nu1 = (int)((lu1-fu1)/du1)+1;
+    Sampling su1 = new Sampling(nu1,du1,fu1);
+    final float[][][] x1 = new float[n3][n2][nu1];
+    final InverseInterpolator ii = new InverseInterpolator(s1,su1);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) 
+        ii.invert(u1[i3][i2],x1[i3][i2]);
+    }});
+    float l1 = (float)s1.getLast();
+    float f1 = (float)s1.getFirst();
+    FloatList fu = new FloatList();
+    float ui = (float)fu1;
+    ArrayList<float[][]> x1a = new ArrayList<float[][]>();
+    while(ui<lu1-du1) {
+      float up = ui+(float)du1;
+      float[][] x1i = contour(ui,su1,x1);
+      float[][] x1p = contour(up,su1,x1);
+      FloatList dxs = new FloatList();
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float xi = x1i[i3][i2];
+        float xp = x1p[i3][i2];
+        if(xi<=f1||xi>=l1) {continue;}
+        if(xp<=f1||xp>=l1) {continue;}
+        if(xp-xi<0.0f){continue;}
+        dxs.add(xp-xi);
+      }}
+      float[] dxa = dxs.trim();
+      if(dxa==null){ui+=0.5f*du1;continue;}
+      quickSort(dxa);
+      int np = dxa.length;
+      float dx1 = 0.0f;
+      int nm = 100;
+      nm = min(nm,np);
+      for (int ip=np-1; ip>=np-nm; --ip)
+        dx1 += dxa[ip];
+      fu.add(ui);
+      dx1 /= nm;
+      ui += du1/dx1;
+      despike(2,x1i);
+      x1a.add(x1i);
+      System.out.println("ui="+ui);
+    }
+    int nk = x1a.size();
+    float[][][] x1s = new float[n3][n2][nk];
+    for (int ik=0; ik<nk; ++ik) {
+      float[][] x1i = x1a.get(ik);
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        x1s[i3][i2][ik] = x1i[i3][i2];
+      }}
+    }
+    return new Object[] {fu.trim(),x1s};
+  }
+
+  public float[][][] rgtFromHorizonVolume(
+    int m1, Sampling su1, float[][][] x1s) 
+  {
+    int n3 = x1s.length;
+    int n2 = x1s[0].length;
+    int n1 = x1s[0][0].length;
+    double[] u1s = su1.getValues();
+    float[][][] f = new float[n3][n2][m1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float x1m = x1s[i3][i2][0];
+      float yxm = (float)u1s[0];
+      FloatList xl = new FloatList();
+      FloatList yl = new FloatList();
+      xl.add(x1m);
+      yl.add(yxm);
+      for (int i1=1; i1<n1; ++i1) {
+        float x1i = x1s[i3][i2][i1];
+        float yxi = (float)u1s[i1];
+        if(x1i>x1m) {
+          xl.add(x1i);
+          yl.add(yxi);
+          x1m = x1i;
+          yxm = yxi;
+        }
+      }
+      float[] x = xl.trim();
+      float[] y = yl.trim();
+      CubicInterpolator ci = new CubicInterpolator(x,y);
+      for (int i1=0; i1<m1; ++i1) {
+        f[i3][i2][i1] = ci.interpolate(i1);
+      }
+    }}
+    return f;
+  }
+
+  private float[][] contour(float ui, Sampling s1, float[][][] x1) {
+    int n3 = x1.length;
+    int n2 = x1[0].length;
+    float[][] x1i = new float[n3][n2];
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      x1i[i3][i2] = si.interpolate(s1,x1[i3][i2],ui);
+    }}
+    return x1i;
+  }
+
+
+
   ///////////////////////////////////////////////////////////////////////////
   // private
   private float _scale = 0.0f;    // scale the curvature term
@@ -282,25 +412,6 @@ public class Flattener3C {
   private float _sigma3 = 4.0f; // precon smoothing extent for 3rd dim
   private float _small = 0.01f; // stop CG iterations if residuals small
   private int _niter = 1000; // maximum number of CG iterations
-
-  private float[][][] setWeightsForSmoothing(float[][][] wp) {
-    int n3 = wp.length;
-    int n2 = wp[0].length;
-    int n1 = wp[0][0].length;
-    float[][][] ws = copy(wp);
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float wpi = wp[i3][i2][i1];
-          if (wpi<0.00005f) {
-            ws[i3][i2][i1] = 0.00005f;
-          }
-        }
-      }
-    }
-    return ws;
-  }
-
 
   // Conjugate-gradient operators.
   private static class A3 implements CgSolver.A {
@@ -426,7 +537,9 @@ public class Flattener3C {
     }
   }
 
-  public static void checkShifts(int[][] k1, int[][] k2, int[][] k3, float[][][] r) {
+  public static void checkShifts(
+    int[][] k1, int[][] k2, int[][] k3, float[][][] r) 
+  {
     if (k1!=null && k2!=null &&k3!=null) {
       int nc = k1.length;
       for (int ic=0; ic<nc; ++ic) {
@@ -436,8 +549,8 @@ public class Flattener3C {
           int i1 = k1[ic][ik];
           int i2 = k2[ic][ik];
           int i3 = k3[ic][ik];
-          trace("  i1="+i1+" i2="+i2+" i3="+i3+" r="+r[i3][i2][i1]+" u="+(i1+r[i3][i2][i1]));
-          //assert r[i2][i1]==rp+ip-i1:"shifts r satisfy constraints";
+          trace("  i1="+i1+" i2="+i2+" i3="+i3+
+                " r="+r[i3][i2][i1]+" u="+(i1+r[i3][i2][i1]));
         }
       }
     }
@@ -466,6 +579,27 @@ public class Flattener3C {
         }
       }
     }
+  }
+
+  private void setWeights(
+    float[][] k1, float[][] k2, float[][] k3, float[][][] wp) 
+  {
+    int nc = k1.length;
+    int n1 = wp[0][0].length;
+    for (int ic=0; ic<nc; ++ic) {
+      int nk = k1[ic].length;
+    for (int ik=0; ik<nk; ++ik) {
+      int i1 = round(k1[ic][ik]);
+      int i2 = round(k2[ic][ik]);
+      int i3 = round(k3[ic][ik]);
+      int i1b = max(0,i1-1);
+      int i1e = min(i1+1,n1-1);
+      for (int j1=i1b; j1<=i1e; ++j1) {
+        float sc = 0.1f+0.1f*abs(j1-i1);
+        float wpi = wp[i3][i2][j1];
+        wp[i3][i2][j1] = wpi*sc;
+      }
+    }}
   }
 
   // Smoothing for dimension 1.
@@ -501,9 +635,9 @@ public class Flattener3C {
         x[i2][i1] = yt[i1];
     }
   }
-  private static void smooth1(final float sigma, final float[][][] s, final float[][][] x) {
+  private static void smooth1(
+    final float sigma, final float[][][] s, final float[][][] x) {
     final int n3 = x.length;
-    final int n2 = x[0].length;
     Parallel.loop(n3, new Parallel.LoopInt() {
     public void compute(int i3) {
       float[][] x3 = x[i3];
@@ -776,10 +910,66 @@ public class Flattener3C {
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=1; i1<n1; ++i1) {
-          if (r[i3][i2][i1]<=r[i3][i2][i1-1]-0.99f)
+          if (r[i3][i2][i1]<=r[i3][i2][i1-1]-0.99f) {
             r[i3][i2][i1] = r[i3][i2][i1-1]-0.99f;
+            System.out.println("int i1="+i1);
+            System.out.println("int i2="+i2);
+            System.out.println("int i3="+i3);
+          }
         }
       }
     }
   }
+
+  private void despike(int nmed, float[][] surf) {
+    for (int imed=0; imed<nmed; ++imed) {
+      despike(surf);
+    }
+  }
+
+  private void despike(float[][] f) {
+    int n3 = f.length;
+    int n2 = f[0].length;
+    float[] fs = new float[9];
+    MedianFinder mf = new MedianFinder(9);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int i2m = max(0,i2-1);
+      int i3m = max(0,i3-1);
+      int i2p = min(i2+1,n2-1);
+      int i3p = min(i3+1,n3-1);
+      fs[0] = f[i3m][i2m];
+      fs[1] = f[i3m][i2 ];
+      fs[2] = f[i3m][i2p];
+      fs[3] = f[i3 ][i2m];
+      fs[4] = f[i3 ][i2 ];
+      fs[5] = f[i3 ][i2p];
+      fs[6] = f[i3p][i2m];
+      fs[7] = f[i3p][i2 ];
+      fs[8] = f[i3p][i2p];
+      f[i3][i2] = mf.findMedian(fs);
+    }}
+  }
+
+
+  private class FloatList {
+    public int n;
+    public float[] a = new float[1024];
+    public void add(float f) {
+      if (n==a.length) {
+        float[] t = new float[2*n];
+        System.arraycopy(a,0,t,0,n);
+        a = t;
+      }
+      a[n++] = f;
+    }
+    public float[] trim() {
+      if (n==0)
+        return null;
+      float[] t = new float[n];
+      System.arraycopy(a,0,t,0,n);
+      return t;
+    }
+  }
+
 }

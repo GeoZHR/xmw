@@ -5,7 +5,7 @@ the Common Public License - v1.0, which accompanies this distribution, and is
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 
-package unct;
+package dgb;
 
 import edu.mines.jtk.util.*;
 import edu.mines.jtk.dsp.*;
@@ -250,10 +250,10 @@ public class HorizonExtraction {
     float[][] surfs = new float[n1s*200][max(n2,n3)*3];
     float d1 = (float)_s1.getDelta();
     float f1 = (float)_s1.getFirst();
-    //float rgtMin = min(_u1)+5;
-    //float rgtMax = max(_u1)-5;
-    float rgtMin = 10;
-    float rgtMax = n1;
+    float rgtMin = min(_u1)+5;
+    float rgtMax = max(_u1)-5;
+    //float rgtMin = 10;
+    //float rgtMax = n1;
 
     ColorMap cp = new ColorMap(rgtMin,rgtMax,ColorMap.JET);
 
@@ -300,69 +300,6 @@ public class HorizonExtraction {
     return sfs;
   }
 
-
-  public float[][][] zContours(int k1, FaultSkin[] sks) {
-    int n3 = _u1.length;
-    int n2 = _u1[0].length;
-    int n1 = _u1[0][0].length;
-    short[][][] mk = zeroOnFaults(n1,n2,n3,sks);
-    float[][] r = new float[n3][n2];
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-      r[i3][i2] = _u1[i3][i2][k1];
-    }}
-    float dr = 2.0f;
-    float rmin = min(r);
-    float rmax = max(r);
-    System.out.println("rmin="+rmin);
-    System.out.println("rmax="+rmax);
-    int nr = round((rmax-rmin)/dr)-1;
-    Sampling sr = new Sampling(nr,dr,rmin);
-    double[] rs = sr.getValues();
-    ContourMaker cm = new ContourMaker(r);
-    float fc = 0.5f*(rmin+rmax)+16;
-    ContourMaker.Contour ct = cm.getContour(fc);
-    int ns = ct.ns;
-    float rgtMin = min(_u1)+5;
-    float rgtMax = max(_u1)-5;
-    ColorMap cp = new ColorMap(rgtMin,rgtMax,ColorMap.JET);
-    float[][][] surfs = new float[ns][2][n2*n3*10];
-    for (int is=0; is<ns; ++is) {
-      int c1 = 0;
-      int c2 = 0;
-      float[] x1 = ct.x1.get(is);
-      float[] x2 = ct.x2.get(is);
-      int np = x1.length;
-      for (int ip=0; ip<np; ++ip) {
-        surfs[is][0][c1++] = x2[ip];
-        surfs[is][0][c1++] = x1[ip];
-        surfs[is][0][c1++] = k1;
-        surfs[is][1][c2++] = fc;
-        surfs[is][1][c2++] = fc;
-        surfs[is][1][c2++] = fc;
-      }
-      surfs[is] = copy(c1,2,surfs[is]);
-      surfs[is][1] = cp.getRgbFloats(surfs[is][1]);
-    }
-    return surfs;
-  }
-
-  /*
-  public float[][][] horizonLines(
-    Sampling t1, int k2, int k3, FaultSkin[] sks) 
-  {
-    double[] u1s = t1.getValues();
-    int n1s = u1s.length;
-    float[][][] surfs = new float[n1s*2][][];
-    int k = 0;
-    for (int i1s=0; i1s<n1s; i1s++) {
-      float u1i = (float)u1s[i1s];
-      surfs[k++] = horizonLine2(k2,u1i,sks);
-      surfs[k++] = horizonLine3(k3,u1i,sks);
-    }
-    return surfs;
-  }
-  */
 
   public float[][] horizonLine2(int k2, float u1i, FaultSkin[] sks) {
     int n3 = _u1.length;
@@ -708,9 +645,13 @@ public class HorizonExtraction {
     cleanRGT(u1);
     final int n3 = u1.length;
     final int n2 = u1[0].length;
-    final int n1 = u1[0][0].length;
-    final float[][][] x1 = new float[n3][n2][n1];
-    final InverseInterpolator ii = new InverseInterpolator(s1,s1);
+    final double fu1 = min(u1);
+    final double lu1 = max(u1);
+    final double du1 = s1.getDelta();
+    final int nu1 = (int)((lu1-fu1)/du1)+1;
+    final Sampling su1 = new Sampling(nu1,du1,fu1);
+    final float[][][] x1 = new float[n3][n2][nu1];
+    final InverseInterpolator ii = new InverseInterpolator(s1,su1);
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2) 

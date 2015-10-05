@@ -243,7 +243,9 @@ public class RgtInterp3 {
   }
 
 
-  public float[][][][] grid(Sampling s1, Sampling s2, Sampling s3) {
+  public float[][][][] grid(
+    boolean setBounds, Sampling s1, Sampling s2, Sampling s3) 
+  {
     Check.argument(s1.isUniform(),"s1 is uniform");
     Check.argument(s2.isUniform(),"s2 is uniform");
     Check.argument(s3.isUniform(),"s2 is uniform");
@@ -281,8 +283,51 @@ public class RgtInterp3 {
       gridBlended(t,p,q);
     }
     */
-    setBounds(p);
-    setBounds(q);
+    if(setBounds) {setBounds(p);setBounds(q);}
+    float[][][] ti = unflatten(su1,t);
+    float[][][] pi = unflatten(su1,p);
+    float[][][] qi = unflatten(su1,q);
+    return new float[][][][]{ti,pi,qi};
+  }
+
+  public float[][][][] gridBlend(
+    Sampling s1, Sampling s2, Sampling s3) 
+  {
+    Check.argument(s1.isUniform(),"s1 is uniform");
+    Check.argument(s2.isUniform(),"s2 is uniform");
+    Check.argument(s3.isUniform(),"s2 is uniform");
+    Check.state(_fx!=null,"scattered samples have been set");
+    Check.state(_x1!=null,"scattered samples have been set"); 
+    Check.state(_x2!=null,"scattered samples have been set");
+    Check.state(_x3!=null,"scattered samples have been set");
+    convertX1(s1,s2,s3);
+    int n3 = s3.getCount();
+    int n2 = s2.getCount();
+    double fu1 = min(_u1);
+    double du1 = s1.getDelta()*1.0;
+    double lu1 = max(_u1);
+    int nu1 = (int)((lu1-fu1)/du1)+1;
+    Sampling su1 = new Sampling(nu1,du1,fu1);
+    float pnull = -FLT_MAX;
+    float tnull = -FLT_MAX;
+    SimpleGridder3 sg = new SimpleGridder3(_fx,_x1,_x2,_x3);
+    sg.setNullValue(pnull);
+    float[][][] p = sg.grid(su1,s2,s3);
+    checkPoints(pnull,p);
+    float[][][] t = new float[n3][n2][nu1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<nu1; ++i1) {
+        t[i3][i2][i1] = (p[i3][i2][i1]!=pnull)?0.0f:tnull;
+      }
+    }}
+    t = gridNearest(pnull,p);
+    t = mul(sqrt(t),2f);
+    float[][][] q = p;
+    if (_blending) {
+      q = new float[n3][n2][nu1];
+      gridBlended(t,p,q);
+    }
     float[][][] ti = unflatten(su1,t);
     float[][][] pi = unflatten(su1,p);
     float[][][] qi = unflatten(su1,q);

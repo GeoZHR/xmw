@@ -73,9 +73,9 @@ def main(args):
   #goSynSeis()
   #goSynsFlatten()
   #goSeisFlatten()
-  goSynsSeisTie()
+  #goSynsSeisTie()
   #goTimeUpdateS()
-  #goTimeUpdateM()
+  goTimeUpdateM()
   #goSlopes()
   #goScan()
   #goThin()
@@ -127,7 +127,7 @@ def goRgtInterp(sps,fname):
   ri = RgtInterp3(spc[0],spc[1],spc[2],spc[3])
   ri.setRgt(gt)
   ri.setScales(0.001,1.0)
-  fti,fpi,fqi = ri.grid(s1,s2,s3)
+  fti,fpi,fqi = ri.grid(True,s1,s2,s3)
   writeImage(fpifile+fname,fpi)
   #writeImage(fqifile+fname,fqi)
   plot3(gx,fpi,cmin=2.4,cmax=5.0,cmap=jetRamp(1.0),
@@ -152,6 +152,7 @@ def goTimeUpdateM():
   ndfw = zerodouble(3,nl)
   fx,fs,fu=goSeisFlatten()
   swsu,wsu,mds= swt.updateTimeDepthM(1,s1,lgs,fx,fs,fu)
+  #swsu,wsu,mds= swt.updateTimeDepthM(3,s1,lgs,fx,fs,fu)
   wwx = swt.getSyns(True,lgs,ndfw)
   wsx = swt.getSyns(True,mds,ndfs)
   swsx = []
@@ -169,11 +170,40 @@ def goTimeUpdateM():
   plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
   plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
   plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
+  sdc = SeismicDepthConversion()
+  ndft = zerodouble(3)
+  gt = readImage(gtcfile)
+  gxc,gtc = sdc.imageCut(s1,mds,gx,gt,ndft)
+  st = Sampling((int)(ndft[0]),ndft[1],ndft[2])
+  vt = sdc.averageVelInterp(st,s2,s3,mds,gtc)
+  zt = sdc.depthTime(st,s2,s3,vt,gtc)
+  dz = 0.002
+  fz = 0.3
+  lz = max(zt)
+  nz = round((lz-fz)/dz)
+  sz = Sampling(nz,dz,fz)
+  gcc = sdc.convert(sz,st,s2,s3,gx,zt)
+  plot3s(st,s2,s3,gxc,label1="Time (s)")
+  plot3s(sz,s2,s3,gcc,label1="Depth (km)")
+  plot3X(st,gxc,vt,cmin=min(vt),cmax=max(vt),cmap=jetRamp(1.0),
+        clab="Velocity (km/s)")
+  sps = sdc.averageVelAtWellsC(st,mds)
+  plot3X(st,gxc,vt,sps=sps,cmin=min(vt),cmax=max(vt),wmin=min(vt),wmax=max(vt),
+         cmap=jetRamp(1.0),clab="Velocity (km/s)")
+  '''
+  plot3s(sz,s2,s3,gcc,label1="Depth (km)")
+  plot3X(st,gxc,zt,cmin=min(zt),cmax=max(zt),cmap=jetRamp(1.0),
+        clab="Depth (km)")
+  '''
+  '''
+  sps = sdc.averageVelAtWellsX(st,mds)
+  plot3X(st,gxc,vt,sps=sps,cmin=min(vt),cmax=max(vt),wmin=min(vt),wmax=max(vt),
+         cmap=jetRamp(1.0),clab="Velocity (km/s)")
   plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.0,png="seisVelB")
   plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelA")
   goRgtInterp(svw,"w")
   goRgtInterp(svs,"s")
-
+  '''
 
 def goSynSeis():
   simple = True
@@ -457,6 +487,23 @@ def gain(x):
   y = like(x)
   div(x,sqrt(g),y)
   return y
+def slice12(k3,f):
+  n1,n2,n3 = len(f[0][0]),len(f[0]),len(f)
+  s = zerofloat(n1,n2)
+  SimpleFloat3(f).get12(n1,n2,0,0,k3,s)
+  return s
+
+def slice13(k2,f):
+  n1,n2,n3 = len(f[0][0]),len(f[0]),len(f)
+  s = zerofloat(n1,n3)
+  SimpleFloat3(f).get13(n1,n3,0,k2,0,s)
+  return s
+
+def slice23(k1,f):
+  n1,n2,n3 = len(f[0][0]),len(f[0]),len(f)
+  s = zerofloat(n2,n3)
+  SimpleFloat3(f).get23(n2,n3,k1,0,0,s)
+  return s
 
 def plot1(s1,ys,hlabel="Seismic traces",vlabel="depth (km)",png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
@@ -465,19 +512,6 @@ def plot1(s1,ys,hlabel="Seismic traces",vlabel="depth (km)",png=None):
     pv.setLineColor(Color.BLACK)
   #sp.setVLimits(0.1,1.1)
   sp.setSize(800,800)
-  sp.setHLabel(hlabel)
-  sp.setVLabel(vlabel)
-  if png and pngDir:
-    sp.paintToPng(300,7.0,pngDir+png+".png")
-
-def plot1X(s1,y,vmin=None,vmax=None, 
-    color=Color.BLACK,hlabel="Stacked trace",vlabel="Time (s)",png=None):
-  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
-  pv = sp.addPoints(s1,y)
-  pv.setLineColor(color)
-  sp.setVLimits(vmin,vmax)
-  sp.setHLimits(-3.5,3.5)
-  sp.setSize(190,800)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)
   if png and pngDir:
@@ -536,6 +570,88 @@ def plot2(w,sz,sl,wmin=0.0,wmax=0.0,vlabel="Time (s)",cbar=None,png=None):
   pv.setClips(wmin,wmax)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
+def plot3X(s1,f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          slices=None,surf=None,hs=None,logs=None,sps=None,curve=None,
+          wmin=0,wmax=0,png=None):
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if wmin!=0 and wmax!=0:
+      ipg.setClips(wmin,wmax)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      #ipg.setClips(-2.0,2.0)
+      ipg.setClips(-2.0,1.5) # use for subset plots
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-2.0,1.5)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120) # for slides
+    #cbar.setWidthMinimum(80)
+  if logs:
+    wg = wellGroup(logs,curve,wmin,wmax)
+    sf.world.addChild(wg)
+  if sps:
+    #samples = sps[0],sps[1],sps[2],sps[3]
+    wg = makeLogPoints(sps,wmin,wmax,cbar)
+    sf.world.addChild(wg)
+  if hs:
+    x1 = readImage(ghfile)
+    u1 = readImage(gtfile)
+    hfr = HorizonFromRgt(s1,s2,s3,x1,u1)
+    for hi in hs:
+      [xyz,rgb] = hfr.singleHorizon(hi)
+      tg = TriangleGroup(True,xyz,rgb)
+      sf.world.addChild(tg)
+  if surf:
+    tgs = Triangle()
+    xyz = tgs.trianglesForSurface(surf,0,n1-1)
+    tg  = TriangleGroup(True,xyz)
+    sf.world.addChild(tg)
+  ipg.setSlices(924,224,68)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
+  if cbar:
+    sf.setSize(837,700)
+  else:
+    sf.setSize(700,700) # for slides
+    #sf.setSize(740,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  ov = sf.getOrbitView()
+  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.1)
+  ov.setAzimuthAndElevation(235,25)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.0,0.05,0.08))
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
+      #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
+      cbar.setInterval(0.5)
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           slices=None,surf=None,hs=None,logs=None,sps=None,curve=None,
@@ -767,6 +883,54 @@ def plot3F(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(137,1,pngDir+png+"cbar.png")
+
+def plot3s(s1,s2,s3,s,g=None,cmin=0,cmax=0,
+           label1="Time (s)",cbar="Velocity (km/s)", png=None):
+  pp = PlotPanelPixels3(
+    PlotPanelPixels3.Orientation.X1DOWN_X2RIGHT,
+    PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM,
+    s1,s2,s3,s)
+  k1,k2,k3=300,150,60
+  pp.setSlices(k1,k2,k3)
+  pp.setLabel1(label1)
+  pp.setLabel2("Crossline (km)")
+  pp.setLabel3("Inline (km)")
+  #pp.setClips(smin,smax)
+  pp.setClips(-2.0,1.5)
+  if g:
+    pp.setLineColor(Color.BLACK)
+    cb = pp.addColorBar(cbar)
+    cb.setInterval(1.0)
+  else:
+    pp.setLineColor(Color.YELLOW)
+    cb = pp.addColorBar("Amplitude")
+    cb.setInterval(5.0)
+  pp.setColorBarWidthMinimum(100)
+  pp.setInterval1(0.2)
+  pp.setInterval2(1.0)
+  pp.setInterval3(1.0)
+  pp.mosaic.setHeightElastic(0,100)
+  pp.mosaic.setHeightElastic(1,200)
+  if g:
+    pv12 = PixelsView(s1,s2,slice12(k3,g))
+    pv12.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
+    pv13 = PixelsView(s1,s3,slice13(k2,g))
+    pv13.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
+    pv23 = PixelsView(s2,s3,slice23(k1,g))
+    pv23.setOrientation(PixelsView.Orientation.X1RIGHT_X2UP)
+    for pv in [pv12,pv13,pv23]:
+      pv.setColorModel(ColorMap.getJet(0.5))
+      if cmin!=cmax:
+        pv.setClips(cmin,cmax)
+    pp.pixelsView12.tile.addTiledView(pv12)
+    pp.pixelsView13.tile.addTiledView(pv13)
+    pp.pixelsView23.tile.addTiledView(pv23)
+  pf = PlotFrame(pp)
+  pf.setFontSize(24)
+  pf.setSize(996,815)
+  pf.setVisible(True)
+  if png and pngDir:
+    pf.paintToPng(300,6,pngDir+png+".png")
 
 def wellGroup(logs,curve,cmin=0,cmax=0,cbar=None):
   print "number of logs =",len(logs)

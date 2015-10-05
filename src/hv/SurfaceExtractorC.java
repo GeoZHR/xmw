@@ -70,7 +70,7 @@ public class SurfaceExtractorC {
       RadialGridder2 rg = new RadialGridder2(bs,k1,k2,k3);    
       float[][] surf = rg.grid(s2,s3);
       surfaceCorrect(surf,lmt);
-      checkControlPoints(k2, k3, surf); 
+      //checkControlPoints(k2, k3, surf); 
       return surf;
     }
   }
@@ -90,7 +90,7 @@ public class SurfaceExtractorC {
     float[][] qi1 = new float[n3][n2]; 
     float[][] wi1 = new float[n3][n2]; 
     //float[][] ks = new float[][]{k1,k2,k3};
-    checkControlPoints(k2, k3, surf); 
+    //checkControlPoints(k2, k3, surf); 
     float[][] ks = updateConstraints(k1,k2,k3,p,q,ep,surf);
     //int np = k1.length;
     //float[] cf = new float[np]; // force of constraints
@@ -259,7 +259,6 @@ public class SurfaceExtractorC {
     int nc = k1.length;
     float wh = max(w)*0.8f;
     for (int ic=0; ic<nc; ++ic) {
-      System.out.println("ic="+ic);
       float c1 = k1[ic];
       int c2 = (int)k2[ic];
       int c3 = (int)k3[ic];
@@ -342,7 +341,7 @@ public class SurfaceExtractorC {
       VecArrayFloat2 vsurf = new VecArrayFloat2(surf);
       updateSlopesAndWeights(p,q,w,surf,pi1,qi1,wi1);
       A2 a2 = new A2(wi1,_weight);
-      M2 m2 = new M2(_sigma1,_sigma2,wi1,k2,k2);
+      M2 m2 = new M2(_sigma1,_sigma2,wi1,k2,k3);
       CgSolver cs = new CgSolver(_small, _niter);
       vb.zero();
       makeRhs(wi1,pi1,qi1,b);
