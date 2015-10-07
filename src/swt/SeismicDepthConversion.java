@@ -14,14 +14,14 @@ import static edu.mines.jtk.util.ArrayMath.*;
 public class SeismicDepthConversion {
 
   public float[][][] convert(
-    Sampling sz, Sampling s1, Sampling s2, Sampling s3, 
+    Sampling sz, Sampling st, Sampling s1, Sampling s2, Sampling s3, 
     final float[][][] gx, final float[][][] zt) 
   {
     final int n3 = gx.length;
     final int n2 = gx[0].length;
     final int n1 = gx[0][0].length;
     final int nz = sz.getCount();
-    final InverseInterpolator ii = new InverseInterpolator(s1,sz);
+    final InverseInterpolator ii = new InverseInterpolator(st,sz);
     final float[][][] tz = new float[n3][n2][nz];
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
@@ -62,10 +62,10 @@ public class SeismicDepthConversion {
   public float[][][] averageVelInterp(
     Sampling s1, Sampling s2, Sampling s3, SynSeis.Model[] mds, float[][][] gt) 
   {
-    float[][] fvx = averageVelAtWellsA(s1,mds);
+    float[][] fvx = averageVelAtWells(s1,mds);
     RgtInterp3 rgi = new RgtInterp3(fvx[0],fvx[1],fvx[2],fvx[3]);
     rgi.setRgt(gt);
-    rgi.setScales(0.001f,1.0f);
+    rgi.setScales(0.2f,1.0f);
     float[][][][] ftpq = rgi.gridBlend(s1,s2,s3);
     return ftpq[2];
   }

@@ -3,7 +3,6 @@ package he;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-
 import vec.*;
 import util.*;
 
@@ -120,6 +119,49 @@ public class HorizonExtractor2{
     // and hence can be removed from the constraints.
     //checkConstraintForce(k2,k3,cf);
   }
+
+  public float[] regrid1(float[] cv) {
+    int n = cv.length;
+    float[] sv = new float[n];
+    FloatList xc = new FloatList();
+    FloatList yc = new FloatList();
+    for (int i=0; i<n; i+=16) {
+      xc.add(i); yc.add(cv[i]);
+    }
+    CubicInterpolator ci = 
+      new CubicInterpolator(CubicInterpolator.Method.SPLINE,xc.trim(),yc.trim());
+    for (int i=0; i<n; i++) {
+      sv[i] = ci.interpolate(i);
+    }
+    FloatList xs = new FloatList();
+    FloatList ys = new FloatList();
+    for (int i=8; i<n; i+=16) {
+      xs.add(i);ys.add(sv[i]);
+    }
+    CubicInterpolator si = 
+      new CubicInterpolator(CubicInterpolator.Method.SPLINE,xs.trim(),ys.trim());
+    for (int i=0; i<n; i++) {
+      sv[i] = si.interpolate1(i);
+    }
+    return sv;
+  }
+
+  public float[] regrid2(float[] cv) {
+    int n = cv.length;
+    float[] sv = new float[n];
+    FloatList xc = new FloatList();
+    FloatList yc = new FloatList();
+    for (int i=0; i<n; i+=16) {
+      xc.add(i); yc.add(cv[i]);
+    }
+    CubicInterpolator ci = 
+      new CubicInterpolator(CubicInterpolator.Method.SPLINE,xc.trim(),yc.trim());
+    for (int i=0; i<n; i++) {
+      sv[i] = ci.interpolate1(i);
+    }
+    return sv;
+  }
+
 
   public void surfaceRefine(float[][] surf, float[][][] u) {
     int n3 = u.length;
@@ -381,4 +423,25 @@ public class HorizonExtractor2{
   private float _small = 0.01f; // stop CG iterations if residuals small
   private int _niter = 200; // maximum number of CG iterations
   private int _exniter = 10; // external iterations of surface updating
+
+
+  private class FloatList {
+  public int n;
+  public float[] a = new float[1024];
+  public void add(float f) {
+    if (n==a.length) {
+      float[] t = new float[2*n];
+      System.arraycopy(a,0,t,0,n);
+      a = t;
+    }
+    a[n++] = f;
+  }
+  public float[] trim() {
+    if (n==0)
+      return null;
+    float[] t = new float[n];
+    System.arraycopy(a,0,t,0,n);
+    return t;
+  }
+ }
 }

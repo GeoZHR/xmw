@@ -9,6 +9,7 @@ setupForSubset("subt1")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
+f1,f2,f3 = s1.first,s2.first,s3.first
 
 # Names and descriptions of image files used below.
 gxfile = "gx" # input seismic image 
@@ -167,9 +168,9 @@ def goTimeUpdateM():
   hlabel = "Log index"
   vlabel1 = "Time (s)"
   vlabel2 = "Relative geologic time (s)"
-  plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
-  plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
-  plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
+  #plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
+  #plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
+  #plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
   sdc = SeismicDepthConversion()
   ndft = zerodouble(3)
   gt = readImage(gtcfile)
@@ -177,14 +178,19 @@ def goTimeUpdateM():
   st = Sampling((int)(ndft[0]),ndft[1],ndft[2])
   vt = sdc.averageVelInterp(st,s2,s3,mds,gtc)
   zt = sdc.depthTime(st,s2,s3,vt,gtc)
-  dz = 0.002
-  fz = 0.3
+  dz = 0.005
+  fz = min(zt)
   lz = max(zt)
   nz = round((lz-fz)/dz)
   sz = Sampling(nz,dz,fz)
-  gcc = sdc.convert(sz,st,s2,s3,gx,zt)
-  plot3s(st,s2,s3,gxc,label1="Time (s)")
-  plot3s(sz,s2,s3,gcc,label1="Depth (km)")
+  gcc = sdc.convert(sz,st,s1,s2,s3,gx,zt)
+  k1z = round((1.22-fz)/dz)
+  k1t = round((0.88-ndft[2])/d1)
+  plot3s(st,s2,s3,gxc,k1=k1t,label1="Time (s)")
+  plot3s(sz,s2,s3,gcc,k1=k1z,label1="Depth (km)")
+  plot3X(st,gxc,zt,cmin=min(zt),cmax=max(zt),cmap=jetRamp(1.0),
+        clab="Depth (km)")
+
   plot3X(st,gxc,vt,cmin=min(vt),cmax=max(vt),cmap=jetRamp(1.0),
         clab="Velocity (km/s)")
   sps = sdc.averageVelAtWellsC(st,mds)
@@ -884,13 +890,13 @@ def plot3F(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.paintToPng(137,1,pngDir+png+"cbar.png")
 
-def plot3s(s1,s2,s3,s,g=None,cmin=0,cmax=0,
+def plot3s(s1,s2,s3,s,k1=300,g=None,cmin=0,cmax=0,
            label1="Time (s)",cbar="Velocity (km/s)", png=None):
   pp = PlotPanelPixels3(
     PlotPanelPixels3.Orientation.X1DOWN_X2RIGHT,
     PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM,
     s1,s2,s3,s)
-  k1,k2,k3=300,150,60
+  k2,k3=150,60
   pp.setSlices(k1,k2,k3)
   pp.setLabel1(label1)
   pp.setLabel2("Crossline (km)")

@@ -14,6 +14,7 @@ from edu.mines.jtk.util.ArrayMath import *
 
 from he import *
 from util import *
+from javad import *
 
 seismicDir = "../../../data/seis/javad/"
 pngDir = "../../../png/javad/"
@@ -28,25 +29,52 @@ def main(args):
   goEvent()
 def goEvent():
   gx = readImage(ffile)
-  pmax = 10.0
-  sigma1,sigma2=4.0,2.0  
+  dc = DerivativeCalculator()
+  sigma1=8.0
+  sigma2=4.0  
+  pmax = 10
   lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
   p2 = zerofloat(n1,n2)
   wp = zerofloat(n1,n2)
-  k1,k2=[784,699,821],[65,119,187]
   k1,k2=[784],[65]
   lsf.findSlopes(gx,p2,wp)
+  wp = fillfloat(1.0,n1,n2)
   he2 = HorizonExtractor2()
-  he2.setWeight(0.0)
-  he2.setSmoothing(6.0)
-  he2.setExternalIterations(10)
+  he2.setWeight(0.001)
+  he2.setSmoothing(12)
+  he2.setExternalIterations(20)
   cs = [k1],[k2]
   cv = he2.curveInitialization(n2,n1-1,k1,k2)
+  print len(cv)
   plot(s1,s2,gx,c=cs,ps=cv,png="initial")
   he2.curveUpdateFromSlopes(wp,p2,k1,k2,cv)
-  plot(s1,s2,gx,c=cs,ps=cv,png="updat10")
-  #plot(s1,s2,wp)
+  plot(s1,s2,gx,c=cs,ps=cv,clab="cv",png="initial")
+  sv = dc.regrid(0.1,cv)
+  plot(s1,s2,gx,c=cs,ps=sv,clab="sv",png="initial")
+  '''
+  dv1=dc.regrid1(cv)
+  dv2=dc.regrid1(dv1)
+  dv3=dc.regrid1(dv2)
+  px = zerofloat(n2)
+  print "dv1:"
+  for dv in dv1:
+    print dv
+  print "dv2:"
+  for dv in dv2:
+    print dv
+  print "dv3:"
+  for dv in dv3:
+    print dv
 
+  for i in range(n2):
+    px[i] = i
+  plot1(px,dv1,dv1)
+  plot1(px,dv2,dv2)
+  plot1(px,dv3,dv3)
+  plot(s1,s2,gx,c=cs,ps=cv,png="updated")
+  '''
+  #plot(s1,s2,gx,c=cs,ps=cv,clab="cv",png="updat10")
+  #plot(s1,s2,gx,c=cs,ps=sv,clab="sv",png="regridded")
 def flip2(f):
   n2 = len(f)
   for i2 in range(n2/2):
@@ -67,6 +95,19 @@ def gain(x):
 
 gray = ColorMap.GRAY
 jet = ColorMap.JET
+def plot1(px,py1,py2):
+  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+  tp = PointsView.Mark.HOLLOW_CIRCLE
+  pv1 = sp.addPoints(py1,px)
+  pv2 = sp.addPoints(py2,px)
+  pv1.setOrientation(PointsView.Orientation.X1DOWN_X2RIGHT)
+  pv2.setOrientation(PointsView.Orientation.X1DOWN_X2RIGHT)
+  pv1.setLineStyle(PointsView.Line.NONE)
+  pv2.setLineStyle(PointsView.Line.NONE)
+  pv1.setMarkStyle(tp)
+  pv2.setMarkStyle(tp)
+  pv1.setMarkColor(Color.BLUE)
+  pv2.setMarkColor(Color.RED)
 
 def plot(s1,s2,x,u=None,c=None,ps=None, 
         cmap=ColorMap.GRAY,clab=None,vlabel=None,hlabel=None,
@@ -95,9 +136,10 @@ def plot(s1,s2,x,u=None,c=None,ps=None,
     cv.setLineWidth(3.0)
     #cv.setLineColor(Color.YELLOW)
   if ps:
-    px = zerofloat(n2)
-    for i2 in range(n2):
-      px[i2] = i2
+    ns2 = s2.getCount()
+    px = zerofloat(ns2)
+    for i2 in range(ns2):
+      px[i2] = float(s2.getValue(i2))
     pvc=sp.addPoints(ps,px)
     pvc.setLineWidth(3.0)
     pvc.setLineColor(Color.RED)
