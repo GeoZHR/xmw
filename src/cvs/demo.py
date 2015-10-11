@@ -303,6 +303,7 @@ def goUnfaultS():
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
+  '''
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
   skins = readSkins(fslbase)
@@ -317,6 +318,7 @@ def goUnfaultS():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+  '''
 
 def goFlatten():
   fw = readImage(fwsfile)
