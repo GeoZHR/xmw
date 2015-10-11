@@ -86,11 +86,11 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfaultS()
-  goUnfaultX()
+  #goUnfaultX()
   #goUncScan()
   #goFlatten()
   #goInterp()
-  #goHorizonExtraction()
+  goHorizons()
   #goTest()
   #test()
 def test():
@@ -558,7 +558,7 @@ def goFlatten():
     gu = fl3.flatten(s1,su1,gt,gw)
     writeImage(fgfile,gu)
     writeImage(rgtfile,gt)
-  gx  = readImage(gxfile)
+  gx = readImage(gxfile)
   gt = readImage(rgtfile)
   plot3(gx)
   plot3(gw)
@@ -567,6 +567,75 @@ def goFlatten():
         clab="Relative geologic time (samples)",png="rgt")
   plot3(gw,gt,cmin=10.0,cmax=n1+20,cmap=jetFill(0.9),
         clab="Relative geologic time (samples)",png="gwt")
+
+def goHorizons():
+  gx  = readImage(gxfile)
+  gu  = readImage(fgfile)
+  rgt = readImage(rgtfile)
+  sx1 = readImage(sw1file)
+  sx2 = readImage(sw2file)
+  sx3 = readImage(sw3file)
+
+  sks = readSkins(fslbase)
+  uncw = readUncs(uncfile)
+  rgtx = zerofloat(n1,n2,n3)
+  uf = UnfaultS(4.0,2.0)
+  uf.applyShiftsX([sx1,sx2,sx3],rgt,rgtx)
+  hfw = HorizonExtraction(s1,s2,s3,None,rgt)
+  hfx = HorizonExtraction(s1,s2,s3,None,rgtx)
+  gw = readImage(fwsfile)
+  #gx = gain(gx)
+  #gw = gain(gw)
+  '''
+  fs = [20,58,72]
+  dt = 2
+  ns = ["horizonsSlide","horizonsub1Slide","horizonsub2Slide"]
+  for ik, ft in enumerate(fs):
+    name = ns[ik]
+    nt = (round((n1-ft)/dt)-10)
+    st = Sampling(nt,dt,ft)
+    hs = hfr.multipleHorizons(st,sks)
+    plot3X(gx,hs=hs,png=name)
+  ft=60  
+  dt=5
+  nt = (round((n1-ft)/dt)-1)
+  st = Sampling(nt,dt,ft)
+  hs = hfr.multipleHorizons(st,sks)
+  for unc in uncs:
+    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
+  hc = hfr.trigSurfaces(0.1,uncs,sks,None)
+  plot3(gx,hs=hs,png="cwpLettersHorizons")
+  '''
+  ft = 10
+  dt = 3
+  nt = (round((n1-ft)/dt))
+  st = Sampling(nt,dt,ft)
+  k3,k2=59,138
+  uncx = copy(uncw)
+  for unc in uncx:
+    uf.applyShiftsR([sx1,sx2,sx3],unc,unc)
+  #sub(uncs,1,uncs)
+  hxs = hfx.horizonCurves(st,k2,k3,sks,None)
+  #uxs = hfx.horizonCurves(uncx,k2,k3,sks)
+  hws = hfw.horizonCurves(st,k2,k3,None,None)
+  #uws = hfw.horizonCurves(uncw,k2,k3,None)
+  hus = hfx.horizontalSlices(st,k2,k3)
+  plot3X(gx,curve=True,hs=hxs,png="horizonsX")
+  plot3X(gw,curve=True,hs=hws,png="horizonsW")
+  plot3X(gu,curve=True,hs=hus,png="horizonsU")
+
+  '''
+  ft=20  
+  dt=2
+  nt = (round((n1-ft)/dt)-10)
+  st = Sampling(nt,dt,ft)
+  hs = hfr.multipleHorizons(st)
+  for unc in uncs:
+    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
+  sub(uncs,1,uncs)
+  hc = hfr.trigSurfaces(0.1,uncs,sks,None)
+  '''
+  #plot3(gx,skins=sks,hs=hs,uncx=hc,png="allSurfaces")
 
 def goInterp():
   #p=getImageWithLogPoints(logType)
@@ -750,7 +819,7 @@ def getLogPointsX(logType):
 
 def goHorizonExtraction():
   gx = readImage(gxfile)
-  u1 = readImage(u1file)
+  u1 = readImage(rgtfile)
   x1 = readImage(x1file)
   w1 = readImage(sw1file)
   w2 = readImage(sw2file)
@@ -1084,6 +1153,202 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
+def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          xyz=None,cells=None,skins=None,smax=0.0,slices=None,
+          links=False,curve=False,trace=False,hs=None,uncs=None,uncx=None,png=None):
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
 
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      #ipg.setClips(-2.0,2.0)
+      ipg.setClips(-2.0,1.5) # use for subset plots
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-2.0,1.5)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120)
+  if xyz:
+    pg = PointGroup(0.2,xyz)
+    ss = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.YELLOW)
+    ss.add(cs)
+    pg.setStates(ss)
+    #ss = StateSet()
+    #ps = PointState()
+    #ps.setSize(5.0)
+    #ss.add(ps)
+    #pg.setStates(ss)
+    sf.world.addChild(pg)
+  if cells:
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    cmap = ColorMap(0.0,1.0,ColorMap.JET)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
+    qg = QuadGroup(xyz,uvw,rgb)
+    qg.setStates(ss)
+    sf.world.addChild(qg)
+  if uncs:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setLocalViewer(True)
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ss.add(ms)
+    sg.setStates(ss)
+    us = UncSurfer()
+    uc=readImage(ulfile)
+    uc = gain2(uc,12)
+    uc = sub(uc,min(uc))
+    uc = div(uc,max(uc))
+    ul = zerofloat(n1,n2,n3)
+    copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
+    for unc in uncs:
+      [xyz,rgb]=us.buildTrigs(n1,s3,s2,-0.1,unc,ul)
+      #[xyz,rgb]=us.buildTrigs(n1,s3,s2,0.01,unc,ul)
+      tg  = TriangleGroup(True,xyz,rgb)
+      sg.addChild(tg)
+    sf.world.addChild(sg)
+  if uncx:
+    for unc in uncx:
+      if not curve:
+        tg = TriangleGroup(True,unc[0])
+        tg.setColor(Color.MAGENTA)
+        sf.world.addChild(tg)
+      else:
+        lg = LineGroup(unc[0],unc[1])
+        ss = StateSet()
+        lg.setStates(ss)
+        ls = LineState()
+        ls.setWidth(6)
+        ls.setSmooth(False)
+        ss.add(ls)
+        sf.world.addChild(lg)
+  if hs:
+    for hi in hs:
+      if not curve:
+        tg = TriangleGroup(True,hi[0],hi[1])
+        sf.world.addChild(tg)
+      else:
+        lg = LineGroup(hi[0],hi[1])
+        ss = StateSet()
+        lg.setStates(ss)
+        ls = LineState()
+        ls.setWidth(3)
+        ls.setSmooth(False)
+        ss.add(ls)
+        sf.world.addChild(lg)
+
+  if skins:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setLocalViewer(True)
+    #lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    if not smax:
+      ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    sg.setStates(ss)
+    size = 2.0
+    if links:
+      size = 0.65 
+      ls = LineState()
+      ls.setWidth(4.0)
+      ls.setSmooth(True)
+      ss.add(ls)
+    ct = 0
+    for skin in skins:
+      if smax>0.0: # show fault throws
+        cmap = ColorMap(-1.0,smax,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
+      else: # show fault likelihood
+        cmap = ColorMap(0.0,1.0,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
+      qg = QuadGroup(xyz,uvw,rgb)
+      qg.setStates(None)
+      sg.addChild(qg)
+      if links:
+        if ct==0:
+          r,g,b=0,0,0
+        if ct==1:
+          r,g,b=0,0,1
+        if ct==2:
+          r,g,b=0,1,1
+        if ct==3:
+          #r,g,b=0.627451,0.12549,0.941176
+          r,g,b=1,1,1
+        r,g,b=0,0,1
+        xyz = skin.getCellLinksXyz()
+        rgb = skin.getCellLinksRgb(r,g,b,xyz)
+        lg = LineGroup(xyz,rgb)
+        #lg = LineGroup(xyz)
+        sg.addChild(lg)
+        #ct = ct+1
+    sf.world.addChild(sg)
+  ipg.setSlices(109,138,59)
+  if cbar:
+    sf.setSize(887,700)
+  else:
+    sf.setSize(750,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  radius = 0.48*sqrt(n1*n1+n2*n2+n3*n3)
+  zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
+  ov = sf.getOrbitView()
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
+  ov.setAzimuthAndElevation(120.0,25.0)
+  ov.setTranslate(Vector3(0.02,0.16,-0.27))
+  ov.setScale(1.25)
+  # for subset plots
+  #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
+  #ov.setAzimuthAndElevation(-40.0,25.0)
+  #ov.setTranslate(Vector3(0.0241,-0.0400,0.0103))
+  #ov.setScale(1.3) #use only for subset plots
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 #############################################################################
 run(main)

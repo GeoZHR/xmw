@@ -88,7 +88,8 @@ public class HorizonExtraction {
     int n1s = uncs.length;
     float[][][] xbs = new float[n1s*200][2][];
     float[][] surfs = new float[n1s*200][max(n2,n3)*3];
-    short[][][] mk = zeroOnFaults(n1,n2,n3,sks);
+    short[][][] mk = new short[n3][n2][n1];
+    if(sks!=null){mk = zeroOnFaults(n1,n2,n3,sks);}
     float rgtMin = min(_u1)+5;
     float rgtMax = max(_u1)-5;
     ColorMap cp = new ColorMap(rgtMin,rgtMax,ColorMap.JET);
@@ -157,6 +158,60 @@ public class HorizonExtraction {
     return sfs;
   }
 
+  public float[][][] horizontalSlices(Sampling t1, int k2, int k3) {
+    int n3 = _u1.length;
+    int n2 = _u1[0].length;
+    int n1 = _u1[0][0].length;
+    double[] u1s = t1.getValues();
+    int n1s = u1s.length;
+    float[][][] xbs = new float[n1s*200][2][];
+    float[][] surfs = new float[n1s*200][max(n2,n3)*3];
+    float rgtMin = 10;
+    float rgtMax = n1;
+    ColorMap cp = new ColorMap(rgtMin,rgtMax,ColorMap.JET);
+
+    int k = 0;
+    for (int i1s=0; i1s<n1s; ++i1s) {
+      int p = 0;
+      float u1i = (float)u1s[i1s];
+      for (int i3=0; i3<n3; i3+=2) {
+        float x3 = i3;
+        float x2 = k2;
+        float x1 = u1i;
+        if(x1>=n1) {continue;}
+        surfs[k][p++] = x3;
+        surfs[k][p++] = x2;
+        surfs[k][p++] = x1;
+      }
+      float[] vs = fillfloat(u1i,p);
+      xbs[k][0] = copy(p,surfs[k]);
+      xbs[k][1] = cp.getRgbFloats(vs);
+      if(p>6){k ++;}
+      p = 0;
+      for (int i2=0; i2<n2; i2+=2) {
+        float x3 = k3;
+        float x2 = i2;
+        float x1 = u1i;
+        if(x1>=n1) {continue;}
+        surfs[k][p++] = x3;
+        surfs[k][p++] = x2;
+        surfs[k][p++] = x1;
+      }
+      vs = fillfloat(u1i,p);
+      xbs[k][0] = copy(p,surfs[k]);
+      xbs[k][1] = cp.getRgbFloats(vs);
+      if(p>6){k ++;}
+      p = 0;
+    }
+    float[][][] sfs = new float[k][2][];
+    for (int i=0; i<k; ++i) {
+      int np = xbs[i][0].length;
+      sfs[i][0] = copy(np,0,xbs[i][0]); 
+      sfs[i][1] = copy(np,0,xbs[i][1]); 
+    }
+    return sfs;
+
+  }
 
   public float[][][] horizonCurves(
     Sampling t1, int k2, int k3, FaultSkin[] sks, float[][][] uncs) 
@@ -170,8 +225,10 @@ public class HorizonExtraction {
     float[][] surfs = new float[n1s*200][max(n2,n3)*3];
     float d1 = (float)_s1.getDelta();
     float f1 = (float)_s1.getFirst();
-    short[][][] uk = zeroUncs(n1,n2,n3,uncs);
-    short[][][] mk = zeroOnFaults(n1,n2,n3,sks);
+    short[][][] mk = new short[n3][n2][n1];
+    short[][][] uk = new short[n3][n2][n1];
+    if(uncs!=null){uk = zeroUncs(n1,n2,n3,uncs);}
+    if(sks!=null){mk = zeroOnFaults(n1,n2,n3,sks);}
     //float rgtMin = min(_u1)+5;
     //float rgtMax = max(_u1)-5;
     float rgtMin = 10;

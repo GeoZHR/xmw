@@ -75,8 +75,8 @@ def main(args):
   #goSynsFlatten()
   #goSeisFlatten()
   #goSynsSeisTie()
-  #goTimeUpdateS()
-  goTimeUpdateM()
+  goTimeUpdateS()
+  #goTimeUpdateM()
   #goSlopes()
   #goScan()
   #goThin()
@@ -106,10 +106,22 @@ def goTimeUpdateS():
     sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
     swx.append(sxi)
     swu.append(sui)
+  '''
   plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15, 
          vlabel="Time (s)",png="synsSeisBS")
   plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisAS")
+  '''
+  wxs[0]=wus[0]
+  swx[0]=swu[0]
+  wxs[1]=wus[1]
+  swx[1]=swu[1]
+
+  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15,
+         vlabel="Time (s)",png="synsSeisAS1")
+
+    
+  '''
   svw,sdw=swt.getSamples(s1,lgs)
   svs,sds=swt.getSamples(s1,mds)
   vlabel2 = "RGT"
@@ -119,6 +131,7 @@ def goTimeUpdateS():
   plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelAS")
   goRgtInterp(svw,"wS")
   goRgtInterp(svs,"sS")
+  '''
 
 def goRgtInterp(sps,fname):
   gx = readImage(gxfile)
