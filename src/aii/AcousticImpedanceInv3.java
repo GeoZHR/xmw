@@ -1,3 +1,9 @@
+/****************************************************************************
+Copyright (c) 2009, Colorado School of Mines and others. All rights reserved.
+This program and accompanying materials are made available under the terms of
+the Common Public License - v1.0, which accompanies this distribution, and is 
+available at http://www.eclipse.org/legal/cpl-v10.html
+****************************************************************************/
 package aii;
 
 import vec.*;
@@ -5,6 +11,12 @@ import vec.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+
+/** 
+ * Image-guided 2D acoustic impedance inversion with constraints from well logs
+ * @Author: Xinming Wu and Dave Hale, Colorado School of Mines
+ * @Version: 2015.10.10
+ */
 
 public class AcousticImpedanceInv3 {
 
