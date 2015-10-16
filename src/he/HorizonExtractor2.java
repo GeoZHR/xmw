@@ -362,7 +362,7 @@ public class HorizonExtractor2{
 
   private static void smooth1(float sigma, float[] x){
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
-    ref.setEdges(RecursiveExponentialFilter.Edges.OUTPUT_ZERO_VALUE);
+    ref.setEdges(RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE);
     ref.apply(x,x);
   }
 

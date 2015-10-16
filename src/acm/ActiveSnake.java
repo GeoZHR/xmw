@@ -12,6 +12,11 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+/**
+ * Active snake
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2015.06.18
+ */
 public class ActiveSnake {
 
   public static class Snake {

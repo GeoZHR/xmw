@@ -6,13 +6,16 @@ Version: 2015.02.09
 
 from fakeutils import *
 #setupForSubset("fake")
-setupForSubset("tp")
-#setupForSubset("f3d")
+#setupForSubset("tp")
+setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
+rxfile  = "rx" # reflectivity image
+rnfile  = "rn" # reflectivity image
+pxfile  = "px" # impedance image
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -62,296 +65,91 @@ pngDir = None
 plotOnly = False
 pngDir = "../../../png/flc/tp/"
 pngDir = "../../../png/flc/fake/"
-
+fmin,fmax = -2.0,2.0
+emin,emax = -2.0,2.0
+pmin,pmax = -1.0,1.0
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
-  goFlatten2d()
-  #goFlatten3d()
-  #goSlopes()
-  #goScan()
-  #goThin()
-  #goSkin()
-  #goReferImage()
-  #goRefine3d()
-  #goRefine3dV()
-  #goTest()
-  #gx = readImage(gufile)
-  #gx = gain(gx)
-  #plot3p(gx)
-  #goSeisFlatten()
+  goPwd()
+  #goPaint()
 
-def goSeisFlatten():
-  gf = readImage(gufile)
-  flr = FlattenerR()
-  g3f = flr.applyForRefer(15,-0.2,0.2,gf)
-  plot3p(gf,clab="Amplitude")
-  plot3p(g3f,clab="Amplitude")
-  g3s = zerofloat(n1,n2,n3)
-  ref = RecursiveExponentialFilter(4)
-  ref.apply2(g3f,g3s)
-  ref.apply3(g3s,g3s)
-  plot3p(g3s,clab="Amplitude")
-  smin,smax = -20.0,20.0
-  dwk = DynamicWarpingK(4,smin,smax,s1,s2,s3)
-  dwk.setStrainLimits(-0.3,0.3,-0.2,0.2,-0.2,0.2)
-  dwk.setSmoothness(4,8,8)
-  dw = dwk.findShifts(s1,g3s,s1,gf)
-  gh = dwk.applyShifts(s1,gf,dw)
-  plot3p(gh,clab="corrected")
-
-
-
-def goFlatten2d():
+def goPwd():
   gx = readImage(gxfile)
   gx = gain(gx)
-  g3 = gx[50]
+  gx = gx[50]
+  pwd = PlaneWaveDestructor(-4.0,4.0)
+  pwd.setSmoothness(2.0,0.5)
+  pwd.setLateralBias(0.0) # 0.0 is the default
+  pwd.setOuterIterations(50) # 5 is the default
+  p = pwd.findSlopes(gx)
+  g = pwd.applyFilter(p,gx)
+  plot2(s1,s2,gx,clab="Amplitude",cmin=fmin,cmax=fmax,png="gx")
+  plot2(s1,s2,g, clab="Amplitude",cmin=emin,cmax=emax,png="gx")
+  plot2(s1,s2,p,cmap=ColorMap.JET,clab="Slopes",
+        cmin=min(p),cmax=max(p),interp=True,png="u")
+
+def goPaint():
+  gx = readImage(gxfile)
+  gx = gx[50]
+  lsf = LocalSlopeFinder(8.0,2.0,5.0)
   p2 = zerofloat(n1,n2)
-  ep = zerofloat(n1,n2)
-  lsf = LocalSlopeFinder(4.0,2.0,5.0)
-  lsf.findSlopes(g3,p2,ep)
-  ep = pow(ep,8)
-  fl = Flattener2()
-  fl.setWeight1(0.02)
-  fl.setIterations(0.001,400)
-  fl.setSmoothings(6.0,6.0)
-  fm = fl.getMappingsFromSlopes(s1,s2,p2,ep)
-  gf = fm.flatten(g3)
-  flr = FlattenerR()
-  gs = flr.getReferImageX(gf)
-  smin,smax = -5.0,5.0
-  r1min,r1max = -0.5,0.5
-  r2min,r2max = -0.5,0.5
-  dwk = DynamicWarpingK(8,smin,smax,s1,s2)
-  dwk.setStrainLimits(r1min,r1max,r2min,r2max)
-  dwk.setSmoothness(4,2)
-  ss = dwk.findShifts(s1,gs,s1,gf)
-  gh = dwk.applyShifts(s1,gf,ss)
-  plot2(s1,s2,g3,clab="Amplitude",cmin=-2,cmax=2,png="gx")
-  plot2(s1,s2,gs,clab="Amplitude",cmin=-2,cmax=2,png="gs")
-  plot2(s1,s2,gf,clab="Amplitude",cmin=-2,cmax=2,png="gf")
-  plot2(s1,s2,gh,clab="Amplitude",cmin=-2,cmax=2,png="gh")
-  plot2(s1,s2,ss,cmap=ColorMap.JET,clab="Shifts (samples)",cmin=-3,cmax=3,png="ss")
+  wp = zerofloat(n1,n2)
+  lsf.findSlopes(gx,p2,wp)
+  pp = PredictivePaint2(n1,50,2,0.1)
+  u = pp.paint(s1,p2)
+  plot2(s1,s2,gx,clab="Amplitude",cmin=-2,cmax=2,png="gx")
+  plot2(s1,s2,u,cmap=ColorMap.JET,clab="RGT",
+        cmin=min(u),cmax=max(u),interp=False,png="u")
 
-def goFlatten3d():
+def goImpedance2():
   gx = readImage(gxfile)
-  if not plotOnly:
-    p2 = zerofloat(n1,n2,n3)
-    p3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    lsf = LocalSlopeFinder(4.0,2.0,2.0,5.0)
-    lsf.findSlopes(gx,p2,p3,ep)
-    ep = pow(ep,8)
-    fl = Flattener3()
-    fl.setWeight1(0.04)
-    fl.setIterations(0.001,200)
-    fl.setSmoothings(6.0,6.0)
-    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-    u1 = fm.u1
-    writeImage(u1file,u1)
-    gf = fm.flatten(gx)
-    gf = readImage(gffile)
-    fl = Flattener3()
-    u1 = readImage(u1file)
-    u1 = sub(u1,min(u1))
-    u1 = fl.resampleRgt(s1,None,u1)
-    du,fu,lu = 1.0,21,210
-    nu = round((lu-fu)/du)+1
-    print nu
-    su = Sampling(nu,du,fu)
-    gu = fl.flatten(s1,su,u1,gx)
-    gx = gain(gx)
-    gf = gain(gf)
-    gu = gain(gu)
-    writeImage(gffile,gf)
-    writeImage(gufile,gu)
-  else:
-    gf = readImage(gffile)
-    gu = readImage(gufile)
-  plot3p(gx)
-  plot3p(gf)
-  plot3p(gu)
-def goTest():
-  gf = readImage(gufile)
-  flr = FlattenerR()
-  dr2,dr3 = 20,20
-  fr2,fr3 = 10,10
-  nr2 = (n2-fr2)/dr2
-  nr3 = (n3-fr3)/dr3
-  sr2 = Sampling(nr2,dr2,fr2)
-  sr3 = Sampling(nr3,dr3,fr3)
-  grs = flr.resample(s2,s3,sr2,sr3,gf)
-  grt = flr.imageToTraces(grs)
-  grr = flr.tracesToImage(nr2,nr3,grt)
-  grf = flr.sincInterp(sr2,sr3,s2,s3,grr)
-  plot3p(gf,clab="Amplitude")
-  plot3p(grf,clab="Amplitude")
-def goReferImage():
-  gf = readImage(gffile)
-  flr = FlattenerR()
-  dr2,dr3 = 20,20
-  fr2,fr3 = 50,50
-  nr2 = (n2-fr2)/dr2
-  nr3 = (n3-fr3)/dr3
-  sr2 = Sampling(nr2,dr2,fr2)
-  sr3 = Sampling(nr3,dr3,fr3)
-  gr = flr.resample(s2,s3,sr2,sr3,gf)
-  g2 = flr.imageToTraces(gr)
-  m2 = len(g2)
-  sx2 = Sampling(m2) 
-  '''
-  wlw = WellLogWarpingD()
-  wlw.setMaxShift(10)
-  wlw.setPowError(1.0)
-  g2s = wlw.findShifts(s1,g2)
-  g2d = wlw.applyShifts(g2,g2s)
-  smax = 10
-  r1min,r1max = -0.5,0.5
-  r2min,r2max = -0.2,0.2
-  r3min,r3max = -0.2,0.2
-  g3d = flr.tracesToImage(nr2,nr3,g2)
-  g3f = flr.flattenImage(smax,r1min,r1max,r2min,r2max,r3min,r3max,g3d)
-  g2f = flr.imageToTraces(g3f)
-  '''
-  g2s = zerofloat(n1,m2)
-  g2d = flr.flattenTraces(15,-0.2,0.2,g2,g2s)
-  m2 = len(g2)
-  plot2(s1,sx2,g2,clab="Amplitude",cmin=-2,cmax=2)
-  plot2(s1,sx2,g2d,clab="g2d",cmin=-2,cmax=2)
-  plot2(s1,sx2,g2s,clab="g2d",cmin=-15,cmax=15)
-  #plot2(s1,sx2,g2f,clab="g2f",cmin=-2,cmax=2)
-  g3f = flr.tracesToImage(nr2,nr3,g2d)
-  #g3s = flr.tracesToImage(nr2,nr3,g2s)
+  px = readImage(pxfile)
+  rx = readImage(rxfile)
+  #smooth = 0.5 # for clean data
+  #rx = readImage(rnfile)
+  smooth = 0.5 # for noisy data
+  r3,p3,g3 = rx[50],px[50],gx[50]
+  k1,k2,fp = setWells(p3)
+  ep = fillfloat(1.0,n1,n2)
+  u1 = fillfloat(1.0,n1,n2)
+  u2 = fillfloat(1.0,n1,n2)
+  lof = LocalOrientFilter(8.0,2.0)
+  et2 = lof.applyForTensors(g3)
+  lof.applyForNormalLinear(r3,u1,u2,ep)
+  wp = pow(ep,6.0)
+  et2.setEigenvalues(0.000001,1.0)
+  ai2 = AcousticImpedanceInv2(6.0,6.0)
+  ai2.setIterations(0.001,800)
+  ai2.setTensors(et2)
+  ai2.setSmoothness(smooth)
+  pt = zerofloat(n1,n2)
+  ai2.setInitial(u1,pt,k1,k2,fp)
+  pi2 = ai2.applyForImpedance(r3,wp,k1,k2,fp)
+  plot2(s1,s2,r3,clab="Reflectivity",cmin=-0.05,cmax=0.05,png="rx")
+  plot2(s1,s2,p3,cmap=ColorMap.JET,clab="True impedance",
+        cmin=min(p3),cmax=max(p3),png="p3")
+  plot2(s1,s2,pt,cmap=ColorMap.JET,clab="Initial impedance",
+        cmin=min(p3),cmax=max(p3),interp=False,png="pt")
+  plot2(s1,s2,pi2,cmap=ColorMap.JET,clab="Recovered impedance",
+        cmin=min(p3),cmax=max(p3),png="pi")
 
-  g3r = flr.linearInterp(sr2,sr3,s2,s3,g3f)
-  #g3t = flr.linearInterp(sr2,sr3,s2,s3,g3s)
-  #dwk = DynamicWarpingK(8,-10,10,s1);
-  #gfc = dwk.applyShifts(s1,gf,g3t)
-  #writeImage(grifile,g3r)
-  #plot3p(gf,clab="Amplitude")
-  #plot3p(gfc,clab="Amplitude")
-  plot3p(g3r,clab="Amplitude")
-def goRefine3d():
-  gf = readImage(gufile)
-  if not plotOnly:
-    flr = FlattenerR()
-    #gr = readImage(grifile)
-    gr = flr.getReferImageA(gf)
-    smin,smax = -15.0,15.0
-    dwk = DynamicWarpingK(4,smin,smax,s1,s2,s3)
-    dwk.setStrainLimits(-0.3,0.3,-0.1,0.1,-0.1,0.1)
-    dwk.setSmoothness(3,16,16)
-    dw = dwk.findShifts(s1,gr,s1,gf)
-    gh = dwk.applyShifts(s1,gf,dw)
-    writeImage(dwfile,dw)
-    writeImage(ghfile,gh)
-    writeImage(grfile,gr)
-  else:
-    gh = readImage(ghfile)
-    gr = readImage(grfile)
-    dw = readImage(dwfile)
-  plot3p(gf,clab="Amplitude",png="gf1")
-  plot3p(gh,clab="Amplitude",png="gh1")
-  plot3p(gr,clab="Amplitude",png="gr1")
-  plot3p(gf,dw,cmin=-15,cmax=15,clab="Shifts (samples)",cmap=jetFill(1.0),png="dw1")
-
-def goRefine3dV():
-  gf = readImage(gffile)
-  if not plotOnly:
-    sk = readSkins(fskbase)
-    flr = FlattenerR()
-    #gr = flr.getReferImage(gf)
-    k2,k3=98,105
-    gr = flr.getReferImageX(k2,k3,gf)
-    #gr = readImage(grifile)
-    smin,smax = -10.0,10.0
-    r1mins = fillfloat(-0.2,n1,n2,n3)
-    r1maxs = fillfloat( 0.2,n1,n2,n3)
-    r2mins = fillfloat(-0.2,n1,n2,n3)
-    r2maxs = fillfloat( 0.2,n1,n2,n3)
-    r3mins = fillfloat(-0.2,n1,n2,n3)
-    r3maxs = fillfloat( 0.2,n1,n2,n3)
-    FaultSkin.setValuesOnFaults(-10.0,sk,r1mins)
-    FaultSkin.setValuesOnFaults( 10.0,sk,r1maxs)
-    FaultSkin.setValuesOnFaults(-10.0,sk,r2mins)
-    FaultSkin.setValuesOnFaults( 10.0,sk,r2maxs)
-    FaultSkin.setValuesOnFaults(-10.0,sk,r3mins)
-    FaultSkin.setValuesOnFaults( 10.0,sk,r3maxs)
-    dwc = DynamicWarpingC(8,smin,smax,s1,s2,s3)
-    dwc.setStrains(r1mins,r2mins,r3mins,r1maxs,r2maxs,r3maxs)
-    dwc.setSmoothness(4,2,2)
-    dw = dwc.findShifts(s1,gr,s1,gf)
-    gh = dwc.applyShifts(s1,gf,dw)
-    #dwk = DynamicWarpingK(8,smin,smax,s1,s2,s3)
-    #dwk.setStrainLimits(-0.2,0.2,-0.2,0.2,-0.2,0.2)
-    #dwk.setSmoothness(4,2,2)
-    #dw = dwk.findShifts(s1,gr,s1,gf)
-    #gh = dwk.applyShifts(s1,gf,dw)
-    #writeImage(dwfile,dw)
-    #writeImage(ghfile,gh)
-    #writeImage(grfile,gr)
-  else:
-    gh = readImage(ghfile)
-    gr = readImage(grfile)
-    dw = readImage(dwfile)
-  plot3(gf,clab="Amplitude",png="gf1")
-  plot3(gh,clab="Amplitude",png="gh1")
-  plot3(gr,clab="Amplitude",png="gr1")
-  plot3(gf,dw,cmin=-8,cmax=6,clab="Shifts (samples)",cmap=jetFill(1.0),png="dw1")
-'''
-def goFlatten3d():
-  gx = readImage(gxfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(4.0,2.0,2.0,5.0)
-  lsf.findSlopes(gx,p2,p3,ep)
-  ep = pow(ep,8)
-  fl = Flattener3()
-  fl.setWeight1(0.02)
-  fl.setIterations(0.001,400)
-  fl.setSmoothings(6.0,6.0)
-  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-  gf = fm.flatten(gx)
-  flr = FlattenerR()
-  gs = flr.getReferImageM(gf)
-  smin,smax = -5.0,5.0
-  r1min,r1max = -0.5,0.5
-  r2min,r2max = -0.5,0.5
-  r3min,r3max = -0.5,0.5
-  dwr = DynamicWarpingK(8,smin,smax,s1,s2,s3)
-  dwr.setStrainLimits(r1min,r1max,r2min,r2max,r3min,r3max)
-  dwr.setSmoothness(2,5,5)
-  ss = dwr.findShifts(s1,gs,s1,gf)
-  gh = dwr.applyShifts(s1,gf,ss)
-  #plot3(gx)
-  #plot3(gs)
-  plot3(gf)
-  plot3(gh)
-'''
-def goSPS():
-  print "screened Poisson surface method ..."
-  gx = readImage(gxfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(4.0,1.0,1.0,5.0)
-  lsf.findSlopes(gx,p2,p3,ep)
-  ep = pow(ep,8)
-  fl = Flattener3()
-  fl.setWeight1(0.02)
-  fl.setIterations(0.001,400)
-  fl.setSmoothings(6.0,6.0)
-  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-  ut = fm.u1
-  gf = fm.flatten(gx)
-  fx = fm.unflatten(gf)
-  plot3(gx,png="gx")
-  plot3(gf,png="gf")
-  plot3(fx,png="fx")
-  plot3(gx,ut,cmin=min(ut),cmax=max(ut),cmap=jetFill(1.0),
-    clab="ScreenPoissonSurface",png="pss")
+def setWells(p3):
+  k1 = zerofloat(n1*2)
+  k2 = zerofloat(n1*2)
+  fp = zerofloat(n1*2)
+  k = 0
+  for i1 in range(n1):
+    k1[k] = i1
+    k2[k] = 15
+    fp[k] = p3[15][i1]
+    k = k+1
+  for i1 in range(n1):
+    k1[k] = i1
+    k2[k] = 61
+    fp[k] = p3[61][i1]
+    k = k+1
+  return k1,k2,fp
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -376,8 +174,6 @@ def goFakeData():
   if impedance:
     gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
   plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-  #plot3(gx,p2,cmap=bwrNotch(1.0))
-  #plot3(gx,p3,cmap=bwrNotch(1.0))
 
 def goSlopes():
   print "goSlopes ..."
@@ -401,97 +197,6 @@ def goSlopes():
         clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
-
-def goScan():
-  print "goScan ..."
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gx = readImage(gffile)
-  gx = FaultScanner.taper(10,0,0,gx)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
-  zm = ZeroMask(0.1,1,1,1,gx)
-  zero=0.0
-  zm.setValue(zero,fl)
-  zm.setValue(zero,fp)
-  zm.setValue(zero,ft)
-
-  print "fl min =",min(fl)," max =",max(fl)
-  print "fp min =",min(fp)," max =",max(fp)
-  print "ft min =",min(ft)," max =",max(ft)
-  writeImage(flfile,fl)
-  writeImage(fpfile,fp)
-  writeImage(ftfile,ft)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=145,cmap=jetFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
-
-def goThin():
-  print "goThin ..."
-  gx = readImage(gffile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=145,cmap=jetFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
-
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
-
-def goSkin():
-  print "goSkin ..."
-  gx = readImage(gffile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMinSkinSize(minSkinSize)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.2)
-  cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  print "total number of cells =",len(cells)
-  print "total number of skins =",len(skins)
-  print "number of cells in skins =",FaultSkin.countCells(skins)
-  removeAllSkinFiles(fskbase)
-  writeSkins(fskbase,skins)
-  plot3(gx,cells=cells,png="cells")
-  plot3(gx,skins=skins,png="skins")
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
 
 def like(x):
   n2 = len(x)
@@ -586,17 +291,19 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
 def plot2(s1,s2,x,cmap=ColorMap.GRAY,clab=None,cmin=0,cmax=0,
-         title=None,png=None):
+         title=None,interp=True,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   if title:
     sp.setTitle(title)
   sp.addColorBar(clab)
-  sp.setSize(680,600)
-  sp.plotPanel.setColorBarWidthMinimum(80)
+  sp.setSize(680,500)
+  sp.plotPanel.setColorBarWidthMinimum(100)
   pv = sp.addPixels(s1,s2,x)
   pv.setColorModel(cmap)
-  #pv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  if interp:
+    pv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  else:
+    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
   if cmin<cmax:
     pv.setClips(cmin,cmax)
   if pngDir and png:
@@ -737,7 +444,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov = sf.getOrbitView()
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
   ov.setAzimuthAndElevation(-55.0,25.0)
-  ov.setTranslate(Vector3(0.03,0.33,0.15))
+  ov.setTranslate(Vector3(0.03,0.03,0.15))
   ov.setScale(1.4)
   sf.setVisible(True)
   if png and pngDir:

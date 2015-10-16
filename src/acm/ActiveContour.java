@@ -12,6 +12,12 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+/**
+ * Active contour
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2015.06.18
+ */
+
 public class ActiveContour {
 
   public static class Snake {

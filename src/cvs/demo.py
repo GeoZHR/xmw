@@ -5,7 +5,7 @@ Version: 2014.07.17
 """
 
 from pnzutils import *
-setupForSubset("pnzs")
+setupForSubset("pnzb")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -59,11 +59,13 @@ maxThrow = 40.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/ipfx/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  gx = readImage("gxs")
+  plot3(gx)
   #goSlopes()
   #goScan()
   #goThin()
@@ -71,7 +73,7 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goUnfaultS()
+  #goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
   #goSubset()
@@ -303,9 +305,9 @@ def goUnfaultS():
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
-  '''
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
+  '''
   skins = readSkins(fslbase)
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)

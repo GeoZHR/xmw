@@ -1,18 +1,17 @@
 """
-Jython utilities for PNZ data sete.
-Author: Xinming Wu, Colorado School of Mines
-Version: 2015.10.10
+Jython utilities for fake image processing.
+Author: Dave Hale, Colorado School of Mines
+Version: 2014.06.17
 """
 from common import *
 
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/pnz/"
+_datdir = "../../../data/seis/aii/"
 
 #############################################################################
 # Setup
-
 def setupForSubset(name):
   """
   Setup for a specified directory includes:
@@ -23,48 +22,53 @@ def setupForSubset(name):
   global seismicDir
   global s1,s2,s3
   global n1,n2,n3
-  if name=="pnz":
-    """ big subset of pnz """
-    print "setupForSubset: pnz"
-    seismicDir = _datdir+"pnz/"
-    n1,n2,n3 = 751,1001,1001
+  if name=="fake":
+    """ fake image """
+    print "setupForSubset: fake"
+    seismicDir = _datdir+"fake/"
+    n1,n2,n3 = 101,102,103
+    s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
+  elif name=="tp":
+    """ subset of Teapot dome """
+    print "setupForSubset: tp"
+    seismicDir = _datdir+"tp/"
+    n1,n2,n3 = 251,357,143
     d1,d2,d3 = 1.0,1.0,1.0 
-    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  if name=="pnzb":
-    """ bigger subset of pnz """
+  elif name=="pnz":
+    """ subset of Teapot dome """
     print "setupForSubset: pnz"
     seismicDir = _datdir+"pnz/"
-    #n1,n2,n3 = 150,2001,2001
-    n1,n2,n3 = 200,879,752
+    n1,n2,n3 = 300,450,450
     d1,d2,d3 = 1.0,1.0,1.0 
-    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="f3d":
+    """ subset of F3 """
+    print "setupForSubset: f3d"
+    seismicDir = _datdir+"f3d/"
+    #n1,n2,n3 = 462,951,591
+    n1,n2,n3 = 190,480,500
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+    '''
+    gx = readImage("f3draw")
+    n1,n2,n3=190,480,500
+    j1,j2,j3=210,0  ,0
+    gxs = copy(n1,n2,n3,j1,j2,j3,gx)
+    '''
+  elif name=="tp1":
+    print "setupForSubset: subt"
+    seismicDir = _datdir+"tp1/"
+    n1,n2,n3 = 1025,240,80
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 0.000,d2*29,d3*46
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
-  elif name=="pnzs":
-    """ small subset of pnz """
-    print "setupForSubset: pnzs"
-    seismicDir = _datdir+"pnzs/"
-    n1,n2,n3 = 210,1001,825
-    d1,d2,d3 = 1.0,1.0,1.0 
-    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
-    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="pnzt":
-    """ small subset of pnz for fault processing test """
-    print "setupForSubset: pnzt"
-    seismicDir = _datdir+"pnzt/"
-    n1,n2,n3 = 210,200,400
-    d1,d2,d3 = 1.0,1.0,1.0
-    f1,f2,f3 = 0.0,0.0,0.0
-    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
-    #f1,f2,f3 = 0.300,0.0,0.0 # (s,km,km)
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  else:
-    print "unrecognized subset:",name
-    System.exit
 
 def getSamplings():
   return s1,s2,s3
@@ -75,22 +79,25 @@ def getSeismicDir():
 #############################################################################
 # read/write images
 
-def readImage(basename):
+def readImage(name):
   """ 
-  Reads an image from a file with specified basename
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
   """
-  fileName = seismicDir+basename+".dat"
+  fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName)
   ais.readFloats(image)
   ais.close()
   return image
 
-def writeImage(basename,image):
+def writeImage(name,image):
   """ 
-  Writes an image to a file with specified basename
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
   """
-  fileName = seismicDir+basename+".dat"
+  fileName = seismicDir+name+".dat"
   aos = ArrayOutputStream(fileName)
   aos.writeFloats(image)
   aos.close()

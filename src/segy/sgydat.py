@@ -11,7 +11,66 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-  goAns()
+  goTp()
+def goTp():
+  """
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/aii/tp/rx.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 246726896
+  number of traces = 64184
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: ft (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =     2, i2max =   188 (inline indices)
+    i3min =     1, i3max =   345 (crossline indices)
+    xmin =  240.217147, xmax =  246.706339 (x coordinates, in km)
+    ymin =  286.158127, ymax =  297.847817 (y coordinates, in km)
+  grid sampling:
+    n1 =   901 (number of samples per trace)
+    n2 =   187 (number of traces in inline direction)
+    n3 =   345 (number of traces in crossline direction)
+    d1 = 0.025000 (time sampling interval, in s)
+    d2 = 0.033530 (inline sampling interval, in km)
+    d3 = 0.033545 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =     2, i3min =     1, x =  240.501384, y =  286.158177
+    i2max =   188, i3min =     1, x =  246.736068, y =  286.311796
+    i2min =     2, i3max =   345, x =  240.217310, y =  297.694247
+    i2max =   188, i3max =   345, x =  246.451994, y =  297.847866
+  grid azimuth: 88.59 degrees
+  ****** end of SEG-Y file info ******
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/aii/tp/"
+  sgyfile = basedir+"gx.sgy"
+  datfile = basedir+"gx.dat"
+  #i1min,i1max,i2min,i2max,i3min,i3max = 0,900,2,188,1,345
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,2,188,1,345
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  print n1
+  print n2
+  print n3
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=1.0)
 
 def goAns():
   """

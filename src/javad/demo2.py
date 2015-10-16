@@ -30,8 +30,8 @@ def main(args):
 def goEvent():
   gx = readImage(ffile)
   dc = DerivativeCalculator()
-  sigma1=8.0
-  sigma2=4.0  
+  sigma1=2.0
+  sigma2=2.0  
   pmax = 10
   lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
   p2 = zerofloat(n1,n2)
@@ -49,9 +49,9 @@ def goEvent():
   plot(s1,s2,gx,c=cs,ps=cv,png="initial")
   he2.curveUpdateFromSlopes(wp,p2,k1,k2,cv)
   plot(s1,s2,gx,c=cs,ps=cv,clab="cv",png="initial")
+  '''
   sv = dc.regrid(0.1,cv)
   plot(s1,s2,gx,c=cs,ps=sv,clab="sv",png="initial")
-  '''
   dv1=dc.regrid1(cv)
   dv2=dc.regrid1(dv1)
   dv3=dc.regrid1(dv2)
