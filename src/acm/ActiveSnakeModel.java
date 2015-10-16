@@ -13,6 +13,12 @@ import edu.mines.jtk.interp.*;
 import edu.mines.jtk.lapack.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+/**
+ * Active snake model
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2015.06.18
+ */
+
 public class ActiveSnakeModel {
 
   public static class Snake {
