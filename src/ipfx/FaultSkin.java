@@ -496,9 +496,9 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cell.s1 = ais.readFloat();
         cell.s2 = ais.readFloat();
         cell.s3 = ais.readFloat();
-        //cell.r1 = ais.readFloat();
-        //cell.r2 = ais.readFloat();
-        //cell.r3 = ais.readFloat();
+        cell.r1 = ais.readFloat();
+        cell.r2 = ais.readFloat();
+        cell.r3 = ais.readFloat();
       }
       FaultCell[] cells = cellList.toArray(new FaultCell[0]);
       FaultCellGrid fcg = new FaultCellGrid(cells);

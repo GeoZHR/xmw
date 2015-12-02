@@ -5,7 +5,7 @@ Version: 2014.07.17
 """
 
 from utils import *
-setupForSubset("bp")
+setupForSubset("bpSub")
 #setupForSubset("hongliu")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -43,8 +43,8 @@ u1file = "u1" # relateive geologic time volume
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 60,85
-sigmaPhi,sigmaTheta = 15,40
+minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 10,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -60,15 +60,15 @@ maxThrow = 25.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-#pngDir = "../../../png/beg/"
 #pngDir = "../../../png/beg/hongliu/"
-plotOnly = True
+pngDir = "../../../png/beg/bp/sub/"
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goSkin()
   #goTv()
@@ -78,71 +78,11 @@ def main(args):
   #goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
-  goDisplay()
+  #goDisplay()
 
 def goDisplay():
   gx = readImage(gxfile)
-  gs = copy(200,n2,n3,260,0,0,gx)
-  writeImage('gs',gs)
-  plot3(gx,cmin=min(gx)/2,cmax=max(gx)/2)
-  #hx = readHorizon(hxfile)
-  #plot3(gx,cmin=min(gx)/2,cmax=max(gx)/2,horizon=hx)
-
-def goTv():
-  gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  plot3(gx,skins=sk,png="skinOld")
-  fcs = FaultSkin.getCells(sk)
-  plot3(gx,cells=fcs,png="cells")
-  fls = zerofloat(n1,n2,n3)
-  for ic in range(0,len(fcs),1):
-    cell = fcs[ic]
-    ks = cell.getI()
-    ms = cell.getIm()
-    ps = cell.getIp()
-    fls[ks[2]][ks[1]][ks[0]] = cell.getFl()
-    fls[ms[2]][ms[1]][ms[0]] = cell.getFl()
-    fls[ps[2]][ps[1]][ps[0]] = cell.getFl()
-  plot3(gx,fls,cmin=min(fls),cmax=max(fls),cmap=jetRamp(1.0),
-    clab="Fault likelihood",png="oldFl")
-
-  cells=[]
-  fl = zerofloat(n1,n2,n3)
-  for ic in range(0,len(fcs),5):
-    cell = fcs[ic]
-    cells.append(cell)
-    ks = cell.getI()
-    ms = cell.getIm()
-    ps = cell.getIp()
-    fl[ks[2]][ks[1]][ks[0]] = cell.getFl()
-    fl[ms[2]][ms[1]][ms[0]] = cell.getFl()
-    fl[ps[2]][ps[1]][ps[0]] = cell.getFl()
-  plot3(gx,cells=cells,png="cells")
-  plot3(gx,fl,cmin=min(fl),cmax=max(fl),cmap=jetRamp(1.0),
-    clab="Fault likelihood",png="reFl")
-  tv3 = TensorVoting3()
-  tv3.setSigma(20)
-  tv3.setWindow(20,15,15)
-  sm,cm,u1,u2,u3 = tv3.applyVote(n1,n2,n3,cells)
-  sm = add(sm,0.1)
-  clip(0.0,1.0,sm)
-  cells = tv3.findCells(0.1,sm,u1,u2,u3)
-  plot3(gx,cells=cells,png="cells")
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.1)
-  fs.setMinSkinSize(minSkinSize)
-  skins = fs.findSkins(cells)
-  removeAllSkinFiles(fskgood)
-  writeSkins(fskgood,skins)
-  plot3(gx,cm,cmin=0.2,cmax=1.0,skins=skins,cmap=jetRamp(1.0),
-        png="skins")
-  plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
-    clab="Surfaceness",png="sm")
-  plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
-    clab="Junction",png="cm")
-
+  plot3(gx,cmin=-0.5,cmax=0.5)
 
 def goSlopes():
   print "goSlopes ..."
@@ -164,26 +104,30 @@ def goSlopes():
 
 def goScan():
   print "goScan ..."
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gx = readImage(gxfile)
-  gx = FaultScanner.taper(10,0,0,gx)
-  fx = FaultScanner.phaseShift(90,gx)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx,fx)
-  print "fl min =",min(fl)," max =",max(fl)
-  print "fp min =",min(fp)," max =",max(fp)
-  print "ft min =",min(ft)," max =",max(ft)
-  writeImage(flfile,fl)
-  writeImage(fpfile,fp)
-  writeImage(ftfile,ft)
-  plot3(gx,clab="Amplitude")
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    gx = readImage(gxfile)
+    gx = FaultScanner.taper(10,0,0,gx)
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(fpfile,fp)
+    writeImage(ftfile,ft)
+  else:
+    gx = readImage(gxfile)
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
+      clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
 
 def goThin():
   print "goThin ..."
@@ -680,7 +624,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
-  ipg.setSlices(n1,950,609)
+  ipg.setSlices(n1,376,350)
   if cbar:
     sf.setSize(1037,700)
   else:

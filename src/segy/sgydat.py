@@ -45,7 +45,7 @@ def goHongliu():
   '''
   firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
-  writeImage = True # reads all traces, writes an image
+  writeImage = False # reads all traces, writes an image
   showImage = True # displays the image
   basedir = "../../../data/seis/hongliu/"
   sgyfile = basedir+"sgr.sgy"
@@ -100,13 +100,14 @@ def goBp():
   ****** end of SEG-Y file info ******
   '''
   firstLook = False # fast, does not read all trace headers
-  secondLook = True # slow, must read all trace headers
-  writeImage = False # reads all traces, writes an image
-  showImage = False # displays the image
-  basedir = "../../../data/seis/bp/"
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/beg/bp/"
   sgyfile = basedir+"1_120_angle30_tvsw_ftrim_55Hz.sgy"
-  datfile = basedir+"gx.dat"
-  i1min,i1max,i2min,i2max,i3min,i3max = 0,500,5400,7509,10744,13561
+  #sgyfile = basedir+"bp.sgy"
+  datfile = basedir+"gxs.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max =260,450,5400,6404,11400,12650
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
   if firstLook:
