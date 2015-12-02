@@ -28,11 +28,12 @@ def setupForSubset(name):
     print "setupForSubset: pnz"
     seismicDir = _datdir+"pnz/"
     n1,n2,n3 = 751,1001,1001
+    n1,n2,n3 = 136,1001,1001
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  if name=="pnzb":
+  elif name=="pnzb":
     """ bigger subset of pnz """
     print "setupForSubset: pnz"
     seismicDir = _datdir+"pnz/"
@@ -47,7 +48,8 @@ def setupForSubset(name):
     """ small subset of pnz """
     print "setupForSubset: pnzs"
     seismicDir = _datdir+"pnzs/"
-    n1,n2,n3 = 210,1001,825
+    #n1,n2,n3 = 210,1001,825
+    n1,n2,n3 = 100,1001,825
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
@@ -74,6 +76,16 @@ def getSeismicDir():
 
 #############################################################################
 # read/write images
+def readImage2(basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 def readImage(basename):
   """ 

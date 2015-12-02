@@ -39,7 +39,18 @@ p3file = "p3s"
 epfile = "eps"
 def main(args):
   #slopes()
-  multipleControlPoints()
+  #multipleControlPoints()
+  goAmplitude()
+def goAmplitude():
+  sf = readImage2("surfm")
+  si = SincInterpolator()
+  sa = zerofloat(n2,n3)
+  gx = readImage(gxfile)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      i1 = sf[i3][i2]
+      sa[i3][i2] = si.interpolate(s1,s2,s3,gx,i1,i2,i3)
+  writeImage("surfa",sa)
 def slopes():
   f = readImage(gxfile)
   p2 = copy(f)

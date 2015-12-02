@@ -58,17 +58,18 @@ maxThrow =  15.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/ipfx/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   goThin()
-  goSkin()
-  goReSkin()
+  goTest()
+  #goSkin()
+  #goReSkin()
   '''
   goSmooth()
   goSlip()
@@ -77,6 +78,33 @@ def main(args):
   goHorizonExtraction()
   '''
   #goSubset()
+def goTest():
+  gx = readImage(gxfile)
+  fl = readImage(fltfile)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  fs = FaultScannerX(sigmaPhi,sigmaTheta)
+  fc,fl,fp,ft= fs.scan(minPhi,maxPhi,minTheta,maxTheta,fl)
+  plot3(fc,cmin=min(fc),cmax=max(fc))
+  fl = mul(fl,4)
+  clip(0.0,1.0,fl)
+  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+  print "fl min =",min(fl)," max =",max(fl)
+  print "fp min =",min(fp)," max =",max(fp)
+  print "ft min =",min(ft)," max =",max(ft)
+  ft = convertDips(ft)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=min(ft),cmax=max(ft),cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ftt),cmin=min(ft),cmax=max(ft),cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
 
 def goSubset():
   gx  = readImage(gxfile)
@@ -687,3 +715,4 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
 
 #############################################################################
 run(main)
+

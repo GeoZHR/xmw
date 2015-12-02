@@ -37,7 +37,7 @@ bsfile  = "bs"  # fault block volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
+sigmaPhi,sigmaTheta = 8,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -59,9 +59,9 @@ pngDir = "../../../png/ifs/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  #goFakeData()
+  #goSlopes()
   '''
-  goFakeData()
-  goSlopes()
   goScan()
   goThin()
   goSmooth()
@@ -72,7 +72,7 @@ def main(args):
   goSmoothTest()
   goSlipTest()
   '''
-  goConstraints()
+  #goConstraints()
   #goFault()
   #goFS()
   #goFSSPS()
@@ -81,7 +81,7 @@ def main(args):
   #goSlip()
   #goCleanCells()
   
-  #goTV()
+  goTV()
   #goSPS()
   #goPSS()
   #goFSS()
@@ -92,6 +92,33 @@ def main(args):
   #goRemoveOutliers()
   #computeGaussian()
   #rosePlot()
+  #goScanT()
+
+def goScanT():
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  fc = fs.findCells([fl,fp,ft])
+  flt = zerofloat(n1,n2,n3)
+  for fci in fc:
+    ik = fci.getI()
+    i1 = ik[0]
+    i2 = ik[1]
+    i3 = ik[2]
+    flt[i3][i2][i1] = fci.getFl()
+  gx = FaultScanner.taper(10,0,0,gx)
+  fs = FaultScanner(sigmaPhi,sigmaTheta)
+  fl = fs.scanT(minPhi,maxPhi,minTheta,maxTheta,p2,p3,flt,gx)
+  print "fl min =",min(fl)," max =",max(fl)
+  plot3(gx,fl,cmin=min(fl),cmax=max(fl),cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+
 def goConstraints():
   gx = readImage(gxfile)
   s1 = readImage(fs1file)
@@ -407,7 +434,7 @@ def goFakeData():
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults
   conjugate = True # if True, two large planar faults will intersect
-  conical = True # if True, may want to set nplanar to 0 (or not!)
+  conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
@@ -488,20 +515,46 @@ def goThin():
 def goTV():
   print "goTensorVoting ..."
   gx = readImage(gxfile)
-  sk = readSkins(fskclean)
-  sk = [sk[0]]
-  fc = FaultSkin.getCells(sk)
-  tv = TensorVoting(n1,n2,n3,fc)
+  sk = readSkins(fskbase)
+  #fc = FaultSkin.getCells(sk)
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
-  ss = tv.tensorVote(fl,fp,ft)
-
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  fc = fs.findCells([fl,fp,ft])
+  flt = zerofloat(n1,n2,n3)
+  for fci in fc:
+    ik = fci.getI()
+    i1 = ik[0]
+    i2 = ik[1]
+    i3 = ik[2]
+    flt[i3][i2][i1] = fci.getFl()
+  tv = TensorVoting(n1,n2,n3,fc)
+  ss = tv.applyVote(10,n1,n2,n3,fc)
+  #ss = tv.applySmooth(2,n1,n2,n3,fc)
   #ss[0] = gain(ss[0])
   div(ss[0],max(ss[0]),ss[0])
   div(ss[1],max(ss[1]),ss[1])
   div(ss[2],max(ss[2]),ss[2])
+  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+  '''
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
+        clab="Fault dip (degrees)",png="ft")
+  '''
+  plot3(gx,ss[0],cmin=min(ss[0]),cmax=max(ss[0]),cmap=jetRamp(1.0),
+    clab="sm",png="sm")
+  plot3(gx,ss[1],cmin=min(ss[1]),cmax=max(ss[1]),cmap=jetRamp(1.0),
+    clab="cm",png="sm")
+  plot3(gx,ss[2],cmin=min(ss[2]),cmax=max(ss[2]),cmap=jetRamp(1.0),
+    clab="jm",png="sm")
 
+
+  '''
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMinSkinSize(minSkinSize)
@@ -524,7 +577,6 @@ def goTV():
     clab="jm",png="sm")
 
 
-  '''
   plot3(gx,ss[1],cmin=min(ss[1]),cmax=max(ss[1]),cells=fc,cmap=jetRamp(1.0),
     clab="cm",png="cm")
   plot3(gx,ss[2],cmin=min(ss[2]),cmax=max(ss[2]),cells=fc,cmap=jetRamp(1.0),

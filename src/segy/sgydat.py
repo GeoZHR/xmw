@@ -11,49 +11,47 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-  goTp()
-def goTp():
-  """
+  goBp()
+  #goHongliu()
+
+def goHongliu():
+  '''
   ****** beginning of SEG-Y file info ******
-  file name = ../../../data/seis/aii/tp/rx.sgy
+  file name = ../../../data/seis/hongliu/sgr.sgy
   byte order = BIG_ENDIAN
-  number of bytes = 246726896
-  number of traces = 64184
+  number of bytes = 131064444
+  number of traces = 40401
   format = 1 (4-byte IBM floating point)
   units for spatial coordinates: ft (will be converted to km)
   indices and coordinates from trace headers:
-    i2min =     2, i2max =   188 (inline indices)
-    i3min =     1, i3max =   345 (crossline indices)
-    xmin =  240.217147, xmax =  246.706339 (x coordinates, in km)
-    ymin =  286.158127, ymax =  297.847817 (y coordinates, in km)
+    i2min =   400, i2max =   600 (inline indices)
+    i3min =  1500, i3max =  1700 (crossline indices)
+    xmin =  534.667016, xmax =  544.012641 (x coordinates, in km)
+    ymin =   90.798510, ymax =  100.137296 (y coordinates, in km)
   grid sampling:
-    n1 =   901 (number of samples per trace)
-    n2 =   187 (number of traces in inline direction)
-    n3 =   345 (number of traces in crossline direction)
-    d1 = 0.025000 (time sampling interval, in s)
-    d2 = 0.033530 (inline sampling interval, in km)
-    d3 = 0.033545 (crossline sampling interval, in km)
+    n1 =   751 (number of samples per trace)
+    n2 =   201 (number of traces in inline direction)
+    n3 =   201 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.033527 (inline sampling interval, in km)
+    d3 = 0.033546 (crossline sampling interval, in km)
   grid corner points:
-    i2min =     2, i3min =     1, x =  240.501384, y =  286.158177
-    i2max =   188, i3min =     1, x =  246.736068, y =  286.311796
-    i2min =     2, i3max =   345, x =  240.217310, y =  297.694247
-    i2max =   188, i3max =   345, x =  246.451994, y =  297.847866
-  grid azimuth: 88.59 degrees
+    i2min =   400, i3min =  1500, x =  534.667016, y =   94.644686
+    i2max =   600, i3min =  1500, x =  540.159778, y =   90.798510
+    i2min =   400, i3max =  1700, x =  538.519878, y =  100.137296
+    i2max =   600, i3max =  1700, x =  544.012641, y =   96.291121
+  grid azimuth: 125.00 degrees
   ****** end of SEG-Y file info ******
-  """
+  '''
   firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
   writeImage = True # reads all traces, writes an image
   showImage = True # displays the image
-  basedir = "../../../data/seis/aii/tp/"
-  sgyfile = basedir+"gx.sgy"
+  basedir = "../../../data/seis/hongliu/"
+  sgyfile = basedir+"sgr.sgy"
   datfile = basedir+"gx.dat"
-  #i1min,i1max,i2min,i2max,i3min,i3max = 0,900,2,188,1,345
-  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,2,188,1,345
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,750,400,600,1500,1700
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
-  print n1
-  print n2
-  print n3
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -70,7 +68,93 @@ def goTp():
   si.close()
   if showImage:
     x = readImage(datfile,n1,n2,n3)
-    show3d(x,clip=1.0)
+    show3d(x,clip=max(x))
+
+def goBp():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/bp/1_120_angle30_tvsw_ftrim_55Hz.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 9002929356
+  number of traces = 4011999
+  format = 5 (4-byte IEEE floating point)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =  5400, i2max =  7509 (inline indices)
+    i3min = 10744, i3max = 13561 (crossline indices)
+    xmin =  422.267000, xmax =  477.717000 (x coordinates, in km)
+    ymin = 2377.265000, ymax = 2445.636000 (y coordinates, in km)
+  grid sampling:
+    n1 =   501 (number of samples per trace)
+    n2 =  2110 (number of traces in inline direction)
+    n3 =  2818 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.025000 (inline sampling interval, in km)
+    d3 = 0.025000 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =  5400, i3min = 10744, x =  414.668656, y = 2392.604687
+    i2max =  7509, i3min = 10744, x =  457.858656, y = 2362.362687
+    i2min =  5400, i3max = 13561, x =  455.063545, y = 2450.293444
+    i2max =  7509, i3max = 13561, x =  498.253545, y = 2420.051444
+  grid azimuth: 125.00 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
+  basedir = "../../../data/seis/bp/"
+  sgyfile = basedir+"1_120_angle30_tvsw_ftrim_55Hz.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,500,5400,7509,10744,13561
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=max(x))
+
+def goClyde():
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/pdgm/clyde/"
+  sgyfile = basedir+"clyde.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,499,0,240299,0,0
+  #i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,1,345,2,188
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    #i1min,i1max,i2min,i2max,i3min,i3max = 0,589,29,28+240,46,80+45
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=max(x))
 
 def goAns():
   """

@@ -29,15 +29,185 @@ public class TensorVoting {
     _nc = fc.length;
   }
 
+  public float[][][][] applySmooth (
+    float sigma, int n1, int n2, int n3, FaultCell[] cells) {
+    float[][][] g11 = fillfloat(0.0f,n1,n2,n3);
+    float[][][] g22 = fillfloat(0.0f,n1,n2,n3);
+    float[][][] g33 = fillfloat(0.0f,n1,n2,n3);
+    float[][][] g12 = fillfloat(0.0f,n1,n2,n3);
+    float[][][] g13 = fillfloat(0.0f,n1,n2,n3);
+    float[][][] g23 = fillfloat(0.0f,n1,n2,n3);
+    float[][][] ss = fillfloat(0.0f,n1,n2,n3);
+    float[][][] cs = fillfloat(0.0f,n1,n2,n3);
+    float[][][] js = fillfloat(0.0f,n1,n2,n3);
+    for (FaultCell cell:cells) {
+      int i1 = cell.i1;
+      int i2 = cell.i2;
+      int i3 = cell.i3;
+      float w1 = cell.w1;
+      float w2 = cell.w2;
+      float w3 = cell.w3;
+      g11[i3][i2][i1] = w1*w1;
+      g22[i3][i2][i1] = w2*w2;
+      g33[i3][i2][i1] = w3*w3;
+      g12[i3][i2][i1] = w1*w2;
+      g13[i3][i2][i1] = w1*w3;
+      g23[i3][i2][i1] = w2*w3;
+    }
+    //RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(sigma);
+    RecursiveExponentialFilter rgf = new RecursiveExponentialFilter(sigma);
+    rgf.apply(g11,g11);
+    rgf.apply(g12,g12);
+    rgf.apply(g13,g13);
+    rgf.apply(g22,g22);
+    rgf.apply(g23,g23);
+    rgf.apply(g33,g33);
+    double[][] a = new double[3][3];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      a[0][0] = g11[i3][i2][i1]; 
+      a[0][1] = g12[i3][i2][i1]; 
+      a[0][2] = g13[i3][i2][i1];
+      a[1][0] = g12[i3][i2][i1]; 
+      a[1][1] = g22[i3][i2][i1]; 
+      a[1][2] = g23[i3][i2][i1];
+      a[2][0] = g13[i3][i2][i1]; 
+      a[2][1] = g23[i3][i2][i1]; 
+      a[2][2] = g33[i3][i2][i1];
+      float[][] ue = solveEigenproblems(a);
+      ss[i3][i2][i1] = (ue[1][0]-ue[1][1]);
+      cs[i3][i2][i1] = (ue[1][1]-ue[1][2]);
+      js[i3][i2][i1] = (ue[1][2]);
+    }}}
+
+    return new float[][][][]{ss,cs,js};
+  }
+
+  public float[][][][] applyVote(float sigma,
+    final int n1, final int n2, final int n3, FaultCell[] cells) {
+    int nc = cells.length;
+    final float d1 = 10;
+    final float d2 = 10;
+    final float d3 = 10;
+    final float sigmas = 0.5f/(sigma*sigma);
+    final float[] fs = new float[nc]; 
+    final float[][] xs = new float[3][nc];
+    final float[][] us = new float[3][nc];
+    setKdTreeNodes(cells,xs,us,fs);
+    final KdTree kt = new KdTree(xs);
+    final float[][][] ss = new float[n3][n2][n1];
+    final float[][][] cs = new float[n3][n2][n1];
+    final float[][][] js = new float[n3][n2][n1];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      System.out.println("i3="+i3);
+      float[] xmin = new float[3];
+      float[] xmax = new float[3];
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        xmin[0] = i1-d1; xmax[0] = i1+d1;
+        xmin[1] = i2-d2; xmax[1] = i2+d2;
+        xmin[2] = i3-d3; xmax[2] = i3+d3;
+        int[] id = kt.findInRange(xmin,xmax);
+        int nd = id.length;
+        if(nd<1) {continue;}
+        double[][] a = new double[3][3];
+        float g11 = 0.0f;
+        float g12 = 0.0f;
+        float g13 = 0.0f;
+        float g22 = 0.0f;
+        float g23 = 0.0f;
+        float g33 = 0.0f;
+        for (int ik=0; ik<nd; ++ik) {
+          int ip = id[ik];
+          float fl = fs[ip];
+          float x1 = xs[0][ip];
+          float x2 = xs[1][ip];
+          float x3 = xs[2][ip];
+          float u1 = us[0][ip];
+          float u2 = us[1][ip];
+          float u3 = us[2][ip];
+          float r1 = i1-x1;
+          float r2 = i2-x2;
+          float r3 = i3-x3;
+          float rs = sqrt(r1*r1+r2*r2+r3*r3);
+          if (rs==0) {
+            g11 += fl*u1*u1;
+            g12 += fl*u1*u2;
+            g13 += fl*u1*u3;
+            g22 += fl*u2*u2;
+            g23 += fl*u2*u3;
+            g33 += fl*u3*u3;
+          } else {
+            r1 /= rs;
+            r2 /= rs;
+            r3 /= rs;
+            float ur = u1*r1+u2*r2+u3*r3;
+            if (abs(ur)>0.7f){continue;}
+            float phi = acos(abs(ur));
+            float sc = exp(-rs*rs*sigmas)*pow(sin(phi),4)*fl*16f;
+            float v1 = u1;
+            float v2 = u2;
+            float v3 = u3;
+            if(abs(ur)>0.01f) {
+              float cx = 0.5f*rs/ur; // find a better way
+              float c1 = x1+u1*cx;
+              float c2 = x2+u2*cx;
+              float c3 = x3+u3*cx;
+              v1 = c1-i1;
+              v2 = c2-i2;
+              v3 = c3-i3;
+              float vs = 1.0f/sqrt(v1*v1+v2*v2+v3*v3);
+              v1 *= vs; 
+              v2 *= vs; 
+              v3 *= vs; 
+            }
+            g11 += sc*v1*v1;
+            g12 += sc*v1*v2;
+            g13 += sc*v1*v3;
+            g22 += sc*v2*v2;
+            g23 += sc*v2*v3;
+            g33 += sc*v3*v3;
+          }
+        }
+        a[0][0] = g11; a[0][1] = g12; a[0][2] = g13;
+        a[1][0] = g12; a[1][1] = g22; a[1][2] = g23;
+        a[2][0] = g13; a[2][1] = g23; a[2][2] = g33;
+        float[][] ue = solveEigenproblems(a);
+        ss[i3][i2][i1] = (ue[1][0]-ue[1][1]);
+        cs[i3][i2][i1] = (ue[1][1]-ue[1][2]);
+        js[i3][i2][i1] = (ue[1][2]);
+      }}
+    }});
+    return new float[][][][]{ss,cs,js};
+  }
+
+  public float[][][][] applyVoteB(float sigma,
+    final int n1, final int n2, final int n3, FaultCell[] cells) {
+    float[][][] fl = new float[n3][n2][n1];
+    for (FaultCell fc:cells) {
+      int i1 = fc.i1;
+      int i2 = fc.i2;
+      int i3 = fc.i3;
+      fl[i3][i2][i1] = fc.fl;
+    }
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    float[][][] el = new float[n3][n2][n1];
+    LocalOrientFilter lof = new LocalOrientFilter(2.0,1.0,1.0);
+    lof.applyForNormalPlanar(fl,u1,u2,u3,el);
+    return new float[][][][]{el,el,el};
+  }
+
+  /*
   public float[][][][] tensorVoteS(
     final float[][][] fl, final float[][][] fp, final float[][][] ft) {
-    final float[][][] fpp = copy(fp);
-    final float[][][] ftp = copy(ft);
-    final FaultGeometry fg = new FaultGeometry();
     final float[][] st = initialTensor();
     final float[][][] xu = setKdTreePoints();
     final KdTree kt = new KdTree(xu[0]);
-    final int[] ds = new int[]{15,10,10};
+    final int[] ds = new int[]{20,20,20};
     final int[] ns = new int[]{_n1,_n2,_n3};
     final int[] bs1 = getBounds(_n1,xu[0][0]);
     final int[] bs2 = getBounds(_n2,xu[0][1]);
@@ -54,29 +224,18 @@ public class TensorVoting {
       for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
         for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
           int[] is = new int[]{i1,i2,i3};
-          float[] y = new float[]{i1,i2,i3};
-          int ne = kt.findNearest(y);
-          float x1 = xu[0][0][ne];
-          float x2 = xu[0][1][ne];
-          float x3 = xu[0][2][ne];
-          float dd = distance(new float[]{x1,x2,x3},y);
-          if(dd>15.0f){continue;}
           getRange(ds,is,ns,xmin,xmax);
           int[] id = kt.findInRange(xmin,xmax);
           int nd = id.length;
           if(nd<1) {continue;}
           double[][] a = new double[3][3];
-          float fpa = 0.0f;
-          float fta = 0.0f;
-          float pts = 0.0f;
-
           for (int ik=0; ik<nd; ++ik) {
             int ic = id[ik];
             int j1 = (int)xu[0][0][ic];
             int j2 = (int)xu[0][1][ic];
             int j3 = (int)xu[0][2][ic];
-            float[] v = new float[]{i1-j1,i2-j2,i3-j3};
             float gn = fl[j3][j2][j1];
+            float[] v = new float[]{i1-j1,i2-j2,i3-j3};
             if(sum(abs(v))==0.0f) {
               a[0][0] += gn*st[ic][0];
               a[1][1] += gn*st[ic][3];
@@ -87,19 +246,18 @@ public class TensorVoting {
               a[2][0] += gn*st[ic][2];
               a[1][2] += gn*st[ic][4];
               a[2][1] += gn*st[ic][4];
-              fpa += fpp[j3][j2][j1];
-              fta += ftp[j3][j2][j1];
-              pts += 1.0f;
             } else {
               float w1 = xu[1][0][ic];
               float w2 = xu[1][1][ic];
               float w3 = xu[1][2][ic];
               float[] t = new float[1];
-              float[] w = new float[]{w1,w2,w3};
-              float sc = computeScale(t,v,w);
+              float sc = computeScaleX(t,v,st[ic]);
               if(sc==0.0f){continue;}
               if(Float.isNaN(sc)){continue;}
               sc *= gn;
+              if(w1*v[0]+w2*v[1]+w3*v[2]>0.0f) {
+                w1 = -w1; w2 = -w2; w3 = -w3;
+              }
               float u1 = w1+v[0]*t[0];
               float u2 = w2+v[1]*t[0];
               float u3 = w3+v[2]*t[0];
@@ -121,16 +279,6 @@ public class TensorVoting {
               a[2][0] += sc*u13*uss;
               a[2][1] += sc*u23*uss;
               a[2][2] += sc*u33*uss;
-              int k1 = _fc[ne].i1;
-              int k2 = _fc[ne].i2;
-              int k3 = _fc[ne].i3;
-              float fpr = fpp[k3][k2][k1];
-              float fpi = fpp[j3][j2][j1];
-              if(abs(fpr-fpi)<40) {
-                fpa += fpp[j3][j2][j1];
-                fta += ftp[j3][j2][j1];
-                pts += 1.0f;
-              }
             }
           }
           float[][] ue = solveEigenproblems(a);
@@ -141,20 +289,6 @@ public class TensorVoting {
           sm[i3][i2][i1] = (ue[1][0]-ue[1][1]);
           cm[i3][i2][i1] = (ue[1][1]-ue[1][2]);
           jm[i3][i2][i1] = (ue[1][2]);
-          /*
-          double fpo = fpp[i3][i2][i1];
-          double fto = ftp[i3][i2][i1];
-          float[] uo = fg.faultNormalVectorFromStrikeAndDip(fpo,fto);
-          if((u1*uo[0]+u2*uo[1]+u3*uo[2])<0.0f){
-            u1=-u1;
-            u2=-u2;
-            u3=-u3;
-          }
-          ft[i3][i2][i1] = fg.faultDipFromNormalVector(u1,u2,u3);
-          fp[i3][i2][i1] = fg.faultStrikeFromNormalVector(u1,u2,u3);
-          */
-          ft[i3][i2][i1] = fta/pts;
-          fp[i3][i2][i1] = fpa/pts;
         }
       }
       //}
@@ -165,13 +299,10 @@ public class TensorVoting {
 
   public float[][][][] tensorVote(
     final float[][][] fl, final float[][][] fp, final float[][][] ft) {
-    final float[][][] fpp = copy(fp);
-    final float[][][] ftp = copy(ft);
-    final FaultGeometry fg = new FaultGeometry();
     final float[][] st = initialTensor();
     final float[][][] xu = setKdTreePoints();
     final KdTree kt = new KdTree(xu[0]);
-    final int[] ds = new int[]{10,10,10};
+    final int[] ds = new int[]{8,8,8};
     final int[] ns = new int[]{_n1,_n2,_n3};
     final int[] bs1 = getBounds(_n1,xu[0][0]);
     final int[] bs2 = getBounds(_n2,xu[0][1]);
@@ -201,9 +332,6 @@ public class TensorVoting {
           if(nd<1) {continue;}
           double[][] a = new double[3][3];
           double[][] r = new double[3][3];
-          float fpa = 0.0f;
-          float fta = 0.0f;
-          float pts = 0.0f;
           for (int ik=0; ik<nd; ++ik) {
             int ic = id[ik];
             int j1 = (int)xu[0][0][ic];
@@ -242,46 +370,30 @@ public class TensorVoting {
               a[2][1] += sc*sr[2][1];
               a[2][2] += sc*sr[2][2];
             }
-            int k1 = _fc[ne].i1;
-            int k2 = _fc[ne].i2;
-            int k3 = _fc[ne].i3;
-            float fpr = fpp[k3][k2][k1];
-            float fpi = fpp[j3][j2][j1];
-            if(abs(fpr-fpi)<40) {
-              fpa += fpp[j3][j2][j1];
-              fta += ftp[j3][j2][j1];
-              pts += 1.0f;
-            }
-
           }
           //float[][] ue = solveEigenproblems(mul(a,1.0/cot));
           float[][] ue = solveEigenproblems(a);
           float u1 = ue[0][0];
           float u2 = ue[0][1];
           float u3 = ue[0][2];
+          if(u1>0f) {
+            u1 = -u1;
+            u2 = -u2;
+            u3 = -u3;
+          }
           if(u2==0.0f&&u3==0.0f){continue;}
           sm[i3][i2][i1] = (ue[1][0]-ue[1][1]);
           cm[i3][i2][i1] = (ue[1][1]-ue[1][2]);
           jm[i3][i2][i1] = (ue[1][2]);
-          ft[i3][i2][i1] = fta/pts;
-          fp[i3][i2][i1] = fpa/pts;
-          /*
-          double fpo = fpp[i3][i2][i1];
-          double fto = ftp[i3][i2][i1];
-          float[] uo = fg.faultNormalVectorFromStrikeAndDip(fpo,fto);
-          if(u1*uo[0]<0.0f){u1=-u1;}
-          if(u2*uo[1]<0.0f){u2=-u2;}
-          if(u3*uo[2]<0.0f){u3=-u3;}
-
-          ft[i3][i2][i1] = fg.faultDipFromNormalVector(u1,u2,u3);
-          fp[i3][i2][i1] = fg.faultStrikeFromNormalVector(u1,u2,u3);
-          */
+          ft[i3][i2][i1] = FaultGeometry.faultDipFromNormalVector(u1,u2,u3);
+          fp[i3][i2][i1] = FaultGeometry.faultStrikeFromNormalVector(u1,u2,u3);
         }
       }
       //}
     }});
     return new float[][][][]{sm,cm,jm};
   }
+  */
 
   private float computeScale(float[] k, float[] v, float[] w) {
     float b = 0.0f;
@@ -308,8 +420,40 @@ public class TensorVoting {
     }
   }
 
+  private float computeScaleX(
+    float[] k, float[] v, float[] s) {
+    float b = 0.0f;
+    float sigma = 20.0f;
+    float v1 = v[0];
+    float v2 = v[1];
+    float v3 = v[2];
+    float s11 = s[0];
+    float s12 = s[1];
+    float s13 = s[2];
+    float s22 = s[3];
+    float s23 = s[4];
+    float s33 = s[5];
+    float sds = v1*v1+v2*v2+v3*v3;
 
-  private float computeScale(float[] k, float[] v, float[] s, float[] w, double[][] r) {
+    float sv1 = s11*v1+s12*v2+s13*v3;
+    float sv2 = s12*v1+s22*v2+s23*v3;
+    float sv3 = s13*v1+s23*v2+s33*v3;
+    float sns = sv1*v1+sv2*v2+sv3*v3;
+    float vsr = sqrt(sds); 
+    float sin = sqrt(sns/sds);
+    float tha = asin(sin);
+    float arc = vsr*tha/sin;
+    if(sin==0.0f){arc=vsr;}
+    float cur = 2.0f*sin/vsr;
+    k[0] = cur;
+    float ep = (arc*arc+b*cur*cur)/(sigma*sigma);
+    return exp(-ep);
+  }
+
+
+
+  private float computeScale(
+    float[] k, float[] v, float[] s, float[] w, double[][] r) {
     float b = 0.0f;
     float sigma = 20.0f;
     float v1 = v[0];
@@ -476,6 +620,22 @@ public class TensorVoting {
     }
     return xu;
   }
+
+  private void setKdTreeNodes(
+    FaultCell[] cells, float[][] xs, float[][] us, float[] fl) {
+    int nc = cells.length;
+    for (int ic=0; ic<nc; ic++) {
+      FaultCell fc = cells[ic];
+      fl[ic] = fc.fl;
+      xs[0][ic] = fc.i1;
+      xs[1][ic] = fc.i2;
+      xs[2][ic] = fc.i3;
+      us[0][ic] = fc.w1;
+      us[1][ic] = fc.w2;
+      us[2][ic] = fc.w3;
+    }
+  }
+
 
 
   private float[][] initialTensor() {

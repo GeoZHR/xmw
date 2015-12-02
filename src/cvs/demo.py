@@ -5,7 +5,7 @@ Version: 2014.07.17
 """
 
 from pnzutils import *
-setupForSubset("pnzb")
+setupForSubset("pnz")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -58,14 +58,12 @@ maxThrow = 40.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-pngDir = "../../../png/ipfx/"
+#pngDir = "../../../png/ipfx/"
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  gx = readImage("gxs")
-  plot3(gx)
   #goSlopes()
   #goScan()
   #goThin()
@@ -77,6 +75,40 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goSubset()
+  goSemblance()
+
+def goSemblance():
+  gx = readImage("gxb")
+  #gs = copy(136,n2,n3,186,0,0,gx)
+  #writeImage("gxb",gs)
+  gx = div(gx,max(gx)*0.1)
+  plot3(gx)
+  '''
+  g1 = zerofloat(n1,n2,n3)
+  g2 = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(2,2)
+  et1 = lof.applyForTensors(gx)
+  et2 = lof.applyForTensors(gx)
+  et1.setEigenvalues(0.0001,1.0000,1.0000)
+  et2.setEigenvalues(0.0001,0.0001,1.0000)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(et1,64,gx,g1)
+  lsf.apply(et2,64,gx,g2)
+  plot3(gx)
+  plot3(g1)
+  plot3(g2)
+  plot3(sub(g2,g1))
+  cs = ChannelScanner(8,20)
+  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
+  p2,p3 = ChannelScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  sb = cs.scan(2,12,gx,p2,p3)
+  writeImage("sb",sb)
+  print min(sb)
+  print max(sb)
+  plot3(gx)
+  plot3(sb,cmin=min(sb),cmax=max(sb))
+  '''
+
 
 def goSlopes():
   print "goSlopes ..."
@@ -609,7 +641,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         #ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(85,5,56)
-  ipg.setSlices(85,5,43)
+  ipg.setSlices(53,5,824)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:

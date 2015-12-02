@@ -33,7 +33,7 @@ seismicDir = "../../data/"
 
 def main(args):
   applyFor2D()
-  applyFor3D()
+  #applyFor3D()
 
 def applyFor3D():
   g = readImage("tpst")

@@ -192,6 +192,7 @@ public class SeismicWellTie {
     float d1 = (float)s1.getDelta();
     float[][][] sds = new float[4][nl][];
     float[][][] svs = new float[4][nl][];
+    float[][][] sps = new float[5][nl][];
     for (int il=0; il<nl; ++il) {
       SynSeis.Model md = models[il];
       Sampling sz = md.sz;
@@ -215,6 +216,11 @@ public class SeismicWellTie {
       svs[1][il] = new float[nt];
       svs[2][il] = new float[nt];
       svs[3][il] = new float[nt];
+      sps[0][il] = new float[nt];
+      sps[1][il] = new float[nt];
+      sps[2][il] = new float[nt];
+      sps[3][il] = new float[nt];
+      sps[4][il] = new float[nt];
       float[] fvs = md.v;
       float[] fds = md.d;
       for (int it=0; it<nt; ++it) {
@@ -240,9 +246,16 @@ public class SeismicWellTie {
         sds[1][il][it] = (float)st.getValue(it);
         sds[2][il][it] = (float)md.x2;
         sds[3][il][it] = (float)md.x3;
+        sps[1][il][it] = (float)st.getValue(it);
+        sps[2][il][it] = (float)md.x2;
+        sps[3][il][it] = (float)md.x3;
+        float pi = fvm*fdm;
+        sps[0][il][it] = 0.5f*log(pi);
+        if (it>0)
+          sps[4][il][it] = sps[0][il][it]-sps[0][il][it-1];
       }
     }
-    return new float[][][][]{svs,sds};
+    return new float[][][][]{svs,sds,sps};
   }
 
   public float[][][][] getSamples(

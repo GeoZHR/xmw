@@ -242,6 +242,26 @@ public class FaultScanner {
     return scan(phiSampling,thetaSampling,snd);
   }
 
+  public float[][][] scanT(
+      double phiMin, double phiMax,
+      double thetaMin, double thetaMax,
+      float[][][] p2, float[][][] p3, float[][][] flt,float[][][] g) {
+    Sampling sp = makePhiSampling(phiMin,phiMax);
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    return scanT(sp,st,p2,p3,flt,g);
+  }
+
+  public float[][][] scanT(
+      Sampling phiSampling, Sampling thetaSampling,
+      float[][][] p2, float[][][] p3, float[][][] flt,float[][][] g) {
+    //float[][][][] snd = semblanceNumDen(p2,p3,g);
+    //float[][][] se = semblanceFromNumDen(snd[0],snd[1]);
+    //se = sub(1,se);
+    return scan(phiSampling,thetaSampling,flt);
+  }
+
+
+
   /**
    * Thins fault images to include only ridges in fault likelihoods.
    * After thinning, may be only one voxel wide. Thinned fault strikes and
@@ -421,6 +441,82 @@ public class FaultScanner {
   private static void trace(String s) {
     System.out.println(s);
   }
+
+  private float[][][] scan(
+      Sampling phiSampling, Sampling thetaSampling,float[][][] snd) {
+    // Algorithm: given snum,sden (semblance numerators and denominators)
+    // initialize f,p,t (fault likelihood, phi, and theta)
+    // for all phi:
+    //   rotate snum,sden so that strike vector is aligned with axis 2
+    //   smooth snum,sden along fault strike (that is, along axis 2)
+    //   compute fphi,tphi (fault likelihood and dip) in 1-3 slices
+    //   unrotate fphi,tphi to original coordinates
+    //   update f,p,t for maximum likelihood
+    final int n1 = snd[0][0].length;
+    final int n2 = snd[0].length;
+    final int n3 = snd.length;
+    float[][][] fl = new float[n3][n2][n1];
+    float[][][][] gs = new float[6][n3][n2][n1];
+    int np = phiSampling.getCount();
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    for (int ip=0; ip<np; ++ip) {
+      final float phi = (float)phiSampling.getValue(ip);
+      if (ip>0) {
+        double timeUsed = sw.time();
+        double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
+        int timeLeftSec = 1+(int)timeLeft;
+        trace("FaultScanner.scan: done in "+timeLeftSec+" seconds");
+      }
+      Rotator r = new Rotator(phi,n1,n2,n3);
+      float[][][] rsnd  = r.rotate(snd);
+      float[][][][] rgs = r.rotate(gs);
+      smooth2(rsnd);
+      scanTheta(phi,thetaSampling,rsnd,rgs);
+      gs = r.unrotate(rgs);
+    }
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      double[][] a = new double[3][3];
+      float g11 = gs[0][i3][i2][i1];
+      float g12 = gs[1][i3][i2][i1];
+      float g13 = gs[2][i3][i2][i1];
+      float g22 = gs[3][i3][i2][i1];
+      float g23 = gs[4][i3][i2][i1];
+      float g33 = gs[5][i3][i2][i1];
+      a[0][0] = g11; a[0][1] = g12; a[0][2] = g13;
+      a[1][0] = g12; a[1][1] = g22; a[1][2] = g23;
+      a[2][0] = g13; a[2][1] = g23; a[2][2] = g33;
+      float[][] us = solveEigenproblems(a);
+      float eui = us[1][0];
+      float evi = us[1][1];
+      float esi = (eui>0.0f)?1.0f/eui:1.0f;
+      fl[i3][i2][i1] = (eui-evi)*esi;
+    }}}
+    sw.stop();
+    trace("FaultScanner.scan: done");
+    return fl;
+  }
+
+  private float[][] solveEigenproblems(double[][] a) {
+    double[] e = new double[3];
+    double[][] z = new double[3][3];
+    Eigen.solveSymmetric33(a,z,e);
+    float eui = (float)e[0];
+    float evi = (float)e[1];
+    float ewi = (float)e[2];
+    if (ewi<0.0f) ewi = 0.0f;
+    if (evi<ewi) evi = ewi;
+    if (eui<evi) eui = evi;
+    float u1i = (float)z[0][0];
+    float u2i = (float)z[0][1];
+    float u3i = (float)z[0][2];
+    float[] es = new float[]{eui,evi,ewi};
+    float[] us = new float[]{u1i,u2i,u3i};
+    return new float[][]{us,es};
+  }
+
 
   // This scan smooths semblance numerators and denominators along fault
   // planes by first rotating and shearing those images before applying
@@ -660,6 +756,21 @@ public class FaultScanner {
   }
 
   // Horizontal smoothing of rotated snum,sden along axis 2.
+  private void smooth2(final float[][][] snd) {
+    final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
+    final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
+    loop(n3,new LoopInt() {
+    public void compute(int i3) {
+      float[][] s3 = extractSlice3(i3,snd);
+      if (s3!=null) {
+        ref.apply2(s3,s3); 
+        restoreSlice3(i3,snd,s3);
+      }
+    }});
+  }
+
+
+  // Horizontal smoothing of rotated snum,sden along axis 2.
   private void smooth2(final float[][][][] snd) {
     final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
     final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
@@ -681,6 +792,131 @@ public class FaultScanner {
     ref.setEdges(RecursiveExponentialFilter.Edges.INPUT_ZERO_SLOPE);
     return ref;
   }
+
+  private void scanTheta(
+    final float phi, Sampling thetaSampling, final float[][][] sn, 
+    final float[][][][] rgs) {
+    final int n1 = n1(sn), n2 = n2(sn), n3 = n3(sn);
+    final Sampling st = thetaSampling;
+    final float[][][] f = like(sn);
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    loop(n2,new LoopInt() {
+    public void compute(int i2) {
+      float[][] sn2 = extractSlice2(i2,sn);
+      if (sn2==null)
+        return;
+      int n3 = sn2.length;
+      int nt = st.getCount();
+      for (int it=0; it<nt; ++it) {
+        float ti = (float)st.getValue(it);
+        float theta = toRadians(ti);
+        float shear = -1.0f/tan(theta);
+        float[][] sns = shear(si,shear,sn2);
+        float sigma = (float)_sigmaTheta*sin(theta);
+        RecursiveExponentialFilter ref = makeRef(sigma);
+        ref.apply1(sns,sns);
+        float[][] s2 = unshear(si,shear,sns);
+        for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
+          float[] s32 = s2[i3];
+          float[] g11i = rgs[0][j3][i2];
+          float[] g12i = rgs[1][j3][i2];
+          float[] g13i = rgs[2][j3][i2];
+          float[] g22i = rgs[3][j3][i2];
+          float[] g23i = rgs[4][j3][i2];
+          float[] g33i = rgs[5][j3][i2];
+          for (int i1=0; i1<n1; ++i1) {
+            float sc = s32[i1];
+            float[] us = faultNormalVectorFromStrikeAndDip(phi,ti);
+            float u11 = us[0]*us[0]*sc;
+            float u12 = us[0]*us[1]*sc;
+            float u13 = us[0]*us[2]*sc;
+            float u22 = us[1]*us[1]*sc;
+            float u23 = us[1]*us[2]*sc;
+            float u33 = us[2]*us[2]*sc;
+            g11i[i1] += u11;
+            g12i[i1] += u12;
+            g13i[i1] += u13;
+            g22i[i1] += u22;
+            g23i[i1] += u23;
+            g33i[i1] += u33;
+          }
+        }
+      }
+    }});
+  }
+
+    // Makes an array like that specified, including any null arrays.
+  private float[][][] like(float[][][] p) {
+    int n1 = n1(p);
+    int n2 = n2(p);
+    int n3 = n3(p);
+    float[][][] q = new float[n3][n2][];
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        q[i3][i2] = (p[i3][i2]!=null)?new float[n1]:null;
+      }
+    }
+    return q;
+  }
+
+
+
+  /*
+  private void scanTheta(final float phi,
+    Sampling thetaSampling, final float[][][] snd, final float[][][][] rgs) {
+    final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
+    final Sampling st = thetaSampling;
+    final float[][][] f = like(snd);
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    //loop(n2,new LoopInt() {
+    //public void compute(int i2) {
+    for (int i2=0; i2<n2;++i2){
+      float[][] sn2 = extractSlice2(i2,snd);
+      if (sn2==null)
+        return;
+      int nt = st.getCount();
+      for (int it=0; it<nt; ++it) {
+        float ti = (float)st.getValue(it);
+        float theta = toRadians(ti);
+        float shear = -1.0f/tan(theta);
+        float[][] sns = shear(si,shear,sn2);
+        float sigma = (float)_sigmaTheta*sin(theta);
+        RecursiveExponentialFilter ref = makeRef(sigma);
+        ref.apply1(sns,sns);
+        float[][] s2 = unshear(si,shear,sns);
+        for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
+          float[] s32 = s2[i3];
+          float[] g11i = rgs[0][j3][i2];
+          float[] g12i = rgs[1][j3][i2];
+          float[] g13i = rgs[2][j3][i2];
+          float[] g22i = rgs[3][j3][i2];
+          float[] g23i = rgs[4][j3][i2];
+          float[] g33i = rgs[5][j3][i2];
+          for (int i1=0; i1<n1; ++i1) {
+            float sc = s32[i1]; // semblance
+            float[] us = faultNormalVectorFromStrikeAndDip(phi,ti);
+            float u11 = us[0]*us[0]*sc;
+            float u12 = us[0]*us[1]*sc;
+            float u13 = us[0]*us[2]*sc;
+            float u22 = us[1]*us[1]*sc;
+            float u23 = us[1]*us[2]*sc;
+            float u33 = us[2]*us[2]*sc;
+            g11i[i1] += u11;
+            g12i[i1] += u12;
+            g13i[i1] += u13;
+            g22i[i1] += u22;
+            g23i[i1] += u23;
+            g33i[i1] += u33;
+          }
+        }
+      }
+    }
+    //}});
+  }
+  */
+
 
   // For one fault strike, scans over all fault dips theta. The fault strike
   // vector has already been aligned with image axis 2, and semblance
@@ -873,6 +1109,17 @@ public class FaultScanner {
       }
     }});
     return new float[][][][]{sn,sd};
+  }
+
+  private static float[][][] semblanceFromNumDen(float[][][] sn, float[][][] sd) {
+    int n3 = sn.length;
+    int n2 = sn[0].length;
+    int n1 = sn[0][0].length;
+    float[][][] se = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+      se[i3] = semblanceFromNumDen(sn[i3],sd[i3]);
+    }
+    return se;
   }
 
   // Computes semblance ratios from numerators and denominators.

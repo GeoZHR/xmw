@@ -203,16 +203,16 @@ public class HorizonExtractor {
         if(z4<0||z5<0||z6<0){continue;}
         if(z1>nz||z2>nz||z3>nz){continue;}
         if(z4>nz||z5>nz||z6>nz){continue;}
-        //float v1 = sincInterp(z1,y0,x0,gx);
-        //float v2 = sincInterp(z2,y1,x0,gx);
-        //float v3 = sincInterp(z3,y0,x1,gx);
-        //float v4 = sincInterp(z4,y0,x1,gx);
-        //float v5 = sincInterp(z5,y1,x0,gx);
-        //float v6 = sincInterp(z6,y1,x1,gx);
-        //zas[k++] = v1;  zas[k++] = v2;  zas[k++] =v3;
-        //zas[k++] = v4;  zas[k++] = v5;  zas[k++] =v6;
-        zas[k++] = z1;  zas[k++] = z2;  zas[k++] =z3;
-        zas[k++] = z4;  zas[k++] = z5;  zas[k++] =z6;
+        float v1 = sincInterp(z1,y0,x0,gx);
+        float v2 = sincInterp(z2,y1,x0,gx);
+        float v3 = sincInterp(z3,y0,x1,gx);
+        float v4 = sincInterp(z4,y0,x1,gx);
+        float v5 = sincInterp(z5,y1,x0,gx);
+        float v6 = sincInterp(z6,y1,x1,gx);
+        zas[k++] = v1;  zas[k++] = v2;  zas[k++] =v3;
+        zas[k++] = v4;  zas[k++] = v5;  zas[k++] =v6;
+        //zas[k++] = z1;  zas[k++] = z2;  zas[k++] =z3;
+        //zas[k++] = z4;  zas[k++] = z5;  zas[k++] =z6;
 
         xyz[i++] = x0;  xyz[i++] = y0;  xyz[i++] = z[ix  ][iy  ];
         xyz[i++] = x0;  xyz[i++] = y1;  xyz[i++] = z[ix  ][iy+1];
@@ -234,7 +234,9 @@ public class HorizonExtractor {
       rgb = cp.getRgbFloats(zas);
     }else {
       ColorMap cp = new ColorMap(zmin,zmax,ColorMap.JET);
-      rgb = cp.getRgbFloats(mul(zas,-1f));
+      //ColorMap cp = new ColorMap(zmin,zmax,ColorMap.BLUE_WHITE_RED);
+      rgb = cp.getRgbFloats(zas);
+      //rgb = cp.getRgbFloats(mul(zas,-1f));
     }
     //ColorMap cp = new ColorMap(min(zas),max(zas),ColorMap.RED_WHITE_BLUE);
     //float[] rgb = cp.getRgbFloats(zas);

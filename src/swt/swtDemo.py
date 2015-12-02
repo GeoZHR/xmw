@@ -41,6 +41,7 @@ fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fpifile  = "fpi" # nearest interp
 fqifile  = "fqi" # blended interp
+pxfile = "px" # impedance image
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -75,7 +76,7 @@ def main(args):
   #goSynsFlatten()
   #goSeisFlatten()
   #goSynsSeisTie()
-  goTimeUpdateS()
+  #goTimeUpdateS()
   #goTimeUpdateM()
   #goSlopes()
   #goScan()
@@ -83,6 +84,22 @@ def main(args):
   #goSkin()
   #goImageFlatten()
   #goRefine3dV()
+  #goReflectivity()
+  goImpedance()
+  '''
+  px = readImage(pxfile)
+  print min(px)
+  print max(px)
+  gx = readImage(gxfile)
+  plot3(gx,px,cmin=0,cmax=20,cmap=jetFill(1.0),
+        clab="Impedance",png="impedA")
+  gx = readImage(gxfile)
+  re = Reflectivity()
+  re.setParams(80,3)
+  rx = re.apply3D(d1,gx)
+  plot3(rx,cmin=-1,cmax=1)
+  '''
+
 def goTimeUpdateS():
   gx = readImage(gxfile)
   lgs = getLogs()
@@ -119,8 +136,6 @@ def goTimeUpdateS():
 
   plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisAS1")
-
-    
   '''
   svw,sdw=swt.getSamples(s1,lgs)
   svs,sds=swt.getSamples(s1,mds)
@@ -148,6 +163,15 @@ def goRgtInterp(sps,fname):
         clab="Velocity (km/s)",png=fpifile+fname)
   plot3(gx,fpi,sps=sps,cmin=2.4,cmax=5.0,wmin=2.4,wmax=5.0,cmap=jetRamp(1.0),
         clab="Velocity (km/s)",png=fpifile+fname+"Wells")
+def goReflectivity(sps):
+  gx = readImage(gxfile)
+  re = Reflectivity()
+  re.setParams(60,3)
+  rx = re.apply3D(d1,gx)
+  print min(rx)
+  print max(rx)
+  plot3(gx)
+  plot3(rx,cmin=-1,cmax=1)
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -156,6 +180,65 @@ def goDisplay():
   sps = swt.getSamples(s1,lgs)
   plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
   plot3(gx,sps=sps[0],wmin=2.4,wmax=5.0,clab="Velocity (km/s)",png="seisVel")
+
+def goImpedance():
+  gx = readImage(gxfile)
+  lgs = getLogs()
+  nl = len(lgs)
+  swt = SeismicWellTie()
+  ndfs = zerodouble(3,nl)
+  ndfw = zerodouble(3,nl)
+  fx,fs,fu=goSeisFlatten()
+  swsu,wsu,mds= swt.updateTimeDepthM(1,s1,lgs,fx,fs,fu)
+  svs,sds,spc=swt.getSamples(s1,mds)
+  sps = swt.convertPoints(spc)
+  k1,k2,k3,fp = sps[1],sps[2],sps[3],sps[0]
+  for ip in range(len(k1)):
+    k1[ip] = (k1[ip]-f1)/d1
+    k2[ip] = (k2[ip]-f2)/d2
+    k3[ip] = (k3[ip]-f3)/d3
+  '''
+  gt = readImage(gtcfile)
+  ri = RgtInterp3(sps[0],sps[1],sps[2],sps[3])
+  ri.setRgt(gt)
+  ri.setScales(0.001,1.0)
+  fti,fpi,fqi = ri.grid(False,s1,s2,s3)
+  plot3(gx,fpi,cmin=min(fpi),cmax=max(fpi),cmap=jetFill(1.0),
+        clab="Impedance",png="impedInitial")
+  '''
+  re = Reflectivity()
+  re.setParams(100,10)
+  rx = re.apply3D(d1,gx)
+  pa = abs(min(spc[4]))+abs(max(spc[4]))
+  pr = abs(min(rx))+abs(max(rx))
+  div(rx,-2*pr/pa,rx)
+  print min(rx)
+  print max(rx)
+  plot3(rx,cmin=min(rx),cmax=max(rx))
+  smooth = 0.5
+  ep = fillfloat(1.0,n1,n2,n3)
+  u1 = fillfloat(1.0,n1,n2,n3)
+  u2 = fillfloat(1.0,n1,n2,n3)
+  u3 = fillfloat(1.0,n1,n2,n3)
+  lof = LocalOrientFilter(8.0,2.0)
+  et3 = lof.applyForTensors(gx)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  wp = pow(ep,2.0)
+  et3.setEigenvalues(0.000001,1.0,1.0)
+  ai3 = AcousticImpedanceInv3(6.0,6.0)
+  ai3.setTensors(et3)
+  ai3.setSmoothness(smooth)
+  ai3.setIterations(0.001,200)
+  pi3 = fillfloat(0.0,n1,n2,n3)
+  ai3.setInitial(pi3,k1,k2,k3,fp)
+  pi3 = ai3.applyForImpedance(pi3,rx,wp,k1,k2,k3,fp)
+  plot3(gx,sps=spc,curve="imped",wmin=min(fp),wmax=max(fp),png="impedB")
+  #pi3 = exp(mul(pi3,2.0))
+  #writeImage(pxfile,pi3)
+  plot3(gx,pi3,cmin=min(fp),cmax=max(fp),cmap=jetFill(1.0),
+        clab="Impedance",png="impedA")
+  plot3(gx,pi3,cmin=min(fp),cmax=max(fp),cmap=jetFill(1.0),
+        clab="Impedance",sps=spc,wmin=min(fp),wmax=max(fp),png="impedA")
 
 def goTimeUpdateM():
   gx = readImage(gxfile)
@@ -177,7 +260,7 @@ def goTimeUpdateM():
     swwx.append(swi)
     swsx.append(ssi)
   svw,sdw=swt.getSamples(s1,lgs)
-  svs,sds=swt.getSamples(s1,mds)
+  svs,sds,sps,=swt.getSamples(s1,mds)
   hlabel = "Log index"
   vlabel1 = "Time (s)"
   vlabel2 = "Relative geologic time (s)"
@@ -970,7 +1053,7 @@ def wellGroup(logs,curve,cmin=0,cmax=0,cbar=None):
 
 def makeLogPoints(samples,cmin,cmax,cbar):
   lg = Group()
-  fl,x1l,x2l,x3l = samples
+  fl,x1l,x2l,x3l,fr = samples
   for i,f in enumerate(fl):
     f = fl[i]
     x1 = x1l[i]

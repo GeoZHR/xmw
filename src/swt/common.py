@@ -23,6 +23,7 @@ from swt import *
 from uff import *
 from hv import *
 from unct import *
+from aii import *
 
 #############################################################################
 # Run the function main on the Swing thread

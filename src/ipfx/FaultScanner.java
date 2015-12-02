@@ -386,6 +386,10 @@ public class FaultScanner {
     return gt;
   }
 
+  public static float convertDip(float scale, float dp) {
+    return toDegrees(atan(tan(toRadians(dp))/scale));
+  }
+
   /**
    * Adjust strikes for coordinate system and rotation.
    * @param lh true, if left-handed coordinate system; false, otherwise.

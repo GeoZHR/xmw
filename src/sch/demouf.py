@@ -85,9 +85,9 @@ def main(args):
   #goUnfaultC()
   #goUnfold()
   #goTeaser()
-  goSlices()
+  #goSlices()
   #goShifts()
-  #goHorizon()
+  goHorizon()
   #goView3D()
   #gx = readImage(gxfile)
   #gw = readImage(gwfile)
@@ -148,17 +148,17 @@ def goHorizon():
   gxs = sub(gx,scs)
   slices = [150,194,212]
   qgs = []
-  cs = [1.0,0.75,0.5,0.25,0.0]
+  #cs = [1.0,0.75,0.5,0.25,0.0]
+  cs = [0.7,0.7,0.7,0.7,0.7]
   for hi,h in enumerate(hs):
     qgi = []
     ws = he.findInUnfaultSpace(h,rs)
     xs = he.findInCurrentSpace(h,ws,ts,rs)
     qg = he.applyForTg(cs[hi],xs,gx,sk)
-    '''
-    qgi = qgi.append(qg)
+    qgi.append(qg)
     plot3(gxs,g=fls,qg=qgi,cmin=0.01,cmax=1.0,cmap=jetFillExceptMin(1.0),
           slices=slices,cint=0.1,png="horizon"+str(hi))
-    '''
+  '''
     qgs.append(qg)
   plot3(gxs,g=fls,qg=qgs,cmin=0.01,cmax=1.0,cmap=jetFillExceptMin(1.0),
       slices=slices,cint=0.1,png="horizon"+str(hi))
@@ -166,6 +166,7 @@ def goHorizon():
   plot3(gxs,g=fls,cmin=0.01,cmax=1.0,cmap=jetFillExceptMin(1.0),
         slices=slices,cint=0.1,png="seismic")
 
+  '''
 def goShifts():
   gx = readImage(gxfile)
   gw = readImage(gwfile)

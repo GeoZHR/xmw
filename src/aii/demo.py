@@ -70,13 +70,27 @@ pngDir = "../../../png/aii/fake/"
 def main(args):
   #goFakeData()
   #goImpedance2()
-  goImpedance3()
+  #goImpedance3()
+  goReflectivity()
+def goReflectivity():
+  gx = readImage(gxfile)
+  rx = readImage(rxfile)
+  re = Reflectivity()
+  re.setParams(90,10)
+  rxc = re.apply3D(0.004,gx)
+  print min(rx)
+  print max(rx)
+  print min(rxc)
+  print max(rxc)
+  #plot3(gx)
+  plot3(rx,cmin=-0.1,cmax=0.1)
+  plot3(rxc,cmin=-0.1,cmax=0.1)
 
 def goImpedance3():
   gx = readImage(gxfile)
   px = readImage(pxfile)
   rx = readImage(rnfile)
-  smooth = 0.9 # for noisy data
+  smooth = 0.1 # for noisy data
   ep = fillfloat(1.0,n1,n2,n3)
   u1 = fillfloat(1.0,n1,n2,n3)
   u2 = fillfloat(1.0,n1,n2,n3)
@@ -92,8 +106,11 @@ def goImpedance3():
   ai3.setSmoothness(smooth)
   pt = zerofloat(n1,n2,n3)
   k1,k2,k3,fp = getLogs(px)
+  pi3 = ai3.initialInterp(wp,k1,k2,k3,fp)
+  '''
   ai3.setInitial(pt,k1,k2,k3,fp)
-  pi3 = ai3.applyForImpedance(rx,wp,k1,k2,k3,fp)
+  pi3 = ai3.applyForImpedance(copy(pt),rx,wp,k1,k2,k3,fp)
+  '''
   samples = fp,k1,k2,k3
   print min(px)
   print max(px)

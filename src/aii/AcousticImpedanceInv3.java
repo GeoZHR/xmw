@@ -49,14 +49,13 @@ public class AcousticImpedanceInv3 {
     _d = d;
   }
 
-  public float[][][] applyForImpedance(
+  public float[][][] applyForImpedance(float[][][] p,
     float[][][] r, float[][][] wp, float[] k1, float[] k2, float[] k3, float[] f) 
   {
     int n3 = r.length;
     int n2 = r[0].length;
     int n1 = r[0][0].length;
     float[][][] b = new float[n3][n2][n1];
-    float[][][] p = new float[n3][n2][n1];
     setInitial(p,k1,k2,k3,f);
     VecArrayFloat3 vb = new VecArrayFloat3(b);
     VecArrayFloat3 vp = new VecArrayFloat3(p);
@@ -68,6 +67,47 @@ public class AcousticImpedanceInv3 {
     cs.solve(a3,m3,vb,vp);
     return p;
   }
+
+  public float[][][] initialInterp(
+    float[][][] wp, float[] k1, float[] k2, float[] k3, float[] f) 
+  {
+    float sct = _sc;
+    _sc = 1.0f;
+    int n3 = wp.length;
+    int n2 = wp[0].length;
+    int n1 = wp[0][0].length;
+    float[][][] b = new float[n3][n2][n1];
+    float[][][] p = new float[n3][n2][n1];
+    setInitial(p,k1,k2,k3,f);
+    VecArrayFloat3 vb = new VecArrayFloat3(b);
+    VecArrayFloat3 vp = new VecArrayFloat3(p);
+    CgSolver cs = new CgSolver(_small,_niter);
+    A3 a3 = new A3(_d,wp);
+    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,k1,k2,k3);
+    vb.zero();
+    cs.solve(a3,m3,vb,vp);
+    _sc = sct;
+    return p;
+  }
+
+  public void setInitial(
+    float[][][] p, float[] k1, float[] k2, float[] k3, float[] f) 
+  {
+    int np = k1.length;
+    int n3 = p.length;
+    int n2 = p[0].length;
+    int n1 = p[0][0].length;
+    for (int ip=0; ip<np; ++ip) {
+      int i1 = round(k1[ip]);
+      int i2 = round(k2[ip]);
+      int i3 = round(k3[ip]);
+      if(i1<0) i1=0; if(i1>n1-1) i1=n1-1;
+      if(i2<0) i2=0; if(i2>n2-1) i2=n2-1;
+      if(i3<0) i3=0; if(i3>n3-1) i3=n3-1;
+      p[i3][i2][i1] = f[ip];
+    }
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private
@@ -101,8 +141,8 @@ public class AcousticImpedanceInv3 {
   private static void applyLhs(
     Tensors3 et, float[][][] w, float[][][] x, float[][][] y) 
   {
-    applyLhs1(w,x,y);
-    applyLhs2(et,w,x,y);
+    if(_sc<1.0f) {applyLhs1(w,x,y);}
+    if(_sc>0.0f) {applyLhs2(et,w,x,y);}
   }
 
   private static void applyLhs1(
@@ -273,10 +313,16 @@ public class AcousticImpedanceInv3 {
     float[] k1, float[] k2, float[] k3, float[][][] x) 
   {
     int np = k2.length;
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
     for (int ip=0; ip<np; ++ip) {
-      int i1 = (int)k1[ip]; 
-      int i2 = (int)k2[ip]; 
-      int i3 = (int)k3[ip]; 
+      int i1 = round(k1[ip]);
+      int i2 = round(k2[ip]);
+      int i3 = round(k3[ip]);
+      if(i1<0) i1=0; if(i1>n1-1) i1=n1-1;
+      if(i2<0) i2=0; if(i2>n2-1) i2=n2-1;
+      if(i3<0) i3=0; if(i3>n3-1) i3=n3-1;
       x[i3][i2][i1] = 0.f;
     }
   }
@@ -359,23 +405,6 @@ public class AcousticImpedanceInv3 {
     }});
   }
 
-  public void setInitial(
-    float[][][] p, float[] k1, float[] k2, float[] k3, float[] f) 
-  {
-    int np = k1.length;
-    int n3 = p.length;
-    int n2 = p[0].length;
-    int n1 = p[0][0].length;
-    for (int ip=0; ip<np; ++ip) {
-      int i1 = round(k1[ip]);
-      int i2 = round(k2[ip]);
-      int i3 = round(k3[ip]);
-      if(i1<0) i1=0; if(i1>n1-1) i1=n1-1;
-      if(i2<0) i2=0; if(i2>n2-1) i2=n2-1;
-      if(i3<0) i3=0; if(i3>n3-1) i3=n3-1;
-      p[i3][i2][i1] = f[ip];
-    }
-  }
 
 
 }
