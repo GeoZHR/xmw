@@ -12,7 +12,9 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-import static stv.FaultGeometry.*;
+import ipfx.*;
+import ipfx.FaultCell;
+import static ipfx.FaultGeometry.*;
 
 /**
  * 3D tensor voting. 
@@ -411,134 +413,6 @@ public class TensorVoting3 {
     return sp;
   }
 
-  public EigenTensors3 mark (
-    float[][][] g11, float[][][] g12, float[][][] g13, 
-    float[][][] g22, float[][][] g23, float[][][] g33, FaultCell[] cells) {
-    int n3 = g11.length;
-    int n2 = g11[0].length;
-    int n1 = g11[0][0].length;
-    float[][][] dx = new float[n3][n2][n1];
-    short[][][] k1 = new short[n3][n2][n1];
-    short[][][] k2 = new short[n3][n2][n1];
-    short[][][] k3 = new short[n3][n2][n1];
-    for (FaultCell fc:cells) {
-      int i1 = fc.i1;
-      int i2 = fc.i2;
-      int i3 = fc.i3;
-      float w1 = fc.w1;
-      float w2 = fc.w2;
-      float w3 = fc.w3;
-      float fl = fc.fl;
-      g11[i3][i2][i1] = w1*w1*fl;
-      g12[i3][i2][i1] = w1*w2*fl;
-      g13[i3][i2][i1] = w1*w3*fl;
-      g22[i3][i2][i1] = w2*w2*fl;
-      g23[i3][i2][i1] = w2*w3*fl;
-      g33[i3][i2][i1] = w3*w3*fl;
-    }
-    ClosestPointTransform cpt = new ClosestPointTransform();
-    cpt.apply(0.0f,g11,dx,k1,k2,k3);
-    float[][][] u1 = new float[n3][n2][n1];
-    float[][][] u2 = new float[n3][n2][n1];
-    float[][][] w1 = new float[n3][n2][n1];
-    float[][][] w2 = new float[n3][n2][n1];
-    float[][][] eu = fillfloat(0.01f,n1,n2,n3);
-    float[][][] ev = fillfloat(1.00f,n1,n2,n3);
-    float[][][] ew = fillfloat(1.00f,n1,n2,n3);
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      int c1 = k1[i3][i2][i1];
-      int c2 = k2[i3][i2][i1];
-      int c3 = k3[i3][i2][i1];
-      float g11i = g11[c3][c2][c1];
-      float g12i = g12[c3][c2][c1];
-      float g13i = g13[c3][c2][c1];
-      float g22i = g22[c3][c2][c1];
-      float g23i = g23[c3][c2][c1];
-      float g33i = g33[c3][c2][c1];
-      double[][] a = new double[3][3];
-      a[0][0] = g11i; a[0][1] = g12i; a[0][2] = g13i;
-      a[1][0] = g12i; a[1][1] = g22i; a[1][2] = g23i;
-      a[2][0] = g13i; a[2][1] = g23i; a[2][2] = g33i;
-      double[] e = new double[3];
-      double[][] z = new double[3][3];
-      Eigen.solveSymmetric33(a,z,e);
-      float u1i = (float)z[0][0];
-      float u2i = (float)z[0][1];
-      float w1i = (float)z[2][0];
-      float w2i = (float)z[2][1];
-      u1[i3][i2][i1] = u1i;
-      u2[i3][i2][i1] = u2i;
-      w1[i3][i2][i1] = w1i;
-      w2[i3][i2][i1] = w2i;
-    }}}
-    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,false);
-  }
-
-  public float[][][][] applyVoteX(float sigma,
-    final int n1, final int n2, final int n3, final FaultCell[] cells) {
-    int nc = cells.length;
-    final float[] w11s = new float[nc];
-    final float[] w12s = new float[nc];
-    final float[] w13s = new float[nc];
-    final float[] w22s = new float[nc];
-    final float[] w23s = new float[nc];
-    final float[] w33s = new float[nc];
-    final float[][][] g11 = new float[n3][n2][n1];
-    final float[][][] g12 = new float[n3][n2][n1];
-    final float[][][] g13 = new float[n3][n2][n1];
-    final float[][][] g22 = new float[n3][n2][n1];
-    final float[][][] g23 = new float[n3][n2][n1];
-    final float[][][] g33 = new float[n3][n2][n1];
-    final float sigmas = 0.5f/(_sigma*_sigma);
-    precompute(cells,w11s,w12s,w13s,w22s,w23s,w33s);
-    for (int ic=0; ic<nc; ++ic) {
-      FaultCell cell = cells[ic];
-      final int c1 = cell.i1;
-      final int c2 = cell.i2;
-      final int c3 = cell.i3;
-      final float w1 = cell.w1;
-      final float w2 = cell.w2;
-      final float w3 = cell.w3;
-      final float w11 = w11s[ic];
-      final float w12 = w12s[ic];
-      final float w13 = w13s[ic];
-      final float w22 = w22s[ic];
-      final float w23 = w23s[ic];
-      final float w33 = w33s[ic];
-      loop(n3,new Parallel.LoopInt() {
-      public void compute(int i3) {
-        for (int i2=0; i2<n2; i2++) {
-        for (int i1=0; i1<n1; i1++) {
-          float d1 = i1-c1;
-          float d2 = i2-c2;
-          float d3 = i3-c3;
-          float ds = sqrt(d1*d1+d2*d2+d3*d3);
-          if(ds==0f) {
-            g11[i3][i2][i1] += w11;
-            g12[i3][i2][i1] += w12;
-            g13[i3][i2][i1] += w13;
-            g22[i3][i2][i1] += w22;
-            g23[i3][i2][i1] += w23;
-            g33[i3][i2][i1] += w33;
-          } else {
-            d1 /= ds; d2 /= ds; d3 /= ds;
-            float wd = w1*d1+w2*d2+w3*d3;
-            if(abs(wd)>0.4f){continue;}
-            float sc = exp(-ds*ds*sigmas)*pow((1f-wd*wd),4);
-            g11[i3][i2][i1] += w11*sc;
-            g12[i3][i2][i1] += w12*sc;
-            g13[i3][i2][i1] += w13*sc;
-            g22[i3][i2][i1] += w22*sc;
-            g23[i3][i2][i1] += w23*sc;
-            g33[i3][i2][i1] += w33*sc;
-          }
-        }}
-      }});
-    }
-    return solveEigenproblems(g11,g12,g13,g22,g23,g33);
-  }
 
   public float[][][][] solveEigenproblems(
     final float[][][] g11, final float[][][] g12, final float[][][] g13,
@@ -590,10 +464,10 @@ public class TensorVoting3 {
     loop(nc,new Parallel.LoopInt() {
     public void compute(int ic) {
       FaultCell cell = cells[ic];
-      float fl = cell.fl;
-      float w1 = cell.w1;
-      float w2 = cell.w2;
-      float w3 = cell.w3;
+      float fl = cell.getFl();
+      float w1 = cell.getW1();
+      float w2 = cell.getW2();
+      float w3 = cell.getW3();
       w11s[ic] = fl*w1*w1;
       w12s[ic] = fl*w1*w2;
       w13s[ic] = fl*w1*w3;
@@ -603,28 +477,6 @@ public class TensorVoting3 {
     }});
   }
 
-  public FaultCell[] getSparseCells (
-    int n1, int n2, int n3, int d1, int d2, int d3, FaultCell[] cells) {
-    FaultCell[][][] fcg = new FaultCell[n3][n2][n1];
-    for (FaultCell fc:cells) {
-      int i1 = fc.i1;
-      int i2 = fc.i2;
-      int i3 = fc.i3;
-      fcg[i3][i2][i1] = fc;
-    }
-    ArrayList<FaultCell> fcs = new ArrayList<FaultCell>();
-    for (int i3=0; i3<n3; i3+=d3) {
-    for (int i2=0; i2<n2; i2+=d2) {
-    for (int i1=0; i1<n1; i1+=d1) {
-      if (fcg[i3][i2][i1]!=null) {
-        fcs.add(fcg[i3][i2][i1]);
-      }
-    }}}
-    return fcs.toArray(new FaultCell[0]);
-  }
-
-
-  
   private float[][] solveEigenproblems(double[][] a) {
     double[] e = new double[3];
     double[][] z = new double[3][3];
@@ -648,17 +500,13 @@ public class TensorVoting3 {
     int nc = cells.length;
     for (int ic=0; ic<nc; ic++) {
       FaultCell fc = cells[ic];
-      float w1 = fc.w1;
-      float w2 = fc.w2;
-      float w3 = fc.w3;
-      float fl = fc.fl;
-      fls[ic] = fl;
-      xs[0][ic] = fc.i1;
-      xs[1][ic] = fc.i2;
-      xs[2][ic] = fc.i3;
-      us[0][ic] = w1;
-      us[1][ic] = w2;
-      us[2][ic] = w3;
+      fls[ic] = fc.getFl();
+      xs[0][ic] = fc.getI1();
+      xs[1][ic] = fc.getI2();
+      xs[2][ic] = fc.getI3();
+      us[0][ic] = fc.getW1();
+      us[1][ic] = fc.getW2();
+      us[2][ic] = fc.getW3();
     }
   }
 

@@ -17,7 +17,7 @@ import edu.mines.jtk.mosaic.*;
 import edu.mines.jtk.sgl.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-import static stv.FaultGeometry.*;
+import static ipfx.FaultGeometry.*;
 
 /**
  * Generates fake seismic data with faults and horizons.

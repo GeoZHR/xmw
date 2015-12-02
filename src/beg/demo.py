@@ -62,15 +62,15 @@ maxThrow = 25.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/bp/sub/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goTv()
   #goReSkin()
   #goSmooth()
@@ -132,6 +132,9 @@ def goScan():
 def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
+  flt = readImage(fltfile)
+  ftt = readImage(fttfile)
+  '''
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
@@ -142,12 +145,15 @@ def goThin():
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
+  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
+  '''
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+  '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -505,13 +511,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.setClips(cmin,cmax)
     else:
       #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-2.0,1.5) # use for subset plots
+      ipg.setClips(-0.5,0.5) # use for subset plots
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2.0,1.5)
+    ipg.setClips1(-0.5,0.5)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:

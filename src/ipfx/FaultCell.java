@@ -519,7 +519,7 @@ public class FaultCell implements Serializable {
   interface Set1 { public void set(FaultCell cell, float value); }
   interface SetN { public void set(FaultCell cell, float[] values); }
 
-  FaultCell(float x1, float x2, float x3, float fl, float fp, float ft) {
+  public FaultCell(float x1, float x2, float x3, float fl, float fp, float ft) {
     set(x1,x2,x3,fl,fp,ft);
   }
 
