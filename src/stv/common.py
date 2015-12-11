@@ -19,6 +19,8 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from stv import *
+from ad import *
+from ipfx import *
 #from util import *
 
 #############################################################################

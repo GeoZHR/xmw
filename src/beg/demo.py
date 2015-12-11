@@ -5,7 +5,7 @@ Version: 2014.07.17
 """
 
 from utils import *
-setupForSubset("bpSub")
+setupForSubset("bpSub1")
 #setupForSubset("hongliu")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -37,7 +37,11 @@ sw2file = "sw2" # 2nd component of unfaulting shifts
 sw3file = "sw3" # 3rd component of unfaulting shifts
 gufile = "gu" # flattened image
 x1file = "x1" # horizon volume
-u1file = "u1" # relateive geologic time volume
+u1file = "u1" # first component of normal
+u2file = "u2" # second component of normal
+u3file = "u3" # third component of normal
+smfile = "sm"
+cmfile = "cm"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -48,8 +52,8 @@ sigmaPhi,sigmaTheta = 10,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.5
+lowerLikelihood = 0.1
+upperLikelihood = 0.3
 minSkinSize = 3000
 
 # These parameters control the computation of fault dip slips.
@@ -61,16 +65,16 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/beg/bp/sub/"
+pngDir = "../../../png/beg/bp/sub1/"
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goTv()
   #goReSkin()
   #goSmooth()
@@ -148,7 +152,7 @@ def goThin():
   '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
+  plot3(gx,ftt,cmin=70,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   '''
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
@@ -202,6 +206,47 @@ def goSkin():
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''
+def goTv():
+  gx = readImage(gxfile)
+  tv3 = TensorVoting3()
+  tv3.setSigma(20)
+  tv3.setWindow(20,20,20)
+  if not plotOnly:
+    sk = readSkins(fskbase)
+    plot3(gx,skins=sk,png="skinOld")
+    fcs = FaultSkin.getCells(sk)
+    plot3(gx,cells=fcs,png="cells")
+    cells=[]
+    fl = zerofloat(n1,n2,n3)
+    for ic in range(0,len(fcs),5):
+      cell = fcs[ic]
+      cells.append(cell)
+    sm,cm,u1,u2,u3 = tv3.applyVote(n1,n2,n3,cells)
+    writeImage(smfile,sm)
+    writeImage(cmfile,cm)
+    writeImage(u1file,u1)
+    writeImage(u2file,u2)
+    writeImage(u3file,u3)
+  else:
+    sm = readImage(smfile)
+    cm = readImage(cmfile)
+    u1 = readImage(u1file)
+    u2 = readImage(u2file)
+    u3 = readImage(u3file)
+  cells = tv3.findCells(0.1,sm,u1,u2,u3)
+  plot3(gx,cells=cells,png="cells")
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(minSkinSize)
+  skins = fs.findSkins(cells)
+  plot3(gx,cm,cmin=0.2,cmax=1.0,skins=skins,cmap=jetRamp(1.0),
+        clab="Faults",png="skinsNew")
+  plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
+    clab="Surfaceness",png="sm")
+  plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
+    clab="Junction",png="cm")
 
 def goReSkin():
   print "goReSkin ..."

@@ -111,6 +111,7 @@ public class TensorVoting3 {
             float v2 = u2;
             float v3 = u3;
             float sc = exp(-rs*rs*sigmas)*pow((1f-ur*ur),12)*fl;
+            /*
             if(abs(ur)>0.0001f) {
               float cx = 0.5f*rs/ur; // find a better way
               float c1 = x1+u1*cx;
@@ -120,6 +121,7 @@ public class TensorVoting3 {
               float vs = 1.0f/sqrt(v1*v1+v2*v2+v3*v3);
               v1 *= vs; v2 *= vs; v3 *= vs; 
             }
+            */
             g11 += sc*v1*v1;
             g12 += sc*v1*v2;
             g13 += sc*v1*v3;
@@ -138,10 +140,6 @@ public class TensorVoting3 {
         float u1i = ue[0][0];
         float u2i = ue[0][1];
         float u3i = ue[0][2];
-        float eus = eui;
-        float evs = evi;
-        eus = (eus>0.0f)?1.0f/eus:1.0f;
-        evs = (evs>0.0f)?1.0f/evs:1.0f;
         ss[i3][i2][i1] = (eui-evi);
         cs[i3][i2][i1] = (evi-ewi)*(eui-evi);
         u1[i3][i2][i1] = u1i;

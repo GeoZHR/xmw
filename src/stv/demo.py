@@ -47,7 +47,7 @@ sigmaPhi,sigmaTheta = 4,20
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.2
 upperLikelihood = 0.5
-minSkinSize = 1000
+minSkinSize = 2000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -64,10 +64,10 @@ plotOnly = False
 def main(args):
   #goFakeData()
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
   #goRescan()
-  goSkin()
+  #goSkin()
   #goTest()
   #goKdTest()
   #goRescan()
@@ -86,6 +86,64 @@ def main(args):
   #goRescanX()
   #phaseShift()
   #goHsurfer()
+  goTI()
+def goTI():
+  fx = randfloat(n1,n2,n3)
+  gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.5)
+  fs.setMinSkinSize(minSkinSize)
+  #fcs = fs.findCells([fl,fp,ft])
+  fcs = FaultSkin.getCells(sk)
+  plot3(gx,skins=sk,png="oldSkins")
+  fls = zerofloat(n1,n2,n3)
+  cells=[]
+  for ic in range(0,len(fcs),5):
+    cell = fcs[ic]
+    cells.append(cell)
+    ks = cell.getI()
+    ms = cell.getIm()
+    ps = cell.getIp()
+    fls[ks[2]][ks[1]][ks[0]] = cell.getFl()
+    fls[ms[2]][ms[1]][ms[0]] = cell.getFl()
+    fls[ps[2]][ps[1]][ps[0]] = cell.getFl()
+  plot3(gx,fls,cmin=min(fls),cmax=max(fls),cmap=jetRamp(1.0),
+    clab="Fault likelihood",png="sm")
+  ti = TensorInterp()
+  ti.setParameters(80,5,0.4)
+  sm,u1,u2,u3 = ti.apply(n1,n2,n3,cells)
+  plot3(gx,fl,cmin=min(fl),cmax=max(fl),cmap=jetRamp(1.0),
+    clab="Fault likelihood (resampled)",png="fl")
+  plot3(gx,sm,cmin=min(sm),cmax=max(sm),cmap=jetRamp(1.0),
+    clab="Salient map",png="sm")
+  tv3 = TensorVoting3()
+  cells = tv3.findCells(0.2,sm,u1,u2,u3)
+  plot3(gx,cells=cells,png="cells")
+  skins = fs.findSkins(cells)
+  plot3(gx,skins=skins,png="skins")
+
+def goFed():
+  fx = readImage(gxfile)
+  wp = fillfloat(1,n1,n2,n3)
+  fs = fillfloat(1,n1,n2,n3)
+  lof = LocalOrientFilter(4,4)
+  ets = lof.applyForTensors(fx)
+  ets.setEigenvalues(0.0001,1,1)
+  fed = FastExplicitDiffusion()
+  fed.setParameters(5,5,0.2)
+  gx = fed.apply(ets,wp,fx)
+  plot3(fx,clab="seismic")
+  plot3(gx,cmin=min(gx),cmax=max(gx),clab="FED")
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,20,fx,fs)
+  plot3(fs,cmin=min(fs),cmax=max(fs),clab="LSF")
+
 def goHsurfer():
   gx = readImage(gxfile)
   fl = readImage(flfile)
@@ -283,7 +341,7 @@ def goTest():
   fcs = FaultSkin.getCells(sk)
   plot3(gx,cells=fcs,png="cells")
   fls = zerofloat(n1,n2,n3)
-  for ic in range(0,len(fcs),1):
+  for ic in range(0,len(fcs),5):
     cell = fcs[ic]
     ks = cell.getI()
     ms = cell.getIm()

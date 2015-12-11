@@ -5,10 +5,7 @@ Version: 2014.07.17
 """
 
 from utils import *
-#setupForSubset("clyde")
-setupForSubset("clydeSub")
-#setupForSubset("opunakeSub")
-#setupForSubset("parihaka")
+setupForSubset("3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -16,6 +13,8 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 gxfile  = "gx" # input image (maybe after bilateral filtering)
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
+cefile  = "ce" # eigenvalue-derived planarity
+aefile  = "ae" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
@@ -61,18 +60,17 @@ maxThrow = 25.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-pngDir = "../../../png/ipfx/"
-plotOnly = False
+pngDir = "../../../png/slt/"
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  #goSemblance()
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
-  #goTv()
-  goTI()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -80,102 +78,23 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goDisplay()
-
-def goTI():
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.5)
-  fs.setMinSkinSize(minSkinSize)
-  fx = randfloat(n1,n2,n3)
-  gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  plot3(gx,skins=sk,png="skins")
+  goSalt()
   '''
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fcs = fs.findCells([fl,fp,ft])
-  fcs = FaultSkin.getCells(sk)
-  plot3(gx,skins=sk,png="oldSkins")
-  fls = zerofloat(n1,n2,n3)
-  cells=[]
-  for ic in range(0,len(fcs),1):
-    cell = fcs[ic]
-    cells.append(cell)
-    ks = cell.getI()
-    ms = cell.getIm()
-    ps = cell.getIp()
-    fls[ks[2]][ks[1]][ks[0]] = cell.getFl()
-    fls[ms[2]][ms[1]][ms[0]] = cell.getFl()
-    fls[ps[2]][ps[1]][ps[0]] = cell.getFl()
-  plot3(gx,fls,cmin=min(fls),cmax=max(fls),cmap=jetRamp(1.0),
-    clab="Fault likelihood",png="sm")
-  '''
-  cells = FaultSkin.getCells(sk)
-  ti = TensorInterp()
-  ti.setParameters(80,5,0.5)
-  sm,u1,u2,u3 = ti.apply(n1,n2,n3,cells)
-  plot3(gx,sm,cmin=min(sm),cmax=max(sm),cmap=jetRamp(1.0),
-    clab="Salient map",png="sm")
-  tv3 = TensorVoting3()
-  cells = tv3.findCells(0.2,sm,u1,u2,u3)
-  plot3(gx,cells=cells,png="cells")
-  skins = fs.findSkins(cells)
-  plot3(gx,skins=skins,png="skins")
-
-def goTv():
+  sig1,sig2=8,4
   gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  plot3(gx,skins=sk,png="skinOld")
-  fcs = FaultSkin.getCells(sk)
-  plot3(gx,cells=fcs,png="cells")
-  fls = zerofloat(n1,n2,n3)
-  for ic in range(0,len(fcs),1):
-    cell = fcs[ic]
-    ks = cell.getI()
-    ms = cell.getIm()
-    ps = cell.getIp()
-    fls[ks[2]][ks[1]][ks[0]] = cell.getFl()
-    fls[ms[2]][ms[1]][ms[0]] = cell.getFl()
-    fls[ps[2]][ps[1]][ps[0]] = cell.getFl()
-  plot3(gx,fls,cmin=min(fls),cmax=max(fls),cmap=jetRamp(1.0),
-    clab="Fault likelihood",png="oldFl")
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(sig1,sig2)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  ets = lof.applyForTensors(gx)
+  lsf = LocalSemblanceFilter(4,16)
+  sm = lsf.semblance(LocalSemblanceFilter.Direction3.U,ets,ep)
+  plot3(gx,ep,cmin=0.1,cmax=1,cmap=jetRamp(1.0),clab="ep",png="ep")
+  plot3(gx,sm,cmin=0.1,cmax=1,cmap=jetRamp(1.0),clab="sm",png="ep")
+  '''
 
-  cells=[]
-  fl = zerofloat(n1,n2,n3)
-  for ic in range(0,len(fcs),5):
-    cell = fcs[ic]
-    cells.append(cell)
-    ks = cell.getI()
-    ms = cell.getIm()
-    ps = cell.getIp()
-    fl[ks[2]][ks[1]][ks[0]] = cell.getFl()
-    fl[ms[2]][ms[1]][ms[0]] = cell.getFl()
-    fl[ps[2]][ps[1]][ps[0]] = cell.getFl()
-  plot3(gx,cells=cells,png="cells")
-  plot3(gx,fl,cmin=min(fl),cmax=max(fl),cmap=jetRamp(1.0),
-    clab="Fault likelihood",png="reFl")
-  tv3 = TensorVoting3()
-  tv3.setSigma(15)
-  tv3.setWindow(20,15,15)
-  sm,cm,fm,u1,u2,u3 = tv3.applyVote(n1,n2,n3,cells)
-  cells = tv3.findCells(0.1,sm,u1,u2,u3)
-  plot3(gx,cells=cells,png="cells")
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.2)
-  fs.setMinSkinSize(minSkinSize)
-  skins = fs.findSkins(cells)
-  removeAllSkinFiles(fskgood)
-  writeSkins(fskgood,skins)
-  plot3(gx,cm,cmin=0.2,cmax=1.0,skins=skins,cmap=jetRamp(1.0),
-        png="skins")
-  plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
-    clab="Surfaceness",png="sm")
-  plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
-    clab="Junction",png="cm")
 
 def goDisplay():
   gx = readImage("gx")
@@ -184,6 +103,40 @@ def goDisplay():
   print min(gx)
   print max(gx)
   plot3(gx)
+def goSalt():
+  sig1,sig2=8,2
+  gx = readImage(gxfile)
+  if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    writeImage(epfile,ep)
+    lof = LocalOrientFilter(sig1,sig2)
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    ets = lof.applyForTensors(gx)
+    ets.setEigenvalues(0.001,1,1)
+    ss = SaltScanner(10,30)
+    ce,ae=ss.scan(ets,gx,u1,u2,u3)
+    writeImage(cefile,ce)
+    writeImage(aefile,ae)
+  else:
+    ce = readImage(cefile)
+    ae = readImage(aefile)
+  ed = abs(sub(ce,ae))
+  sd = mul(ed,ce)
+  div(ed,max(ed),ed)
+  div(sd,max(sd),sd)
+  plot3(gx)
+  plot3(gx,sub(1,ce),cmin=0.1,cmax=1,cmap=jetFill(1.0),
+        clab="ce",png="ce")
+  plot3(gx,sub(1,ae),cmin=0.1,cmax=1,cmap=jetFill(1.0),
+        clab="ae",png="ae")
+  plot3(gx,ed,cmin=0.05,cmax=max(ed)-0.8,cmap=jetRamp(1.0),
+        clab="ed",png="ae")
+  plot3(gx,sd,cmin=0.05,cmax=max(sd)-0.8,cmap=jetRamp(1.0),
+        clab="sd",png="ae")
+
 
 def goSlopes():
   print "goSlopes ..."

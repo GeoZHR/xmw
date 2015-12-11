@@ -8,7 +8,7 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/beg/"
+_datdir = "../../../data/seis/slt/"
 
 #############################################################################
 # Setup
@@ -17,7 +17,7 @@ def setupForSubset(name):
   Setup for a specified directory includes:
     seismic directory
     samplings s1,s2,s3
-  Example: setupForSubset("hongliu")
+  Example: setupForSubset("s1")
   """
   global seismicDir
   global welllogDir
@@ -25,40 +25,51 @@ def setupForSubset(name):
   global n1,n2,n3
   global sz,sl,sc
   global nz,nl,nc
-  if name=="hongliu":
-    print "setupForSubset: hongliu"
-    seismicDir = _datdir+"hongliu/"
-    n1,n2,n3 = 751,201,201
+  if name=="3d":
+    print "setupForSubset: 3d"
+    seismicDir = _datdir+"3d/"
+    n1,n2,n3 = 242,611,591
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    f1,f2,f3 = 0.000,400,1500
+    f1,f2,f3 = 0.000,0.000,0.000
+    #f1,f2,f3 = 220,340,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
-  elif name=="bp":
-    print "setupForSubset: bp"
-    seismicDir = _datdir+"bp/"
-    n1,n2,n3 = 501,2110,2818
-    d1,d2,d3 = 1.0,1.0,1.0 
+  elif name=="2d":
+    print "setupForSubset: 2d"
+    seismicDir = _datdir+"2d/"
+    n1,n2 = 242,611
+    d1,d2 = 1.0,1.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    f1,f2,f3 = 0.000,5400,10744
+    f1,f2 = 0.000,0.000
+    #f1,f2 = 220,340
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+
+  elif name=="opunake":
+    print "setupForSubset: opunake"
+    seismicDir = _datdir+"opunake/"
+    n1,n2,n3 = 639,557,192
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 0.000,d2*29,d3*46
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="bpSub":
-    print "setupForSubset: bp subset"
-    seismicDir = _datdir+"bp/sub/"
-    n1,n2,n3 = 191,1005,1251
+
+  elif name=="opunakeSub":
+    print "setupForSubset: opunake subset"
+    seismicDir = _datdir+"opunake/sub/"
+    n1,n2,n3 = 350,472,184
     d1,d2,d3 = 1.0,1.0,1.0 
-    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    #f1,f2,f3 = 0.000,5400,11400
-    f1,f2,f3 = 0.000,0.000,0.000
+    f1,f2,f3 = 0.0,0.0,0.0
+    #f1,f2,f3 = 49,42,3;
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="bpSub1":
-    print "setupForSubset: bp subet"
-    seismicDir = _datdir+"bp/sub1/"
-    n1,n2,n3 = 191,1005,1251
+
+  elif name=="parihaka":
+    print "setupForSubset: parihaka"
+    seismicDir = _datdir+"parihaka/"
+    n1,n2,n3 = 501,302,301
     d1,d2,d3 = 1.0,1.0,1.0 
-    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    #f1,f2,f3 = 0.000,5400,11400
-    f1,f2,f3 = 0.000,0.000,0.000
+    f1,f2,f3 = 0.0,0.0,0.0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
   else:
@@ -73,18 +84,18 @@ def getSeismicDir():
 
 #############################################################################
 # read/write images
-def readHorizon(name):
+
+def readImage2d(name):
   """ 
   Reads an image from a file with specified name.
   name: base name of image file; e.g., "tpsz"
   """
   fileName = seismicDir+name+".dat"
-  image = zerofloat(n2,n3)
+  image = zerofloat(n1,n2)
   ais = ArrayInputStream(fileName)
   ais.readFloats(image)
   ais.close()
   return image
-
 
 def readImage(name):
   """ 
