@@ -18,7 +18,8 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from ad import *
+from ipf import *
+from srp import *
 from slt import *
 
 #############################################################################

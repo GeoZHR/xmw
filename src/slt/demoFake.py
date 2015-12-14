@@ -4,51 +4,72 @@ Author: Xinming Wu and Dave Hale, Colorado School of Mines
 Version: 2015.02.09
 """
 
-from utils import *
-
-setupForSubset("3d")
+from fakeutils import *
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-cefile  = "ce" # image after lsf with fault likelihoods
-aefile  = "ae" # eigenvalue-derived planarity
+gsxfile = "gsx" # image after lsf with fault likelihoods
+epfile  = "ep" # eigenvalue-derived planarity
+p2file  = "p2" # inline slopes
+p3file  = "p3" # crossline slopes
+p2kfile = "p2k" # inline slopes (known)
+p3kfile = "p3k" # crossline slopes (known)
+flfile  = "fl" # fault likelihood
+fpfile  = "fp" # fault strike (phi)
+ftfile  = "ft" # fault dip (theta)
+fltfile = "flt" # fault likelihood thinned
+fptfile = "fpt" # fault strike thinned
+fttfile = "ftt" # fault dip thinned
+fs1file = "fs1" # fault slip (1st component)
+fs2file = "fs2" # fault slip (2nd component)
+fs3file = "fs3" # fault slip (3rd component)
+fskbase = "fsk" # fault skin (basename only)
 
+# These parameters control the scan over fault strikes and dips.
+# See the class FaultScanner for more information.
+minPhi,maxPhi = 0,360
+minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 4,20
+
+# These parameters control the construction of fault skins.
+# See the class FaultSkinner for more information.
+lowerLikelihood = 0.5
+upperLikelihood = 0.7
+minSkinSize = 3000
+
+# These parameters control the computation of fault dip slips.
+# See the class FaultSlipper for more information.
+minThrow = 0.01
+maxThrow = 15.0
+
+# Directory for saved png images. If None, png images will not be saved;
+# otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../png/"
 
+# Processing begins here. When experimenting with one part of this demo, we
+# can comment out earlier parts that have already written results to files.
 def main(args):
-  goSaltScan()
-  #goPSS()
-  #goSalt()
-
-def goSaltScan():
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  gx = readImage(gxfile
-  lof = LocalOrientFilter(8,2)
-  lof.applyForNormal(gx,u1,u2,u3)
-  ets = lof.applyForTensors(gx)
-  ets.setEigenvalues(0.01,1.0,1.0)
-  ss = SaltScanner(20,50)
-  cx,ax = ss.scan(ets,gx,u1,u2,u3)
-  writeImage("cet",cx)
-  writeImage("aet",ax)
-
-
-def goSalt():
+  #goFakeData()
+  #goSlopes()
+  #goScan()
+  #goThin()
+  #goSkin()
+  goPSS()
+  #goSPS()
+def goSPS():
+  print "screened Poisson surface method ..."
   gx = readImage(gxfile)
-  ae = readImage(aefile)
-  ce = readImage(cefile)
-  ca = abs(sub(ce,ae))
-  cd = sub(ce,0.5)
-  ad = sub(ae,0.5)
-  plot3(gx,ca,cmin=0.01,cmax=max(ca)-0.1,cmap=jetRamp(1.0))#,fbs=cd,png="pss")
-  plot3(gx,ce,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),fbs=cd,png="pss")
-  plot3(gx,ae,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),fbs=ad,png="pss")
-
+  sk = readSkins(fskbase)
+  fc = FaultSkin.getCells(sk)
+  sp = ScreenPoissonSurfer()
+  us = sp.setNormalsFromCells(n1,n2,n3,fc)
+  sf = sp.faultIndicator(us)
+  plot3(gx,cells=fc,png="cells")
+  plot3(gx,sf,cmin=min(sf),cmax=max(sf),cells=fc,fbs=sf,cmap=jetRamp(1.0),
+    clab="ScreenPoissonSurface",png="pss")
 
 def goPSS():
   print "point set surface method ..."
@@ -245,10 +266,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   n1 = len(f[0][0])
   n2 = len(f[0])
   n3 = len(f)
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
-  d1,d2,d3 = s1.delta,s2.delta,s3.delta
-  f1,f2,f3 = s1.first,s2.first,s3.first
-  l1,l2,l3 = s1.last,s2.last,s3.last
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -370,17 +387,15 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     sf.setSize(837,700)
   else:
-    sf.setSize(850,700)
+    sf.setSize(700,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
-  ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
-  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,-0.05))
-  ov.setAzimuthAndElevation(-56.0,35.0)
+  ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
+  ov.setAzimuthAndElevation(-55.0,25.0)
+  ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
+  ov.setScale(1.2)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

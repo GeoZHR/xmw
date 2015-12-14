@@ -226,13 +226,13 @@ public class SaltScanner {
 
   public float[][] smooth2(EigenTensors2 et, float[][] fx) {
     FastExplicitDiffusion fed = new FastExplicitDiffusion();
-    fed.setParameters(_h2,5,0.4f);
+    fed.setParameters(_h2,5,0.5f);
     return fed.apply(et,fx);
   }
 
   public float[][][] smooth2(EigenTensors3 et, float[][][] fx) {
     FastExplicitDiffusion fed = new FastExplicitDiffusion();
-    fed.setParameters(_h2,5,0.4f);
+    fed.setParameters(_h2,5,0.5f);
     return fed.apply(et,fx);
   }
 
@@ -321,30 +321,6 @@ public class SaltScanner {
             a[2][1] = g23[i3][i2][i1];
             a[2][2] = g33[i3][i2][i1];
             Eigen.solveSymmetric33(a,z,e);
-            float u1i = (float)z[0][0];
-            float u2i = (float)z[0][1];
-            float u3i = (float)z[0][2];
-            float v1i = (float)z[1][0];
-            float v2i = (float)z[1][1];
-            float v3i = (float)z[1][2];
-            float w1i = (float)z[2][0];
-            float w2i = (float)z[2][1];
-            float w3i = (float)z[2][2];
-            if (u1i<0.0f) {
-              u1i = -u1i;
-              u2i = -u2i;
-              u3i = -u3i;
-            }
-            if (v2i<0.0f) {
-              v1i = -v1i;
-              v2i = -v2i;
-              v3i = -v3i;
-            }
-            if (w3i<0.0f) {
-              w1i = -w1i;
-              w2i = -w2i;
-              w3i = -w3i;
-            }
             float eui = (float)e[0];
             float evi = (float)e[1];
             float ewi = (float)e[2];
@@ -419,13 +395,13 @@ public class SaltScanner {
 
   private void setScales(int h1) {
     _c1 = new float[h1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(h1);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(h1/2);
     float[] x = new float[20*h1];
     float[] y = new float[20*h1];
     x[10*h1] = 1;
     rgf.apply0(x,y);
     copy(h1,10*h1,y,0,_c1);
-    mul(_c1,2f,_c1);
+    mul(_c1,10f,_c1);
   }
 
   private static void trace(String s) {

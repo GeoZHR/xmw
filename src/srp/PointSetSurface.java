@@ -51,15 +51,18 @@ public class PointSetSurface {
     final KdTree kt = new KdTree(xu[0]);
     final float st = (float)sin(Math.PI/8);
     final float[][][] sf = fillfloat(v,n1,n2,n3);
-    Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
+    //Parallel.loop(bs3[0],bs3[1],1,new Parallel.LoopInt() {
+    Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       float[] xmin = new float[3];
       float[] xmax = new float[3];
       System.out.println("i3="+i3);
-      for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
-        for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
-          if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
-          if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
+      //for (int i2=bs2[0]; i2<bs2[1]; ++i2) {
+        //for (int i1=bs1[0]; i1<bs1[1]; ++i1) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          //if((i2<bb2[i1][0]||i2>bb2[i1][1])){continue;}
+          //if((i3<bb3[i1][0]||i3>bb3[i1][1])){continue;}
           int[] id = null;
           int di = 10,nd = 0;
           while(nd<20 && di<=dt) {
@@ -93,7 +96,7 @@ public class PointSetSurface {
             float d33 = d3*d3;
             float dsi = d11+d22+d33;
             float wdi = w1*d1+w2*d2+w3*d3;
-            if(dsi!=0.0f&&abs(wdi/sqrt(dsi))>st){continue;}
+            //if(dsi!=0.0f&&abs(wdi/sqrt(dsi))>st){continue;}
             xpl.add(new float[]{x1,x2,x3});
             upl.add(new float[]{w1,w2,w3});
             dxl.add(sqrt(0.5f*dsi/(di*di)));
