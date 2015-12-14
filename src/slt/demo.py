@@ -27,7 +27,7 @@ def goSaltScan():
   u1 = zerofloat(n1,n2,n3)
   u2 = zerofloat(n1,n2,n3)
   u3 = zerofloat(n1,n2,n3)
-  gx = readImage(gxfile
+  gx = readImage(gxfile)
   lof = LocalOrientFilter(8,2)
   lof.applyForNormal(gx,u1,u2,u3)
   ets = lof.applyForTensors(gx)

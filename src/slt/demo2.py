@@ -18,7 +18,7 @@ def goTest():
   gx = readImage2d(gxfile)
   lof = LocalOrientFilter(8,2)
   lof.applyForNormal(gx,u1,u2)
-  ss = SaltScanner(20,20)
+  ss = SaltScanner(20,50)
   cx,ax = ss.scan(gx,u1,u2)
   cd = abs(sub(cx,ax))
   plot(gx)
