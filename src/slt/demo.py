@@ -19,10 +19,10 @@ pngDir = None
 #pngDir = "../../png/"
 
 def main(args):
-  #goSaltScan()
   #goPSS()
   #goSalt()
-  goSaltSurfer()
+  goSaltScan()
+  #goSaltSurfer()
 def goSaltSurfer():
   gx = readImage(gxfile)
   u1 = zerofloat(n1,n2,n3)
