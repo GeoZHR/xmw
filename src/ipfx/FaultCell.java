@@ -804,6 +804,7 @@ public class FaultCell implements Serializable {
               qt = qa; qa = qd; qd = qt;
     }
     for (FaultCell cell:cells) {
+      if(cell==null){continue;}
       float x1 = cell.x1;
       float x2 = cell.x2;
       float x3 = cell.x3;

@@ -307,31 +307,46 @@ public class TensorVoting3 {
   }
 
   public FaultCell[] findCells (
-    float[][][] ss, float[][][] u1, float[][][] u2, float[][][] u3) {
-    ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
-    int n3 = ss.length;
-    int n2 = ss[0].length;
-    int n1 = ss[0][0].length;
-    SincInterpolator si = new SincInterpolator();
-    Sampling s1 = new Sampling(n1);
-    Sampling s2 = new Sampling(n2);
-    Sampling s3 = new Sampling(n3);
-    for (int i3=0; i3<n3 ;++i3) {
-    for (int i2=0; i2<n2 ;++i2) {
-    for (int i1=0; i1<n1 ;++i1) {
-      float u1i = u1[i3][i2][i1];
-      float u2i = u2[i3][i2][i1];
-      float u3i = u3[i3][i2][i1];
+    final float[][][] ss, final float[][][] u1, 
+    final float[][][] u2, final float[][][] u3) 
+  {
+    final int n3 = ss.length;
+    final int n2 = ss[0].length;
+    final int n1 = ss[0][0].length;
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    final float[][][] sm = new float[n3][n2][n1];
+    final float[][][] sp = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    final ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
+    loop(1,n3-1,new Parallel.LoopInt() {
+    public void compute(int i3) {
+    for (int i2=1; i2<n2-1 ;++i2) {
+    for (int i1=1; i1<n1-1 ;++i1) {
+      float u1i = u1[i3][i2][i1]*2f;
+      float u2i = u2[i3][i2][i1]*2f;
+      float u3i = u3[i3][i2][i1]*2f;
       float x1m = i1-u1i;
       float x2m = i2-u2i;
       float x3m = i3-u3i;
       float x1p = i1+u1i;
       float x2p = i2+u2i;
       float x3p = i3+u3i;
+      sm[i3][i2][i1] = si.interpolate(s1,s2,s3,ss,x1m,x2m,x3m);
+      sp[i3][i2][i1] = si.interpolate(s1,s2,s3,ss,x1p,x2p,x3p);
+    }}}});
+    for (int i3=1; i3<n3-1; ++i3) {
+    for (int i2=1; i2<n2-1; ++i2) {
+    for (int i1=1; i1<n1-1; ++i1) {
+      float u1i = u1[i3][i2][i1];
+      float u2i = u2[i3][i2][i1];
+      float u3i = u3[i3][i2][i1];
       float sxi = ss[i3][i2][i1];
-      float sxm = si.interpolate(s1,s2,s3,ss,x1m,x2m,x3m);
-      float sxp = si.interpolate(s1,s2,s3,ss,x1p,x2p,x3p);
-      if (sxi>sxm && sxi>sxp && sxi>0.1f) {
+      float sxm = sm[i3][i2][i1];
+      float sxp = sp[i3][i2][i1];
+      if (sxi>sxm && sxi>sxp && sxi>0.2f) {
         if (u1i>0.0f) {
           u1i = -u1i;
           u2i = -u2i;

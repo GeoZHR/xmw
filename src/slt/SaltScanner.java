@@ -154,6 +154,8 @@ public class SaltScanner {
   {
     zero(cx);
     zero(ax);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    rgf.apply000(fx,fx);
     final int n3 = fx.length;
     final int n2 = fx[0].length;
     final int n1 = fx[0][0].length;
