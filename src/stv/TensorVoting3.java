@@ -306,7 +306,8 @@ public class TensorVoting3 {
     return cellList.toArray(new FaultCell[0]);
   }
 
-  public FaultCell[] findCells (
+  public FaultCell[] findCellsX (
+    final float smin,
     final float[][][] ss, final float[][][] u1, 
     final float[][][] u2, final float[][][] u3) 
   {
@@ -346,7 +347,7 @@ public class TensorVoting3 {
       float sxi = ss[i3][i2][i1];
       float sxm = sm[i3][i2][i1];
       float sxp = sp[i3][i2][i1];
-      if (sxi>sxm && sxi>sxp && sxi>0.2f) {
+      if (sxi>sxm && sxi>sxp && sxi>smin) {
         if (u1i>0.0f) {
           u1i = -u1i;
           u2i = -u2i;
