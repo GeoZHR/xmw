@@ -13,22 +13,6 @@ gxfile  = "gx" # input image (maybe after bilateral filtering)
 def main(args):
   #goTest()
   #goSemblance()
-  goSmooth()
-def goSmooth():
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  el = zerofloat(n1,n2)
-  av = fillfloat(1,n1,n2)
-  au = fillfloat(1,n1,n2)
-  gs = zerofloat(n1,n2)
-  gx = readImage2d(gxfile)
-  lof = LocalOrientFilter(8,2)
-  lof.applyForNormalLinear(gx,u1,u2,el)
-  ldf = LocalDipFilter()
-  ldf.applyForwardIso(0.1,0.2,u2,gx,gs)
-  plot(gx)
-  plot(gs)
-  plot(sub(gx,gs))
 
 def goTest():
   u1 = zerofloat(n1,n2)
