@@ -162,7 +162,7 @@ public class SaltScanner {
 
     solveEigenproblems(g11s,g12s,g13s,g22s,g23s,g33s,g11c);
 
-    LocalOrientFilter lof = new LocalOrientFilter(4,1);
+    LocalOrientFilter lof = new LocalOrientFilter(4,4);
     lof.applyForNormal(g11c,u1,u2,u3);
     smooth1(g11c,u1,u2,u3,g22c,g33c);
     trace("planarities done...");
