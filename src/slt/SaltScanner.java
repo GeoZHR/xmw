@@ -92,14 +92,13 @@ public class SaltScanner {
   }
 
 
-  //public float[][][][] scan(
-  public float[][][] scan(
-    EigenTensors3 ets, float[][][] fx, 
-    float[][][] u1, float[][][] u2, float[][][] u3) 
-  {
+  public float[][][][] scan( EigenTensors3 ets, float[][][] fx) {
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
 
     float[][][] g11c = new float[n3][n2][n1];
     float[][][] g12c = new float[n3][n2][n1];
@@ -107,13 +106,6 @@ public class SaltScanner {
     float[][][] g22c = new float[n3][n2][n1];
     float[][][] g23c = new float[n3][n2][n1];
     float[][][] g33c = new float[n3][n2][n1];
-
-    float[][][] g11a = new float[n3][n2][n1];
-    float[][][] g12a = new float[n3][n2][n1];
-    float[][][] g13a = new float[n3][n2][n1];
-    float[][][] g22a = new float[n3][n2][n1];
-    float[][][] g23a = new float[n3][n2][n1];
-    float[][][] g33a = new float[n3][n2][n1];
 
     float[][][] g11s = new float[n3][n2][n1];
     float[][][] g12s = new float[n3][n2][n1];
@@ -169,11 +161,65 @@ public class SaltScanner {
     */
 
     solveEigenproblems(g11s,g12s,g13s,g22s,g23s,g33s,g11c);
-    //solveEigenproblems(g11a,g12a,g13a,g22a,g23a,g33a,g22s);
+
+    LocalOrientFilter lof = new LocalOrientFilter(4,1);
+    lof.applyForNormal(g11c,u1,u2,u3);
+    g22c = smooth1(g11c,u1,u2,u3);
     trace("planarities done...");
 
-    return g11c;//new float[][][][]{g11s,g22s};
+    return new float[][][][]{g11c,g22c};
   }
+
+  public float[][][] smooth1(
+    final float[][][] fx, final float[][][] u1, final float[][][] u2, 
+    final float[][][] u3) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] cx = new float[n3][n2][n1];
+    final float[][][] ax = new float[n3][n2][n1];
+    final float[][][] dx = new float[n3][n2][n1];
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3, new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float u1i = u1[i3][i2][i1];
+        float u2i = u2[i3][i2][i1];
+        float u3i = u3[i3][i2][i1];
+        for (int k=1; k<=_h1; k++) {
+          float u1k = k*u1i;
+          float u2k = k*u2i;
+          float u3k = k*u3i;
+          float x1p = i1+u1k;
+          float x2p = i2+u2k;
+          float x3p = i3+u3k;
+          float x1m = i1-u1k;
+          float x2m = i2-u2k;
+          float x3m = i3-u3k;
+          float sci = _c1[k-1];
+          float fxm = si.interpolate(s1,s2,s3,fx,x1m,x2m,x3m);
+          float fxp = si.interpolate(s1,s2,s3,fx,x1p,x2p,x3p);
+          cx[i3][i2][i1] += sci*fxm;
+          ax[i3][i2][i1] += sci*fxp;
+        }
+      }}
+    }});
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      dx[i3][i2][i1] = abs(cx[i3][i2][i1]-ax[i3][i2][i1]);
+    }}}
+    sub(dx,min(dx),dx);
+    div(dx,max(dx),dx);
+    return dx;
+  }
+
 
   public void smooth1(
     final float[][][] fx, final float[][][] u1, final float[][][] u2, 
