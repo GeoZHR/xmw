@@ -18,7 +18,8 @@ public class SaltScanner {
 
   public SaltScanner (float sigma1, float sigma2) {
     _h1 = round(sigma1);
-    _h2 = round(sigma2*sigma2/2f);
+    _h2 = round(sigma2);
+    //_h2 = round(sigma2*sigma2/2f);
     setScales(_h1);
   }
 
@@ -112,8 +113,31 @@ public class SaltScanner {
     float[][][] g23a = new float[n3][n2][n1];
     float[][][] g33a = new float[n3][n2][n1];
 
+    float[][][] g11s = new float[n3][n2][n1];
+    float[][][] g12s = new float[n3][n2][n1];
+    float[][][] g13s = new float[n3][n2][n1];
+    float[][][] g22s = new float[n3][n2][n1];
+    float[][][] g23s = new float[n3][n2][n1];
+    float[][][] g33s = new float[n3][n2][n1];
+
+
     computeGradientProducts(fx,g11c,g12c,g13c,g22c,g23c,g33c);
     trace("structure tensors done...");
+
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(ets,_h2,g11c,g11s);
+    trace("1st smooth parallel to structures done...");
+    lsf.apply(ets,_h2,g12c,g12s);
+    trace("2nd smooth parallel to structures done...");
+    lsf.apply(ets,_h2,g13c,g13s);
+    trace("3rd smooth parallel to structures done...");
+    lsf.apply(ets,_h2,g22c,g22s);
+    trace("4th smooth parallel to structures done...");
+    lsf.apply(ets,_h2,g23c,g23s);
+    trace("5th smooth parallel to structures done...");
+    lsf.apply(ets,_h2,g33c,g33s);
+    trace("6th smooth parallel to structures done...");
+    /*
 
     float[][][] g11s = smooth2(ets,g11c);
     trace("1st smooth parallel to structures done...");
@@ -127,6 +151,7 @@ public class SaltScanner {
     trace("5th smooth parallel to structures done...");
     float[][][] g33s = smooth2(ets,g33c);
     trace("6th smooth parallel to structures done...");
+    */
 
     smooth1(g11s,u1,u2,u3,g11c,g11a);
     trace("1st smooth normal to structures done...");
