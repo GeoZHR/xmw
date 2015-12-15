@@ -31,8 +31,8 @@ def goSaltSurfer():
   g1 = zerofloat(n1,n2,n3)
   g2 = zerofloat(n1,n2,n3)
   g3 = zerofloat(n1,n2,n3)
-  ae = readImage("aet")#file)
-  ce = readImage("cet")#file)
+  ae = readImage("ae")#file)
+  ce = readImage("ce")#file)
   rgf = RecursiveGaussianFilter(2.0)
   rgf.apply100(ce,g1)
   rgf.apply010(ce,g2)
@@ -61,14 +61,14 @@ def goSaltScan():
   lof.applyForNormal(gx,u1,u2,u3)
   ets = lof.applyForTensors(gx)
   ets.setEigenvalues(0.01,1.0,1.0)
-  ss = SaltScanner(10,40)
+  ss = SaltScanner(10,50)
   ce,ae = ss.scan(ets,gx,u1,u2,u3)
   writeImage("ce",ce)
   writeImage("ae",ae)
   '''
   ce = readImage("cet")
   ae = readImage("aet")
-  plot3(gx,sub(1,ce),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="ce")
+  #plot3(gx,sub(1,ce),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="ce")
   plot3(gx,sub(1,ae),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="ae")
   '''
 

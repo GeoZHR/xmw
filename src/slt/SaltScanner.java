@@ -125,6 +125,7 @@ public class SaltScanner {
     computeGradientProducts(fx,g11c,g12c,g13c,g22c,g23c,g33c);
     trace("structure tensors done...");
 
+    /*
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     lsf.apply(ets,_h2,g11c,g11s);
     trace("1st smooth parallel to structures done...");
@@ -138,8 +139,8 @@ public class SaltScanner {
     trace("5th smooth parallel to structures done...");
     lsf.apply(ets,_h2,g33c,g33s);
     trace("6th smooth parallel to structures done...");
+    */
 
-    /*
     g11s = smooth2(ets,g11c);
     trace("1st smooth parallel to structures done...");
     g12s = smooth2(ets,g12c);
@@ -152,7 +153,6 @@ public class SaltScanner {
     trace("5th smooth parallel to structures done...");
     g33s = smooth2(ets,g33c);
     trace("6th smooth parallel to structures done...");
-    */
 
     smooth1(g11s,u1,u2,u3,g11c,g11a);
     trace("1st smooth normal to structures done...");
@@ -180,8 +180,6 @@ public class SaltScanner {
   {
     zero(cx);
     zero(ax);
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
-    rgf.apply000(fx,fx);
     final int n3 = fx.length;
     final int n2 = fx[0].length;
     final int n1 = fx[0][0].length;
