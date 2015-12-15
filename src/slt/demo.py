@@ -73,7 +73,7 @@ def goSaltScan():
   ets = lof.applyForTensors(gx)
   ets.setEigenvalues(0.01,1.0,1.0)
   ss = SaltScanner(20,40)
-  ep,cp,ap = ss.scan(ets,gx,u1,u2,u3)
+  ep,cp,ap = ss.scan(ets,gx)
   writeImage("ep",ep)
   writeImage("cp",cp)
   writeImage("ap",ap)
