@@ -91,65 +91,6 @@ public class SaltScanner {
     return new float[][][]{cx,ax};
   }
 
-  public float[][][] scanX(
-    EigenTensors3 ets, float[][][] fx, 
-    float[][][] u1, float[][][] u2, float[][][] u3) 
-  {
-    int n3 = fx.length;
-    int n2 = fx[0].length;
-    int n1 = fx[0][0].length;
-
-    float[][][] g11c = new float[n3][n2][n1];
-    float[][][] g12c = new float[n3][n2][n1];
-    float[][][] g13c = new float[n3][n2][n1];
-    float[][][] g22c = new float[n3][n2][n1];
-    float[][][] g23c = new float[n3][n2][n1];
-    float[][][] g33c = new float[n3][n2][n1];
-
-    float[][][] g11s = new float[n3][n2][n1];
-    float[][][] g12s = new float[n3][n2][n1];
-    float[][][] g13s = new float[n3][n2][n1];
-    float[][][] g22s = new float[n3][n2][n1];
-    float[][][] g23s = new float[n3][n2][n1];
-    float[][][] g33s = new float[n3][n2][n1];
-
-
-    computeGradientProducts(fx,g11c,g12c,g13c,g22c,g23c,g33c);
-    trace("structure tensors done...");
-
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.apply(ets,_h2,g11c,g11s);
-    trace("1st smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g12c,g12s);
-    trace("2nd smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g13c,g13s);
-    trace("3rd smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g22c,g22s);
-    trace("4th smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g23c,g23s);
-    trace("5th smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g33c,g33s);
-    trace("6th smooth parallel to structures done...");
-
-    smooth1X(g11s,u1,u2,u3,g11c);
-    trace("1st smooth normal to structures done...");
-    smooth1X(g12s,u1,u2,u3,g12c);
-    trace("2nd smooth normal to structures done...");
-    smooth1X(g13s,u1,u2,u3,g13c);
-    trace("3rd smooth normal to structures done...");
-    smooth1X(g22s,u1,u2,u3,g22c);
-    trace("4th smooth normal to structures done...");
-    smooth1X(g23s,u1,u2,u3,g23c);
-    trace("5th smooth normal to structures done...");
-    smooth1X(g33s,u1,u2,u3,g33c);
-    trace("6th smooth normal to structures done...");
-
-    solveEigenproblemsX(g11c,g12c,g13c,g22c,g23c,g33c,g11s);
-    trace("planarities done...");
-
-    return g11s;
-  }
-
 
   public float[][][][] scan(
     EigenTensors3 ets, float[][][] fx, 
@@ -197,19 +138,19 @@ public class SaltScanner {
     trace("5th smooth parallel to structures done...");
     lsf.apply(ets,_h2,g33c,g33s);
     trace("6th smooth parallel to structures done...");
-    /*
 
-    float[][][] g11s = smooth2(ets,g11c);
+    /*
+    g11s = smooth2(ets,g11c);
     trace("1st smooth parallel to structures done...");
-    float[][][] g12s = smooth2(ets,g12c);
+    g12s = smooth2(ets,g12c);
     trace("2nd smooth parallel to structures done...");
-    float[][][] g13s = smooth2(ets,g13c);
+    g13s = smooth2(ets,g13c);
     trace("3rd smooth parallel to structures done...");
-    float[][][] g22s = smooth2(ets,g22c);
+    g22s = smooth2(ets,g22c);
     trace("4th smooth parallel to structures done...");
-    float[][][] g23s = smooth2(ets,g23c);
+    g23s = smooth2(ets,g23c);
     trace("5th smooth parallel to structures done...");
-    float[][][] g33s = smooth2(ets,g33c);
+    g33s = smooth2(ets,g33c);
     trace("6th smooth parallel to structures done...");
     */
 
@@ -232,36 +173,6 @@ public class SaltScanner {
 
     return new float[][][][]{g11s,g22s};
   }
-
-  public void smooth1X(
-    final float[][][] fx, final float[][][] u1, final float[][][] u2, 
-    final float[][][] u3, final float[][][] gx) 
-  {
-    final int n3 = fx.length;
-    final int n2 = fx[0].length;
-    final int n1 = fx[0][0].length;
-    final float[][][] g1 = new float[n3][n2][n1];
-    final float[][][] g2 = new float[n3][n2][n1];
-    final float[][][] g3 = new float[n3][n2][n1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(_h1);
-    rgf.apply100(fx,g1);
-    rgf.apply010(fx,g2);
-    rgf.apply001(fx,g3);
-    Parallel.loop(n3, new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float u1i = u1[i3][i2][i1];
-        float u2i = u2[i3][i2][i1];
-        float u3i = u3[i3][i2][i1];
-        float g1i = g1[i3][i2][i1];
-        float g2i = g2[i3][i2][i1];
-        float g3i = g3[i3][i2][i1];
-        gx[i3][i2][i1] = g1i*u1i+g2i*u2i+g3i*u3i;
-      }}
-    }});
-  }
-
 
   public void smooth1(
     final float[][][] fx, final float[][][] u1, final float[][][] u2, 
@@ -354,22 +265,6 @@ public class SaltScanner {
   }
 
 
-  public float[][] apply(boolean causal, float a, float[][] fx) {
-    int n2 = fx.length;
-    int n1 = fx[0].length;
-    float[][] gx = new float[n2][n1];
-    if (causal) {
-      causal1(a,fx,gx);
-      causal2(a,gx,gx);
-      causal1(a,gx,gx);
-    } else {
-      anticausal1(a,fx,gx);
-      anticausal2(a,gx,gx);
-      anticausal1(a,gx,gx);
-    }
-    return gx;
-  }
-
   private void computeGradientProducts(
     final float[][][] fx,
     final float[][][] g11, final float[][][] g12, final float[][][] g13,
@@ -448,103 +343,6 @@ public class SaltScanner {
             ep[i3][i2][i1] = (eui-evi)*esi;
           }
         }
-      }
-    });
-  }
-
-  private void solveEigenproblemsX(
-    final float[][][] g11, final float[][][] g12, final float[][][] g13,
-    final float[][][] g22, final float[][][] g23, final float[][][] g33,
-    final float[][][] ep)
-  {
-    final int n3 = g11.length;
-    final int n2 = g11[0].length;
-    final int n1 = g11[0][0].length;
-    Parallel.loop(n3,new Parallel.LoopInt() {
-      public void compute(int i3) {
-        double[][] a = new double[3][3];
-        double[][] z = new double[3][3];
-        double[] e = new double[3];
-        for (int i2=0; i2<n2; ++i2) {
-          for (int i1=0; i1<n1; ++i1) {
-            a[0][0] = g11[i3][i2][i1];
-            a[0][1] = g12[i3][i2][i1];
-            a[0][2] = g13[i3][i2][i1];
-            a[1][0] = g12[i3][i2][i1];
-            a[1][1] = g22[i3][i2][i1];
-            a[1][2] = g23[i3][i2][i1];
-            a[2][0] = g13[i3][i2][i1];
-            a[2][1] = g23[i3][i2][i1];
-            a[2][2] = g33[i3][i2][i1];
-            Eigen.solveSymmetric33(a,z,e);
-            float eui = (float)e[0];
-            float evi = (float)e[1];
-            float ewi = (float)e[2];
-            if (ewi<0.0f) ewi = 0.0f;
-            if (evi<ewi) evi = ewi;
-            if (eui<evi) eui = evi;
-            ep[i3][i2][i1] = eui-evi;
-          }
-        }
-      }
-    });
-  }
-
-
-
-  // Vertically causal and anti-causal filters are implemented 
-  // by one-side recursive exponential filters.  
-  private void causal2(float a, float[][] x, float[][] y) {
-    int n2 = x.length;
-    int n1 = x[0].length;
-    float b = 1.0f - a;
-    for (int i1=0; i1<n1; ++i1){ 
-      float yi = y[0][i1] = x[0][i1];
-      for (int i2=1; i2<n2; ++i2) 
-        y[i2][i1] = yi = a*yi + b*x[i2][i1];
-    }
-  }
-
-  private void causal1(float a, float[] x, float[] y) {
-    int n1 = x.length;
-    float b = 1.0f - a;
-    float yi = y[0] = x[0];
-    for (int i1=1; i1<n1; ++i1) 
-      y[i1] = yi = a*yi + b*x[i1];
-  }
-
-  private void causal1(final float a, final float[][] x, final float[][] y) {
-    final int n2 = x.length;
-    Parallel.loop(n2, new Parallel.LoopInt() {
-      public void compute(int i2) {
-        causal1(a,x[i2],y[i2]);
-      }
-    });
-  }
-
-  private void anticausal1(float a, float[] x, float[] y) {
-    int n1 = x.length;
-    float b = 1.0f - a;
-    float yi = y[n1-1] = x[n1-1];
-    for(int i1=n1-2; i1>=0; --i1)
-      y[i1] = yi = a*yi + b*x[i1];
-  }
-  private void anticausal2(float a, float[][] x, float[][] y) {
-    int n2 = x.length;
-    int n1 = x[0].length;
-    float b = 1.0f - a;
-    for(int i1=0; i1<n1; ++i1) {
-      float yi = y[n2-1][i1] = x[n2-1][i1];
-      for(int i2=n2-2; i2>=0; --i2)
-        y[i2][i1] = yi = a*yi + b*x[i2][i1];
-    }
-  }
-
-  private void anticausal1(final float a, final float[][] x, final float[][] y) {
-    final int n2 = x.length;
-    Parallel.loop(n2, new Parallel.LoopInt() {
-      public void compute(int i2) {
-        anticausal1(a,x[i2],y[i2]);
       }
     });
   }
