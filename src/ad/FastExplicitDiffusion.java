@@ -100,7 +100,8 @@ public class FastExplicitDiffusion {
     for (int m=0; m<_m; ++m) {
       trace("m="+m);
     for (int ic=0; ic<nc; ++ic) {
-      applyLaplacian(et,-ts[ic],wp,copy(gx),gx);
+      float[][][] gt = copy(gx);
+      applyLaplacian(et,-ts[ic],wp,gt,gx);
     }}
     return gx;
   }
