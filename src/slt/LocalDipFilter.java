@@ -372,7 +372,7 @@ public class LocalDipFilter {
   // The first-derivative approximation used here is consistent
   // with an O(h^2) isotropic approximation to the Laplacian.
   // NOTE: if we use this, must also change preconditioner.
-  private void applyForwardIso(
+  public void applyForwardIso(
     float sd, float sn, float[][] u2, float[][] x, float[][] y) 
   {
     float aone = 1.0f+sd;

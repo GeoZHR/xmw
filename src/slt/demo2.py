@@ -25,7 +25,7 @@ def goSmooth():
   lof = LocalOrientFilter(8,2)
   lof.applyForNormalLinear(gx,u1,u2,el)
   ldf = LocalDipFilter()
-  ldf.applyForward(0.01,0.0,u2,gx,gs)
+  ldf.applyForwardIso(0.1,0.2,u2,gx,gs)
   plot(gx)
   plot(gs)
   plot(sub(gx,gs))

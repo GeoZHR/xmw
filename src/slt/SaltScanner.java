@@ -18,8 +18,8 @@ public class SaltScanner {
 
   public SaltScanner (float sigma1, float sigma2) {
     _h1 = round(sigma1);
-    _h2 = round(sigma2);
-    //_h2 = round(sigma2*sigma2/2f);
+    //_h2 = round(sigma2);
+    _h2 = round(sigma2*sigma2/2f);
     setScales(_h1);
   }
 
