@@ -164,10 +164,10 @@ public class SaltScanner {
 
     LocalOrientFilter lof = new LocalOrientFilter(4,1);
     lof.applyForNormal(g11c,u1,u2,u3);
-    g22c = smooth1(g11c,u1,u2,u3);
+    smooth1(g11c,u1,u2,u3,g22c,g33c);
     trace("planarities done...");
 
-    return new float[][][][]{g11c,g22c};
+    return new float[][][][]{g11c,g22c,g33c};
   }
 
   public float[][][] smooth1(
