@@ -1,5 +1,6 @@
 from utils import *
 
+
 setupForSubset("2d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -10,9 +11,9 @@ gxfile  = "gx" # input image (maybe after bilateral filtering)
 
 
 def main(args):
-  goTest()
+  #goTest()
   #goSemblance()
-  #goSmooth()
+  goSmooth()
 def goSmooth():
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
@@ -23,20 +24,11 @@ def goSmooth():
   gx = readImage2d(gxfile)
   lof = LocalOrientFilter(8,2)
   lof.applyForNormalLinear(gx,u1,u2,el)
-  for i2 in range(n2):
-    for i1 in range(n1):
-      if el[i2][i1]>0.7:
-        au[i2][i1]=0.01
-  au = pow(el,2)
-  sub(au,min(au),au)
-  div(au,max(au),au)
-  au = sub(1,au)
-  ets = lof.applyForTensors(gx)
-  ets.setEigenvalues(au,av)
-  lsf = LocalSmoothingFilter()
-  lsf.apply(ets,20,gx,gs)
+  ldf = LocalDipFilter()
+  ldf.applyForward(0.01,0.0,u2,gx,gs)
   plot(gx)
   plot(gs)
+  plot(sub(gx,gs))
 
 def goTest():
   u1 = zerofloat(n1,n2)

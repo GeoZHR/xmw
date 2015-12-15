@@ -61,12 +61,16 @@ def goSaltScan():
   lof.applyForNormal(gx,u1,u2,u3)
   ets = lof.applyForTensors(gx)
   ets.setEigenvalues(0.01,1.0,1.0)
-  ss = SaltScanner(10,200)
+  ss = SaltScanner(20,50)
   ce,ae = ss.scan(ets,gx,u1,u2,u3)
   writeImage("ce",ce)
   writeImage("ae",ae)
+  '''
+  ce = readImage("cet")
+  ae = readImage("aet")
   plot3(gx,sub(1,ce),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="ce")
   plot3(gx,sub(1,ae),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="ae")
+  '''
 
 
 def goSalt():
