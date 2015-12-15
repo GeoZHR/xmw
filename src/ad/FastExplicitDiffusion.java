@@ -66,8 +66,8 @@ public class FastExplicitDiffusion {
     int nc = ts.length;
     RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
     for (int m=0; m<_m; ++m) {
+      trace("m="+m);
     for (int ic=0; ic<nc; ++ic) {
-      trace("ic="+ic);
       rgf.apply100(gx,g1);
       rgf.apply010(gx,g2);
       rgf.apply001(gx,g3);
