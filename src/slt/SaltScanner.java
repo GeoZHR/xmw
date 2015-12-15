@@ -92,7 +92,8 @@ public class SaltScanner {
   }
 
 
-  public float[][][][] scan(
+  //public float[][][][] scan(
+  public float[][][] scan(
     EigenTensors3 ets, float[][][] fx, 
     float[][][] u1, float[][][] u2, float[][][] u3) 
   {
@@ -152,7 +153,6 @@ public class SaltScanner {
     trace("5th smooth parallel to structures done...");
     g33s = smooth2(ets,g33c);
     trace("6th smooth parallel to structures done...");
-    */
 
     smooth1(g11s,u1,u2,u3,g11c,g11a);
     trace("1st smooth normal to structures done...");
@@ -166,12 +166,13 @@ public class SaltScanner {
     trace("5th smooth normal to structures done...");
     smooth1(g33s,u1,u2,u3,g33c,g33a);
     trace("6th smooth normal to structures done...");
+    */
 
-    solveEigenproblems(g11c,g12c,g13c,g22c,g23c,g33c,g11s);
-    solveEigenproblems(g11a,g12a,g13a,g22a,g23a,g33a,g22s);
+    solveEigenproblems(g11s,g12s,g13s,g22s,g23s,g33s,g11c);
+    //solveEigenproblems(g11a,g12a,g13a,g22a,g23a,g33a,g22s);
     trace("planarities done...");
 
-    return new float[][][][]{g11s,g22s};
+    return g11c;//new float[][][][]{g11s,g22s};
   }
 
   public void smooth1(
