@@ -37,7 +37,7 @@ def setupForSubset(name):
   elif name=="3dSub":
     print "setupForSubset: 3dSub"
     seismicDir = _datdir+"3d/sub/"
-    n1,n2,n3 = 153,611,430
+    n1,n2,n3 = 242,611,179
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,0.000,0.000

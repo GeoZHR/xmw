@@ -2,6 +2,7 @@ package slt;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Parallel;
+import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 import ad.*;
@@ -16,13 +17,7 @@ import ad.*;
 
 public class SaltScanner {
 
-  public SaltScanner (float sigma1, float sigma2) {
-    _h1 = round(sigma1);
-    //_h2 = round(sigma2);
-    _h2 = round(sigma2*sigma2/2f);
-    setScales(_h1);
-  }
-
+  /*
   public float[][][] scan(float[][] fx, float[][] u1, float[][] u2) {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -90,15 +85,14 @@ public class SaltScanner {
     }}
     return new float[][][]{cx,ax};
   }
+  */
 
 
-  public float[][][][] scan( EigenTensors3 ets, float[][][] fx) {
+  public float[][][] applyForPlanar(float sigma, EigenTensors3 ets, float[][][] fx) {
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
-    float[][][] u1 = new float[n3][n2][n1];
-    float[][][] u2 = new float[n3][n2][n1];
-    float[][][] u3 = new float[n3][n2][n1];
+    sigma = sigma*sigma*0.5f;
 
     float[][][] g11c = new float[n3][n2][n1];
     float[][][] g12c = new float[n3][n2][n1];
@@ -114,198 +108,105 @@ public class SaltScanner {
     float[][][] g23s = new float[n3][n2][n1];
     float[][][] g33s = new float[n3][n2][n1];
 
-
     computeGradientProducts(fx,g11c,g12c,g13c,g22c,g23c,g33c);
     trace("structure tensors done...");
-
+    Stopwatch sw = new Stopwatch();
+    sw.start();
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.apply(ets,_h2,g11c,g11s);
+    lsf.apply(ets,sigma,g11c,g11s);
     trace("1st smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g12c,g12s);
+    lsf.apply(ets,sigma,g12c,g12s);
     trace("2nd smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g13c,g13s);
+    lsf.apply(ets,sigma,g13c,g13s);
     trace("3rd smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g22c,g22s);
+    lsf.apply(ets,sigma,g22c,g22s);
     trace("4th smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g23c,g23s);
+    lsf.apply(ets,sigma,g23c,g23s);
     trace("5th smooth parallel to structures done...");
-    lsf.apply(ets,_h2,g33c,g33s);
+    lsf.apply(ets,sigma,g33c,g33s);
     trace("6th smooth parallel to structures done...");
-
+    trace("lsf smooth: done in "+sw.time()+" seconds");
     /*
-    g11s = smooth2(ets,g11c);
-    trace("1st smooth parallel to structures done...");
-    g12s = smooth2(ets,g12c);
-    trace("2nd smooth parallel to structures done...");
-    g13s = smooth2(ets,g13c);
-    trace("3rd smooth parallel to structures done...");
-    g22s = smooth2(ets,g22c);
-    trace("4th smooth parallel to structures done...");
-    g23s = smooth2(ets,g23c);
-    trace("5th smooth parallel to structures done...");
-    g33s = smooth2(ets,g33c);
-    trace("6th smooth parallel to structures done...");
-
-    smooth1(g11s,u1,u2,u3,g11c,g11a);
-    trace("1st smooth normal to structures done...");
-    smooth1(g12s,u1,u2,u3,g12c,g12a);
-    trace("2nd smooth normal to structures done...");
-    smooth1(g13s,u1,u2,u3,g13c,g13a);
-    trace("3rd smooth normal to structures done...");
-    smooth1(g22s,u1,u2,u3,g22c,g22a);
-    trace("4th smooth normal to structures done...");
-    smooth1(g23s,u1,u2,u3,g23c,g23a);
-    trace("5th smooth normal to structures done...");
-    smooth1(g33s,u1,u2,u3,g33c,g33a);
-    trace("6th smooth normal to structures done...");
+    g11s = smooth2(sigma,ets,g11c);
+    g12s = smooth2(sigma,ets,g12c);
+    g13s = smooth2(sigma,ets,g13c);
+    g22s = smooth2(sigma,ets,g22c);
+    g23s = smooth2(sigma,ets,g23c);
+    g33s = smooth2(sigma,ets,g33c);
+    trace("lsf smooth: done in "+sw.time()+" seconds");
     */
+    sw.stop();
+    return solveEigenproblems(g11s,g12s,g13s,g22s,g23s,g33s);
 
-    solveEigenproblems(g11s,g12s,g13s,g22s,g23s,g33s,g11c);
-
-    LocalOrientFilter lof = new LocalOrientFilter(4,4);
-    lof.applyForNormal(g11c,u1,u2,u3);
-    smooth1(g11c,u1,u2,u3,g22c,g33c);
-    trace("planarities done...");
-
-    return new float[][][][]{g11c,g22c,g33c};
   }
 
-  public float[][][] smooth1(
-    final float[][][] fx, final float[][][] u1, final float[][][] u2, 
-    final float[][][] u3) 
+  public float[][][] saltLikelihood(
+    float sigma, float[][][] ep, 
+    float[][][] u1, float[][][] u2, float[][][] u3) 
   {
-    final int n3 = fx.length;
-    final int n2 = fx[0].length;
-    final int n1 = fx[0][0].length;
-    final float[][][] cx = new float[n3][n2][n1];
-    final float[][][] ax = new float[n3][n2][n1];
-    final float[][][] dx = new float[n3][n2][n1];
-    final Sampling s1 = new Sampling(n1);
-    final Sampling s2 = new Sampling(n2);
-    final Sampling s3 = new Sampling(n3);
-    final SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    Parallel.loop(n3, new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float u1i = u1[i3][i2][i1];
-        float u2i = u2[i3][i2][i1];
-        float u3i = u3[i3][i2][i1];
-        for (int k=1; k<=_h1; k++) {
-          float u1k = k*u1i;
-          float u2k = k*u2i;
-          float u3k = k*u3i;
-          float x1p = i1+u1k;
-          float x2p = i2+u2k;
-          float x3p = i3+u3k;
-          float x1m = i1-u1k;
-          float x2m = i2-u2k;
-          float x3m = i3-u3k;
-          float sci = _c1[k-1];
-          float fxm = si.interpolate(s1,s2,s3,fx,x1m,x2m,x3m);
-          float fxp = si.interpolate(s1,s2,s3,fx,x1p,x2p,x3p);
-          cx[i3][i2][i1] += sci*fxm;
-          ax[i3][i2][i1] += sci*fxp;
-        }
-      }}
-    }});
+    int n3 = ep.length;
+    int n2 = ep[0].length;
+    int n1 = ep[0][0].length;
+    float[][][] g1 = new float[n3][n2][n1];
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(sigma);
+    rgf.apply100(ep,g1);
+    rgf.apply010(ep,g2);
+    rgf.apply001(ep,g3);
+    int d = round(sigma*2)+1;
+    float[][][] sl = new float[n3][n2][n1];
+    for (int i3=d; i3<n3-d; ++i3) {
+    for (int i2=d; i2<n2-d; ++i2) {
+    for (int i1=d; i1<n1-d; ++i1) {
+      float g1i = g1[i3][i2][i1];
+      float g2i = g2[i3][i2][i1];
+      float g3i = g3[i3][i2][i1];
+      float u1i = u1[i3][i2][i1];
+      float u2i = u2[i3][i2][i1];
+      float u3i = u3[i3][i2][i1];
+      sl[i3][i2][i1] = abs(g1i*u1i+g2i*u2i+g3i*u3i); 
+    }}}
+    /*
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      dx[i3][i2][i1] = abs(cx[i3][i2][i1]-ax[i3][i2][i1]);
+    for (int k=0; k<d; ++k) {
+      sl[i3][i2][k] = sl[i3][i2][d];
+      sl[i3][i2][n1-k-1] = sl[i3][i2][n1-d-1];
     }}}
-    sub(dx,min(dx),dx);
-    div(dx,max(dx),dx);
-    return dx;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+    for (int k=0; k<d; ++k) {
+      sl[k][i2][i1] = sl[d][i2][i1];
+      sl[n3-k-1][i2][i1] = sl[n3-d-1][i2][i1];
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=0; i1<n1; ++i1) {
+    for (int k=0; k<d; ++k) {
+      sl[i3][k][i1] = sl[i3][d][i1];
+      sl[i3][n2-k-1][i1] = sl[i3][n2-d-1][i1];
+    }}}
+    */
+    normalize(sl);
+    return sl;
   }
 
-
-  public void smooth1(
-    final float[][][] fx, final float[][][] u1, final float[][][] u2, 
-    final float[][][] u3, final float[][][] cx, final float[][][] ax) 
-  {
-    zero(cx);
-    zero(ax);
-    final int n3 = fx.length;
-    final int n2 = fx[0].length;
-    final int n1 = fx[0][0].length;
-    final Sampling s1 = new Sampling(n1);
-    final Sampling s2 = new Sampling(n2);
-    final Sampling s3 = new Sampling(n3);
-    final SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    Parallel.loop(n3, new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float u1i = u1[i3][i2][i1];
-        float u2i = u2[i3][i2][i1];
-        float u3i = u3[i3][i2][i1];
-        for (int k=1; k<=_h1; k++) {
-          float u1k = k*u1i;
-          float u2k = k*u2i;
-          float u3k = k*u3i;
-          float x1p = i1+u1k;
-          float x2p = i2+u2k;
-          float x3p = i3+u3k;
-          float x1m = i1-u1k;
-          float x2m = i2-u2k;
-          float x3m = i3-u3k;
-          float sci = _c1[k-1];
-          float fxm = si.interpolate(s1,s2,s3,fx,x1m,x2m,x3m);
-          float fxp = si.interpolate(s1,s2,s3,fx,x1p,x2p,x3p);
-          cx[i3][i2][i1] += sci*fxm;
-          ax[i3][i2][i1] += sci*fxp;
-        }
-      }}
-    }});
+  private void normalize(float[][][] x) {
+    sub(x,min(x),x);
+    div(x,max(x),x);
   }
 
-
-  public float[][][] smooth1(
-    final float[][] fx, final float[][] u1, final float[][] u2) 
-  {
-    final int n2 = fx.length;
-    final int n1 = fx[0].length;
-    final float[][] cx = new float[n2][n1];
-    final float[][] ax = new float[n2][n1];
-    final Sampling s1 = new Sampling(n1);
-    final Sampling s2 = new Sampling(n2);
-    final SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    Parallel.loop(n2, new Parallel.LoopInt() {
-    public void compute(int i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float u1i = u1[i2][i1];
-        float u2i = u2[i2][i1];
-        for (int k=1; k<=_h1; k++) {
-          float u1k = k*u1i;
-          float u2k = k*u2i;
-          float x1p = i1+u1k;
-          float x2p = i2+u2k;
-          float x1m = i1-u1k;
-          float x2m = i2-u2k;
-          float sci = _c1[k-1];
-          float fxm = si.interpolate(s1,s2,fx,x1m,x2m);
-          float fxp = si.interpolate(s1,s2,fx,x1p,x2p);
-          cx[i2][i1] += sci*fxm;
-          ax[i2][i1] += sci*fxp;
-        }
-      }
-    }});
-    return new float[][][]{cx,ax};
-  }
-
-  public float[][] smooth2(EigenTensors2 et, float[][] fx) {
+  public float[][] smooth2(float sigma, EigenTensors2 et, float[][] fx) {
+    sigma = sigma*sigma*0.5f;
     FastExplicitDiffusion fed = new FastExplicitDiffusion();
-    fed.setParameters(_h2,5,0.5f);
+    fed.setParameters(sigma,5,0.5f);
     return fed.apply(et,fx);
   }
 
-  public float[][][] smooth2(EigenTensors3 et, float[][][] fx) {
+  public float[][][] smooth2(float sigma, EigenTensors3 et, float[][][] fx) {
+    sigma = sigma*sigma*0.5f;
     FastExplicitDiffusion fed = new FastExplicitDiffusion();
-    fed.setParameters(_h2,5,0.5f);
+    fed.setParameters(sigma,5,0.5f);
     return fed.apply(et,fx);
   }
 
@@ -353,14 +254,14 @@ public class SaltScanner {
     });
   }
 
-  private void solveEigenproblems(
+  private float[][][] solveEigenproblems(
     final float[][][] g11, final float[][][] g12, final float[][][] g13,
-    final float[][][] g22, final float[][][] g23, final float[][][] g33,
-    final float[][][] ep)
+    final float[][][] g22, final float[][][] g23, final float[][][] g33)
   {
     final int n3 = g11.length;
     final int n2 = g11[0].length;
     final int n1 = g11[0][0].length;
+    final float[][][] ep = new float[n3][n2][n1];
     Parallel.loop(n3,new Parallel.LoopInt() {
       public void compute(int i3) {
         double[][] a = new double[3][3];
@@ -390,17 +291,7 @@ public class SaltScanner {
         }
       }
     });
-  }
-
-  private void setScales(int h1) {
-    _c1 = new float[h1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(h1/2);
-    float[] x = new float[20*h1];
-    float[] y = new float[20*h1];
-    x[10*h1] = 1;
-    rgf.apply0(x,y);
-    copy(h1,10*h1,y,0,_c1);
-    mul(_c1,10f,_c1);
+    return ep;
   }
 
   private static void trace(String s) {
@@ -408,8 +299,5 @@ public class SaltScanner {
   }
 
 
-  private int _h1 = 5;
-  private int _h2 = 10;
-  private float[] _c1 = new float[_h1];
 }
 

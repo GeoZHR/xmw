@@ -7,6 +7,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package slt;
 
 import ipfx.*;
+import static ipfx.FaultGeometry.*;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
@@ -66,16 +67,13 @@ public class ScreenPoissonSurfer {
    * @param us[3] array of 3rd component of fault normal vectors.
    */
   public float[][][] saltIndicator(
-    FaultCell[] cells, float[][][] u1, float[][][] u2, float[][][] u3)
+    float[][][] mk, float[][][] u1, float[][][] u2, float[][][] u3)
   {
     int n3 = u1.length;
     int n2 = u1[0].length;
     int n1 = u1[0][0].length;
-    float[][][] mk = getScreenMark(n1,n2,n3,cells);
-    // Compute shifts r(x1,x2,x3), in samples.
     float[][][] b = new float[n3][n2][n1]; // right-hand side
     float[][][] f = new float[n3][n2][n1]; // fault isosurface volume, in samples
-    //initialization(f);
     VecArrayFloat3 vb = new VecArrayFloat3(b);
     VecArrayFloat3 vf = new VecArrayFloat3(f);
     Smoother3 smoother3 = new Smoother3(n1,n2,n3,_sigma1,_sigma2,_sigma3);
@@ -85,9 +83,74 @@ public class ScreenPoissonSurfer {
     smoother3.applyTranspose(b);
     cs.solve(a3,vb,vf);
     smoother3.apply(f);
-    setBounds(f);
     return f;
   }
+
+
+  /**
+   * @param us[0] array of fault likelihoods.
+   * @param us[1] array of 1st component of fault normal vectors.
+   * @param us[2] array of 2nd component of fault normal vectors.
+   * @param us[3] array of 3rd component of fault normal vectors.
+   */
+  public float[][][] saltIndicator(
+    FaultCell[] cells, float[][][] u1, float[][][] u2, float[][][] u3)
+  {
+    int n3 = u1.length;
+    int n2 = u1[0].length;
+    int n1 = u1[0][0].length;
+    float[][][] mk = getScreenMark(n1,n2,n3,cells);
+    float[][][] b = new float[n3][n2][n1]; // right-hand side
+    float[][][] f = new float[n3][n2][n1]; // fault isosurface volume, in samples
+    VecArrayFloat3 vb = new VecArrayFloat3(b);
+    VecArrayFloat3 vf = new VecArrayFloat3(f);
+    Smoother3 smoother3 = new Smoother3(n1,n2,n3,_sigma1,_sigma2,_sigma3);
+    A3 a3 = new A3(smoother3,mk);
+    CgSolver cs = new CgSolver(_small,_niter);
+    makeRhs(u1,u2,u3,b);
+    smoother3.applyTranspose(b);
+    cs.solve(a3,vb,vf);
+    smoother3.apply(f);
+    //setBounds(f);
+    return f;
+  }
+
+  public float[][][] findScreenPoints (
+    final float smin,
+    final float[][][] ss, final float[][][] u1, 
+    final float[][][] u2, final float[][][] u3) 
+  {
+    final int n3 = ss.length;
+    final int n2 = ss[0].length;
+    final int n1 = ss[0][0].length;
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    final float[][][] mk = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(1,n3-1,new Parallel.LoopInt() {
+    public void compute(int i3) {
+    for (int i2=1; i2<n2-1 ;++i2) {
+    for (int i1=1; i1<n1-1 ;++i1) {
+      float sxi = ss[i3][i2][i1];
+      float u1i = u1[i3][i2][i1]*2f;
+      float u2i = u2[i3][i2][i1]*2f;
+      float u3i = u3[i3][i2][i1]*2f;
+      float x1m = i1-u1i;
+      float x2m = i2-u2i;
+      float x3m = i3-u3i;
+      float x1p = i1+u1i;
+      float x2p = i2+u2i;
+      float x3p = i3+u3i;
+      float sxm = si.interpolate(s1,s2,s3,ss,x1m,x2m,x3m);
+      float sxp = si.interpolate(s1,s2,s3,ss,x1p,x2p,x3p);
+      if (sxi>sxm && sxi>sxp && sxi>smin) 
+        mk[i3][i2][i1] = sxi;
+    }}}});
+    return mk;
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private
@@ -160,7 +223,6 @@ public class ScreenPoissonSurfer {
       _sigma1 = sigma1;
       _sigma2 = sigma2;
       _sigma3 = sigma3;
-      //testSpd();
     }
     public void apply(float[][][] x) {
       smooth3(_sigma3,x);
@@ -279,13 +341,9 @@ public class ScreenPoissonSurfer {
         xd += x11[i1 ];
         xa -= x11[i1m];
 
-        float x1 = 0.25f*(xa+xb+xc+xd);
-        float x2 = 0.25f*(xa-xb+xc-xd);
-        float x3 = 0.25f*(xa+xb-xc-xd);
-
-        float y1 = x1;
-        float y2 = x2;
-        float y3 = x3;
+        float y1 = 0.25f*(xa+xb+xc+xd);
+        float y2 = 0.25f*(xa-xb+xc-xd);
+        float y3 = 0.25f*(xa+xb-xc-xd);
 
         float ya = 0.25f*(y1+y2+y3);
         float yb = 0.25f*(y1-y2+y3);
@@ -315,8 +373,7 @@ public class ScreenPoissonSurfer {
     for (int i1=0; i1<n1; ++i1) {
       float mki = mk[i3][i2][i1];
       if(mki>0f){
-        mki *= mki;
-        mki *= mki;
+        mki = pow(mki,4);
         y[i3][i2][i1] += mki*x[i3][i2][i1];
       }
     }}}

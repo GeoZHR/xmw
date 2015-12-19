@@ -12,80 +12,67 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-cefile  = "ce" # image after lsf with fault likelihoods
-aefile  = "ae" # eigenvalue-derived planarity
+slfile  = "sl" # eigenvalue-derived planarity
+epfile  = "ep" # eigenvalue-derived planarity
+sffile  = "sf" # eigenvalue-derived planarity
 
 pngDir = None
+plotOnly = False
 #pngDir = "../../png/"
 
 def main(args):
-  #goPSS()
-  #goSalt()
-  goSaltScan()
-  #goSaltSurfer()
+  goSaltLike()
+  goSaltSurfer()
+def goSaltLike():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(16,4)
+    ets = lof.applyForTensors(gx)
+    lof.applyForNormal(gx,u1,u2,u3)
+    #ets.setEigenvalues(0.02,1.0,1.0)
+    ets.setEigenvalues(0.01,1.0,1.0)
+    ss = SaltScanner()
+    ep = ss.applyForPlanar(100,ets,gx)
+    #ep = ss.applyForPlanar(50,ets,gx)
+    sl = ss.saltLikelihood(4,ep,u1,u2,u3)
+    writeImage(epfile,ep)
+    writeImage(slfile,sl)
+  else:
+    ep = readImage(epfile)
+    sl = readImage(slfile)
+  plot3(gx,sub(1,ep),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="ep")
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="sl")
+
 def goSaltSurfer():
   gx = readImage(gxfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  g1 = zerofloat(n1,n2,n3)
-  g2 = zerofloat(n1,n2,n3)
-  g3 = zerofloat(n1,n2,n3)
-  ae = readImage("apt")#file)
-  ce = readImage("cpt")#file)
-  ca = abs(sub(ce,ae))
-  sub(ae,min(ae),ae)
-  div(ae,max(ae),ae)
-  mul(ca,sub(1,ae),ca)
-  sub(ca,min(ca),ca)
-  div(ca,max(ca),ca)
-  lof = LocalOrientFilter(4,1)
-  lof.applyForNormal(ce,u1,u2,u3)
-  tv = TensorVoting3()
-  fc = tv.findCellsX(0.1,ca,u1,u2,u3)
-  #fc = tv.findCells(0.2,ca,u1,u2,u3)
-  plot3(gx,ca,cmin=0.1,cmax=0.8,cells=fc,cmap=jetRamp(1.0),png="points")
-
-  rgf = RecursiveGaussianFilter(2.0)
-  rgf.apply100(ce,g1)
-  rgf.apply010(ce,g2)
-  rgf.apply001(ce,g3)
-  mul(g1,g1,g1)
-  mul(g2,g2,g2)
-  mul(g3,g3,g3)
-  add(g1,g2,g2)
-  add(g2,g3,g3)
-  g3 = sqrt(g3)
-  mul(g3,u1,u1)
-  mul(g3,u2,u2)
-  mul(g3,u3,u3)
-
-  sps = ScreenPoissonSurfer()
-  sps.setSmoothings(20,20,20)
-  sf = sps.saltIndicator(fc,u1,u2,u3)
-  plot3(gx,ca,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="salts")
-
-def goSaltScan():
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  gx = readImage(gxfile)
-  lof = LocalOrientFilter(8,2)
-  lof.applyForNormal(gx,u1,u2,u3)
-  ets = lof.applyForTensors(gx)
-  ets.setEigenvalues(0.02,1.0,1.0)
-  ss = SaltScanner(20,50)
-  ep,cp,ap = ss.scan(ets,gx)
-  writeImage("ep",ep)
-  writeImage("cp",cp)
-  writeImage("ap",ap)
-  '''
-  ce = readImage("cet")
-  ae = readImage("ce")
-  plot3(gx,sub(1,ce),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="ce")
-  plot3(gx,sub(1,ae),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="ae")
-  '''
-
+  ep = readImage(epfile)
+  sl = readImage(slfile)
+  if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(2,1)
+    lof.applyForNormal(ep,u1,u2,u3)
+    ets = lof.applyForTensors(ep)
+    ss = SaltSurfer()
+    fc = ss.findPoints(0.3,sl,u1,u2,u3)
+    plot3(gx,sl,cmin=0.1,cmax=0.8,cells=fc,cmap=jetRamp(1.0),png="points")
+    mul(sl,u1,u1)
+    mul(sl,u2,u2)
+    mul(sl,u3,u3)
+    sps = ScreenPoissonSurfer()
+    sps.setSmoothings(20,20,20)
+    sf = sps.saltIndicator(fc,u1,u2,u3)
+    writeImage(sffile,sf)
+  else:
+    sf = readImage(sffile)
+  print min(sf)
+  print max(sf)
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="salts")
+  plot3(gx,sf,cmin=min(sf),cmax=max(sf),cmap=bwrRamp(1.0),fbs=sf,png="salts")
 
 def goSalt():
   gx = readImage(gxfile)
@@ -258,6 +245,8 @@ def jetFillExceptMin(alpha):
   return ColorMap.setAlpha(ColorMap.JET,a)
 def jetRamp(alpha):
   return ColorMap.setAlpha(ColorMap.JET,rampfloat(0.0,alpha/256,256))
+def bwrRamp(alpha):
+  return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,rampfloat(0.0,alpha/256,256))
 def bwrFill(alpha):
   return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,alpha)
 def bwrNotch(alpha):
@@ -414,8 +403,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(95,5,51)
-  #ipg.setSlices(95,5,95)
+  ipg.setSlices(236,5,585)
   if cbar:
     sf.setSize(837,700)
   else:

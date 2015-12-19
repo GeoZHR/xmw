@@ -97,6 +97,7 @@ public class FastExplicitDiffusion {
     FedStep fs = new FedStep(_t,_m,_tm);
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
+    trace("nc="+nc);
     for (int m=0; m<_m; ++m) {
       trace("m="+m);
     for (int ic=0; ic<nc; ++ic) {

@@ -2,9 +2,14 @@ package slt;
 
 import java.util.*;
 
+
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+
+import ipfx.*;
+import ipfx.FaultCell;
+import static ipfx.FaultGeometry.*;
 
 
 /**
@@ -17,204 +22,225 @@ import static edu.mines.jtk.util.ArrayMath.*;
 
 public class SaltSurfer {
 
-  public float[][][] findSurfacesX(
-    float[][][] fx, float[][][] u1, float[][][] u2, float[][][] u3) 
-  {
-    int n3 = fx.length;
-    int n2 = fx[0].length;
-    int n1 = fx[0][0].length;
-    float[][][] fp = copy(fx);
-    float[][][] g1 = new float[n3][n2][n1];
-    float[][][] g2 = new float[n3][n2][n1];
-    float[][][] g3 = new float[n3][n2][n1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(4.0);
-    rgf.apply100(fp,g1);
-    rgf.apply010(fp,g2);
-    rgf.apply001(fp,g3);
-    mul(g1,u1,g1);
-    mul(g2,u2,g2);
-    mul(g3,u3,g3);
-    add(g1,g2,g2);
-    add(g2,g3,g3);
+
+     // Uses fault images to find cells, oriented points located on ridges.
+  public FaultCell[] findCells( float fmin,
+    float[][][] f, float[][][] u1, float[][][] u2, float[][][] u3) {
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+    // Vertical image boundaries are discontinuities that may look like
+    // faults. If a fault appears to be near and nearly parallel to image
+    // boundaries, then assume it is a boundary artifact and not truly a
+    // fault.
+    int imax = 5; // max number of samples considered to be near boundary
+    float wwmax = 0.75f; // cosine of 30 degrees, squared
+
+    // Loop over all samples. Construct cells for samples nearest to ridges.
+    ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
     for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      if (fx[i3][i2][i1]<0.3f) {
-        g3[i3][i2][i1] = 0f;
-      }
-    }}}
-    System.out.println("test1");
-    float[][][] g11 = new float[n3][n2][n1];
-    float[][][] g12 = new float[n3][n2][n1];
-    float[][][] g13 = new float[n3][n2][n1];
-    float[][][] g22 = new float[n3][n2][n1];
-    float[][][] g23 = new float[n3][n2][n1];
-    float[][][] g33 = new float[n3][n2][n1];
-    float[][] xs = findPoints(fx,u1,u2,u3);
-    int np = xs[0].length;
-    for (int ip=0; ip<np; ++ip) {
-      int i1 = round(xs[0][ip]);
-      int i2 = round(xs[1][ip]);
-      int i3 = round(xs[2][ip]);
-      float sc = xs[3][ip];
-      float u1i = u1[i3][i2][i1];
-      float u2i = u2[i3][i2][i1];
-      float u3i = u3[i3][i2][i1];
-      g11[i3][i2][i1] = u1i*u1i*sc;
-      g12[i3][i2][i1] = u1i*u2i*sc;
-      g13[i3][i2][i1] = u1i*u3i*sc;
-      g22[i3][i2][i1] = u2i*u2i*sc;
-      g23[i3][i2][i1] = u2i*u3i*sc;
-      g33[i3][i2][i1] = u3i*u3i*sc;
-    }
-    System.out.println("test2");
-    RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(8.0);
-    rgf1.apply000(g11,g11);
-    rgf1.apply000(g12,g12);
-    rgf1.apply000(g13,g13);
-    rgf1.apply000(g22,g22);
-    rgf1.apply000(g23,g23);
-    rgf1.apply000(g33,g33);
-    System.out.println("test3");
-    EigenTensors3 ets = applyForTensors(g11,g12,g13,g22,g23,g33);
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    float[][][] gs = new float[n3][n2][n1];
-    lsf.apply(ets,20,g3,gs);
-    System.out.println("test4");
-    return gs;
-  }
+      int i3m = max(i3-1,0);
+      int i3p = min(i3+1,n3-1);
+      for (int i2=0; i2<n2; ++i2) {
+        int i2m = max(i2-1,0);
+        int i2p = min(i2+1,n2-1);
+        float[] fmi = f[i3m][i2 ];
+        float[] fim = f[i3 ][i2m];
+        float[] fip = f[i3 ][i2p];
+        float[] fpi = f[i3p][i2 ];
+        float[] fmm = f[i3m][i2m];
+        float[] fpp = f[i3p][i2p];
+        float[] fmp = f[i3m][i2p];
+        float[] fpm = f[i3p][i2m];
+        float[] fii = f[i3 ][i2 ];
+        float[] u1i = u1[i3][i2];
+        float[] u2i = u2[i3][i2];
+        float[] u3i = u3[i3][i2];
+        for (int i1=0; i1<n1; ++i1) {
+          float fmii = fmi[i1 ];
+          float fimi = fim[i1 ];
+          float fipi = fip[i1 ];
+          float fpii = fpi[i1 ];
+          float fmmi = fmm[i1 ];
+          float fppi = fpp[i1 ];
+          float fmpi = fmp[i1 ];
+          float fpmi = fpm[i1 ];
+          float fiii = fii[i1 ];
+          float u1ii = u1i[i1 ];
+          float u2ii = u2i[i1 ];
+          float u3ii = u3i[i1 ];
+          if (u2ii==0f&&u3ii==0f){continue;}
+          if (u1ii>0.0f) {
+            u1ii = -u1ii;
+            u2ii = -u2ii;
+            u3ii = -u3ii;
+          }
+          float piii = faultStrikeFromNormalVector(u1ii,u2ii,u3ii);
+          // Most image samples will not have a fault cell.
+          FaultCell cell = null;
 
-  public EigenTensors3 applyForTensors(
-    float[][][] g11, float[][][] g12, float[][][] g13,
-    float[][][] g22, float[][][] g23, float[][][] g33) 
-  {
-    int n3 = g11.length;
-    int n2 = g11[0].length;
-    int n1 = g11[0][0].length;
-    float[][][] u2 = new float[n3][n2][n1];
-    float[][][] u3 = new float[n3][n2][n1];
-    float[][][] w1 = new float[n3][n2][n1];
-    float[][][] w2 = new float[n3][n2][n1];
-    float[][][] eu = fillfloat(0.001f,n1,n2,n3);
-    float[][][] ev = fillfloat(1.000f,n1,n2,n3);
-    float[][][] ew = fillfloat(1.000f,n1,n2,n3);
-    solveEigenproblems(g11,g12,g13,g22,g23,g33,u2,u3,w1,w2);
-    // Compute u1 such that u3 > 0.
-    float[][][] u1 = u3;
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float u2i = u2[i3][i2][i1];
-      float u3i = u3[i3][i2][i1];
-      float u1s = 1.0f-u2i*u2i-u3i*u3i;
-      float u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
-      if (u3i<0.0f) {
-        u1i = -u1i;
-        u2i = -u2i;
-      }
-      u1[i3][i2][i1] = u1i;
-      u2[i3][i2][i1] = u2i;
-    }}}
-    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
-  }
+          // Accumulators for ridge likelihoods and locations. Depending on
+          // the limits on fault strike used below, we may find more than one
+          // ridge.
+          float nr = 0;
+          float fl = 0.0f;
+          float d2 = 0.0f;
+          float d3 = 0.0f;
 
+          // If S-N ridge, ...
+          if ((fipi<fiii && fimi<fiii) &&
+              ((337.5f<=piii || piii<= 22.5f) || 
+               (157.5f<=piii && piii<=202.5f))) {
+            float f1 = 0.5f*(fipi-fimi); // 1st derivative
+            float f2 = fipi-2.0f*fiii+fimi; // 2nd derivative
+            float dr = -f1/f2; // signed distance to ridge
+            float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
+            if (fr>=fmin) {
+              if (imax<=i2 && i2<n2-imax || u2ii*u2ii<=wwmax) {
+                fl += fr;
+                d2 += dr;
+                nr += 1;
+              }
+            }
+          }
 
-  private void solveEigenproblems(
-    final float[][][] g11, final float[][][] g12, final float[][][] g13,
-    final float[][][] g22, final float[][][] g23, final float[][][] g33,
-    final float[][][] u2, final float[][][] u3, final float[][][] w1, 
-    final float[][][] w2) 
-  {
-    final int n1 = g11[0][0].length;
-    final int n2 = g11[0].length;
-    final int n3 = g11.length;
-    Parallel.loop(n3,new Parallel.LoopInt() {
-      public void compute(int i3) {
-        double[][] a = new double[3][3];
-        double[][] z = new double[3][3];
-        double[] e = new double[3];
-        for (int i2=0; i2<n2; ++i2) {
-          for (int i1=0; i1<n1; ++i1) {
-            a[0][0] = g11[i3][i2][i1];
-            a[0][1] = g12[i3][i2][i1];
-            a[0][2] = g13[i3][i2][i1];
-            a[1][0] = g12[i3][i2][i1];
-            a[1][1] = g22[i3][i2][i1];
-            a[1][2] = g23[i3][i2][i1];
-            a[2][0] = g13[i3][i2][i1];
-            a[2][1] = g23[i3][i2][i1];
-            a[2][2] = g33[i3][i2][i1];
-            Eigen.solveSymmetric33(a,z,e);
-            u2[i3][i2][i1] = (float)z[0][1];
-            u3[i3][i2][i1] = (float)z[0][2];
-            w1[i3][i2][i1] = (float)z[2][0];
-            w2[i3][i2][i1] = (float)z[2][1];
+          // If SW-NE ridge, ...
+          if ((fmpi<fiii && fpmi<fiii) &&
+              (( 22.5f<=piii && piii<= 67.5f) || 
+               (202.5f<=piii && piii<=247.5f))) {
+            float f1 = 0.5f*(fmpi-fpmi); // 1st derivative
+            float f2 = fmpi-2.0f*fiii+fpmi; // 2nd derivative
+            float dr = -f1/f2; // signed distance to ridge
+            float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
+            if (fr>=fmin) {
+              if ((imax<=i2 && i2<n2-imax || u2ii*u2ii<=wwmax) &&
+                  (imax<=i3 && i3<n3-imax || u3ii*u3ii<=wwmax)) {
+                fl += fr;
+                d2 += dr;
+                d3 -= dr;
+                nr += 1;
+              }
+            }
+          }
+
+          // If W-E ridge, ...
+          if ((fpii<fiii && fmii<fiii) &&
+              (( 67.5f<=piii && piii<=112.5f) ||
+               (247.5f<=piii && piii<=292.5f))) {
+            float f1 = 0.5f*(fpii-fmii); // 1st derivative
+            float f2 = fmii-2.0f*fiii+fpii; // 2nd derivative
+            float dr = -f1/f2; // signed distance to ridge
+            float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
+            if (fr>=fmin) {
+              if (imax<=i3 && i3<n3-imax || u3ii*u3ii<=wwmax) {
+                fl += fr;
+                d3 += dr;
+                nr += 1;
+              }
+            }
+          }
+
+          // If NW-SE ridge, ...
+          if ((fppi<fiii && fmmi<fiii) &&
+              ((112.5f<=piii && piii<=157.5f) || 
+               (292.5f<=piii && piii<=337.5f))) {
+            float f1 = 0.5f*(fppi-fmmi); // 1st derivative
+            float f2 = fppi-2.0f*fiii+fmmi; // 2nd derivative
+            float dr = -f1/f2; // signed distance to ridge
+            float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
+            if (fr>=fmin) {
+              if ((imax<=i2 && i2<n2-imax || u2ii*u2ii<=wwmax) &&
+                  (imax<=i3 && i3<n3-imax || u3ii*u3ii<=wwmax)) {
+                fl += fr;
+                d2 += dr;
+                d3 += dr;
+                nr += 1;
+              }
+            }
+          }
+
+          // If at least one ridge, construct a cell and add to list.
+          if (nr>0) {
+            fl /= nr;
+            d2 /= nr;
+            d3 /= nr;
+            float tiii = faultDipFromNormalVector(u1ii,u2ii,u3ii);
+            cell = new FaultCell(i1,i2+d2,i3+d3,fl,piii,tiii);
+            cellList.add(cell);
           }
         }
       }
-    });
+    }
+    return cellList.toArray(new FaultCell[0]);
   }
 
+  public float[][][] scalarField(
+    int n1, int n2, int n3, FaultCell[] cells) {
+    float[][][] fx = new float[n3][n2][n1];
+    for (FaultCell cell:cells) {
+      if(cell==null) {continue;}
+      int i1 = cell.getI1();
+      int i2 = cell.getI2();
+      int i3 = cell.getI3();
+      fx[i3][i2][i1] = cell.getFl();
+    }
+    return fx;
+  }
 
-   
-
-  public float[][][] findSurfaces(
-    float[][][] fx, float[][][] u1, float[][][] u2, float[][][] u3) 
+  public FaultCell[] findPoints (
+    final float fmin,
+    final float[][][] fx, final float[][][] u1, 
+    final float[][][] u2, final float[][][] u3) 
   {
-    int n3 = fx.length;
-    int n2 = fx[0].length;
-    int n1 = fx[0][0].length;
-    float[][] xs = findPoints(fx,u1,u2,u3);
-    SaltNormal sn = new SaltNormal();
-    float[][] xus = sn.applyForNormals(xs);
-    PointSetSurface pss = new PointSetSurface();
-    return pss.findScalarField(n1,n2,n3,xus);
-  }
-
-  public void findSurfaces(float[][] xus) {
-
-  }
-
-  public float[][] findPoints (
-    final float[][][] ss, 
-    final float[][][] u1, final float[][][] u2, final float[][][] u3) 
-  {
-    final int n3 = ss.length;
-    final int n2 = ss[0].length;
-    final int n1 = ss[0][0].length;
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
     final Sampling s1 = new Sampling(n1);
     final Sampling s2 = new Sampling(n2);
     final Sampling s3 = new Sampling(n3);
-    final float[][] xps = new float[4][n2*n3*20];
+    final float[][][] fm = new float[n3][n2][n1];
+    final float[][][] fp = new float[n3][n2][n1];
     final SincInterpolator si = new SincInterpolator();
-    int k = 0;
-    //Parallel.loop(n3,new Parallel.LoopInt() {
-    //public void compute(int i3) {
-      for (int i3=0; i3<n3 ;++i3) {
-      for (int i2=0; i2<n2 ;++i2) {
-      for (int i1=0; i1<n1 ;++i1) {
-        float u1i = u1[i3][i2][i1];
-        float u2i = u2[i3][i2][i1];
-        float u3i = u3[i3][i2][i1];
-        float x1m = i1-u1i;
-        float x2m = i2-u2i;
-        float x3m = i3-u3i;
-        float x1p = i1+u1i;
-        float x2p = i2+u2i;
-        float x3p = i3+u3i;
-        float sxi = ss[i3][i2][i1];
-        float sxm = si.interpolate(s1,s2,s3,ss,x1m,x2m,x3m);
-        float sxp = si.interpolate(s1,s2,s3,ss,x1p,x2p,x3p);
-        if (sxi>sxm && sxi>sxp && sxi>0.3f) {
-          xps[0][k] = i1;
-          xps[1][k] = i2;
-          xps[2][k] = i3;
-          xps[3][k] = sxi;
-          k++;
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    final ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
+    Parallel.loop(1,n3-1,new Parallel.LoopInt() {
+    public void compute(int i3) {
+    for (int i2=1; i2<n2-1 ;++i2) {
+    for (int i1=1; i1<n1-1 ;++i1) {
+      float u1i = u1[i3][i2][i1];
+      float u2i = u2[i3][i2][i1];
+      float u3i = u3[i3][i2][i1];
+      float x1m = i1-u1i;
+      float x2m = i2-u2i;
+      float x3m = i3-u3i;
+      float x1p = i1+u1i;
+      float x2p = i2+u2i;
+      float x3p = i3+u3i;
+      fm[i3][i2][i1] = si.interpolate(s1,s2,s3,fx,x1m,x2m,x3m);
+      fp[i3][i2][i1] = si.interpolate(s1,s2,s3,fx,x1p,x2p,x3p);
+    }}}});
+    for (int i3=1; i3<n3-1; ++i3) {
+    for (int i2=1; i2<n2-1; ++i2) {
+    for (int i1=1; i1<n1-1; ++i1) {
+      float u1i = u1[i3][i2][i1];
+      float u2i = u2[i3][i2][i1];
+      float u3i = u3[i3][i2][i1];
+      float fxi = fx[i3][i2][i1];
+      float fxm = fm[i3][i2][i1];
+      float fxp = fp[i3][i2][i1];
+      if (fxi>fxm && fxi>fxp && fxi>fmin && abs(u1i)<0.9f) {
+        if (u1i>0.0f) {
+          u1i = -u1i;
+          u2i = -u2i;
+          u3i = -u3i;
         }
-      }}}
-    //}});
-    return copy(k,4,xps);
+        float t = faultDipFromNormalVector(u1i,u2i,u3i);
+        float p = faultStrikeFromNormalVector(u1i,u2i,u3i);
+        FaultCell cell = new FaultCell(i1,i2,i3,fxi,p,t);
+        cellList.add(cell);
+      }
+    }}}
+    return cellList.toArray(new FaultCell[0]);
   }
-  
+
 }

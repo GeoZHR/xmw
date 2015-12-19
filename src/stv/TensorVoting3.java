@@ -326,9 +326,9 @@ public class TensorVoting3 {
     public void compute(int i3) {
     for (int i2=1; i2<n2-1 ;++i2) {
     for (int i1=1; i1<n1-1 ;++i1) {
-      float u1i = u1[i3][i2][i1]*2f;
-      float u2i = u2[i3][i2][i1]*2f;
-      float u3i = u3[i3][i2][i1]*2f;
+      float u1i = u1[i3][i2][i1]*1f;
+      float u2i = u2[i3][i2][i1]*1f;
+      float u3i = u3[i3][i2][i1]*1f;
       float x1m = i1-u1i;
       float x2m = i2-u2i;
       float x3m = i3-u3i;
@@ -347,7 +347,7 @@ public class TensorVoting3 {
       float sxi = ss[i3][i2][i1];
       float sxm = sm[i3][i2][i1];
       float sxp = sp[i3][i2][i1];
-      if (sxi>sxm && sxi>sxp && sxi>smin) {
+      if (sxi>sxm && sxi>sxp && sxi>smin && abs(u1i)<0.9f) {
         if (u1i>0.0f) {
           u1i = -u1i;
           u2i = -u2i;
