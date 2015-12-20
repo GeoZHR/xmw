@@ -21,7 +21,7 @@ plotOnly = False
 #pngDir = "../../png/"
 
 def main(args):
-  #goSaltLike()
+  goSaltLike()
   goSaltSurfer()
 def goSaltLike():
   gx = readImage(gxfile)
@@ -29,10 +29,10 @@ def goSaltLike():
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(8,2)
+    lof = LocalOrientFilterP(16,4)
     ets = lof.applyForTensors(gx)
     lof.applyForNormal(gx,u1,u2,u3)
-    ets.setEigenvalues(0.01,1.0,1.0)
+    ets.setEigenvalues(0.02,1.0,1.0)
     ss = SaltScanner()
     ep = ss.applyForPlanar(100,ets,gx)
     sl = ss.saltLikelihood(4,ep,u1,u2,u3)
@@ -54,7 +54,6 @@ def goSaltSurfer():
     u3 = zerofloat(n1,n2,n3)
     lof = LocalOrientFilterP(2,1)
     lof.applyForNormal(ep,u1,u2,u3)
-    ets = lof.applyForTensors(ep)
     ss = SaltSurfer()
     fc = ss.findPoints(0.3,sl,u1,u2,u3)
     #plot3(gx,sl,cmin=0.1,cmax=0.8,cells=fc,cmap=jetRamp(1.0),png="points")
