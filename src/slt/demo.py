@@ -34,7 +34,7 @@ def goSaltLike():
     lof.applyForNormal(gx,u1,u2,u3)
     ets.setEigenvalues(0.02,1.0,1.0)
     ss = SaltScanner()
-    ep = ss.applyForPlanar(50,ets,gx)
+    ep = ss.applyForPlanar(80,ets,gx)
     sl = ss.saltLikelihood(4,ep,u1,u2,u3)
     writeImage(epfile,ep)
     writeImage(slfile,sl)
