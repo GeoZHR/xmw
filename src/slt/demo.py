@@ -32,7 +32,7 @@ def goSaltLike():
     lof = LocalOrientFilterP(8,2)
     ets = lof.applyForTensors(gx)
     lof.applyForNormal(gx,u1,u2,u3)
-    ets.setEigenvalues(0.001,1.0,1.0)
+    ets.setEigenvalues(0.05,1.0,1.0)
     ss = SaltScanner()
     ep = ss.applyForPlanar(100,ets,gx)
     sl = ss.saltLikelihood(4,ep,u1,u2,u3)
