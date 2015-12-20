@@ -94,7 +94,7 @@ public class SaltScanner {
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
-    //sigma = sigma*sigma*0.5f;
+    sigma = sigma*sigma*0.5f;
 
     float[][][] g11c = new float[n3][n2][n1];
     float[][][] g12c = new float[n3][n2][n1];
@@ -114,7 +114,6 @@ public class SaltScanner {
     trace("structure tensors done...");
     Stopwatch sw = new Stopwatch();
     sw.start();
-    /*
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     lsf.apply(ets,sigma,g11c,g11s);
     trace("1st smooth parallel to structures done...");
@@ -129,13 +128,14 @@ public class SaltScanner {
     lsf.apply(ets,sigma,g33c,g33s);
     trace("6th smooth parallel to structures done...");
     trace("lsf smooth: done in "+sw.time()+" seconds");
-    */
+    /*
     g11s = smooth2(sigma,ets,g11c);
     g12s = smooth2(sigma,ets,g12c);
     g13s = smooth2(sigma,ets,g13c);
     g22s = smooth2(sigma,ets,g22c);
     g23s = smooth2(sigma,ets,g23c);
     g33s = smooth2(sigma,ets,g33c);
+    */
     trace("lsf smooth: done in "+sw.time()+" seconds");
     sw.stop();
     return solveEigenproblems(g11s,g12s,g13s,g22s,g23s,g33s);
