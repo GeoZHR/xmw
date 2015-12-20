@@ -227,7 +227,7 @@ public class SaltSurfer {
       float fxi = fx[i3][i2][i1];
       float fxm = fm[i3][i2][i1];
       float fxp = fp[i3][i2][i1];
-      if (fxi>fxm && fxi>fxp && fxi>fmin && abs(u1i)<0.9f) {
+      if (fxi>fxm && fxi>fxp && fxi>fmin && abs(u1i)<0.95f) {
         if (u1i>0.0f) {
           u1i = -u1i;
           u2i = -u2i;
