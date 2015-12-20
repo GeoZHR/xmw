@@ -88,7 +88,9 @@ public class SaltScanner {
   */
 
 
-  public float[][][] applyForPlanar(float sigma, EigenTensors3 ets, float[][][] fx) {
+  public float[][][] applyForPlanar(
+    float sigma, EigenTensors3 ets, float[][][] fx) 
+  {
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
@@ -142,51 +144,32 @@ public class SaltScanner {
 
   public float[][][] saltLikelihood(
     float sigma, float[][][] ep, 
-    float[][][] u1, float[][][] u2, float[][][] u3) 
+    final float[][][] u1, final float[][][] u2, final float[][][] u3) 
   {
-    int n3 = ep.length;
-    int n2 = ep[0].length;
-    int n1 = ep[0][0].length;
-    float[][][] g1 = new float[n3][n2][n1];
-    float[][][] g2 = new float[n3][n2][n1];
-    float[][][] g3 = new float[n3][n2][n1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(sigma);
+    final int n3 = ep.length;
+    final int n2 = ep[0].length;
+    final int n1 = ep[0][0].length;
+    final float[][][] g1 = new float[n3][n2][n1];
+    final float[][][] g2 = new float[n3][n2][n1];
+    final float[][][] g3 = new float[n3][n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
     rgf.apply100(ep,g1);
     rgf.apply010(ep,g2);
     rgf.apply001(ep,g3);
-    int d = round(sigma*2)+1;
-    float[][][] sl = new float[n3][n2][n1];
-    for (int i3=d; i3<n3-d; ++i3) {
-    for (int i2=d; i2<n2-d; ++i2) {
-    for (int i1=d; i1<n1-d; ++i1) {
-      float g1i = g1[i3][i2][i1];
-      float g2i = g2[i3][i2][i1];
-      float g3i = g3[i3][i2][i1];
-      float u1i = u1[i3][i2][i1];
-      float u2i = u2[i3][i2][i1];
-      float u3i = u3[i3][i2][i1];
-      sl[i3][i2][i1] = abs(g1i*u1i+g2i*u2i+g3i*u3i); 
-    }}}
-    /*
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int k=0; k<d; ++k) {
-      sl[i3][i2][k] = sl[i3][i2][d];
-      sl[i3][i2][n1-k-1] = sl[i3][i2][n1-d-1];
-    }}}
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-    for (int k=0; k<d; ++k) {
-      sl[k][i2][i1] = sl[d][i2][i1];
-      sl[n3-k-1][i2][i1] = sl[n3-d-1][i2][i1];
-    }}}
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i1=0; i1<n1; ++i1) {
-    for (int k=0; k<d; ++k) {
-      sl[i3][k][i1] = sl[i3][d][i1];
-      sl[i3][n2-k-1][i1] = sl[i3][n2-d-1][i1];
-    }}}
-    */
+    final float[][][] sl = new float[n3][n2][n1];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float g1i = g1[i3][i2][i1];
+        float g2i = g2[i3][i2][i1];
+        float g3i = g3[i3][i2][i1];
+        float u1i = u1[i3][i2][i1];
+        float u2i = u2[i3][i2][i1];
+        float u3i = u3[i3][i2][i1];
+        sl[i3][i2][i1] = abs(g1i*u1i+g2i*u2i+g3i*u3i); 
+      }}
+    }});
     normalize(sl);
     return sl;
   }
@@ -222,7 +205,7 @@ public class SaltScanner {
     final float[][][] g1 = new float[n3][n2][n1];
     final float[][][] g2 = new float[n3][n2][n1];
     final float[][][] g3 = new float[n3][n2][n1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.apply100(fx,g1);
     rgf.apply010(fx,g2);
     rgf.apply001(fx,g3);

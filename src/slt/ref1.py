@@ -15,7 +15,7 @@ from edu.mines.jtk.mosaic import *
 from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
-from stv import *
+from slt import *
 #############################################################################
 izv = RecursiveExponentialFilter.Edges.INPUT_ZERO_VALUE
 izs = RecursiveExponentialFilter.Edges.INPUT_ZERO_SLOPE
@@ -49,13 +49,13 @@ def goImpulseResponses():
   x = add(x,1.0)
   ref = RecursiveExponentialFilter(sigma)
   ref.setEdges(izs)
-  rgf = RecursiveGaussianFilter(sigma)
-  rgfx = RecursiveGaussianFilterX(sigma)
+  rgfd  = RecursiveGaussianFilter(sigma)
+  rgfx = RecursiveGaussianFilterP(sigma)
   rrf = RecursiveRectangleFilter(-m,m)
   ref.apply(x,e)
-  rgf.apply0(x,g)
-  rgfx.apply0(x,gx)
-  gg = rgfx.gauss(n,sigma,20)
+  rgfd.apply1(x,g)
+  rgfx.apply1(x,gx)
+  #gg = rgfx.gauss(n,sigma,20)
   rrf.apply(x,r)
   sp = SimplePlot()
   #svr = sp.addSequence(s,r)

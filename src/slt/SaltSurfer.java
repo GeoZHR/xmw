@@ -7,7 +7,6 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import ipfx.*;
 import ipfx.FaultCell;
 import static ipfx.FaultGeometry.*;
 
@@ -203,10 +202,10 @@ public class SaltSurfer {
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     final ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
-    Parallel.loop(1,n3-1,new Parallel.LoopInt() {
+    Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
-    for (int i2=1; i2<n2-1 ;++i2) {
-    for (int i1=1; i1<n1-1 ;++i1) {
+    for (int i2=0; i2<n2 ;++i2) {
+    for (int i1=0; i1<n1 ;++i1) {
       float u1i = u1[i3][i2][i1];
       float u2i = u2[i3][i2][i1];
       float u3i = u3[i3][i2][i1];
@@ -219,9 +218,9 @@ public class SaltSurfer {
       fm[i3][i2][i1] = si.interpolate(s1,s2,s3,fx,x1m,x2m,x3m);
       fp[i3][i2][i1] = si.interpolate(s1,s2,s3,fx,x1p,x2p,x3p);
     }}}});
-    for (int i3=1; i3<n3-1; ++i3) {
-    for (int i2=1; i2<n2-1; ++i2) {
-    for (int i1=1; i1<n1-1; ++i1) {
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
       float u1i = u1[i3][i2][i1];
       float u2i = u2[i3][i2][i1];
       float u3i = u3[i3][i2][i1];
