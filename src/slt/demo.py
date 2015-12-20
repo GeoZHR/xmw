@@ -29,7 +29,7 @@ def goSaltLike():
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(4,1)
+    lof = LocalOrientFilterP(8,4)
     ets = lof.applyForTensors(gx)
     lof.applyForNormal(gx,u1,u2,u3)
     ets.setEigenvalues(0.05,1.0,1.0)
