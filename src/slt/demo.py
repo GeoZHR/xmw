@@ -21,7 +21,7 @@ plotOnly = False
 #pngDir = "../../png/"
 
 def main(args):
-  goSaltLike()
+  #goSaltLike()
   goSaltSurfer()
 def goSaltLike():
   gx = readImage(gxfile)
@@ -49,6 +49,9 @@ def goSaltSurfer():
   ep = readImage(epfile)
   sl = readImage(slfile)
   if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
     lof = LocalOrientFilterP(2,1)
     lof.applyForNormal(ep,u1,u2,u3)
     ets = lof.applyForTensors(ep)
