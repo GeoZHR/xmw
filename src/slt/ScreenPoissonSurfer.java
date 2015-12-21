@@ -373,7 +373,7 @@ public class ScreenPoissonSurfer {
     for (int i1=0; i1<n1; ++i1) {
       float mki = mk[i3][i2][i1];
       if(mki>0f){
-        mki = pow(mki,4);
+        mki = pow(mki,6);
         y[i3][i2][i1] += mki*x[i3][i2][i1];
       }
     }}}

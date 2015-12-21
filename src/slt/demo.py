@@ -22,7 +22,7 @@ plotOnly = False
 
 def main(args):
   goSaltLike()
-  #goSaltSurfer()
+  goSaltSurfer()
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -32,17 +32,18 @@ def goSaltLike():
     lof = LocalOrientFilterP(8,2)
     ets = lof.applyForTensors(gx)
     lof.applyForNormal(gx,u1,u2,u3)
-    ets.setEigenvalues(0.05,1.0,1.0)
+    ets.setEigenvalues(0.01,1.0,1.0)
     ss = SaltScanner()
-    ep = ss.applyForPlanar(100,ets,gx)
+    #ep = ss.applyForPlanar(120,ets,gx)
+    ep = ss.applyForPlanar(200,ets,gx)
     sl = ss.saltLikelihood(4,ep,u1,u2,u3)
     writeImage(epfile,ep)
     writeImage(slfile,sl)
   else:
     ep = readImage(epfile)
     sl = readImage(slfile)
-  #plot3(gx,sub(1,ep),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="ep")
-  #plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="sl")
+  plot3(gx,sub(1,ep),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="ep")
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="sl")
 
 def goSaltSurfer():
   gx = readImage(gxfile)
@@ -57,13 +58,12 @@ def goSaltSurfer():
     g3 = zerofloat(n1,n2,n3)
     lof = LocalOrientFilterP(2,1)
     lof.applyForNormal(ep,u1,u2,u3)
+    mul(u1,sl,g1)
+    mul(u2,sl,g2)
+    mul(u3,sl,g3)
     ss = SaltSurfer()
     fc = ss.findPoints(0.3,sl,u1,u2,u3)
     plot3(gx,sl,cmin=0.1,cmax=0.8,cells=fc,cmap=jetRamp(1.0),png="points")
-    rgf =  RecursiveGaussianFilterP(4)
-    rgf.apply100(ep,g1)
-    rgf.apply010(ep,g2)
-    rgf.apply001(ep,g3)
     sps = ScreenPoissonSurfer()
     sps.setSmoothings(20,20,20)
     sf = sps.saltIndicator(fc,g1,g2,g3)
