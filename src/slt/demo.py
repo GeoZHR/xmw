@@ -22,7 +22,7 @@ plotOnly = False
 
 def main(args):
   goSaltLike()
-  goSaltSurfer()
+  #goSaltSurfer()
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -42,8 +42,8 @@ def goSaltLike():
   else:
     ep = readImage(epfile)
     sl = readImage(slfile)
-  plot3(gx,sub(1,ep),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="ep")
-  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="sl")
+  #plot3(gx,sub(1,ep),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="ep")
+  #plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="sl")
 
 def goSaltSurfer():
   gx = readImage(gxfile)
