@@ -17,12 +17,12 @@ epfile  = "ep" # eigenvalue-derived planarity
 sffile  = "sf" # eigenvalue-derived planarity
 
 pngDir = None
-plotOnly = False
-#pngDir = "../../png/"
+plotOnly = True
+pngDir = "../../../png/slt/3d/"
 
 def main(args):
-  goSaltLike()
-  #goSaltSurfer()
+  #goSaltLike()
+  goSaltSurfer()
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -34,16 +34,16 @@ def goSaltLike():
     lof.applyForNormal(gx,u1,u2,u3)
     ets.setEigenvalues(0.01,1.0,1.0)
     ss = SaltScanner()
-    #ep = ss.applyForPlanar(120,ets,gx)
-    ep = ss.applyForPlanar(200,ets,gx)
+    ep = ss.applyForPlanar(120,ets,gx)
     sl = ss.saltLikelihood(4,ep,u1,u2,u3)
     writeImage(epfile,ep)
     writeImage(slfile,sl)
   else:
     ep = readImage(epfile)
     sl = readImage(slfile)
-  #plot3(gx,sub(1,ep),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="ep")
-  #plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="sl")
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gx,ep,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="Planarity",png="ep")
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
 
 def goSaltSurfer():
   gx = readImage(gxfile)
@@ -58,12 +58,12 @@ def goSaltSurfer():
     g3 = zerofloat(n1,n2,n3)
     lof = LocalOrientFilterP(2,1)
     lof.applyForNormal(ep,u1,u2,u3)
-    mul(u1,sl,g1)
-    mul(u2,sl,g2)
-    mul(u3,sl,g3)
     ss = SaltSurfer()
     fc = ss.findPoints(0.3,sl,u1,u2,u3)
     plot3(gx,sl,cmin=0.1,cmax=0.8,cells=fc,cmap=jetRamp(1.0),png="points")
+    mul(u1,sl,g1)
+    mul(u2,sl,g2)
+    mul(u3,sl,g3)
     sps = ScreenPoissonSurfer()
     sps.setSmoothings(20,20,20)
     sf = sps.saltIndicator(fc,g1,g2,g3)
@@ -72,8 +72,11 @@ def goSaltSurfer():
     sf = readImage(sffile)
   print min(sf)
   print max(sf)
-  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="salts")
-  plot3(gx,sf,cmin=min(sf),cmax=max(sf),cmap=bwrRamp(1.0),fbs=sf,png="salts")
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
+  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
+        clab="Indicator function",png="sf")
+  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
+        clab="Indicator function",png="saltSf")
 
 def goSalt():
   gx = readImage(gxfile)
@@ -404,9 +407,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(236,5,585)
+  ipg.setSlices(232,5,585)
   if cbar:
-    sf.setSize(837,700)
+    sf.setSize(987,700)
   else:
     sf.setSize(850,700)
   vc = sf.getViewCanvas()

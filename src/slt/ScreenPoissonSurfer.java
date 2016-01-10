@@ -199,15 +199,15 @@ public class ScreenPoissonSurfer {
       float[][][] x = v3x.getArray();
       float[][][] y = v3y.getArray();
       float[][][] z = copy(x);
-      //float[][][] p = copy(x);
-      //VecArrayFloat3 v3p = new VecArrayFloat3(p);
-      //zero(p);
+      float[][][] p = copy(x);
+      VecArrayFloat3 v3p = new VecArrayFloat3(p);
+      zero(p);
       _s3.apply(z);
       zero(y);
       applyLhs(z,y);       //laplacian operator
-      //applyLhs(copy(y),p); //biharmonic operator
+      applyLhs(copy(y),p); //biharmonic operator
       screenLhs(_mk,z,y);  //screen points
-      //v3y.add(1f,v3p,1f);
+      v3y.add(1f,v3p,20f);
       _s3.applyTranspose(y);
     }
     private Smoother3 _s3;
@@ -373,7 +373,7 @@ public class ScreenPoissonSurfer {
     for (int i1=0; i1<n1; ++i1) {
       float mki = mk[i3][i2][i1];
       if(mki>0f){
-        mki = pow(mki,6);
+        mki = pow(mki,4);
         y[i3][i2][i1] += mki*x[i3][i2][i1];
       }
     }}}

@@ -5,7 +5,7 @@ Version: 2015.05.07
 """
 from utils import *
 sys.setrecursionlimit(1500)
-setupForSubset("ufs")
+setupForSubset("f3d")
 #setupForSubset("unc")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -58,42 +58,30 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
-pngDir = "../../../png/ipsi/"
-plotOnly = True
+pngDir = "../../../png/f3d/"
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
-  #goThin()
+  #goDisplay()
+  goSlopes()
+  goScan()
+  goThin()
   #goThinImages()
-  #goSkin()
+  goSkin()
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goUnfault()
+  #goUnfault()
   #goUnfaultS()
   #goUncScan()
   #goUncConvert()
   #goFlatten()
   #goHorizons()
-def goTest():
-  rgt = readImage(rgtfile)
-  f = zerofloat(n2,n3)
-  for i3 in range(n3):
-    for i2 in range(n2):
-      f[i3][i2] = rgt[i3][i2][110]
-  #f = rgt[100]
-  rmin = min(f)
-  rmax = max(f)
-  ct = Contours(f)
-  cti = ct.getContour(0.5*(rmin+rmax))
-  cx1 = cti.x1
-  print cti.ns
-  for x1i in cx1:
-    for xk in x1i:
-      print xk
+def goDisplay():
+  gx = readImage(gxfile)
+  plot3(gx)
   
 def goSlopes():
   print "goSlopes ..."
@@ -106,12 +94,14 @@ def goSlopes():
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
+  '''
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
+  '''
 
 def goScan():
   print "goScan ..."
@@ -134,12 +124,14 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+    '''
     plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
     plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
     plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
+    '''
 
 def goThin():
   print "goThin ..."
@@ -151,6 +143,7 @@ def goThin():
   writeImage(fltfile,flt)
   writeImage(fptfile,fpt)
   writeImage(fttfile,ftt)
+  '''
   gx = gain(gx)
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
@@ -161,6 +154,7 @@ def goThin():
         clab="Fault strike (degrees)",cint=45,png="fpt")
   plot3(gx,convertDips(ftt),cmin=35,cmax=50,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
+  '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -179,6 +173,7 @@ def goStat():
   tfl = fs.getFrequencies(st,ft,fl)
   plotStat(sp,pfl,"Fault strike (degrees)")
   plotStat(st,tfl,"Fault dip (degrees)")
+
 def goThinImages():
   gx = readImage(gxfile)
   gx = gain(gx)
@@ -194,12 +189,14 @@ def goThinImages():
   FaultCell.getFlThick(0.0,cells,flt)
   FaultCell.getFpThick(0.0,cells,fpt)
   FaultCell.getFtThick(0.0,cells,ftt)
+  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   plot3(gx,convertDips(ftt),cmin=35,cmax=50,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
+  '''
 
 def goSkin():
   print "goSkin ..."
@@ -223,6 +220,7 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
+  '''
     plot3(gx,cells=cells,png="cells")
   skins = readSkins(fskbase)
   flt = like(gx)
@@ -230,6 +228,7 @@ def goSkin():
   plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
+  '''
 def goReSkin():
   useOldCells=True
   gx = readImage(gxfile)
@@ -872,9 +871,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(117,40,220)
-  ipg.setSlices(110,25,249)
-  #ipg.setSlices(115,25,167)
+  ipg.setSlices(n1,25,249)
   if cbar:
     sf.setSize(987,720)
   else:
@@ -887,7 +884,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.3)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.15,0.05))
+  ov.setTranslate(Vector3(-0.08,0.20,0.05))
   ov.setAzimuthAndElevation(-56.0,35.0)
   #ov.setAzimuthAndElevation(-56.0,40.0)
   sf.setVisible(True)

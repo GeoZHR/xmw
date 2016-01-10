@@ -86,6 +86,64 @@ public class SaltScanner {
     return new float[][][]{cx,ax};
   }
   */
+  public void applyForPhase(float[][] u, float[][] ph){
+    int n2 = u.length;
+    int n1 = u[0].length; 
+    float[] ui = new float[n1];
+    HilbertTransformFilter hbt = new HilbertTransformFilter();
+    for (int i2=0; i2<n2; i2++){
+      hbt.apply(n1,u[i2],ui);
+      for (int i1=0; i1<n1; i1++){
+        float uri =   u[i2][i1];
+        float uii =  ui[i1];
+        ph[i2][i1] = -atan2(uii,uri);
+      }
+    } 
+  }
+
+  public float[][][] applyForLinear(
+    float sigma, EigenTensors2 ets, float[][] fx) 
+  {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    sigma = sigma*sigma*0.5f;
+
+    float[][] g11c = new float[n2][n1];
+    float[][] g12c = new float[n2][n1];
+    float[][] g22c = new float[n2][n1];
+
+    float[][] g11s = new float[n2][n1];
+    float[][] g12s = new float[n2][n1];
+    float[][] g22s = new float[n2][n1];
+
+
+    computeGradientProducts(fx,g11c,g12c,g22c);
+    trace("structure tensors done...");
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.applySmoothS(g11c,g11c);
+    lsf.applySmoothS(g12c,g12c);
+    lsf.applySmoothS(g22c,g22c);
+    lsf.apply(ets,sigma,g11c,g11s);
+    trace("1st smooth parallel to structures done...");
+    lsf.apply(ets,sigma,g12c,g12s);
+    trace("2nd smooth parallel to structures done...");
+    lsf.apply(ets,sigma,g22c,g22s);
+    trace("3rd smooth parallel to structures done...");
+    /*
+    g11s = smooth2(sigma,ets,g11c);
+    g12s = smooth2(sigma,ets,g12c);
+    g13s = smooth2(sigma,ets,g13c);
+    g22s = smooth2(sigma,ets,g22c);
+    g23s = smooth2(sigma,ets,g23c);
+    g33s = smooth2(sigma,ets,g33c);
+    */
+    trace("lsf smooth: done in "+sw.time()+" seconds");
+    sw.stop();
+    return solveEigenproblems(g11s,g12s,g22s);
+
+  }
 
 
   public float[][][] applyForPlanar(
@@ -142,6 +200,30 @@ public class SaltScanner {
 
   }
 
+  public float[][] saltLikelihood(
+    float sigma, float[][] ep, float[][] u1, float[][] u2) 
+  {
+    final int n2 = ep.length;
+    final int n1 = ep[0].length;
+    final float[][] g1 = new float[n2][n1];
+    final float[][] g2 = new float[n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+    rgf.apply10(ep,g1);
+    rgf.apply01(ep,g2);
+    final float[][] sl = new float[n2][n1];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g1i = g1[i2][i1];
+      float g2i = g2[i2][i1];
+      float u1i = u1[i2][i1];
+      float u2i = u2[i2][i1];
+      sl[i2][i1] = abs(g1i*u1i+g2i*u2i); 
+    }}
+    sub(sl,min(sl),sl);
+    div(sl,max(sl),sl);
+    return sl;
+  }
+
   public float[][][] saltLikelihood(
     float sigma, float[][][] ep, 
     final float[][][] u1, final float[][][] u2, final float[][][] u3) 
@@ -195,6 +277,26 @@ public class SaltScanner {
 
 
   private void computeGradientProducts(
+    final float[][] fx,
+    final float[][] g11, final float[][] g12, final float[][] g22)
+  {
+    final int n2 = fx.length;
+    final int n1 = fx[0].length;
+    final float[][] g1 = new float[n2][n1];
+    final float[][] g2 = new float[n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
+    rgf.apply10(fx,g1);
+    rgf.apply01(fx,g2);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      g11[i2][i1] = g1[i2][i1]*g1[i2][i1];
+      g12[i2][i1] = g1[i2][i1]*g2[i2][i1];
+      g22[i2][i1] = g2[i2][i1]*g2[i2][i1];
+    }}
+  }
+
+
+  private void computeGradientProducts(
     final float[][][] fx,
     final float[][][] g11, final float[][][] g12, final float[][][] g13,
     final float[][][] g22, final float[][][] g23, final float[][][] g33)
@@ -235,6 +337,40 @@ public class SaltScanner {
         }
       }
     });
+  }
+
+  private float[][][] solveEigenproblems(
+    final float[][] g11, final float[][] g12, final float[][] g22)
+  {
+    final int n2 = g11.length;
+    final int n1 = g11[0].length;
+    final float[][] ed = new float[n2][n1];
+    final float[][] el = new float[n2][n1];
+    float[][] a = new float[2][2];
+    float[][] z = new float[2][2];
+    float[] e = new float[2];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+        a[0][0] = g11[i2][i1];
+        a[0][1] = g12[i2][i1];
+        a[1][0] = g12[i2][i1];
+        a[1][1] = g22[i2][i1];
+        Eigen.solveSymmetric22(a,z,e);
+        float u1i = z[0][0];
+        float u2i = z[0][1];
+        if (u1i<0.0f) {
+          u1i = -u1i;
+          u2i = -u2i;
+        }
+        float eui = e[0];
+        float evi = e[1];
+        if (evi<0.0f) evi = 0.0f;
+        if (eui<evi) eui = evi;
+        float esi = (eui>0.0f)?1.0f/eui:1.0f;
+        ed[i2][i1] = (eui-evi);///eui;
+        el[i2][i1] = (eui-evi)*esi;
+    }}
+    return new float[][][]{ed,el};
   }
 
   private float[][][] solveEigenproblems(

@@ -1,6 +1,5 @@
 from utils import *
 
-
 setupForSubset("2d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -11,26 +10,58 @@ gxfile  = "gx" # input image (maybe after bilateral filtering)
 
 
 def main(args):
-  #goTest()
-  #goSemblance()
+  #goVar()
+  goTest()
 
-def goTest():
+def goVar():
+  fx = zerofloat(n1,n2)
+  px = zerofloat(n1,n2)
+  ux = zerofloat(n1,n2)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   gx = readImage2d(gxfile)
-  lof = LocalOrientFilter(8,2)
+  gx = gain(gx)
+  '''
+  lof = LocalOrientFilterP(8,2)
   lof.applyForNormal(gx,u1,u2)
-  ss = SaltScanner(10,40)
-  cx,ax = ss.scan(gx,u1,u2)
-  cd = abs(sub(cx,ax))
+  ets = lof.applyForTensors(gx)
+  ets.setEigenvalues(1,0.1)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,40,gx,fx)
+  '''
+  rgf = RecursiveGaussianFilterP(8)
+  rgf.apply00(gx,fx)
+  gs = mul(gx,gx)
+  dx = sub(gx,fx)
+  ds = mul(dx,dx)
+  '''
+  ets.setEigenvalues(0.1,1)
+  lsf.apply(ets,100,ds,px)
+  lsf.apply(ets,100,gs,ux)
+  '''
+  rgf.apply00(gs,gs)
+  rgf.apply00(ds,ds)
+  va = div(ds,gs)
   plot(gx)
-  plot(cx)
-  plot(ax)
-  plot(cd)
-  mul(cd,sub(1,ax),cd)
-  plot(cd)
-  mul(cd,sub(1,cx),cd)
-  plot(cd)
+  va = clip(0,1,va)
+  plot(va,cmin=0,cmax=1)
+
+def goTest():
+  ss = SaltScanner()
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  gx = readImage2d(gxfile)
+  lof = LocalOrientFilter(4,2)
+  ets = lof.applyForTensors(gx)
+  lof.applyForNormal(gx,u1,u2)
+  ets.setEigenvalues(0.01,1.0)
+  ed,ep = ss.applyForLinear(100,ets,gx)
+  sl = ss.saltLikelihood(4,ep,u1,u2)
+  plot(gx)
+  plot(ed)
+  plot(ep)
+  plot(sl)
 def goSemblance():
   gx = readImage2d(gxfile)
   u1 = zerofloat(n1,n2)
@@ -876,22 +907,6 @@ def makePointSets(cmap,f,x1,x2):
 
 #############################################################################
 # utilities
-
-def readImage(name):
-  fileName = seismicDir+name+".dat"
-  n1,n2 = s1.count,s2.count
-  image = zerofloat(n1,n2)
-  ais = ArrayInputStream(fileName)
-  ais.readFloats(image)
-  ais.close()
-  return image
-
-def writeImage(name,image):
-  fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)
-  aos.writeFloats(image)
-  aos.close()
-  return image
 
 #############################################################################
 # Run the function main on the Swing thread
