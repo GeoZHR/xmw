@@ -65,9 +65,10 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goDisplay()
+  #goDisplay()
   goSlopes()
   goScan()
+  #goUnc()
   #goThin()
   #goThinImages()
   #goSkin()
@@ -99,7 +100,20 @@ def goDisplay():
   writeImage(fpfile,fp)
   writeImage(ftfile,ft)
   '''
-  
+def goUnc():
+  print "goUnc ..."
+  gx = readImage(gxfile)
+  uc = readImage(uncfile)
+  fs = FaultSelect()
+  fs.setUncValues(30,240,uc)
+  sub(uc,min(uc),uc)
+  div(uc,max(uc),uc)
+  print min(uc)
+  print max(uc)
+  gx = gain(gx)
+  plot3(gx,uc,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Unconformity likelihood",png="unc")
+
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
