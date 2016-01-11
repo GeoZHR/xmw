@@ -144,7 +144,6 @@ def goThin():
   writeImage(fltfile,flt)
   writeImage(fptfile,fpt)
   writeImage(fttfile,ftt)
-    '''
   gx = gain(gx)
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
@@ -155,7 +154,6 @@ def goThin():
         clab="Fault strike (degrees)",cint=45,png="fpt")
   plot3(gx,convertDips(ftt),cmin=35,cmax=50,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-    '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -190,14 +188,12 @@ def goThinImages():
   FaultCell.getFlThick(0.0,cells,flt)
   FaultCell.getFpThick(0.0,cells,fpt)
   FaultCell.getFtThick(0.0,cells,ftt)
-  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   plot3(gx,convertDips(ftt),cmin=35,cmax=50,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  '''
 
 def goSkin():
   print "goSkin ..."
@@ -221,7 +217,6 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
-    '''
     plot3(gx,cells=cells,png="cells")
   skins = readSkins(fskbase)
   flt = like(gx)
@@ -229,7 +224,7 @@ def goSkin():
   plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
-    '''
+
 def goReSkin():
   useOldCells=True
   gx = readImage(gxfile)
