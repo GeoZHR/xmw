@@ -66,7 +66,7 @@ plotOnly = True
 # can comment out earlier parts that have already written results to files.
 def main(args):
   goDisplay()
-  #goSlopes()
+  goSlopes()
   goScan()
   #goThin()
   #goThinImages()
