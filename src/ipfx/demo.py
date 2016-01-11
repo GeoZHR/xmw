@@ -58,7 +58,7 @@ maxThrow =  15.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/ipfx/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -66,8 +66,8 @@ def main(args):
   #goFakeData()
   #goSlopes()
   #goScan()
-  goThin()
-  goSkin()
+  #goThin()
+  #goSkin()
   goReSkin()
   '''
   goSmooth()
@@ -263,7 +263,7 @@ def goReSkin():
   skins = readSkins(fskgood)
   for skin in skins:
     skin.smoothCellNormals(4)
-  #plot3(gx,skins=skins,png="skinsNew")
+  plot3(gx,skins=skins,png="skinsNew")
   plot3(gx,skins=skins,links=True,png="skinsNewLinks")
   #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
   '''

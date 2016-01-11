@@ -40,15 +40,16 @@ sx3file = "sx3"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minPhi,maxPhi = 0,150
-minTheta,maxTheta = 75,80
+#minPhi,maxPhi = 0,150
+minPhi,maxPhi = 0,360
+minTheta,maxTheta = 70,80
 sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.2
 upperLikelihood = 0.5
-minSkinSize = 1000
+minSkinSize = 2000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -67,9 +68,9 @@ def main(args):
   #goDisplay()
   goSlopes()
   goScan()
-  goThin()
+  #goThin()
   #goThinImages()
-  goSkin()
+  #goSkin()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -94,14 +95,14 @@ def goSlopes():
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
-  '''
+  ''' 
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
-  '''
+  ''' 
 
 def goScan():
   print "goScan ..."
@@ -124,14 +125,14 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-    '''
-    plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-    plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-    plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
-    '''
+  ''' 
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+  ''' 
 
 def goThin():
   print "goThin ..."
@@ -143,7 +144,7 @@ def goThin():
   writeImage(fltfile,flt)
   writeImage(fptfile,fpt)
   writeImage(fttfile,ftt)
-  '''
+    '''
   gx = gain(gx)
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
@@ -154,7 +155,7 @@ def goThin():
         clab="Fault strike (degrees)",cint=45,png="fpt")
   plot3(gx,convertDips(ftt),cmin=35,cmax=50,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  '''
+    '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -220,7 +221,7 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
-  '''
+    '''
     plot3(gx,cells=cells,png="cells")
   skins = readSkins(fskbase)
   flt = like(gx)
@@ -228,7 +229,7 @@ def goSkin():
   plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
-  '''
+    '''
 def goReSkin():
   useOldCells=True
   gx = readImage(gxfile)
@@ -289,28 +290,26 @@ def goSlip():
   gx = gain(gx)
   if not plotOnly:
     skins = readSkins(fskgood)
-    plot3(gx,skins=skins,png="skinsfl")
+    plot3(gx,skins=skins,png="skinsfg")
     gsx = readImage(gsxfile)
     sigma1,sigma2,sigma3,pmax = 8.0,3.0,3.0,5.0
     p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
     fsl = FaultSlipper(gsx,p2,p3)
-    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only to show the error
     fsl.computeDipSlips(skins,minThrow,maxThrow)
-    '''
     print "  dip slips computed, now reskinning ..."
     print "  number of skins before =",len(skins),
     fsk = FaultSkinner() # as in goSkin
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMinSkinSize(minSkinSize)
-    fsk.setMinMaxThrow(-1.0,maxThrow)
+    fsk.setMinMaxThrow(0.5,maxThrow)
     skins = fsk.reskin(skins)
-    '''
     #removeAllSkinFiles(fslbase)
     #writeSkins(fslbase,skins)
   #else:
     #skins = readSkins(fslbase)
-  #plot3(gx,skins=skins,png="skinsfl")
+  plot3(gx,skins=skins,png="skinsft")
   #plot3(gx,skins=skins,smax=6,png="skinss1")
 
 def goUnfault():

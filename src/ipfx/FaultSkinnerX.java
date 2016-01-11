@@ -458,19 +458,21 @@ public class FaultSkinnerX {
         int i1i = round(x1);
         int i2i = round(x2);
         int i3i = round(x3);
-        int i2n = i2i;
-        int i3n = i3i;
-        if(i2i>x2) {i2i -= 1;}
-        else       {i2n += 1;}
-        if(i3i>x3) {i3i -= 1;}
-        else       {i3n += 1;}
-        if(i2i<0||i2n>=n2) {fc.fl=fl[i3i][i2i][i1i]; continue;}
-        if(i3i<0||i3n>=n3) {fc.fl=fl[i3i][i2i][i1i]; continue;}
-        x2 -= i2i; x3 -= i3i;
-        float fla = fl[i3i][i2i][i1i];
-        float flb = fl[i3i][i2n][i1i];
-        float flc = fl[i3n][i2i][i1i];
-        float fld = fl[i3n][i2n][i1i];
+        int i2p = i2i;
+        int i3p = i3i;
+        int i2m = i2i;
+        int i3m = i3i;
+        if(i2i>x2) {i2m -= 1;}
+        else       {i2p += 1;}
+        if(i3i>x3) {i3m -= 1;}
+        else       {i3p += 1;}
+        if(i2m<0||i2p>=n2) {fc.fl=fl[i3i][i2i][i1i]; continue;}
+        if(i3m<0||i3p>=n3) {fc.fl=fl[i3i][i2i][i1i]; continue;}
+        x2 -= i2m; x3 -= i3m;
+        float fla = fl[i3m][i2m][i1i];
+        float flb = fl[i3m][i2p][i1i];
+        float flc = fl[i3p][i2m][i1i];
+        float fld = fl[i3p][i2p][i1i];
         fc.fl=fla*(1f-x2)*(1f-x3)+flb*(1f-x3)*x2+flc*(1f-x2)*x3+fld*x2*x3;
       }
       skl.add(skins[0]);

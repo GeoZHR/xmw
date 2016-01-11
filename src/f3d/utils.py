@@ -32,15 +32,17 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.004,0.025,0.024999 # (s,km,km)
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="uncs":
-    """ subset of f3d data set with unconformities """
-    print "setupForSubset: uncs"
-    seismicDir = _datdir+"../../../data/unc/"
-    n1,n2,n3 = 120,200,260
+  elif name=="sub1":
+    """ subset with unconformities and faults """
+    print "setupForSubset: sub1"
+    seismicDir = _datdir+"sub1/"
+    n1,n2,n3 = 116,391,591
     d1,d2,d3 = 1.0,1.0,1.0 
+    #j1,j2,j3 = 344,0,0
+    #d1,d2,d3 = 0.004,0.025,0.024999 # (s,km,km)
+    #f1,f2,f3 = 0.472,0.0,0.0 # = 0.000,0.000,0.000
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-
   elif name=="unc":
     """ subset of delhi data set with unconformities """
     print "setupForSubset: unc"
