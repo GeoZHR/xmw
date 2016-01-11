@@ -27,7 +27,7 @@ def setupForSubset(name):
     """ a subset of f3d seismic image """
     print "setupForSubset: subset of f3d"
     seismicDir = _datdir
-    n1,n2,n3 = 382,951,591
+    n1,n2,n3 = 362,951,591
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.004,0.025,0.024999 # (s,km,km)
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000

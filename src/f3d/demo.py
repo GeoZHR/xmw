@@ -43,7 +43,7 @@ sx3file = "sx3"
 #minPhi,maxPhi = 0,150
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 70,80
-sigmaPhi,sigmaTheta = 8,20
+sigmaPhi,sigmaTheta = 4,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -60,13 +60,13 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
 pngDir = "../../../png/f3d/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDisplay()
-  goSlopes()
+  goDisplay()
+  #goSlopes()
   goScan()
   #goThin()
   #goThinImages()
@@ -82,7 +82,23 @@ def main(args):
   #goHorizons()
 def goDisplay():
   gx = readImage(gxfile)
-  plot3(gx)
+  '''
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  '''
+  gx = copy(n1-20,n2,n3,20,0,0,gx)
+  '''
+  fl = copy(n1-20,n2,n3,20,0,0,fl)
+  fp = copy(n1-20,n2,n3,20,0,0,fp)
+  ft = copy(n1-20,n2,n3,20,0,0,ft)
+  '''
+  writeImage(gxfile,gx)
+  '''
+  writeImage(flfile,fl)
+  writeImage(fpfile,fp)
+  writeImage(ftfile,ft)
+  '''
   
 def goSlopes():
   print "goSlopes ..."
