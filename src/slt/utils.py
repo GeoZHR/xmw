@@ -19,15 +19,17 @@ def setupForSubset(name):
     samplings s1,s2,s3
   Example: setupForSubset("s1")
   """
+  global pngDir
   global seismicDir
-  global welllogDir
   global s1,s2,s3
   global n1,n2,n3
   global sz,sl,sc
   global nz,nl,nc
+  global pngDir
   if name=="3d":
     print "setupForSubset: 3d"
     seismicDir = _datdir+"3d/"
+    pngDir = "../../../png/slt/3d/"
     n1,n2,n3 = 242,611,591
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
@@ -37,48 +39,33 @@ def setupForSubset(name):
   elif name=="3dSub":
     print "setupForSubset: 3dSub"
     seismicDir = _datdir+"3d/sub/"
-    n1,n2,n3 = 242,611,179
+    pngDir = "../../../png/slt/3d/sub/"
+    n1,n2,n3 = 242,211,241
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,0.000,0.000
-    #f1,f2,f3 = 220,340,0
+    #f1,f2,f3 = 220,740,350
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="2d":
+  elif name=="2dSub1":
     print "setupForSubset: 2d"
-    seismicDir = _datdir+"2d/"
-    n1,n2 = 296,1941
-    d1,d2 = 1.0,1.0
-    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    f1,f2 = 0.000,0.000
+    seismicDir = _datdir+"2d/sub1/"
+    pngDir = "../../../png/slt/2d/sub1/"
+    n1,n2 = 162,461  #copy(n1-80,n2-150,80,150)
+    d1,d2 = 0.004,0.025 # (s,km,km)
+    f1,f2 = 0.004+80*d1,150*d2
+    #d1,d2 = 1.00,1.0
+    #f1,f2 = 0.00,0.0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="2dSub2":
+    print "setupForSubset: 2d"
+    seismicDir = _datdir+"2d/sub2/"
+    pngDir = "../../../png/slt/2d/sub2/"
+    #n1,n2 = 296,1941
+    n1,n2 = 162,461  #copy(n1-80,n2-150,80,150)
+    d1,d2 = 0.004,0.025 # (s,km,km)
+    f1,f2 = 0.004+80*d1,0*d2
     #f1,f2 = 220,340
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
-  elif name=="opunake":
-    print "setupForSubset: opunake"
-    seismicDir = _datdir+"opunake/"
-    n1,n2,n3 = 639,557,192
-    d1,d2,d3 = 1.0,1.0,1.0 
-    f1,f2,f3 = 0.0,0.0,0.0
-    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    #f1,f2,f3 = 0.000,d2*29,d3*46
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-
-  elif name=="opunakeSub":
-    print "setupForSubset: opunake subset"
-    seismicDir = _datdir+"opunake/sub/"
-    n1,n2,n3 = 350,472,184
-    d1,d2,d3 = 1.0,1.0,1.0 
-    f1,f2,f3 = 0.0,0.0,0.0
-    #f1,f2,f3 = 49,42,3;
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-
-  elif name=="parihaka":
-    print "setupForSubset: parihaka"
-    seismicDir = _datdir+"parihaka/"
-    n1,n2,n3 = 501,302,301
-    d1,d2,d3 = 1.0,1.0,1.0 
-    f1,f2,f3 = 0.0,0.0,0.0
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-
   else:
     print "unrecognized subset:",name
     System.exit
@@ -88,6 +75,9 @@ def getSamplings():
 
 def getSeismicDir():
   return seismicDir
+
+def getPngDir():
+  return pngDir
 
 #############################################################################
 # read/write images

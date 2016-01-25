@@ -23,6 +23,7 @@ from rgi import *
 from ipfx import *
 from unct import *
 from uff import *
+from he import *
 from f3d import *
 
 #############################################################################

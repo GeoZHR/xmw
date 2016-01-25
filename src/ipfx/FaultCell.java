@@ -82,6 +82,15 @@ public class FaultCell implements Serializable {
     return smp;
   }
 
+  public void shift(float d1, float d2, float d3) {
+    this.x1 += d1;
+    this.x2 += d2;
+    this.x3 += d3;
+    this.i1 = round(this.x1);
+    this.i2 = round(this.x2);
+    this.i3 = round(this.x3);
+  }
+
 
   public int[] getI() {
     return new int[]{i1,i2,i3};

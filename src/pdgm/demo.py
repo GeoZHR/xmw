@@ -6,9 +6,9 @@ Version: 2014.07.17
 
 from utils import *
 #setupForSubset("clyde")
-setupForSubset("clydeSub")
+#setupForSubset("clydeSub")
 #setupForSubset("opunakeSub")
-#setupForSubset("parihaka")
+setupForSubset("parihaka")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -72,14 +72,22 @@ def main(args):
   #goThin()
   #goSkin()
   #goTv()
-  goTI()
+  #goTI()
   #goReSkin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
-  #goDisplay()
+  goDisplay()
+
+def goDisplay():
+  gx = readImage("gx")
+  gx = gain(gx)
+  writeImage(gxfile,gx)
+  print min(gx)
+  print max(gx)
+  plot3(gx)
 
 def goTI():
   fs = FaultSkinner()
@@ -177,13 +185,6 @@ def goTv():
   plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
     clab="Junction",png="cm")
 
-def goDisplay():
-  gx = readImage("gx")
-  gx = gain(gx)
-  writeImage(gxfile,gx)
-  print min(gx)
-  print max(gx)
-  plot3(gx)
 
 def goSlopes():
   print "goSlopes ..."

@@ -5,8 +5,19 @@ import static edu.mines.jtk.util.ArrayMath.*;
 
 import ipfx.*;
 
-public class FaultSelect {
+public class FaultHelper {
 
+  public void mask(float[][] sf, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    float ga = 0.5f*(max(gx)-min(gx));
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int k1 = round(sf[i3][i2]);
+      for (int i1=0; i1<=k1; ++i1)
+        gx[i3][i2][i1] = ga;
+    }}
+  }
   public void setValueOnFaults(float v, FaultSkin[] skins, float[][][] x) {
     for (FaultSkin skin:skins) {
       for (FaultCell cell:skin) {

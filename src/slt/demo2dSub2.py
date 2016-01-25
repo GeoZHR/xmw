@@ -1,6 +1,6 @@
 from utils import *
 
-setupForSubset("2dSub1")
+setupForSubset("2dSub2")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -16,33 +16,34 @@ sffile = "sf"
 def main(args):
   goSaltLike()
   goSaltSurfer()
-  goSaltSurferC()
+  #goSaltSurferC()
 
 def goSaltLike():
   gx = readImage2d(gxfile)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   el = zerofloat(n1,n2)
-  lof = LocalOrientFilterP(4,2)
+  lof = LocalOrientFilterP(4,1)
   ets = lof.applyForTensors(gx)
   ets.setEigenvalues(0.01,1.0)
   ss = SaltScanner()
   el = ss.applyForLinear(200,ets,gx)
   lof = LocalOrientFilterP(4,4)
   lof.applyForNormal(gx,u1,u2)
-  sl = ss.saltLikelihood(9,el,u1,u2)
+  sl = ss.saltLikelihood(15,el,u1,u2)
   ssf = SaltSurfer()
   st1,st2 = ssf.thin(0.3,sl,u1,u2)
   writeImage(elfile,el)
   writeImage(slfile,sl)
   writeImage(stfile,st1)
   plot2(gx,s1,s2,label="Amplitude",png="gx")
-  plot2(gx,s1,s2,el,cmin=0.1,cmax=0.9,cmap=jetRamp(1.0),
+  plot2(gx,s1,s2,el,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         label="Linearity",png="el")
-  plot2(gx,s1,s2,sl,cmin=0.1,cmax=0.9,cmap=jetRamp(1.0),
+  plot2(gx,s1,s2,sl,cmin=0.2,cmax=1,cmap=jetRamp(1.0),
         label="Salt likelihood",png="sl")
-  plot2(gx,s1,s2,st2,cmin=0.1,cmax=0.9,cmap=jetRamp(1.0),
-        label="Salt likelihood", png="st")
+  plot2(gx,s1,s2,st2,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        label="Thinned salt likelihood", png="st")
+
 def goSaltSurfer():
   gx = readImage2d(gxfile)
   el = readImage2d(elfile)
@@ -53,20 +54,20 @@ def goSaltSurfer():
   g1 = zerofloat(n1,n2)
   g2 = zerofloat(n1,n2)
   lof = LocalOrientFilterP(8,2)
-  lof.applyForNormal(el,u1,u2)
+  lof.applyForNormal(gx,u1,u2)
   ss = SaltSurfer()
   mul(u1,sl,g1)
   mul(u2,sl,g2)
+  mk = pow(st,7) 
   sps = ScreenPoissonSurfer()
   sps.setSmoothings(20,20,20)
-  mk = pow(st,12)
   sf = sps.saltIndicator(mk,g1,g2)
   writeImage(sffile,sf)
   print min(sf)
   print max(sf)
   plot2(gx,s1,s2,st,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        label="Salt likelihood")
-  plot2(gx,s1,s2,sf,u=sf,cmin=-15,cmax=15,cmap=bwrRamp(1.0),
+        label="Thinned salt likelihood")
+  plot2(gx,s1,s2,sf,u=sf,cmin=-18,cmax=18,cmap=bwrRamp(1.0),
         label="Salt indicator",png="sf")
 
 def goSaltSurferC():
@@ -78,17 +79,16 @@ def goSaltSurferC():
   u2 = zerofloat(n1,n2)
   g1 = zerofloat(n1,n2)
   g2 = zerofloat(n1,n2)
-  lof = LocalOrientFilterP(8,2)
+  lof = LocalOrientFilterP(2,1)
   lof.applyForNormal(el,u1,u2)
   ss = SaltSurfer()
   mul(u1,sl,g1)
   mul(u2,sl,g2)
   spc = ScreenPoissonSurferC()
   spc.setSmoothings(20,20,20)
-  k1 = [116, 90, 73, 79, 86, 97, 85]#106, 90, 97, 78, 72, 80, 86, 97, 74]
-  k2 = [139,162,190,208,221,235,269]#118,162,173,186,198,213,221,235,276]
-  mk = pow(st,12)
-  sf = spc.saltIndicator(k1,k2,mk,g1,g2)
+  k1 = [116,106, 90, 97, 78, 72, 80, 86, 97, 74]
+  k2 = [139,118,162,173,186,198,213,221,235,276]
+  sf = spc.saltIndicator(k1,k2,st,g1,g2)
   writeImage(sffile,sf)
   print min(sf)
   print max(sf)
@@ -133,8 +133,8 @@ def plot2(f,s1,s2,g=None,u=None,k1=None,k2=None,
   f1,f2 = s1.getFirst(),s2.getFirst()
   d1,d2 = s1.getDelta(),s2.getDelta()
   panel = panel2Teapot()
-  #panel.setHInterval(2.0)
-  #panel.setVInterval(0.2)
+  panel.setHInterval(2.0)
+  panel.setVInterval(0.2)
   panel.setHLabel("Inline (km)")
   panel.setVLabel("Time (s)")
   #panel.setHInterval(100.0)

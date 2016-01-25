@@ -15,7 +15,7 @@ f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
 fmin,fmax=-5,5 # seismic values
 method = "b" # blended
 logSet = "d" # deep logs only
-logType="v"; logLabel="Velocity (km/s)"; vmin,vmax = 2.4,5.6;k1,k2,k3 = 366,15,95
+logType="v"; logLabel="Velocity (km/s)"; vmin,vmax = 2.4,5.6;k1,k2,k3 = 366,15,107#(95)
 #logType="d"; logLabel="Density (g/cc)";  vmin,vmax = 2.0,2.8;k1,k2,k3 = 366,15,77
 #logType = "p"; logLabel = "Porosity"; vmin,vmax = 0.0,0.4
 #logType = "g"; logLabel = "Gamma ray (API units)"; vmin,vmax = 0.0,200.0
@@ -63,8 +63,8 @@ horizons = [
   "TensleepBbaseC1Dolo"]
 """
 
-pngDir = "../../../png/rgi/tp3d/"
 pngDir = None
+pngDir = "../../../png/rgi/tp3d/"
 
 plotOnly = True
 
@@ -75,7 +75,7 @@ def main(args):
   #goRgt()
   #goRgtInterp()
   goRgtInterpX()
-  goInterpO()
+  #goInterpO()
   #goOneWell()
   #goRgtInterpOne()
 
@@ -357,13 +357,16 @@ def goRgtInterpX():
     ri.setRgt(gt)
     samples=ri.getPoints(0.0,p)
     fq = ri.gridX(s1,s2,s3,gx)
-    writeImage(fqxfile,fq)
+    #writeImage(fqxfile,fq)
   else:
     gx = readImage(sfile)
     fq = readImage(fqxfile)
   samples=readLogSamples(logSet,logType,smooth)
-  plot3(gx,samples=samples,clab="Amplitude")
-  plot3(gx,fq,samples=samples,cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
+  plot3(gx,samples=samples,clab="Amplitude",png="seisWell")
+  plot3(gx,fq,samples=samples,cmin=vmin,cmax=vmax,
+        cmap=jetFill(0.3),clab=logLabel,png="interpWell")
+  plot3(gx,fq,cmin=vmin,cmax=vmax,
+        cmap=jetFill(0.3),clab=logLabel,png="interp")
   '''
   plot3(gx,samples=samples,horizon=horizon,clab="Amplitude")
   plot3(gx,fq,samples=samples,horizon=horizon,

@@ -1,10 +1,10 @@
-/****************************************************************************
+/************************************************************************
 Copyright (c) 2007, Colorado School of Mines and others. All rights reserved.
 This program and accompanying materials are made available under the terms of
 the Common Public License - v1.0, which accompanies this distribution, and is
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
-package unct;
+package f3d;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.interp.*;
@@ -13,160 +13,99 @@ import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 import edu.mines.jtk.util.ArrayMath;
 
+import util.*;
+import ipfx.*;
 import java.util.*;
 
 /**
   *
  * @author Xinming Wu, Colorado School of Mines
- * @version 2015.04.08
+ * @version 2013.01.20
  */
-public class UncSurfer {
+public class UnconformityHelper {
 
-  public void setForLof(double sigma1, double sigma2) {
-    _lof = new LocalOrientFilter(sigma1,sigma2);
+  public void setUncValues(int f1, int l1, float[][][] uc) {
+    int n3 = uc.length;
+    int n2 = uc[0].length;
+    int n1 = uc[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if (i1<f1||i1>l1) {
+        uc[i3][i2][i1] = 0f;
+      }
+    }}}
+    for (int i3=240; i3<557; ++i3) {
+    for (int i2=575; i2<897; ++i2) {
+    for (int i1=0; i1<40; ++i1) {
+        uc[i3][i2][i1] = 0f;
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=370; i2<575; ++i2) {
+    for (int i1=0; i1<55; ++i1) {
+        uc[i3][i2][i1] = 0f;
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<370; ++i2) {
+    for (int i1=0; i1<86; ++i1) {
+        uc[i3][i2][i1] = 0f;
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=544; i2<n2; ++i2) {
+    for (int i1=140; i1<n1; ++i1) {
+        uc[i3][i2][i1] = 0f;
+    }}}
+
   }
 
-  // set horizontal and vertical intervals for sparse sampling
-  public void setSampling(int dh, int dv) {
-    _dh = dh;
-    _dv = dv;
+  public float[][][] setUncVolume(float[][][] uc) {
+    int n3 = uc.length;
+    int n2 = uc[0].length;
+    int n1 = uc[0][0].length;
+    float[][][] uv = fillfloat(1f,n1,n2,n3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if (uc[i3][i2][i1]>0.2f) {
+        uv[i3][i2][i1] = 0f;
+      }
+    }}}
+    for (int i3=240; i3<557; ++i3) {
+    for (int i2=575; i2<897; ++i2) {
+    for (int i1=0; i1<40; ++i1) {
+        uv[i3][i2][i1] = 1f;
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=544; i2<n2; ++i2) {
+    for (int i1=140; i1<n1; ++i1) {
+        uv[i3][i2][i1] = 1f;
+    }}}
+    return uv;
   }
 
-  public void setForLofu(double sigma1, double sigma2, int niter) {
-    _niter = niter;
-    _lofuSigma1  = sigma1;
-    _lofuSigma2  = sigma2;
-    //_lofu = new LocalOrientFilterUnc(_lofuSigma1,_lofuSigma2,_niter);
-    _lofu = new LocalOrientFilterUM(_lofuSigma1,_lofuSigma2,_niter);
-  }
-
-  public float[][][] likelihood(float[][][] f) {
-    int n3 = f.length;
-    int n2 = f[0].length;
-    int n3s = reSampling(_dh,n3);
-    int n2s = reSampling(_dh,n2);
-    int nms = n3s;if(nms<n2s){nms=n2s;}
-    int nit = nms*2+200;
-    double sig1u = 0.95;
-    //double sig1u = 0.75;
-    double sig2u = (double)nms*1.0;
-    float[][][] uls = likelihood(nit,sig1u,sig2u,f);
-    return uls;
-  }
-
-  public float[][][] interp(int n1, int n2, int n3, float[][][] uls) {
-    float[][][] uli = new float[n3][n2][n1];
-    interp(_dh,_dv,copy(uls),uli);
-    return uli;
-  }
-
-  // compute unconformity likelihoods
-  public float[][][] likelihood(
-    int nit, double sig1u, double sig2u, float[][][] f) {
-    int n3 = f.length; 
-    int n2 = f[0].length; 
-    int n1 = f[0][0].length; 
-    int n3s = reSampling(_dh,n3);
-    int n2s = reSampling(_dh,n2);
-    int n1s = reSampling(_dv,n1);
-    float[][][] u   = new float[n3s][n2s][n1s];
-    float[][][] uc1 = new float[n3s][n2s][n1s];
-    float[][][] uc2 = new float[n3s][n2s][n1s];
-    float[][][] uc3 = new float[n3s][n2s][n1s];
-    float[][][] ua1 = new float[n3s][n2s][n1s];
-    float[][][] ua2 = new float[n3s][n2s][n1s];
-    float[][][] ua3 = new float[n3s][n2s][n1s];
-    EigenTensors3 et = _lof.applyForTensors(f,true);
-    _lofu = new LocalOrientFilterUM(sig1u,sig2u,nit);
-    _lofu.setSampling(_dh,_dv);
-    _lofu.applyForNormal(et,f,uc1,uc2,uc3,ua1,ua2,ua3); 
-    System.out.println("comupte normals finish~");
-    mul(uc1,ua1,uc1);
-    mul(uc2,ua2,uc2);
-    mul(uc3,ua3,uc3);
-    add(uc1,uc2,u);
-    add(uc3,u  ,u);
-    sub(u,min(u),u);
-    div(u,max(u),u);
-    return u;
-  }
 
   // find all ridges of unconformity likelihoods 
   public void thin(float th,float[][] u, float[][] ut) {
     thinParallel(th,u,ut);
   }
+
   public void thin(float th, float[][][] u, float[][][] ut) {
     thinParallel(th,u,ut);
   }
+
   public void thin(float th, float[] u, float[] ut) {
     int n1 = u.length;
     for (int i1=1; i1<n1-1; ++i1) {
       float ui = u[i1];
-      float dum = ui-u[i1-1]; 
-      float dup = ui-u[i1+1]; 
-      float sum1 = dum+dup;
+      float dum = u[i1-1] - ui; 
+      float dup = u[i1+1] - ui; 
+      float sum1 = abs(dum+dup);
       float sum2 = abs(dum)+abs(dup);
       if (sum1==sum2 && ui>th) {
         ut[i1] = ui;
       }
     }
   }
-
-  // connect ajacent points to form unconformity surfaces for 3D images
-  // x thinned unconformity likelihood with only 1 sample vertically on the ridges
-  // y unconformity likelihoods
-  // output: unconformity surfaces saved in surf[ns][n3][n2]
-  // ns: number of surfaces 
-  // surf[is]: depth of samples on a surface
-  public float[][][] surfer2(
-    int n2d, int n3d,float th, int pMin, float[][][] x) 
-  {
-    float[][][] u = copy(x);
-    int n3 = u.length;
-    int n2 = u[0].length;
-    int n1 = u[0][0].length;
-    int is = 0;
-    int[][] mark = new int[n3][n2];
-    float[][][] surf = new float[100][n3][n2];
-    ArrayMath.fill(Float.NaN,surf);
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=1; i1<n1-1; ++i1) {
-          float ui = u[i3][i2][i1];  
-          int ip = 0;
-          if(ui>0.0f && ui>th) {
-            u[i3][i2][i1] = 0.0f;
-            mark[i3][i2] = i1;
-            double xm = u[i3][i2][i1-1];
-            double xi = u[i3][i2][i1  ];
-            double xp = u[i3][i2][i1+1];
-            surf[is][i3][i2] = findPeak(i1,xm,xi,xp);
-            ip ++;
-            while (sum(mark)>0) {
-              int[] ind = findMark(mark);
-              int i3t = ind[0]; 
-              int i2t = ind[1]; 
-              int i1t = ind[2]; 
-              mark[i3t][i2t] = 0;
-              ip = floodFill2(ip,i1t,i2t,i3t,2,2,2,th,u,mark,surf[is]);
-            }
-            if(ip>=pMin) { 
-              is = is + 1;
-              System.out.println("ip="+ip);
-              System.out.println("is="+is);
-            }else{
-              ArrayMath.fill(Float.NaN,surf[is]);
-            }
-          }
-        }
-      }
-    }
-    float[][][] sfs = copy(n2,n3,is,0,0,0,surf);
-    int ns = sfs.length;
-    System.out.println("ns="+ns);
-    return sfs;
-  }
-
 
   // connect ajacent points to form unconformity surfaces for 3D images
   // x thinned unconformity likelihood with only 1 sample vertically on the ridges
@@ -185,18 +124,21 @@ public class UncSurfer {
     int[][] mark = new int[n3][n2];
     float[][][] surf = new float[100][n3][n2];
     ArrayMath.fill(Float.NaN,surf);
+    double dv = 1.0;
     for (int i3=0; i3<n3; ++i3) {
+      System.out.println("i3="+i3);
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=1; i1<n1-1; ++i1) {
           float ui = u[i3][i2][i1];  
           int ip = 0;
-          if(ui>0.0f && ui>th) {
+          //if(ui>0.0f && ui<th) {
+          if(ui>th) {
             u[i3][i2][i1] = 0.0f;
             mark[i3][i2] = i1;
             double ym = y[i3][i2][i1-1];
             double yi = y[i3][i2][i1  ];
             double yp = y[i3][i2][i1+1];
-            surf[is][i3][i2] = findPeak2(i1,_dv,ym,yi,yp);
+            surf[is][i3][i2] = findPeak2(i1,dv,ym,yi,yp);
             ip ++;
             while (sum(mark)>0) {
               int[] ind = findMark(mark);
@@ -217,76 +159,11 @@ public class UncSurfer {
         }
       }
     }
-    float[][][] sfs = copy(n2,n3,is,0,0,0,surf);
-    int ns = sfs.length;
-    System.out.println("ns="+ns);
-    float[][][] rsfs = fillfloat(Float.NaN,n2d,n3d,ns);
-    refineSample(_dh,sfs,rsfs);
-    return rsfs;
+    return copy(n2,n3,is,0,0,0,surf);
   }
 
-  public float[][][] extractUncs(
-    float[][][] uncs, float[][][] f) { 
-    int n3 = f.length;
-    int n2 = f[0].length;
-    int n1 = f[0][0].length;
-    float[][][] p2 = new float[n3][n2][n1];
-    float[][][] p3 = new float[n3][n2][n1];
-    float[][][] ep = new float[n3][n2][n1];
-    int ns = uncs.length;
-    float[][][] sfs = new float[ns][n3][n2];
-    LocalSlopeFinder lsf = new LocalSlopeFinder(2.0,2.0,20.0);
-    lsf.findSlopes(f,p2,p3,ep);
-    ep = pow(ep,12.0f);
-    replaceBounds(ep);
-    replaceBounds(p2);
-    replaceBounds(p3);
-    SurfaceExtractor se = new SurfaceExtractor();
-    se.setCG(0.01f,200);
-    se.setWeights(1.0f);
-    se.setSmoothings(4.0f,4.0f);
-    for (int is=0; is<ns; ++is) {
-      float[][] cs = getControlPoints(uncs[is]);
-      se.setConstraints(cs[0],cs[1],cs[2]);
-      sfs[is] = se.surfaceInitialization(n2,n3,p2,false); 
-      for (int iter=0; iter<10; iter++) {
-        float ad = se.surfaceUpdateFromSlopes(ep,p2,p3,sfs[is],false);
-        System.out.println(" Average adjustments per sample = "+ad);
-        if(ad<0.02f) {break;}
-      }
-    }
-    return sfs;
-  }
-
-  private float[][] getControlPoints(float[][] sf) {
-    ArrayList<Float> k1 = new ArrayList<Float>();
-    ArrayList<Float> k2 = new ArrayList<Float>();
-    ArrayList<Float> k3 = new ArrayList<Float>();
-    int n3 = sf.length;
-    int n2 = sf[0].length;
-    for (int i3=5; i3<n3; i3+=15) {
-    for (int i2=5; i2<n2; i2+=15) {
-      float i1 = sf[i3][i2];
-      if(!Float.isNaN(i1)){
-        k1.add(i1);
-        k2.add((float)i2);
-        k3.add((float)i3);
-      }
-    }}
-    int n = k1.size();
-    float[][] cs = new float[3][n];
-    int i = 0;
-    for (float ki:k1) {cs[0][i]=ki;i++;}
-    i = 0;
-    for (float ki:k2) {cs[1][i]=ki;i++;}
-    i = 0;
-    for (float ki:k3) {cs[2][i]=ki;i++;}
-    return cs;
-  }
-
-
-  public void surfaceUpdate(double sigma1, double sigma2, 
-    float[][][] f, float[][][] sf) 
+  public void surfaceUpdate(
+    double sigma1, double sigma2, FaultSkin[] sks, float[][][] f, float[][][] sf) 
   {
     int ns = sf.length;
     int n3 = f.length;
@@ -298,6 +175,17 @@ public class UncSurfer {
     System.out.println("sigma2="+sigma2);
     LocalSlopeFinder lsf = new LocalSlopeFinder(sigma1,sigma2,20.0);
     lsf.findSlopes(f,p2,p3,ep);
+    for (FaultSkin ski:sks) {
+    for (FaultCell fc:ski) {
+      int m1 = fc.getM1();
+      int m2 = fc.getM2();
+      int m3 = fc.getM3();
+      int c1 = fc.getP1();
+      int c2 = fc.getP2();
+      int c3 = fc.getP3();
+      ep[m3][m2][m1] = 0.01f;
+      ep[c3][c2][c1] = 0.01f;
+    }}
     ep = pow(ep,12.0f);
     replaceBounds(ep);
     replaceBounds(p2);
@@ -308,10 +196,44 @@ public class UncSurfer {
     se.setSmoothings(4.0f,4.0f);
     for (int is=0; is<ns; ++is) {
       boolean NaNs = checkNaNs(sf[is]);
-      for (int iter=0; iter<10; iter++) {
+      for (int iter=0; iter<5; iter++) {
         float ad = se.surfaceUpdateFromSlopes(ep,p2,p3,sf[is],NaNs);
         System.out.println(" Average adjustments per sample = "+ad);
         if(ad<0.02f) {break;}
+      }
+    }
+  }
+
+  private boolean checkNaNs(float[][] x) {
+    int n2 = x.length;
+    int n1 = x[0].length;
+    for(int i2=0; i2<n2; ++i2) {
+      for(int i1=0; i1<n1; ++i1) {
+        float xi = x[i2][i1];
+        if (Float.isNaN(xi)) {return true;}
+      }
+    }
+    return false;
+  }
+
+  private void replaceBounds(float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    for(int i3=0; i3<n3; ++i3) {
+      for(int i1=0; i1<n1; ++i1) {
+        x[i3][0   ][i1] = x[i3][2   ][i1];
+        x[i3][1   ][i1] = x[i3][2   ][i1];
+        x[i3][n2-1][i1] = x[i3][n2-3][i1];
+        x[i3][n2-2][i1] = x[i3][n2-3][i1];
+      }
+    }
+    for(int i2=0; i2<n2; ++i2) {
+      for(int i1=0; i1<n1; ++i1) {
+        x[0   ][i2][i1] = x[2   ][i2][i1];
+        x[1   ][i2][i1] = x[2   ][i2][i1];
+        x[n3-1][i2][i1] = x[n3-3][i2][i1];
+        x[n3-2][i2][i1] = x[n3-3][i2][i1];
       }
     }
   }
@@ -325,10 +247,8 @@ public class UncSurfer {
     int c = 0;
     int nx = sx.getCount()-1;
     int ny = sy.getCount()-1;
-    /*
-    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(1.0f);
-    ref.apply(z,z);
-    */
+    //RecursiveExponentialFilter ref = new RecursiveExponentialFilter(1.0f);
+    //ref.apply(z,z);
     float[] zas = new float[nx*ny*6];
     float[] zfs = new float[nx*ny*6];
     float[] xyz = new float[nx*ny*6*3];
@@ -423,6 +343,7 @@ public class UncSurfer {
       rgb = cp.getRgbFloats(mul(zas,-1f));
     } else {
       ColorMap cp = new ColorMap(0.2,1.0,ColorMap.JET);
+      pow(zfs,0.5f,zfs);
       rgb = cp.getRgbFloats(zfs);
     }
     //ColorMap cp = new ColorMap(min(zas),max(zas),ColorMap.RED_WHITE_BLUE);
@@ -430,40 +351,6 @@ public class UncSurfer {
     return new float[][]{xyz,rgb};
   }
 
-
-  private boolean checkNaNs(float[][] x) {
-    int n2 = x.length;
-    int n1 = x[0].length;
-    for(int i2=0; i2<n2; ++i2) {
-      for(int i1=0; i1<n1; ++i1) {
-        float xi = x[i2][i1];
-        if (Float.isNaN(xi)) {return true;}
-      }
-    }
-    return false;
-  }
-
-  private void replaceBounds(float[][][] x) {
-    int n3 = x.length;
-    int n2 = x[0].length;
-    int n1 = x[0][0].length;
-    for(int i3=0; i3<n3; ++i3) {
-      for(int i1=0; i1<n1; ++i1) {
-        x[i3][0   ][i1] = x[i3][2   ][i1];
-        x[i3][1   ][i1] = x[i3][2   ][i1];
-        x[i3][n2-1][i1] = x[i3][n2-3][i1];
-        x[i3][n2-2][i1] = x[i3][n2-3][i1];
-      }
-    }
-    for(int i2=0; i2<n2; ++i2) {
-      for(int i1=0; i1<n1; ++i1) {
-        x[0   ][i2][i1] = x[2   ][i2][i1];
-        x[1   ][i2][i1] = x[2   ][i2][i1];
-        x[n3-1][i2][i1] = x[n3-3][i2][i1];
-        x[n3-2][i2][i1] = x[n3-3][i2][i1];
-      }
-    }
-  }
 
   private void refineSample(int d, float[][][] sfs, float[][][] rsfs) {
     int ns  = sfs.length;
@@ -613,47 +500,6 @@ public class UncSurfer {
     });
   }
     
-
-  private int floodFill2(
-    int ip, int i1t, int i2t, int i3t, 
-    int d1, int d2, int d3, float th, 
-    float[][][] u, int[][] mark, float[][] surf) 
-  {
-    int n3 = u.length;
-    int n2 = u[0].length;
-    int n1 = u[0][0].length;
-    int i1b = i1t-d1; if(i1b<0) i1b=0;
-    int i2b = i2t-d2; if(i2b<0) i2b=0;
-    int i3b = i3t-d3; if(i3b<0) i3b=0;
-    int i1e = i1t+d1; if(i1e>n1-1) i1e=n1-1;
-    int i2e = i2t+d2; if(i2e>n2-1) i2e=n2-1;
-    int i3e = i3t+d3; if(i3e>n3-1) i3e=n3-1;
-    float d = 4.f;
-    for (int i3=i3b; i3<=i3e; ++i3) { 
-      for (int i2=i2b; i2<=i2e; ++i2) { 
-        for (int i1=i1b; i1<=i1e; ++i1) { 
-          float ui = u[i3][i2][i1];
-          if(ui>0.0f && ui>th) {
-            float d1i = i1-i1t;
-            float d2i = i2-i2t;
-            float d3i = i3-i3t;
-            float di  = d1i*d1i+d2i*d2i+d3i*d3i;
-            if(di<=d) {
-              double xm = u[i3][i2][i1-1];
-              double xi = u[i3][i2][i1  ];
-              double xp = u[i3][i2][i1+1];
-              surf[i3][i2] = findPeak(i1,xm,xi,xp);
-              mark[i3][i2] = i1;
-              u[i3][i2][i1] = 0.0f;
-              ip++;
-            }
-          }
-        }
-      }
-    }
-    return ip;
-  }
-
   private int floodFill(
     int ip, int i1t, int i2t, int i3t, 
     int d1, int d2, int d3, float th, 
@@ -669,11 +515,13 @@ public class UncSurfer {
     int i2e = i2t+d2; if(i2e>n2-1) i2e=n2-1;
     int i3e = i3t+d3; if(i3e>n3-1) i3e=n3-1;
     float d = 4.f;
+    double dv = 1.0;//(double)AutoUncParameters.INSTANCE.dv;
     for (int i3=i3b; i3<=i3e; ++i3) { 
       for (int i2=i2b; i2<=i2e; ++i2) { 
         for (int i1=i1b; i1<=i1e; ++i1) { 
           float ui = u[i3][i2][i1];
-          if(ui>0.0f && ui>th) {
+          //if(ui>0.0f && ui<th) {
+          if(ui>th) {
             float d1i = i1-i1t;
             float d2i = i2-i2t;
             float d3i = i3-i3t;
@@ -682,7 +530,7 @@ public class UncSurfer {
               double ym = y[i3][i2][i1-1];
               double yi = y[i3][i2][i1  ];
               double yp = y[i3][i2][i1+1];
-              surf[i3][i2] = findPeak2(i1,_dv,ym,yi,yp);
+              surf[i3][i2] = findPeak2(i1,dv,ym,yi,yp);
               mark[i3][i2] = i1;
               u[i3][i2][i1] = 0.0f;
               ip++;
@@ -710,14 +558,16 @@ public class UncSurfer {
     }
     return ind;
   }
-
+  /*
   private float findPeak(int i1, double u1, double u2, double u3) {
+    System.out.println("test");
     float z = (float) i1;
     double a = u1-u3;
     double b = 2.0*(u1+u3)-4.0*u2;
     double d = a/b;
     return (z+(float)d);
   }
+  */
 
   private float findPeak2(int i1, double di, double xm, double xi, double xp) {
     double z = (double) i1*di;
@@ -727,46 +577,8 @@ public class UncSurfer {
     return (float)(z+d);
   }
 
-  private int reSampling(int d, int n) {
-    int ns = 0; 
-    for (int i=0; i<n; i+=d) {
-      ns += 1;
-    }
-    return ns;
-  }
-
-  private static void interp(int dh, int dv, float[][][] x, float[][][] y) {
-    int n3x = x.length;
-    int n3y = y.length;
-    int n2x = x[0].length;
-    int n2y = y[0].length;
-    int n1x = x[0][0].length;
-    int n1y = y[0][0].length;
-    SincInterp xi = new SincInterp();
-    //xi.setUniform(n1x,dv,0.0,n2x,dh,0.0,n3x,dh,0.0,x);
-    xi.setExtrapolation(SincInterp.Extrapolation.CONSTANT);
-    for (int i3=0; i3<n3y; ++i3) {
-      for (int i2=0; i2<n2y; ++i2) {
-        for (int i1=0; i1<n1y; ++i1) {
-          float x1 = (float) i1;
-          float x2 = (float) i2;
-          float x3 = (float) i3;
-          y[i3][i2][i1] = 
-            1.0f-xi.interpolate(n1x,dv,0.0,n2x,dh,0.0,n3x,dh,0.0,x,x1,x2,x3);
-        }
-      }
-    }
-  }
-
-
-
-  private int _dh = 1;
-  private int _dv = 1;
   private double _lofuSigma1 = 0.95;
   private double _lofuSigma2 = 128.0;
   private int _niter = 400;
-  private LocalOrientFilterUM _lofu = 
-    new LocalOrientFilterUM(_lofuSigma1,_lofuSigma2,_niter);
-  private LocalOrientFilter _lof = new LocalOrientFilter(1.0,4.0);
 
 }

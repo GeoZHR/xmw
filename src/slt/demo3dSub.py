@@ -6,7 +6,7 @@ Version: 2015.02.09
 
 from utils import *
 
-setupForSubset("3d")
+setupForSubset("3dSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -19,7 +19,6 @@ mkfile  = "mk" # eigenvalue-derived planarity
 sfcfile  = "sfc" # eigenvalue-derived planarity
 
 pngDir = None
-pngDir = "../../../png/slt/3d/"
 pngDir = getPngDir()
 
 plotOnly = False
@@ -27,6 +26,7 @@ plotOnly = False
 def main(args):
   #goSaltLike()
   goSaltSurfer()
+  #goSaltSurferC()
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -41,17 +41,18 @@ def goSaltLike():
     ep = ss.applyForPlanar(200,ets,gx)
     '''
     ep = readImage(epfile)
-    lof = LocalOrientFilterP(12,8)
+    lof = LocalOrientFilterP(8,8)
     lof.applyForNormal(gx,u1,u2,u3)
-    sl = ss.saltLikelihood(8,ep,u1,u2,u3)
+    #sl = ss.saltLikelihood(4,ep,u1,u2,u3)
+    sl = ss.saltLikelihoodX(0.95,ep,u1,u2,u3)
     writeImage(epfile,ep)
     writeImage(slfile,sl)
   else:
     ep = readImage(epfile)
     sl = readImage(slfile)
   plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,ep,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Planarity",png="ep")
-  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
+  plot3(gx,ep,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="Planarity",png="ep")
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
 
 def goSaltSurfer():
   gx = readImage(gxfile)
@@ -68,8 +69,7 @@ def goSaltSurfer():
     lof.applyForNormal(ep,u1,u2,u3)
     ss = SaltSurfer()
     fc = ss.findPoints(0.3,sl,u1,u2,u3)
-    plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),png="points")
-    '''
+    plot3(gx,sl,cmin=0.1,cmax=0.8,cells=fc,cmap=jetRamp(1.0),png="points")
     mul(u1,sl,g1)
     mul(u2,sl,g2)
     mul(u3,sl,g3)
@@ -83,18 +83,20 @@ def goSaltSurfer():
     sf = readImage(sffile)
   print min(sf)
   print max(sf)
-  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
   plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
         clab="Indicator function",png="sf")
   plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
         clab="Indicator function",png="saltSf")
-    '''
 
 def goSaltSurferC():
   mk = readImage(mkfile)
   gx = readImage(gxfile)
   ep = readImage(epfile)
   sl = readImage(slfile)
+  k1 = [192,111,189,224,212,144,141]
+  k2 = [162,162,139,114,103,142,126]
+  k3 = [126,168,140,148,193,168,182]
   if not plotOnly:
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
@@ -103,19 +105,21 @@ def goSaltSurferC():
     g2 = zerofloat(n1,n2,n3)
     g3 = zerofloat(n1,n2,n3)
     lof = LocalOrientFilterP(8,2)
-    lof.applyForNormal(gx,u1,u2,u3)
+    lof.applyForNormal(ep,u1,u2,u3)
     mul(u1,sl,g1)
     mul(u2,sl,g2)
     mul(u3,sl,g3)
     sps = ScreenPoissonSurferC()
     sps.setSmoothings(20,20,20)
-    mk = sps.getScreenMark(n1,n2,n3,fc)
-    sf = sps.saltIndicator(mk,k1,k2,k3,g1,g2,g3)
+    sf = sps.saltIndicator(k1,k2,k3,mk,g1,g2,g3)
     writeImage(sfcfile,sf)
   else:
     sf = readImage(sfcfile)
   print min(sf)
   print max(sf)
+  plot3(gx)
+  plot3(gx,fbs=sf)
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),png="saltSl")
   plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
   plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
         clab="Indicator function",png="sf")
@@ -387,7 +391,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     cmap = ColorMap(0.0,1.0,ColorMap.JET)
-    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.6,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
@@ -451,21 +455,21 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(232,29,585)
+  ipg.setSlices(230,180,206)
   if cbar:
-    sf.setSize(987,700)
+    sf.setSize(837,700)
   else:
-    sf.setSize(850,700)
+    sf.setSize(700,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.9*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
+  ov.setScale(1.3)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,-0.08))
-  ov.setAzimuthAndElevation(-58.0,36.0)
+  ov.setTranslate(Vector3(0.0,0.05,-0.00))
+  ov.setAzimuthAndElevation(-130.0,30.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

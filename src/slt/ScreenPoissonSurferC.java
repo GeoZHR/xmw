@@ -6,6 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package slt;
 
+import he.*;
 import ipfx.*;
 
 import edu.mines.jtk.dsp.*;
@@ -21,7 +22,7 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * @author Xinming Wu, Colorado School of Mines
  * @version 2015.12.14
  */
-public class ScreenPoissonSurfer {
+public class ScreenPoissonSurferC {
 
   /**
    * Sets half-widths for smoothings in 1st and 2nd dimensions.
@@ -75,6 +76,44 @@ public class ScreenPoissonSurfer {
     return mk;
   }
 
+  public float[][] updateScreenMark(
+    float[][] ks, float[][] mk) {
+    float[] k1 = ks[0];
+    float[] k2 = ks[1];
+    int np = k1.length;
+    int n1 = mk[0].length;
+    float[][] mp = copy(mk);
+    for (int ip=0; ip<np; ++ip) {
+      int i1 = (int)k1[ip];
+      int i2 = (int)k2[ip];
+      zero(mp[i2]);
+      mp[i2][i1] = 1f;
+      if(i1-1>=0) mp[i2][i1-1] = 1f;
+      if(i1+1<n1) mp[i2][i1+1] = 1f;
+    }
+    return mp;
+  }
+
+  public void updateScreenMark(
+    float[][] ks, float[][][] mk) {
+    float[] k1 = ks[0];
+    float[] k2 = ks[1];
+    float[] k3 = ks[2];
+    int np = k1.length;
+    int n1 = mk[0][0].length;
+    for (int ip=0; ip<np; ++ip) {
+      int i1 = (int)k1[ip];
+      int i2 = (int)k2[ip];
+      int i3 = (int)k3[ip];
+      zero(mk[i3][i2]);
+      mk[i3][i2][i1] = 1f;
+      if(i1-1>=0) mk[i3][i2][i1-1] = 1f;
+      if(i1+1<n1) mk[i3][i2][i1+1] = 1f;
+    }
+  }
+
+
+
 
   /**
    * @param st array of thinned salt likelihoods.
@@ -82,21 +121,20 @@ public class ScreenPoissonSurfer {
    * @param u2 array of 2nd component of salt normal vectors.
    */
   public float[][] saltIndicator(
-    float[][] st, float[][] u1, float[][] u2)
+    float[] k1, float[] k2, float[][] st, float[][] u1, float[][] u2)
   {
     int n2 = u1.length;
     int n1 = u1[0].length;
     float[][] b = new float[n2][n1]; // right-hand side
     float[][] f = new float[n2][n1]; // fault isosurface volume, in samples
+    st = updateScreenMark(new float[][]{k1,k2},st);
     VecArrayFloat2 vb = new VecArrayFloat2(b);
     VecArrayFloat2 vf = new VecArrayFloat2(f);
-    Smoother2 smoother2 = new Smoother2(n1,n2,_sigma1,_sigma2);
-    A2 a2 = new A2(smoother2,st);
+    A2 a2 = new A2(st);
+    M2 m2 = new M2(_sigma1,_sigma2,k1,k2);
     CgSolver cs = new CgSolver(_small,_niter);
     makeRhs(u1,u2,b);
-    smoother2.applyTranspose(b);
-    cs.solve(a2,vb,vf);
-    smoother2.apply(f);
+    cs.solve(a2,m2,vb,vf);
     return f;
   }
 
@@ -106,22 +144,23 @@ public class ScreenPoissonSurfer {
    * @param u3 array of 3rd component of fault normal vectors.
    */
   public float[][][] saltIndicator(
-    float[][][] mk, float[][][] u1, float[][][] u2, float[][][] u3)
+    float[] k1, float[] k2, float[] k3, float[][][] mk, 
+    float[][][] u1, float[][][] u2, float[][][] u3)
   {
     int n3 = u1.length;
     int n2 = u1[0].length;
     int n1 = u1[0][0].length;
     float[][][] b = new float[n3][n2][n1]; // right-hand side
     float[][][] f = new float[n3][n2][n1]; // fault isosurface volume, in samples
+    float[][] ks = extendControlPoints(k1,k2,k3,u1,u2,u3);
+    updateScreenMark(ks,mk);
     VecArrayFloat3 vb = new VecArrayFloat3(b);
     VecArrayFloat3 vf = new VecArrayFloat3(f);
-    Smoother3 smoother3 = new Smoother3(n1,n2,n3,_sigma1,_sigma2,_sigma3);
-    A3 a3 = new A3(smoother3,mk);
+    A3 a3 = new A3(mk);
+    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,ks[0],ks[1],ks[2]);
     CgSolver cs = new CgSolver(_small,_niter);
     makeRhs(u1,u2,u3,b);
-    smoother3.applyTranspose(b);
-    cs.solve(a3,vb,vf);
-    smoother3.apply(f);
+    cs.solve(a3,m3,vb,vf);
     return f;
   }
 
@@ -133,7 +172,8 @@ public class ScreenPoissonSurfer {
    * @param us[3] array of 3rd component of fault normal vectors.
    */
   public float[][][] saltIndicator(
-    FaultCell[] cells, float[][][] u1, float[][][] u2, float[][][] u3)
+    FaultCell[] cells, float[] k1, float[] k2, float[] k3, 
+    float[][][] u1, float[][][] u2, float[][][] u3)
   {
     int n3 = u1.length;
     int n2 = u1[0].length;
@@ -143,13 +183,11 @@ public class ScreenPoissonSurfer {
     float[][][] f = new float[n3][n2][n1]; // fault isosurface volume, in samples
     VecArrayFloat3 vb = new VecArrayFloat3(b);
     VecArrayFloat3 vf = new VecArrayFloat3(f);
-    Smoother3 smoother3 = new Smoother3(n1,n2,n3,_sigma1,_sigma2,_sigma3);
-    A3 a3 = new A3(smoother3,mk);
+    A3 a3 = new A3(mk);
+    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,k1,k2,k3);
     CgSolver cs = new CgSolver(_small,_niter);
     makeRhs(u1,u2,u3,b);
-    smoother3.applyTranspose(b);
-    cs.solve(a3,vb,vf);
-    smoother3.apply(f);
+    cs.solve(a3,m3,vb,vf);
     return f;
   }
 
@@ -196,39 +234,81 @@ public class ScreenPoissonSurfer {
   private float _sigma2 = 6.0f; // precon smoothing extent for 2nd dim
   private float _sigma3 = 6.0f; // precon smoothing extent for 3rd dim
   private float _small = 0.01f; // stop CG iterations if residuals small
-  private int _niter = 100; // maximum number of CG iterations
+  private int _niter = 400; // maximum number of CG iterations
 
-  private void setBounds(float[][][] f) {
-    int d = 4;
-    float v = -30f;
-    int n3 = f.length;
-    int n2 = f[0].length;
-    int n1 = f[0][0].length;
+  private float[][] extendControlPoints(float[] k1, float[] k2, float[] k3, 
+    float[][][] u1, float[][][] u2, float[][][] u3) {
+    int w2 = 3;
+    int w3 = 3;
+    int np = k1.length;
+    int n3 = u1.length;
+    int n2 = u1[0].length;
+    int n1 = u1[0][0].length;
+    int ns = np*(w2+w2+1)*(w3+w3+1);
+    float pmin = -8f;
+    float pmax =  8f;
+    float[] k1s = new float[ns];
+    float[] k2s = new float[ns];
+    float[] k3s = new float[ns];
+    float[][][] p2 = new float[n3][n2][n1];
+    float[][][] p3 = new float[n3][n2][n1];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<d; ++i1) {
-      f[i3][i2][i1] = v;
-      f[i3][i2][n1-i1-1] = v;
-    }}}
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<d; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
-      f[i3][i2][i1] = v;
-      f[i3][n2-i2-1][i1] = v;
+      float p2i = -u2[i3][i2][i1]/u1[i3][i2][i1];
+      float p3i = -u3[i3][i2][i1]/u1[i3][i2][i1];
+      if(p2i<pmin) {p2i=pmin;}
+      if(p2i>pmax) {p2i=pmax;}
+      if(p3i<pmin) {p3i=pmin;}
+      if(p3i>pmax) {p3i=pmax;}
+      p2[i3][i2][i1] = p2i;
+      p3[i3][i2][i1] = p3i;
     }}}
-    for (int i3=0; i3<d; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      f[i3][i2][i1] = v;
-      f[n3-i3-1][i2][i1] = v;
-    }}}
+    int nk = 0;
+    for (int ip=0; ip<np; ++ip) {
+      int k1i = (int)k1[ip];
+      int k2i = (int)k2[ip];
+      int k3i = (int)k3[ip];
+      int ib2 = k2i-w2; if(ib2<0   ) {ib2=0;   }
+      int ib3 = k3i-w3; if(ib3<0   ) {ib3=0;   }
+      int ie2 = k2i+w2; if(ie2>n2-1) {ie2=n2-1;} 
+      int ie3 = k3i+w3; if(ie3>n3-1) {ie3=n3-1;} 
+      int n2m = ie2-ib2+1;
+      int n3m = ie3-ib3+1;
+      float[][][] epm = fillfloat(1.0f,n1,n2m,n3m);
+      float[][][] p2m = copy(n1,n2m,n3m,0,ib2,ib3,p2);
+      float[][][] p3m = copy(n1,n2m,n3m,0,ib2,ib3,p3);
+      int k2p = k2i-ib2;
+      int k3p = k3i-ib3;
+      float[] k1t = new float[]{k1i};
+      float[] k2t = new float[]{k2p};
+      float[] k3t = new float[]{k3p};
+      SurfaceExtractorC se = new SurfaceExtractorC();
+      se.setCG(0.01f,200);
+      se.setExternalIterations(10);
+      se.setSmoothings(10,10);
+      float[][] surf = se.surfaceInitialization(n2m,n3m,n1-1,k1t,k2t,k3t);
+      se.surfaceUpdateFromSlopes(epm,p2m,p3m,k1t,k2t,k3t,surf);
+      for (int i3=0; i3<n3m; ++i3) {
+      for (int i2=0; i2<n2m; ++i2) {
+        int i1 = round(surf[i3][i2]);
+        if(i1<0) {i1=0;} if(i1>=n1) {i1=n1-1;}
+        k1s[nk] = i1;
+        k2s[nk] = i2+ib2;
+        k3s[nk] = i3+ib3;
+        nk++;
+      }}
+    }
+    k1s = copy(nk,0,k1s);
+    k2s = copy(nk,0,k2s);
+    k3s = copy(nk,0,k3s);
+    return new float[][]{k1s,k2s,k3s};
 
   }
 
   // Conjugate-gradient operators.
   private static class A2 implements CgSolver.A {
-    A2(Smoother2 s2, float[][] mk){
-      _s2 = s2;
+    A2(float[][] mk){
       _mk = mk;
     }
     public void apply(Vec vx, Vec vy) {
@@ -240,23 +320,75 @@ public class ScreenPoissonSurfer {
       float[][] p = copy(x);
       VecArrayFloat2 v2p = new VecArrayFloat2(p);
       zero(p);
-      _s2.apply(z);
       zero(y);
       applyLhs(z,y);       //laplacian operator
       applyLhs(copy(y),p); //biharmonic operator
       screenLhs(_mk,z,y);  //screen points
       v2y.add(1f,v2p,20f);
-      _s2.applyTranspose(y);
     }
-    private Smoother2 _s2;
     private float[][] _mk;
   }
+
+  private static class M2 implements CgSolver.A {
+    M2(float sigma1, float sigma2, float[] k1, float[] k2) {
+      _sigma1 = sigma1;
+      _sigma2 = sigma2;
+      if (k1!=null && k2!=null) {
+        _k1 = copy(k1);
+        _k2 = copy(k2);
+      }
+    }
+    public void apply(Vec vx, Vec vy) {
+      VecArrayFloat2 v2x = (VecArrayFloat2)vx;
+      VecArrayFloat2 v2y = (VecArrayFloat2)vy;
+      float[][] x = v2x.getArray();
+      float[][] y = v2y.getArray();
+      copy(x,y);
+      constrain(_k1,_k2,y);
+      smooth2(_sigma2,y);
+      smooth1(2.f*_sigma1,y);
+      smooth2(_sigma2,y);
+      constrain(_k1,_k2,y);
+    }
+    private float[] _k1,_k2;
+    private float _sigma1,_sigma2;
+  }
+
+  private static class M3 implements CgSolver.A {
+    M3(float sigma1, float sigma2, float sigma3, 
+       float[] k1, float[] k2, float[] k3) {
+      _sigma1 = sigma1;
+      _sigma2 = sigma2;
+      _sigma3 = sigma3;
+      if (k1!=null && k2!=null && k3!=null) {
+        _k1 = copy(k1);
+        _k2 = copy(k2);
+        _k3 = copy(k3);
+      }
+    }
+    public void apply(Vec vx, Vec vy) {
+      VecArrayFloat3 v3x = (VecArrayFloat3)vx;
+      VecArrayFloat3 v3y = (VecArrayFloat3)vy;
+      float[][][] x = v3x.getArray();
+      float[][][] y = v3y.getArray();
+      copy(x,y);
+      constrain(_k1,_k2,_k3,y);
+      smooth3(_sigma3,y);
+      smooth2(_sigma2,y);
+      smooth1(2.f*_sigma1,y);
+      smooth2(_sigma2,y);
+      smooth3(_sigma3,y);
+      constrain(_k1,_k2,_k3,y);
+    }
+    private float[] _k1, _k2,_k3;
+    private float _sigma1,_sigma2,_sigma3;
+  }
+
 
 
   // Conjugate-gradient operators.
   private static class A3 implements CgSolver.A {
-    A3(Smoother3 s3, float[][][] mk){
-      _s3 = s3;
+    A3(float[][][] mk){
       _mk = mk;
     }
     public void apply(Vec vx, Vec vy) {
@@ -268,56 +400,41 @@ public class ScreenPoissonSurfer {
       float[][][] p = copy(x);
       VecArrayFloat3 v3p = new VecArrayFloat3(p);
       zero(p);
-      _s3.apply(z);
       zero(y);
       applyLhs(z,y);       //laplacian operator
       applyLhs(copy(y),p); //biharmonic operator
       screenLhs(_mk,z,y);  //screen points
       v3y.add(1f,v3p,20f);
-      _s3.applyTranspose(y);
     }
-    private Smoother3 _s3;
     private float[][][] _mk;
   }
 
-  // Smoother used as a preconditioner.
-  private static class Smoother3 {
-    public Smoother3(int n1, int n2, int n3, 
-      float sigma1, float sigma2, float sigma3) 
-    {
-      _sigma1 = sigma1;
-      _sigma2 = sigma2;
-      _sigma3 = sigma3;
+
+
+  private static void constrain(float[] k1, float[] k2, float[][] x) {
+    if (k1!=null && k2!=null) {
+      int np = k1.length;
+      for (int ip=0; ip<np; ++ip) {
+        int i1 = (int)k1[ip]; 
+        int i2 = (int)k2[ip]; 
+        x[i2][i1] = 0.f;
+      }
     }
-    public void apply(float[][][] x) {
-      smooth3(_sigma3,x);
-      smooth2(_sigma2,x);
-      smooth1(_sigma1,x);
-    }
-    public void applyTranspose(float[][][] x) {
-      smooth1(_sigma1,x);
-      smooth2(_sigma2,x);
-      smooth3(_sigma3,x);
-    }
-    private float _sigma1,_sigma2,_sigma3;
   }
 
-  // Smoother used as a preconditioner.
-  private static class Smoother2 {
-    public Smoother2(int n1, int n2,float sigma1, float sigma2){
-      _sigma1 = sigma1;
-      _sigma2 = sigma2;
+  private static void constrain(
+    float[] k1, float[] k2, float[] k3, float[][][] x) {
+    if (k1!=null && k2!=null && k3!=null) {
+      int np = k1.length;
+      for (int ip=0; ip<np; ++ip) {
+        int i1 = (int)k1[ip]; 
+        int i2 = (int)k2[ip]; 
+        int i3 = (int)k3[ip]; 
+        x[i3][i2][i1] = 0.f;
+      }
     }
-    public void apply(float[][] x) {
-      smooth2(_sigma2,x);
-      smooth1(_sigma1,x);
-    }
-    public void applyTranspose(float[][] x) {
-      smooth1(_sigma1,x);
-      smooth2(_sigma2,x);
-    }
-    private float _sigma1,_sigma2;
   }
+
 
 
   // Smoothing for dimension 1.

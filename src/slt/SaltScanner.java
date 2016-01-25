@@ -101,7 +101,7 @@ public class SaltScanner {
     } 
   }
 
-  public float[][][] applyForLinear(
+  public float[][] applyForLinear(
     float sigma, EigenTensors2 ets, float[][] fx) 
   {
     int n2 = fx.length;
@@ -122,9 +122,6 @@ public class SaltScanner {
     Stopwatch sw = new Stopwatch();
     sw.start();
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.applySmoothS(g11c,g11c);
-    lsf.applySmoothS(g12c,g12c);
-    lsf.applySmoothS(g22c,g22c);
     lsf.apply(ets,sigma,g11c,g11s);
     trace("1st smooth parallel to structures done...");
     lsf.apply(ets,sigma,g12c,g12s);
@@ -256,6 +253,42 @@ public class SaltScanner {
     return sl;
   }
 
+  public float[][][] saltLikelihoodX(
+    float sigma, float[][][] ep, float[][][] u1, float[][][] u2, float[][][] u3) 
+  {
+    int n3 = ep.length;
+    int n2 = ep[0].length;
+    int n1 = ep[0][0].length;
+    float[][][] sl = new float[n3][n2][n1];
+    float[][][] ap1 = new float[n3][n2][n1];
+    float[][][] cp1 = new float[n3][n2][n1];
+    float[][][] ap2 = new float[n3][n2][n1];
+    float[][][] cp2 = new float[n3][n2][n1];
+    float[][][] ap3 = new float[n3][n2][n1];
+    float[][][] cp3 = new float[n3][n2][n1];
+    causal1(sigma,ep,cp1);
+    causal2(sigma,ep,cp2);
+    causal3(sigma,ep,cp3);
+    anticausal1(sigma,ep,ap1);
+    anticausal2(sigma,ep,ap2);
+    anticausal3(sigma,ep,ap3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+        float g1i = cp1[i3][i2][i1]-ap1[i3][i2][i1];
+        float g2i = cp2[i3][i2][i1]-ap2[i3][i2][i1];
+        float g3i = cp3[i3][i2][i1]-ap3[i3][i2][i1];
+        float u1i = u1[i3][i2][i1];
+        float u2i = u2[i3][i2][i1];
+        float u3i = u3[i3][i2][i1];
+        //sl[i3][i2][i1] = abs(g1i*u1i+g2i*u2i+g3i*u3i); 
+        sl[i3][i2][i1] = abs(g1i*g1i+g2i*g2i+g3i*g3i); 
+    }}}
+    normalize(sl);
+    return sl;
+  }
+
+
   private void normalize(float[][][] x) {
     sub(x,min(x),x);
     div(x,max(x),x);
@@ -339,7 +372,7 @@ public class SaltScanner {
     });
   }
 
-  private float[][][] solveEigenproblems(
+  private float[][] solveEigenproblems(
     final float[][] g11, final float[][] g12, final float[][] g22)
   {
     final int n2 = g11.length;
@@ -367,10 +400,10 @@ public class SaltScanner {
         if (evi<0.0f) evi = 0.0f;
         if (eui<evi) eui = evi;
         float esi = (eui>0.0f)?1.0f/eui:1.0f;
-        ed[i2][i1] = (eui-evi);///eui;
-        el[i2][i1] = (eui-evi)*esi;
+        ed[i2][i1] = (eui-evi)/(eui+evi);///eui;
+        el[i2][i1] = 1-evi/eui;//(eui-evi)*esi;
     }}
-    return new float[][][]{ed,el};
+    return el;//new float[][][]{ed,el};
   }
 
   private float[][][] solveEigenproblems(
@@ -406,12 +439,159 @@ public class SaltScanner {
             if (eui<evi) eui = evi;
             float esi = (eui>0.0f)?1.0f/eui:1.0f;
             ep[i3][i2][i1] = (eui-evi)*esi;
+            //ep[i3][i2][i1] = 0.5f*(evi+ewi)/eui;
           }
         }
       }
     });
     return ep;
   }
+
+  // Vertically causal and anti-causal filters are implemented 
+  // by one-side recursive exponential filters.  
+  private void causal2(float a, float[][] x, float[][] y) {
+    int n2 = x.length;
+    int n1 = x[0].length;
+    float b = 1.0f - a;
+    for (int i1=0; i1<n1; ++i1){ 
+      float yi = y[0][i1] = x[0][i1];
+      for (int i2=1; i2<n2; ++i2) 
+        y[i2][i1] = yi = a*yi + b*x[i2][i1];
+    }
+  }
+
+  private void causal(float a, float[] x, float[] y) {
+    int n1 = x.length;
+    float b = 1.0f - a;
+    float yi = y[0] = x[0];
+    for (int i1=1; i1<n1; ++i1) 
+      y[i1] = yi = a*yi + b*x[i1];
+  }
+
+  private void causal(final float a, final float[][] x, final float[][] y) {
+    final int n2 = x.length;
+    Parallel.loop(n2, new Parallel.LoopInt() {
+      public void compute(int i2) {
+        causal(a,x[i2],y[i2]);
+      }
+    });
+  }
+
+  private void causal1(
+    final float a, final float[][][] x, final float[][][] y) {
+    final int n3 = x.length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        causal(a,x[i3],y[i3]);
+      }
+    });
+  }
+
+  private void causal2(
+    final float a, final float[][][] x, final float[][][] y) {
+    final int n3 = x.length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        causal2(a,x[i3],y[i3]);
+      }
+    });
+  }
+
+  private void causal3(
+    final float a, final float[][][] x, final float[][][] y) {
+    final int n3 = x.length;
+    final int n2 = x[0].length;
+    final int n1 = x[0][0].length;
+    Parallel.loop(n2,new Parallel.LoopInt() {
+      public void compute(int i2) {
+        float[][] x2 = new float[n3][n1];
+        float[][] y2 = new float[n3][n1];
+        for(int i3=0; i3<n3; ++i3) {
+        for(int i1=0; i1<n1; ++i1) {
+          x2[i3][i1] = x[i3][i2][i1];
+        }}
+        causal2(a,x2,y2);
+        for(int i3=0; i3<n3; ++i3) {
+        for(int i1=0; i1<n1; ++i1) {
+          y[i3][i2][i1] = y2[i3][i1];
+        }}
+      }
+    });
+  }
+
+
+
+  private void anticausal(float a, float[] x, float[] y) {
+    int n1 = x.length;
+    float b = 1.0f - a;
+    float yi = y[n1-1] = x[n1-1];
+    for(int i1=n1-2; i1>=0; --i1)
+      y[i1] = yi = a*yi + b*x[i1];
+  }
+  private void anticausal2(float a, float[][] x, float[][] y) {
+    int n2 = x.length;
+    int n1 = x[0].length;
+    float b = 1.0f - a;
+    for(int i1=0; i1<n1; ++i1) {
+      float yi = y[n2-1][i1] = x[n2-1][i1];
+      for(int i2=n2-2; i2>=0; --i2)
+        y[i2][i1] = yi = a*yi + b*x[i2][i1];
+    }
+  }
+
+  private void anticausal(final float a, final float[][] x, final float[][] y) {
+    final int n2 = x.length;
+    Parallel.loop(n2, new Parallel.LoopInt() {
+      public void compute(int i2) {
+        anticausal(a,x[i2],y[i2]);
+      }
+    });
+  }
+
+  private void anticausal1(
+    final float a, final float[][][] x, final float[][][] y) {
+    final int n3 = x.length;
+    Parallel.loop(n3, new Parallel.LoopInt() {
+      public void compute(int i3) {
+        anticausal(a,x[i3],y[i3]); 
+      }
+    });
+  }
+
+  private void anticausal2(
+    final float a, final float[][][] x, final float[][][] y) {
+    final int n3 = x.length;
+    Parallel.loop(n3, new Parallel.LoopInt() {
+      public void compute(int i3) {
+        anticausal2(a,x[i3],y[i3]); 
+      }
+    });
+  }
+
+  private void anticausal3(
+    final float a, final float[][][] x, final float[][][] y) {
+    final int n3 = x.length;
+    final int n2 = x[0].length;
+    final int n1 = x[0][0].length;
+    Parallel.loop(n2,new Parallel.LoopInt() {
+      public void compute(int i2) {
+        float[][] x2 = new float[n3][n1];
+        float[][] y2 = new float[n3][n1];
+        for(int i3=0; i3<n3; ++i3) {
+        for(int i1=0; i1<n1; ++i1) {
+          x2[i3][i1] = x[i3][i2][i1];
+        }}
+        anticausal2(a,x2,y2);
+        for(int i3=0; i3<n3; ++i3) {
+        for(int i1=0; i1<n1; ++i1) {
+          y[i3][i2][i1] = y2[i3][i1];
+        }}
+      }
+    });
+  }
+
+
+
 
   private static void trace(String s) {
     System.out.println(s);

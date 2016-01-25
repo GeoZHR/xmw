@@ -15,43 +15,39 @@ gxfile  = "gx" # input image (maybe after bilateral filtering)
 slfile  = "sl" # eigenvalue-derived planarity
 epfile  = "ep" # eigenvalue-derived planarity
 sffile  = "sf" # eigenvalue-derived planarity
-mkfile  = "mk" # eigenvalue-derived planarity
-sfcfile  = "sfc" # eigenvalue-derived planarity
 
 pngDir = None
 pngDir = "../../../png/slt/3d/"
-pngDir = getPngDir()
 
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSaltLike()
-  goSaltSurfer()
+  #goSaltSurfer()
+  gx = readImage(gxfile)
+  fx = gx[264]
+  writeImage("gx264",fx)
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
-    ss = SaltScanner()
-    '''
-    lof = LocalOrientFilterP(4,2)
+    lof = LocalOrientFilterP(8,2)
     ets = lof.applyForTensors(gx)
-    ets.setEigenvalues(0.01,1.0,1.0)
-    ep = ss.applyForPlanar(200,ets,gx)
-    '''
-    ep = readImage(epfile)
-    lof = LocalOrientFilterP(12,8)
     lof.applyForNormal(gx,u1,u2,u3)
-    sl = ss.saltLikelihood(8,ep,u1,u2,u3)
+    ets.setEigenvalues(0.01,1.0,1.0)
+    ss = SaltScanner()
+    ep = ss.applyForPlanar(120,ets,gx)
+    sl = ss.saltLikelihood(4,ep,u1,u2,u3)
     writeImage(epfile,ep)
     writeImage(slfile,sl)
   else:
     ep = readImage(epfile)
     sl = readImage(slfile)
   plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,ep,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Planarity",png="ep")
-  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
+  plot3(gx,ep,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="Planarity",png="ep")
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
 
 def goSaltSurfer():
   gx = readImage(gxfile)
@@ -64,56 +60,20 @@ def goSaltSurfer():
     g1 = zerofloat(n1,n2,n3)
     g2 = zerofloat(n1,n2,n3)
     g3 = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(8,2)
+    lof = LocalOrientFilterP(2,1)
     lof.applyForNormal(ep,u1,u2,u3)
     ss = SaltSurfer()
     fc = ss.findPoints(0.3,sl,u1,u2,u3)
-    plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),png="points")
-    '''
+    plot3(gx,sl,cmin=0.1,cmax=0.8,cells=fc,cmap=jetRamp(1.0),png="points")
     mul(u1,sl,g1)
     mul(u2,sl,g2)
     mul(u3,sl,g3)
     sps = ScreenPoissonSurfer()
     sps.setSmoothings(20,20,20)
-    mk = sps.getScreenMark(n1,n2,n3,fc)
-    sf = sps.saltIndicator(mk,g1,g2,g3)
+    sf = sps.saltIndicator(fc,g1,g2,g3)
     writeImage(sffile,sf)
-    writeImage(mkfile,mk)
   else:
     sf = readImage(sffile)
-  print min(sf)
-  print max(sf)
-  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
-  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
-        clab="Indicator function",png="sf")
-  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
-        clab="Indicator function",png="saltSf")
-    '''
-
-def goSaltSurferC():
-  mk = readImage(mkfile)
-  gx = readImage(gxfile)
-  ep = readImage(epfile)
-  sl = readImage(slfile)
-  if not plotOnly:
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    g1 = zerofloat(n1,n2,n3)
-    g2 = zerofloat(n1,n2,n3)
-    g3 = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(8,2)
-    lof.applyForNormal(gx,u1,u2,u3)
-    mul(u1,sl,g1)
-    mul(u2,sl,g2)
-    mul(u3,sl,g3)
-    sps = ScreenPoissonSurferC()
-    sps.setSmoothings(20,20,20)
-    mk = sps.getScreenMark(n1,n2,n3,fc)
-    sf = sps.saltIndicator(mk,k1,k2,k3,g1,g2,g3)
-    writeImage(sfcfile,sf)
-  else:
-    sf = readImage(sfcfile)
   print min(sf)
   print max(sf)
   plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
@@ -387,7 +347,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     cmap = ColorMap(0.0,1.0,ColorMap.JET)
-    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(1.0,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
@@ -451,7 +411,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(232,29,585)
+  ipg.setSlices(232,5,585)
   if cbar:
     sf.setSize(987,700)
   else:
@@ -464,8 +424,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,-0.08))
-  ov.setAzimuthAndElevation(-58.0,36.0)
+  ov.setTranslate(Vector3(0.0,0.05,-0.05))
+  ov.setAzimuthAndElevation(-56.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
