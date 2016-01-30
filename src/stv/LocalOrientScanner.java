@@ -5,32 +5,29 @@ the Common Public License - v1.0, which accompanies this distribution, and is
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 
-package ipfx;
+package stv;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
-import static ipfx.FaultGeometry.*;
+import static ipf.FaultGeometry.*;
 
 /**
- * Computes fault likelihoods, strikes, and dips, by scanning over fault
- * orientations. Fault likelihoods are in the range [0,1], where 0 and 1
- * denote lowest and highest likelihoods, respectively. Computed fault strike
- * and dip angles are those for which maximum fault likelihoods occurred. 
+ * Scans for orientations of planar features in a fault attribute image
  *
- * @author Dave Hale, Colorado School of Mines
- * @version 2014.06.29
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2016.01.30
  */
-public class FaultScanner {
+public class LocalOrientScanner {
 
   /**
    * Constructs a fault scanner with specified parameters.
    * @param sigmaPhi half-width for smoothing along strike of fault planes.
    * @param sigmaTheta half-width for smoothing along dip of fault planes.
    */
-  public FaultScanner(double sigmaPhi, double sigmaTheta) {
+  public LocalOrientScanner(double sigmaPhi, double sigmaTheta) {
     _sigmaPhi = sigmaPhi;
     _sigmaTheta = sigmaTheta;
   }
@@ -90,66 +87,6 @@ public class FaultScanner {
     return mul(vf,vfscl);
   }
 
-  /**
-   * Returns slopes and planarities of features in a specified image.
-   * Image features are assumed to be locally planar, with slopes that may
-   * vary throughout the image. Smoothing parameters control the extents of
-   * Gaussian windows within which slope is estimated for each image sample.
-   * Typically, because slopes tend to vary most rapidly in the 2nd or 3rd
-   * dimensions, the extent of smoothing for the 1st dimension should be
-   * greater than that for the 2nd and 3rd dimensions.
-   * @param sigma1 half-width for smoothing in 1st dimension.
-   * @param sigma2 half-width for smoothing in 2nd dimension.
-   * @param sigma3 half-width for smoothing in 3rd dimension.
-   * @param slopeMax upper bound on computed slopes.
-   * @param f input image for which to compute slopes.
-   * @return array {p2,p3,ep} of slopes and planarities.
-   */
-  public static float[][][][] slopes(
-      double sigma1, double sigma2, double sigma3, 
-      double slopeMax, float[][][] f) {
-    final int n1 = f[0][0].length;
-    final int n2 = f[0].length;
-    final int n3 = f.length;
-    final float p2min = (float)(-slopeMax);
-    final float p2max = (float)( slopeMax);
-    final float p3min = (float)(-slopeMax);
-    final float p3max = (float)( slopeMax);
-
-    // Normal vectors.
-    final float[][][] u1 = new float[n3][n2][n1];
-    final float[][][] u2 = new float[n3][n2][n1];
-    final float[][][] u3 = new float[n3][n2][n1];
-    final float[][][] ep = new float[n3][n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(sigma1,sigma2,sigma3);
-    lof.applyForNormalPlanar(f,u1,u2,u3,ep);
-
-    // Slopes from normal vectors.
-    final float[][][] p2 = u2;
-    final float[][][] p3 = u3;
-    loop(n3,new LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float u1i = u1[i3][i2][i1];
-          float u2i = u2[i3][i2][i1];
-          float u3i = u3[i3][i2][i1];
-          if (-u2i<p2min*u1i) u2i = -p2min*u1i;
-          if (-u2i>p2max*u1i) u2i = -p2max*u1i;
-          if (-u3i<p3min*u1i) u3i = -p3min*u1i;
-          if (-u3i>p3max*u1i) u3i = -p3max*u1i;
-          if (u1i==0.0f) {
-            p2[i3][i2][i1] = (u2i<0.0f)?p2max:p2min;
-            p3[i3][i2][i1] = (u3i<0.0f)?p3max:p3min;
-          } else {
-            p2[i3][i2][i1] = -u2i/u1i;
-            p3[i3][i2][i1] = -u3i/u1i;
-          }
-        }
-      }
-    }});
-    return new float[][][][]{p2,p3,ep};
-  }
 
   /**
    * Returns an image with specified samples taper to zero at edges.
@@ -219,74 +156,12 @@ public class FaultScanner {
    */
   public float[][][][] scan(
       double phiMin, double phiMax,
-      double thetaMin, double thetaMax,
-      float[][][] p2, float[][][] p3, float[][][] g) {
+      double thetaMin, double thetaMax,float[][][] g) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
-    System.out.println("np="+sp.getCount());
-    System.out.println("nt="+st.getCount());
-    return scan(sp,st,p2,p3,g);
+    return scan(sp,st,g);
   }
 
-  /**
-   * Scans with the specified sampling of fault strikes and dips.
-   * @param phiSampling sampling of fault strikes, in degrees.
-   * @param thetaSampling sampling of fault dip angles, in degrees.
-   * @param p2 slopes in the 2nd dimension.
-   * @param p3 slopes in the 3rd dimension.
-   * @param g the image to be scanned.
-   * @return array {fl,fp,ft} of fault likelihoods, strikes, and dips.
-   */
-  public float[][][][] scan(
-      Sampling phiSampling, Sampling thetaSampling,
-      float[][][] p2, float[][][] p3, float[][][] g) {
-    //float[][][][] snd = semblanceNumDen(p2,p3,g);
-    float[][][][] snd = semblanceNumDen(2,p2,p3,g);
-    return scan(phiSampling,thetaSampling,snd);
-  }
-
-  public float[][][] variance(float sigma,
-    final float[][][] p2, final float[][][] p3, final float[][][] fx) {
-    final int n3 = fx.length;
-    final int n2 = fx[0].length;
-    final int n1 = fx[0][0].length;
-    final EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
-    d.setEigenvalues(0.2f,1.00f,1.00f);
-    loop(n3,new LoopInt() {
-    public void compute(int i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float p2i = p2[i3][i2][i1];
-      float p3i = p3[i3][i2][i1];
-      float u1i = 1.0f/sqrt(1.0f+p2i*p2i+p3i*p3i);
-      float u2i = -p2i*u1i;
-      float u3i = -p3i*u1i;
-      float usi = 1.0f/sqrt(u1i*u1i+u2i*u2i);
-      float w1i = -u2i*usi;
-      float w2i =  u1i*usi;
-      float w3i = 0.0f;
-      d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
-      d.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
-    }}}});
-    float c = (float)(0.5*sigma*sigma);
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    float[][][] fs = new float[n3][n2][n1];
-    float[][][] fd = new float[n3][n2][n1];
-    float[][][] sn = new float[n3][n2][n1];
-    float[][][] sd = new float[n3][n2][n1];
-    lsf.apply(d,c,fx,fs);
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float fxi = fx[i3][i2][i1];
-      float fsi = fs[i3][i2][i1];
-      fs[i3][i2][i1] = fxi*fxi;
-      fd[i3][i2][i1] = (fxi-fsi)*(fxi-fsi);
-    }}}
-    lsf.apply(d,c,fd,sn);
-    lsf.apply(d,c,fs,sd);
-    return div(sn,sd);
-  }
 
   /**
    * Thins fault images to include only ridges in fault likelihoods.
@@ -473,7 +348,7 @@ public class FaultScanner {
   // fast recursive axis-aligned smoothing filters.
   private float[][][][] scan(
       Sampling phiSampling, Sampling thetaSampling,
-      float[][][][] snd) {
+      float[][][] g) {
     // Algorithm: given snum,sden (semblance numerators and denominators)
     // initialize f,p,t (fault likelihood, phi, and theta)
     // for all phi:
@@ -482,9 +357,9 @@ public class FaultScanner {
     //   compute fphi,tphi (fault likelihood and dip) in 1-3 slices
     //   unrotate fphi,tphi to original coordinates
     //   update f,p,t for maximum likelihood
-    final int n1 = snd[0][0][0].length;
-    final int n2 = snd[0][0].length;
-    final int n3 = snd[0].length;
+    final int n3 = g.length;
+    final int n2 = g[0].length;
+    final int n1 = g[0][0].length;
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
@@ -495,8 +370,6 @@ public class FaultScanner {
     sw.start();
     for (int ip=0; ip<np; ++ip) {
       final float phi = (float)phiSampling.getValue(ip);
-      if(abs(phi- 90)<=10f) {continue;}
-      if(abs(phi-270)<=10f) {continue;}
       if (ip>0) {
         double timeUsed = sw.time();
         double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
@@ -504,10 +377,10 @@ public class FaultScanner {
         trace("FaultScanner.scan: done in "+timeLeftSec+" seconds");
       }
       Rotator r = new Rotator(phi,n1,n2,n3);
-      float[][][][] rsnd = r.rotate(snd);
-      smooth2(rsnd);
-      float[][][][] rftp = scanTheta(thetaSampling,rsnd);
-      rsnd = null; // enable gc to collect this large array
+      float[][][] rg = r.rotate(g);
+      smooth2(rg);
+      float[][][][] rftp = scanTheta(thetaSampling,rg);
+      rg = null; // enable gc to collect this large array
       float[][][][] ftp = r.unrotate(rftp);
       final float[][][] fp = ftp[0];
       final float[][][] tp = ftp[1];
@@ -590,8 +463,6 @@ public class FaultScanner {
   // Get/set non-null slices of rotated 3D arrays
   private static float[][] extractSlice2(int i2, float[][][] x) {
     int n1 = n1(x);
-    int n2 = n2(x);
-    int n3 = n3(x);
     int i3lo = i3lo(i2,x);
     int i3hi = i3hi(i2,x);
     int m3 = 1+i3hi-i3lo;
@@ -600,10 +471,8 @@ public class FaultScanner {
       copy(x[i3+i3lo][i2],x2[i3]);
     return x2;
   }
+
   private static void restoreSlice2(int i2, float[][][] x, float[][] x2) {
-    int n1 = n1(x);
-    int n2 = n2(x);
-    int n3 = n3(x);
     int i3lo = i3lo(i2,x);
     int i3hi = i3hi(i2,x);
     int m3 = 1+i3hi-i3lo;
@@ -613,8 +482,6 @@ public class FaultScanner {
   }
   private static float[][] extractSlice3(int i3, float[][][] x) {
     int n1 = n1(x);
-    int n2 = n2(x);
-    int n3 = n3(x);
     int i2lo = i2lo(i3,x);
     int i2hi = i2hi(i3,x);
     int m2 = 1+i2hi-i2lo;
@@ -624,9 +491,6 @@ public class FaultScanner {
     return x3;
   }
   private static void restoreSlice3(int i3, float[][][] x, float[][] x3) {
-    int n1 = n1(x);
-    int n2 = n2(x);
-    int n3 = n3(x);
     int i2lo = i2lo(i3,x);
     int i2hi = i2hi(i3,x);
     int m2 = 1+i2hi-i2lo;
@@ -708,17 +572,15 @@ public class FaultScanner {
   }
 
   // Horizontal smoothing of rotated snum,sden along axis 2.
-  private void smooth2(final float[][][][] snd) {
-    final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
+  private void smooth2(final float[][][] g) {
+    final int n3 = n3(g);
     final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
-      for (int is=0; is<2; ++is) {
-        float[][] s3 = extractSlice3(i3,snd[is]);
-        if (s3!=null) {
-          ref.apply2(s3,s3); 
-          restoreSlice3(i3,snd[is],s3);
-        }
+    float[][] s3 = extractSlice3(i3,g);
+      if (s3!=null) {
+        ref.apply2(s3,s3); 
+        restoreSlice3(i3,g,s3);
       }
     }});
   }
@@ -739,46 +601,36 @@ public class FaultScanner {
   // num and den are then smoothed vertically, with an extent sigma that is
   // dip-adjusted (shorter for smaller fault dips), so that after unshearing
   // the extent of smoothing is roughly the same for all fault dips.
-  private float[][][][] scanTheta(Sampling thetaSampling, float[][][][] snd) {
-    final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
+  private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] g) {
+    final int n1 = n1(g), n2 = n2(g);
     final Sampling st = thetaSampling;
-    final float[][][][] ft = like(snd);
-    final float[][][] sn = snd[0];
-    final float[][][] sd = snd[1];
-    final float[][][] f = ft[0];
-    final float[][][] t = ft[1];
+    final float[][][] f = like(g);
+    final float[][][] t = like(g);
+    final float[][][][] ft = new float[][][][]{f,t};
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     loop(n2,new LoopInt() {
     public void compute(int i2) {
-      float[][] sn2 = extractSlice2(i2,sn);
-      float[][] sd2 = extractSlice2(i2,sd);
-      if (sn2==null)
+      float[][] g2 = extractSlice2(i2,g);
+      if (g2==null)
         return;
-      int n3 = sn2.length;
+      int n3 = g2.length;
       int nt = st.getCount();
       for (int it=0; it<nt; ++it) {
         float ti = (float)st.getValue(it);
         float theta = toRadians(ti);
         float shear = -1.0f/tan(theta);
-        float[][] sns = shear(si,shear,sn2);
-        float[][] sds = shear(si,shear,sd2);
+        float[][] gs = shear(si,shear,g2);
         float sigma = (float)_sigmaTheta*sin(theta);
         RecursiveExponentialFilter ref = makeRef(sigma);
-        ref.apply1(sns,sns);
-        ref.apply1(sds,sds);
-        float[][] ss = semblanceFromNumDen(sns,sds);
-        float[][] s2 = unshear(si,shear,ss);
+        ref.apply1(gs,gs);
+        float[][] s2 = unshear(si,shear,gs);
         for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
           float[] s32 = s2[i3];
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
-            float st = s32[i1]; // semblance
-            st = st*st; // semblance^2
-            st = st*st; // semblance^4
-            st = st*st; // semblance^8
-            float fi = 1.0f-st;
+            float fi = s32[i1];
             if (fi>f32[i1]) {
               f32[i1] = fi;
               t32[i1] = ti;
@@ -788,6 +640,23 @@ public class FaultScanner {
       }
     }});
     return ft;
+  }
+
+  // Makes an array like that specified, including any null arrays.
+  private float[][][] like(float[][][] p) {
+    int n1 = n1(p);
+    int n2 = n2(p);
+    int n3 = n3(p);
+    int np = p.length;
+    float[][][] q = new float[n3][n2][];
+    for (int ip=0; ip<np; ++ip) {
+      for (int i3=0; i3<n3; ++i3) {
+        for (int i2=0; i2<n2; ++i2) {
+          q[i3][i2] = (p[i3][i2]!=null)?new float[n1]:null;
+        }
+      }
+    }
+    return q;
   }
 
   // Makes an array like that specified, including any null arrays.
@@ -805,181 +674,6 @@ public class FaultScanner {
       }
     }
     return q;
-  }
-
-  // Computes fault semblance numerators and denominators.
-  private static float[][][][] semblanceNumDen(
-    final float sigma, final float[][][] p2, 
-    final float[][][] p3, final float[][][] fx) 
-  {
-    int n3 = fx.length;
-    int n2 = fx[0].length;
-    int n1 = fx[0][0].length;
-    EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
-    d.setEigenvalues(0.001f,1.00f,1.00f);
-    final float[][][] sn = new float[n3][n2][n1];
-    final float[][][] sd = new float[n3][n2][n1];
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float p2i = p2[i3][i2][i1];
-          float p3i = p3[i3][i2][i1];
-          float fxi = fx[i3][i2][i1];
-          sn[i3][i2][i1] = fxi;
-          sd[i3][i2][i1] = fxi*fxi;
-          float u1i = 1.0f/sqrt(1.0f+p2i*p2i+p3i*p3i);
-          float u2i = -p2i*u1i;
-          float u3i = -p3i*u1i;
-          float usi = 1.0f/sqrt(u1i*u1i+u2i*u2i);
-          float w1i = -u2i*usi;
-          float w2i =  u1i*usi;
-          float w3i = 0.0f;
-          d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
-          d.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
-        }
-      }
-    }
-    float c = sigma*(sigma+1)/6f;
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    float[][][] h = new float[n3][n2][n1];
-    lsf.apply(d,c,sn,h); mul(h,h,sn);
-    lsf.apply(d,c,sd,h); copy(h,sd);
-    return new float[][][][]{sn,sd};
-  }
-
-  // Computes fault semblance numerators and denominators.
-  private static float[][][][] semblanceNumDen(
-    final float[][][] p2, final float[][][] p3, final float[][][] f) 
-  {
-    final int n1 = f[0][0].length;
-    final int n2 = f[0].length;
-    final int n3 = f.length;
-    final float[][][] sn = new float[n3][n2][n1];
-    final float[][][] sd = new float[n3][n2][n1];
-    final SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    loop(n3,new LoopInt() {
-    public void compute(int i3) {
-      float[] xmm = new float[n1];
-      float[] xm0 = new float[n1];
-      float[] xmp = new float[n1];
-      float[] x0m = new float[n1];
-      float[] x0p = new float[n1];
-      float[] xpm = new float[n1];
-      float[] xp0 = new float[n1];
-      float[] xpp = new float[n1];
-      float[] gmm = new float[n1];
-      float[] gm0 = new float[n1];
-      float[] gmp = new float[n1];
-      float[] g0m = new float[n1];
-      float[] g0p = new float[n1];
-      float[] gpm = new float[n1];
-      float[] gp0 = new float[n1];
-      float[] gpp = new float[n1];
-      int i3m = max(i3-1,0);
-      int i3p = min(i3+1,n3-1);
-      for (int i2=0; i2<n2; ++i2) {
-        int i2m = max(i2-1,0);
-        int i2p = min(i2+1,n2-1);
-        float[] fmm = f[i3m][i2m];
-        float[] fm0 = f[i3m][i2 ];
-        float[] fmp = f[i3m][i2p];
-        float[] f0m = f[i3 ][i2m];
-        float[] f00 = f[i3 ][i2 ];
-        float[] f0p = f[i3 ][i2p];
-        float[] fpm = f[i3p][i2m];
-        float[] fp0 = f[i3p][i2 ];
-        float[] fpp = f[i3p][i2p];
-        float[] p2mm = p2[i3m][i2m];
-        float[] p2mp = p2[i3m][i2p];
-        float[] p20m = p2[i3 ][i2m];
-        float[] p20p = p2[i3 ][i2p];
-        float[] p2pm = p2[i3p][i2m];
-        float[] p2pp = p2[i3p][i2p];
-        float[] p3mm = p3[i3m][i2m];
-        float[] p3m0 = p3[i3m][i2 ];
-        float[] p3mp = p3[i3m][i2p];
-        float[] p3pm = p3[i3p][i2m];
-        float[] p3p0 = p3[i3p][i2 ];
-        float[] p3pp = p3[i3p][i2p];
-        float[] sn32 = sn[i3][i2];
-        float[] sd32 = sd[i3][i2];
-        for (int i1=0; i1<n1; ++i1) {
-          xmm[i1] = i1-p3mm[i1]-p2mm[i1];
-          xm0[i1] = i1-p3m0[i1]         ;
-          xmp[i1] = i1-p3mp[i1]+p2mp[i1];
-          x0m[i1] = i1         -p20m[i1];
-          x0p[i1] = i1         +p20p[i1];
-          xpm[i1] = i1+p3pm[i1]-p2pm[i1];
-          xp0[i1] = i1+p3p0[i1]         ;
-          xpp[i1] = i1+p3pp[i1]+p2pp[i1];
-        }
-        si.interpolate(n1,1.0,0.0,fmm,n1,xmm,gmm);
-        si.interpolate(n1,1.0,0.0,fm0,n1,xm0,gm0);
-        si.interpolate(n1,1.0,0.0,fmp,n1,xmp,gmp);
-        si.interpolate(n1,1.0,0.0,f0m,n1,x0m,g0m);
-        si.interpolate(n1,1.0,0.0,f0p,n1,x0p,g0p);
-        si.interpolate(n1,1.0,0.0,fpm,n1,xpm,gpm);
-        si.interpolate(n1,1.0,0.0,fp0,n1,xp0,gp0);
-        si.interpolate(n1,1.0,0.0,fpp,n1,xpp,gpp);
-        float[] hmm = gmm, hm0 = gm0, hmp = gmp;
-        float[] h0m = g0m, h00 = f00, h0p = g0p;
-        float[] hpm = gpm, hp0 = gp0, hpp = gpp;
-        if (            i2==0   ) h0m = h00;
-        if (            i2==n2-1) h0p = h00;
-        if (i3==0               ) hm0 = h00;
-        if (i3==n3-1            ) hp0 = h00;
-        if (i3==0    && i2==0   ) hmm = h00;
-        if (i3==0    && i2==n2-1) hmp = h00;
-        if (i3==n3-1 && i2==0   ) hpm = h00;
-        if (i3==n3-1 && i2==n2-1) hpp = h00;
-        for (int i1=0; i1<n1; ++i1) {
-          float hmmi = hmm[i1];
-          float hm0i = hm0[i1];
-          float hmpi = hmp[i1];
-          float h0mi = h0m[i1];
-          float h00i = h00[i1];
-          float h0pi = h0p[i1];
-          float hpmi = hpm[i1];
-          float hp0i = hp0[i1];
-          float hppi = hpp[i1];
-          float sumn = hmmi+hm0i+hmpi+
-                       h0mi+h00i+h0pi+
-                       hpmi+hp0i+hppi;
-          float sumd = hmmi*hmmi+hm0i*hm0i+hmpi*hmpi+
-                       h0mi*h0mi+h00i*h00i+h0pi*h0pi+
-                       hpmi*hpmi+hp0i*hp0i+hppi*hppi;
-          sn32[i1] = sumn*sumn;
-          sd32[i1] = 9.0f*sumd;
-        }
-      }
-    }});
-    return new float[][][][]{sn,sd};
-  }
-
-  // Computes semblance ratios from numerators and denominators.
-  // Takes care to ensure that semblances are in range [0,1].
-  private static float[][] semblanceFromNumDen(float[][] sn, float[][] sd) {
-    int n1 = sn[0].length;
-    int n2 = sn.length;
-    float[][] sr = new float[n2][n1];
-    for (int i2=0; i2<n2; ++i2) {
-      float[] sn2 = sn[i2];
-      float[] sd2 = sd[i2];
-      float[] sr2 = sr[i2];
-      for (int i1=0; i1<n1; ++i1) {
-        float sni = sn2[i1];
-        float sdi = sd2[i1];
-        if (sdi<=0.0f || sni<=0.0f) {
-          sr2[i1] = 0.0f;
-        } else if (sdi<sni) {
-          sr2[i1] = 1.0f;
-        } else {
-          sr2[i1] = sni/sdi;
-        }
-      }
-    }
-    return sr;
   }
 
   // Removes spurious faults caused by image boundaries. A sample of fault

@@ -64,11 +64,11 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  #goSlopes()
-  #goScan()
-  #goThin()
-  #goSkin()
-  goReSkin()
+  goSlopes()
+  goScan()
+  goThin()
+  goSkin()
+  #goReSkin()
   '''
   goSmooth()
   goSlip()
@@ -154,10 +154,10 @@ def goSlopes():
 
 def goScan():
   print "goScan ..."
+  gx = readImage(gxfile)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    gx = readImage(gxfile)
     gx = FaultScanner.taper(10,0,0,gx)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
@@ -168,7 +168,6 @@ def goScan():
     writeImage(fpfile,fp)
     writeImage(ftfile,ft)
   else:
-    gx = readImage(gxfile)
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)

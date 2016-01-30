@@ -6,6 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package stv;
 
+import util.*;
 import edu.mines.jtk.dsp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
@@ -58,7 +59,6 @@ public class TensorVoting2X {
     final FftComplex fft2 = new FftComplex(nfft2);
     loop(ns, new LoopInt() {
     public void compute(int is) {
-    //for (int is=0; is<ns; ++is) {
       float sci = (float)_scs[is];
       float msi = _nd-(is+1)*2;
       float[][] ci = czerofloat(nfft1,nfft2);
@@ -78,7 +78,6 @@ public class TensorVoting2X {
         u2[i2][ir] += (cri*wri-cii*wii)*sci;
         u2[i2][ii] += (cri*wii+cii*wri)*sci;
       }}
-    //}
     }});
     fft1.complexToComplex1(1,nfft2,u2,u2);
     fft2.complexToComplex2(1,nfft1,u2,u2);
@@ -119,13 +118,13 @@ public class TensorVoting2X {
     float[][] u1 = new float[n2][n1];
     float[][] u2 = new float[n2][n1];
     float[][] gx = new float[n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(sigma1,sigma2);
+    LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2);
     lof.applyForNormal(fx,u1,u2);
     EigenTensors2 ets = lof.applyForTensors(fx);
     ets.setEigenvalues(0.0001f,1.0f);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     lsf.apply(ets,10,fx,gx);
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.apply10(gx,g1);
     rgf.apply01(gx,g2);
     for (int i2=0; i2<n2; ++i2) {
@@ -139,7 +138,7 @@ public class TensorVoting2X {
     }}
     ss = sub(ss,min(ss));
     ss = div(ss,max(ss));
-    return new float[][][]{ss,fx};
+    return new float[][][]{ss,gx};
   }
 
  
@@ -156,8 +155,8 @@ public class TensorVoting2X {
     float[][] u1 = new float[n2][n1];
     float[][] u2 = new float[n2][n1];
     float[][] el = new float[n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(sigma1,sigma2);
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.apply10(fx,g1);
     rgf.apply01(fx,g2);
     lof.applyForNormalLinear(fx,u1,u2,el);
@@ -229,7 +228,7 @@ public class TensorVoting2X {
     float[][] u2 = new float[n2][n1];
     float[][] rs = new float[n2][n1];
     SincInterpolator si  =new SincInterpolator();
-    LocalOrientFilter lof = new LocalOrientFilter(2.0,2.0);
+    LocalOrientFilterP lof = new LocalOrientFilterP(2.0,2.0);
     lof.applyForNormal(fx,u1,u2);
     Sampling s1 = new Sampling(n1);
     Sampling s2 = new Sampling(n2);

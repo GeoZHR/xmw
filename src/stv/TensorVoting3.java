@@ -12,7 +12,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-import ipfx.*;
+import util.*;
 import ipfx.FaultCell;
 import static ipfx.FaultGeometry.*;
 
@@ -49,12 +49,13 @@ public class TensorVoting3 {
     final float sigmas = 0.5f/(_sigma*_sigma);
     final float[][][] ss = new float[n3][n2][n1];
     final float[][][] cs = new float[n3][n2][n1];
-    final float[][][] u1 = new float[n3][n2][n1];
-    final float[][][] u2 = new float[n3][n2][n1];
-    final float[][][] u3 = new float[n3][n2][n1];
+    final float[][][] fp = new float[n3][n2][n1];
+    final float[][][] ft = new float[n3][n2][n1];
+    final int[] c = new int[1];
     loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
-      System.out.println("i3="+i3);
+      c[0] = c[0]+1;
+      System.out.println("c="+c[0]);
       float[] xmin = new float[3];
       float[] xmax = new float[3];
       for (int i2=0; i2<n2; ++i2) {
@@ -111,9 +112,8 @@ public class TensorVoting3 {
             float v2 = u2;
             float v3 = u3;
             float sc = exp(-rs*rs*sigmas)*pow((1f-ur*ur),12)*fl;
-            /*
             if(abs(ur)>0.0001f) {
-              float cx = 0.5f*rs/ur; // find a better way
+              float cx = 0.5f*rs/ur; // find a better way?
               float c1 = x1+u1*cx;
               float c2 = x2+u2*cx;
               float c3 = x3+u3*cx;
@@ -121,7 +121,6 @@ public class TensorVoting3 {
               float vs = 1.0f/sqrt(v1*v1+v2*v2+v3*v3);
               v1 *= vs; v2 *= vs; v3 *= vs; 
             }
-            */
             g11 += sc*v1*v1;
             g12 += sc*v1*v2;
             g13 += sc*v1*v3;
@@ -140,21 +139,108 @@ public class TensorVoting3 {
         float u1i = ue[0][0];
         float u2i = ue[0][1];
         float u3i = ue[0][2];
+        if (u2i==0.0f&&u3i==0f){continue;}
+        if (u1i>0.0f) {
+          u1i = -u1i;
+          u2i = -u2i;
+          u3i = -u3i;
+        }
         ss[i3][i2][i1] = (eui-evi);
         cs[i3][i2][i1] = (evi-ewi)*(eui-evi);
-        u1[i3][i2][i1] = u1i;
-        u2[i3][i2][i1] = u2i;
-        u3[i3][i2][i1] = u3i;
+        ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+        fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
       }}
     }});
     sub(ss,min(ss),ss);
     div(ss,max(ss),ss);
     sub(cs,min(cs),cs);
     div(cs,max(cs),cs);
-    return new float[][][][]{ss,cs,u1,u2,u3};
+    return new float[][][][]{ss,cs,fp,ft};
   }
 
+  public FaultCell[] randCells (
+    int np, int sd, int n1, int n2, int n3, FaultCell[] fcs) {
+    FaultCell[][][] fcg = new FaultCell[n3][n2][n1];
+    for (FaultCell fc:fcs) {
+      int i1 = fc.getI1();
+      int i2 = fc.getI2();
+      int i3 = fc.getI3();
+      fcg[i3][i2][i1] = fc;
+    }
+    Random r = new Random(sd);
+    int[][][] mark = zeroint(n1,n2,n3);
+    FaultCell[] cells = new FaultCell[np];
+    trace("np="+np);
+    for (int ip=0; ip<np; ++ip) {
+      boolean marked = false;
+      while (!marked) {
+        int i1 = r.nextInt(n1);
+        int i2 = r.nextInt(n2);
+        int i3 = r.nextInt(n3);
+        boolean ok = true;
+        int m = 1;
+        for (int j3=max(0,i3-m); j3<min(n3,i3+m+1); ++j3){
+        for (int j2=max(0,i2-m); j2<min(n2,i2+m+1); ++j2){
+        for (int j1=max(0,i1-m); j1<min(n1,i1+m+1); ++j1){
+          if (mark[j3][j2][j1]>0) ok = false;
+        }}}
+        FaultCell cell = fcg[i3][i2][i1];
+        if (ok && cell!=null) {
+          marked = true;
+          mark[i3][i2][i1] = 1;
+          cells[ip] = cell;
+        }
+      }
+    }
+    return cells;
+  }
 
+  public FaultCell[] getFaultCells(int n1, int n2, int n3, FaultCell[] fcs) {
+    FaultCell[][][] fcg = new FaultCell[n3][n2][n1];
+    ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
+    for (FaultCell fc:fcs) {
+      int i1 = fc.getI1();
+      int i2 = fc.getI2();
+      int i3 = fc.getI3();
+      fcg[i3][i2][i1] = fc;
+    }
+
+    for (int i3=0; i3<n3; i3+=1) {
+    for (int i2=0; i2<n2; i2+=2) {
+    for (int i1=0; i1<n1; i1+=2) {
+      FaultCell fc = fcg[i3][i2][i1];
+      if(fc!=null) cellList.add(fc);
+    }}}
+    return cellList.toArray(new FaultCell[0]);
+  }
+  public void getFlImage(FaultCell[] fcs, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    for (FaultCell fc:fcs) {
+      int i1 = fc.getI1();
+      int i2 = fc.getI2();
+      int i3 = fc.getI3();
+      int m1 = fc.getM1();
+      int m2 = fc.getM2();
+      int m3 = fc.getM3();
+      int p1 = fc.getP1();
+      int p2 = fc.getP2();
+      int p3 = fc.getP3();
+      i1 = min(i1,n1-1); i1 = max(i1,0);
+      i2 = min(i2,n2-1); i2 = max(i2,0);
+      i3 = min(i3,n3-1); i3 = max(i3,0);
+      m1 = min(m1,n1-1); m1 = max(m1,0);
+      m2 = min(m2,n2-1); m2 = max(m2,0);
+      m3 = min(m3,n3-1); m3 = max(m3,0);
+      p1 = min(p1,n1-1); p1 = max(p1,0);
+      p2 = min(p2,n2-1); p2 = max(p2,0);
+      p3 = min(p3,n3-1); p3 = max(p3,0);
+      fl[i3][i2][i1] = fc.getFl();
+      fl[m3][m2][m1] = fc.getFl();
+      fl[p3][p2][p1] = fc.getFl();
+    }
+  }
    // Uses fault images to find cells, oriented points located on ridges.
   public FaultCell[] findCells( float fmin,
     float[][][] f, float[][][] u1, float[][][] u2, float[][][] u3) {
@@ -296,6 +382,10 @@ public class TensorVoting3 {
             fl /= nr;
             d2 /= nr;
             d3 /= nr;
+            float x2 = i2+d2;
+            float x3 = i3+d3;
+            x2 = min(x2,n2-1); x2 = max(x2,0);
+            x3 = min(x3,n3-1); x3 = max(x3,0);
             float tiii = faultDipFromNormalVector(u1ii,u2ii,u3ii);
             cell = new FaultCell(i1,i2+d2,i3+d3,fl,piii,tiii);
             cellList.add(cell);
@@ -395,6 +485,17 @@ public class TensorVoting3 {
     return sp;
   }
 
+  public float[][][] thin(float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    LocalOrientFilterP lof = new LocalOrientFilterP(2.0,1.0,1.0);
+    lof.applyForNormal(fx,u1,u2,u3);
+    return findRidges(fx,u1,u2,u3);
+  }
   public float[][][] findRidges (
     float[][][] sm, float[][][] u1, float[][][] u2, float[][][] u3) {
     int n3 = sm.length;
@@ -524,6 +625,35 @@ public class TensorVoting3 {
     }
   }
 
+  private float[][] setKdTreeNodes(float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    ArrayList<Float> x1s = new ArrayList<Float>();
+    ArrayList<Float> x2s = new ArrayList<Float>();
+    ArrayList<Float> x3s = new ArrayList<Float>();
+    ArrayList<Float> fxs = new ArrayList<Float>();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fxi = fx[i3][i2][i1];
+      if(fxi>0.0f) {
+        x1s.add((float)i1);
+        x2s.add((float)i2);
+        x3s.add((float)i3);
+        fxs.add((float)fxi);
+      }
+    }}}
+    int np = x1s.size();
+    float[][] xs = new float[4][np];
+    for (int ip=0; ip<np; ++ip) {
+      xs[0][ip] = x1s.get(ip);
+      xs[1][ip] = x2s.get(ip);
+      xs[2][ip] = x3s.get(ip);
+      xs[3][ip] = fxs.get(ip);
+    }
+    return xs;
+  }
 
   private float _sigma=20f;
   private int _d1 = 10;

@@ -11,6 +11,7 @@ import ipfx.*;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -80,9 +81,25 @@ public class ScreenPoissonSurferC {
     float[][] ks, float[][] mk) {
     float[] k1 = ks[0];
     float[] k2 = ks[1];
-    int np = k1.length;
     int n1 = mk[0].length;
     float[][] mp = copy(mk);
+    CubicInterpolator ci = 
+      new CubicInterpolator(CubicInterpolator.Method.LINEAR,k2,k1);
+    int b2 = round(min(k2));
+    int e2 = round(max(k2));
+    float sigma = 10;
+    for (int i2=b2; i2<=e2; ++i2) {
+      int i1 = (int)ci.interpolate(i2);
+      float d = min(abs(sub(k2,i2)));
+      float s = exp(-0.5f*d*d/(sigma*sigma));
+      System.out.println("s="+s);
+      zero(mp[i2]);
+      mp[i2][i1] = s;
+      if(i1-1>=0) mp[i2][i1-1] = s;
+      if(i1+1<n1) mp[i2][i1+1] = s;
+    }
+    /*
+    int np = k1.length;
     for (int ip=0; ip<np; ++ip) {
       int i1 = (int)k1[ip];
       int i2 = (int)k2[ip];
@@ -91,6 +108,7 @@ public class ScreenPoissonSurferC {
       if(i1-1>=0) mp[i2][i1-1] = 1f;
       if(i1+1<n1) mp[i2][i1+1] = 1f;
     }
+    */
     return mp;
   }
 
@@ -111,8 +129,6 @@ public class ScreenPoissonSurferC {
       if(i1+1<n1) mk[i3][i2][i1+1] = 1f;
     }
   }
-
-
 
 
   /**

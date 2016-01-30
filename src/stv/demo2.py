@@ -1,61 +1,27 @@
-import sys
+"""
+Demonstrate 2D tensor voting for enhancing channels
+Author: Xinming Wu, Colorado School of Mines
+Version: 2016.01.28
+"""
 
-from java.awt import *
-from java.io import *
-from java.lang import *
-from javax.swing import *
-
-from edu.mines.jtk.awt import *
-from edu.mines.jtk.dsp import *
-from edu.mines.jtk.io import *
-from edu.mines.jtk.interp import *
-from edu.mines.jtk.mosaic import *
-from edu.mines.jtk.util import *
-from edu.mines.jtk.util.ArrayMath import *
-
-from stv import *
+from utils2d import * 
+setupForSubset("pnz")
+s1,s2 = getSamplings()
+n1,n2 = s1.count,s2.count
+f1,f2 = s1.getFirst(),s2.getFirst()
+d1,d2 = s1.getDelta(),s2.getDelta()
 
 pngDir = None
-pngDir = "../../../png/acm/"
+pngDir = getPngDir()
 
-seismicDir = "../../../data/seis/acm/"
-seismicDir = "../../../data/seis/stv/"
-fxfile = "atwj1s"
-fxfile = "pnzHorizon"
-#fxfile = "fl62"
-#fxfile = "f3d267"
-#fxfile = "f3d267Sub"
-#fxfile="kidney"
+fxfile = "fx"
 edfile = "edge"
 f1file = "f1"
 f2file = "f2"
 u1file = "u1"
 u2file = "u2"
-#ffile = "tp73"
-f1,f2 = 0,0
-d1,d2 = 1,1
-n1,n2 = 251,357
-n1,n2 = 500,500
-n1,n2 = 879,752
-#n1,n2 = 1268,1684
-#n1,n2 = 386,702
-#n1,n2 = 101,101
-#n1,n2 = 462,951
-#n1,n2 = 140,350
-#n1,n2 = 101,102
-s1 = Sampling(n1,d1,f1)
-s2 = Sampling(n2,d2,f2)
 
 def main(args):
-  #goGVF()
-  #goSnake()
-  #goSnakeReal()
-  #goPaint()
-  #goForce()
-  #goContour()
-  #goExForce()
-  #goSnakeReal()
-  #goExForceF3d()
   #goChannel()
   goPnz()
   #goChannelX()
@@ -108,11 +74,11 @@ def goPnz():
   normalize(ss)
   #normalize(gx)
   se,fs = tv.smoothEdge(2,2,fx)
-  plot(fx)
-  plot(fs)
-  plot(ss,cmin=0.05,cmax=0.6)
-  plot(gx,cmin=0.05,cmax=0.6)
-  plot(se,cmin=0.05,cmax=0.6)
+  plot(fx,png="fx")
+  plot(fs,png="fs")
+  plot(ss,cmin=0.05,cmax=0.4,png="ss")
+  plot(gx,cmin=0.05,cmax=0.6,png="gx")
+  plot(se,cmin=0.05,cmax=0.6,png="se")
 
   #plot(os,cmap=ColorMap.JET)
   #plot2(fx,s1,s2,g=ss,cmin=0.3,cmax=1.0)
@@ -147,8 +113,6 @@ def goChannel():
   lsf.apply(ets,40,ss,ss)
   plot(ss)
   '''
-
-
 
 def goTestXX(): 
   fx = zerofloat(n1,n2)
@@ -612,12 +576,12 @@ def grayRamp(alpha):
   return ColorMap.setAlpha(ColorMap.GRAY,rampfloat(0.0,alpha/256,256))
 
 def plot(f,cmap=ColorMap.GRAY,cmin=None,cmax=None,xp=None,pp=None,ap=None,png=None): 
-  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
-  panel = PlotPanel(1,1,orientation);
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT
+  panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE);
   #panel.setVInterval(0.2)
   pxv = panel.addPixels(0,0,s1,s2,f);
   pxv.setColorModel(cmap)
-  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
   if cmin and cmax:
     pxv.setClips(cmin,cmax)
   #panel.setTitle("normal vectors")
@@ -637,118 +601,19 @@ def plot(f,cmap=ColorMap.GRAY,cmin=None,cmax=None,xp=None,pp=None,ap=None,png=No
     ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
     ptv.setMarkColor(Color.YELLOW)
     ptv.setMarkSize(2.0)
-  cb = panel.addColorBar();
+  #cb = panel.addColorBar();
   #cb.setInterval(0.2)
-  cb.setLabel("Amplitude")
-  panel.setColorBarWidthMinimum(130)
+  #cb.setLabel("Amplitude")
+  #panel.setColorBarWidthMinimum(130)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
-  frame.setSize(890,760)
-  #frame.setSize(1190,760)
+  frame.setSize(round(n2*0.9),round(n1*0.9))
   frame.setFontSize(36)
   if pngDir and png:
-    frame.paintToPng(300,3.333,pngDir+png+".png")
-
-def plot2(f,s1,s2,g=None,cmin=None,cmax=None,label=None,png=None,et=None):
-  n2 = len(f)
-  n1 = len(f[0])
-  panel = panel2Teapot()
-  #panel.setHInterval(2.0)
-  #panel.setVInterval(0.2)
-  #panel.setHLabel("Distance (km)")
-  #panel.setVLabel("Time (s)")
-  #panel.setHInterval(100.0)
-  #panel.setVInterval(100.0)
-  #panel.setHLabel("Pixel")
-  #panel.setVLabel("Pixel")
-  if label:
-    panel.addColorBar(label)
-  else:
-    panel.addColorBar()
-  panel.setColorBarWidthMinimum(180)
-  pv = panel.addPixels(s1,s2,f)
-  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
-  pv.setColorModel(ColorMap.GRAY)
-  #pv.setClips(min(f),max(f))
-  if g:
-    alpha = 0.8
-  else:
-    g = zerofloat(s1.count,s2.count)
-    alpha = 0.0
-  pv = panel.addPixels(s1,s2,g)
-  #pv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  #pv.setColorModel(jetFillExceptMin(1.0))
-  pv.setColorModel(jetRamp(1.0))
-  if cmin and cmax:
-    pv.setClips(cmin,cmax)
-  frame2Teapot(panel,png)
-def panel2Teapot():
-  panel = PlotPanel(1,1,
-    PlotPanel.Orientation.X1DOWN_X2RIGHT,
-    PlotPanel.AxesPlacement.NONE)
-  return panel
-def frame2Teapot(panel,png=None):
-  frame = PlotFrame(panel)
-  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
-  #frame.setFontSizeForPrint(8,240)
-  #frame.setSize(1240,774)
-  frame.setFontSizeForSlide(1.0,0.8)
-  frame.setSize(880,700)
-  frame.setVisible(True)
-  if png and pngDir:
-    frame.paintToPng(400,3.2,pngDir+"/"+png+".png")
-  return frame
-def makePointSets(cmap,f,x1,x2):
-  sets = {}
-  for i in range(len(f)):
-    if f[i] in sets:
-      points = sets[f[i]]
-      points[0].append(f[i])
-      points[1].append(x1[i])
-      points[2].append(x2[i])
-    else:
-      points = [[f[i]],[x1[i]],[x2[i]]] # lists of f, x1, x2
-      sets[f[i]] = points
-  ns = len(sets)
-  fs = zerofloat(1,ns)
-  x1s = zerofloat(1,ns)
-  x2s = zerofloat(1,ns)
-  il = 0
-  for points in sets:
-    fl = sets[points][0]
-    x1l = sets[points][1]
-    x2l = sets[points][2]
-    nl = len(fl)
-    fs[il] = zerofloat(nl)
-    x1s[il] = zerofloat(nl)
-    x2s[il] = zerofloat(nl)
-    copy(fl,fs[il])
-    copy(x1l,x1s[il])
-    copy(x2l,x2s[il])
-    il += 1
-  return fs,x1s,x2s
-
-#############################################################################
-# utilities
-
-def readImage(name):
-  fileName = seismicDir+name+".dat"
-  n1,n2 = s1.count,s2.count
-  image = zerofloat(n1,n2)
-  ais = ArrayInputStream(fileName)
-  ais.readFloats(image)
-  ais.close()
-  return image
-
-def writeImage(name,image):
-  fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)
-  aos.writeFloats(image)
-  aos.close()
-  return image
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread

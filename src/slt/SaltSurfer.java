@@ -233,7 +233,7 @@ public class SaltSurfer {
         int i2m = round(i2-u2i);if(i2m<0){i2m=0;} if(i2m>=n2){i2m=n2-1;}
         int i1p = round(i1+u1i);if(i1p>=n1){i1p=n1-1;} if(i1p<0){i1p=0;}
         int i2p = round(i2+u2i);if(i2p>=n2){i2p=n2-1;} if(i2p<0){i2p=0;}
-        ft2[i2m][i1m] = fxm1;
+        //ft2[i2m][i1m] = fxm1;
         ft2[i2p][i1p] = fxp1;
       }
     }}

@@ -14,7 +14,7 @@ sffile = "sf"
 
 
 def main(args):
-  goSaltLike()
+  #goSaltLike()
   goSaltSurfer()
   #goSaltSurferC()
 
@@ -167,7 +167,7 @@ def plot2(f,s1,s2,g=None,u=None,k1=None,k2=None,
     cv = panel.addContours(c1,c2,uc)
     cv.setContours([0])
     cv.setLineWidth(6.0)
-    cv.setLineColor(Color.CYAN)
+    cv.setLineColor(Color.MAGENTA)
   if k1 and k2:
     for ip in range(len(k1)):
       k1[ip] = f1+k1[ip]*d1

@@ -19,6 +19,7 @@ def setupForSubset(name):
     samplings s1,s2,s3
   Example: setupForSubset("s1")
   """
+  global pngDir
   global seismicDir
   global welllogDir
   global s1,s2,s3
@@ -28,6 +29,7 @@ def setupForSubset(name):
   if name=="clyde":
     print "setupForSubset: clyde"
     seismicDir = _datdir+"clyde/"
+    pngDir = "../../../png/pdgm/clyde/"
     n1,n2,n3 = 500,801,300
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
@@ -37,6 +39,7 @@ def setupForSubset(name):
   elif name=="clydeSub":
     print "setupForSubset: subset of clyde"
     seismicDir = _datdir+"clyde/sub/"
+    pngDir = "../../../png/pdgm/clyde/sub/"
     n1,n2,n3 = 400,801,300
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
@@ -79,6 +82,9 @@ def getSamplings():
 
 def getSeismicDir():
   return seismicDir
+
+def getPngDir():
+  return pngDir
 
 #############################################################################
 # read/write images

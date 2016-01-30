@@ -22,7 +22,7 @@ pngDir = None
 pngDir = "../../../png/slt/3d/"
 pngDir = getPngDir()
 
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSaltLike()
@@ -50,7 +50,7 @@ def goSaltLike():
     ep = readImage(epfile)
     sl = readImage(slfile)
   plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,ep,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Planarity",png="ep")
+  plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Planarity",png="ep")
   plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
 
 def goSaltSurfer():
@@ -68,8 +68,9 @@ def goSaltSurfer():
     lof.applyForNormal(ep,u1,u2,u3)
     ss = SaltSurfer()
     fc = ss.findPoints(0.3,sl,u1,u2,u3)
+    sf = readImage(sffile)
     plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),png="points")
-    '''
+    #plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),fbs=sf,png="pointsSf")
     mul(u1,sl,g1)
     mul(u2,sl,g2)
     mul(u3,sl,g3)
@@ -88,7 +89,6 @@ def goSaltSurfer():
         clab="Indicator function",png="sf")
   plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
         clab="Indicator function",png="saltSf")
-    '''
 
 def goSaltSurferC():
   mk = readImage(mkfile)
@@ -397,7 +397,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     tg = TriangleGroup(ct.i,ct.x,ct.u)
     states = StateSet()
     cs = ColorState()
-    cs.setColor(Color.CYAN)
+    cs.setColor(Color.MAGENTA)
     states.add(cs)
     lms = LightModelState()
     lms.setTwoSide(True)
