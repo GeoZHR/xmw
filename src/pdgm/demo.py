@@ -283,9 +283,14 @@ def goTv():
 
 def goSkinTv():
   gx = readImage(gxfile)
+  fl = readImage("sm1")
+  fp = readImage("fp1")
+  ft = readImage("ft1")
+  '''
   fl = readImage(smfile)
   fp = readImage(fpvfile)
   ft = readImage(ftvfile)
+  '''
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
