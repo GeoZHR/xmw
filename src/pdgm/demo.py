@@ -60,8 +60,8 @@ sigmaPhi,sigmaTheta = 4,20
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
-upperLikelihood = 0.6
-minSkinSize = 300
+upperLikelihood = 0.8
+minSkinSize = 4000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -85,8 +85,10 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
+  #goThinTv()
   #goSkin()
   goTv()
+  #goSkinTv()
   #goTI()
   #goReSkin()
   #goSmooth()
@@ -253,28 +255,18 @@ def goTv():
     fc = fs.findCells([fl,fp,ft])
     fct=[]
     for fci in fc:
-      if(fci.getFl()>0.4):
+      if(fci.getFl()>0.5):
         fct.append(fci)
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
     tv3 = TensorVoting3()
-    tv3.setSigma(15)
-    tv3.setWindow(30,20,20)
+    tv3.setSigma(20)
+    tv3.setWindow(20,20,20)
     sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
     sm = pow(sm,0.5)
     sub(sm,min(sm),sm)
     div(sm,max(sm),sm)
-    fs = FaultSkinner()
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-    cells = fs.findCells([sm,fp,ft])
-    plot3(gx,cells=cells,png="cells")
-    skins = fs.findSkins(cells)
-    removeAllSkinFiles(fsktv)
-    writeSkins(fsktv,skins)
     writeImage(cmfile,cm)
     writeImage(smfile,sm)
     writeImage(fpvfile,fp)
@@ -284,10 +276,39 @@ def goTv():
     cm = readImage(cmfile)
     fp = readImage(fpvfile)
     ft = readImage(ftvfile)
-    skins = readSkins(fsktv)
-  plot3(gx,cm,cmin=0.2,cmax=1.0,skins=skins,cmap=jetRamp(1.0),png="skins")
+    '''
   plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
   plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
+    '''
+
+def goSkinTv():
+  gx = readImage(gxfile)
+  fl = readImage(smfile)
+  fp = readImage(fpvfile)
+  ft = readImage(ftvfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  skins1 = fs.findSkins(cells)
+  skins2 = readSkins(fskbase)
+  removeAllSkinFiles(fsktv)
+  writeSkins(fsktv,skins1)
+  flt1 = zerofloat(n1,n2,n3)
+  flt2 = zerofloat(n1,n2,n3)
+  tv3 = TensorVoting3()
+  flt3 = readImage(fltfile)
+  tv3.getFlImage(FaultSkin.getCells(skins1),flt1)
+  tv3.getFlImage(FaultSkin.getCells(skins2),flt2)
+  plot3(gx,flt1,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
+  plot3(gx,flt2,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Falt likelihood",png="sm")
+  plot3(gx,flt3,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Falt likelihood",png="sm")
+  plot3(gx,fl,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
+  plot3(gx,fl,cmin=0.2,cmax=1.0,skins=skins1,cmap=jetRamp(1.0),png="skins")
+  plot3(gx,fl,cmin=0.2,cmax=1.0,skins=skins2,cmap=jetRamp(1.0),png="skins")
+
 
 
 def goSlopes():
@@ -334,6 +355,29 @@ def goScan():
         clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
+
+def goThinTv():
+  print "goThin ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(smfile)
+    fp = readImage(fpvfile)
+    ft = readImage(ftvfile)
+    flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+    writeImage(fltfile,flt)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
+  else:
+    flt = readImage(fltvfile)
+    fpt = readImage(fptvfile)
+    ftt = readImage(fttvfile)
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+  plot3(gx,convertDips(ftt),cmin=15,cmax=55,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
 
 def goThin():
   print "goThin ..."
@@ -828,7 +872,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(85,5,56)
+  ipg.setSlices(85,5,154)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
