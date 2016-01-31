@@ -111,7 +111,7 @@ public class TensorVoting3 {
             float v1 = u1;
             float v2 = u2;
             float v3 = u3;
-            float sc = exp(-rs*rs*sigmas)*pow((1f-ur*ur),20)*fl;
+            float sc = exp(-rs*rs*sigmas)*pow((1f-ur*ur),12)*fl;
             if(abs(ur)>0.0001f) {
               float cx = 0.5f*rs/ur; // find a better way?
               float c1 = x1+u1*cx;

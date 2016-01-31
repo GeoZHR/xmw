@@ -258,7 +258,7 @@ def goTv():
       if(fci.getFl()>0.5):
         fct.append(fci)
     cells=[]
-    for ic in range(0,len(fct),5):
+    for ic in range(0,len(fct),1):
       cells.append(fct[ic])
     tv3 = TensorVoting3()
     tv3.setSigma(20)
