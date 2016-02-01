@@ -301,6 +301,7 @@ public class TensorVoting3 {
           ur *= ur;
           ur *= ur;
           ur *= ur;
+          ur *= ur;
           scs[k3][k2][k1] = gs[k3][k2][k1]*ur;
         }
       }}

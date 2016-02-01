@@ -82,12 +82,12 @@ def main(args):
   #goSemblance()
   #goSemblanceThin()
   #goSemblanceTv()
-  goSlopes()
-  goScan()
+  #goSlopes()
+  #goScan()
   #goThin()
   #goThinTv()
   #goSkin()
-  #goTv()
+  goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
@@ -255,14 +255,14 @@ def goTv():
     fc = fs.findCells([fl,fp,ft])
     fct=[]
     for fci in fc:
-      if(fci.getFl()>0.5):
+      if(fci.getFl()>0.4):
         fct.append(fci)
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
     tv3 = TensorVoting3()
-    tv3.setSigma(10)
-    tv3.setVoteWindow(20,20,20)
+    tv3.setSigma(20)
+    tv3.setVoteWindow(30,30,30)
     fsc = FaultScanner(4,20)
     sp = fsc.getPhiSampling(minPhi,maxPhi)
     st = fsc.getThetaSampling(minTheta,maxTheta)
@@ -279,8 +279,10 @@ def goTv():
     cm = readImage(cmfile)
     fp = readImage(fpvfile)
     ft = readImage(ftvfile)
+  '''
   plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
   plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
+  '''
 
 def goSkinTv():
   gx = readImage(gxfile)
