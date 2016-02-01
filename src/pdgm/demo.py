@@ -105,7 +105,7 @@ def goOrientScan():
   sem = readImage(semfile)
   sem=sub(1,sem)
   if not plotOnly:
-    fs = LocalOrientScanner(sigmaPhi,sigmaTheta)
+    fs = LocalOrientScannerX(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
