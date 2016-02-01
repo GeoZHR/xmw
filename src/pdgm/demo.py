@@ -55,7 +55,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
+sigmaPhi,sigmaTheta = 8,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -82,12 +82,12 @@ def main(args):
   #goSemblance()
   #goSemblanceThin()
   #goSemblanceTv()
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   #goThin()
   #goThinTv()
   #goSkin()
-  goTv()
+  #goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
@@ -258,12 +258,15 @@ def goTv():
       if(fci.getFl()>0.5):
         fct.append(fci)
     cells=[]
-    for ic in range(0,len(fct),1):
+    for ic in range(0,len(fct),5):
       cells.append(fct[ic])
     tv3 = TensorVoting3()
-    tv3.setSigma(20)
-    tv3.setWindow(20,20,20)
-    sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
+    tv3.setSigma(10)
+    tv3.setVoteWindow(20,20,20)
+    fsc = FaultScanner(4,20)
+    sp = fsc.getPhiSampling(minPhi,maxPhi)
+    st = fsc.getThetaSampling(minTheta,maxTheta)
+    sm,cm,fp,ft = tv3.applyVoteFast(n1,n2,n3,sp,st,cells)
     sm = pow(sm,0.5)
     sub(sm,min(sm),sm)
     div(sm,max(sm),sm)
@@ -276,13 +279,12 @@ def goTv():
     cm = readImage(cmfile)
     fp = readImage(fpvfile)
     ft = readImage(ftvfile)
-    '''
   plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
   plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
-    '''
 
 def goSkinTv():
   gx = readImage(gxfile)
+  '''
   fl = readImage("sm1")
   fp = readImage("fp1")
   ft = readImage("ft1")
@@ -290,7 +292,6 @@ def goSkinTv():
   fl = readImage(smfile)
   fp = readImage(fpvfile)
   ft = readImage(ftvfile)
-  '''
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
@@ -319,7 +320,7 @@ def goSkinTv():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,4.0,4.0,5.0
+  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -332,8 +333,10 @@ def goSlopes():
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
   ep = sub(1,ep)
+  '''
   plot3(gx,ep,cmin=min(ep),cmax=max(ep),cmap=jetRamp(1.0),
         clab="Planarity")
+  '''
 
 def goScan():
   print "goScan ..."
@@ -354,12 +357,14 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+  '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
+  '''
 
 def goThinTv():
   print "goThin ..."

@@ -102,7 +102,50 @@ def main(args):
   #goSemblance()
   #goBallVote()
   #goSemblanceThin()
-  goSemblanceTv()
+  #goSemblanceTv()
+  goVote()
+  #voteScale()
+def voteScale():
+  tv3 = TensorVoting3()
+  tv3.setVoteWindow(50,50,50)
+  fc = FaultScanner(4,20)
+  sp = fc.getPhiSampling(minPhi,maxPhi)
+  st = fc.getThetaSampling(minTheta,maxTheta)
+  scs = tv3.voteScale(sp,st,20)
+  plot3(scs[0][0])
+
+def goVote():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  '''
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        print ft[i3][i2][i1]
+  '''
+  fc = FaultScanner(4,20)
+  sp = fc.getPhiSampling(minPhi,maxPhi)
+  st = fc.getThetaSampling(minTheta,maxTheta)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(minSkinSize)
+  fcs = fs.findCells([fl,fp,ft])
+  cells = []
+  for ic in range(0,len(fcs),5):
+    cells.append(fcs[ic])
+  tv3 = TensorVoting3()
+  tv3.setVoteWindow(30,30,30)
+  ss,cs,fp,ft = tv3.applyVoteFast(n1,n2,n3,15,sp,st,cells)
+  plot3(gx,ss,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
+    clab="Surfaceness",png="sm")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
 
 def goSemblance():
   print "go semblance ..."

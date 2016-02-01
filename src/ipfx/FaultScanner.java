@@ -30,7 +30,7 @@ public class FaultScanner {
    * @param sigmaPhi half-width for smoothing along strike of fault planes.
    * @param sigmaTheta half-width for smoothing along dip of fault planes.
    */
-  public FaultScanner(double sigmaPhi, double sigmaTheta) {
+  public FaultScanner(float sigmaPhi, float sigmaTheta) {
     _sigmaPhi = sigmaPhi;
     _sigmaTheta = sigmaTheta;
   }
@@ -40,7 +40,7 @@ public class FaultScanner {
    * @param phiMin minimum fault strike, in degrees.
    * @param phiMax maximum fault strike, in degrees.
    */
-  public Sampling getPhiSampling(double phiMin, double phiMax) {
+  public Sampling getPhiSampling(float phiMin, float phiMax) {
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
 
@@ -49,7 +49,7 @@ public class FaultScanner {
    * @param thetaMin minimum fault dip, in degrees.
    * @param thetaMax maximum fault dip, in degrees.
    */
-  public Sampling getThetaSampling(double thetaMin, double thetaMax) {
+  public Sampling getThetaSampling(float thetaMin, float thetaMax) {
     return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
 
@@ -218,13 +218,11 @@ public class FaultScanner {
    * @return array {fl,fp,ft} of fault likelihoods, strikes, and dips.
    */
   public float[][][][] scan(
-      double phiMin, double phiMax,
-      double thetaMin, double thetaMax,
+      float phiMin, float phiMax,
+      float thetaMin, float thetaMax,
       float[][][] p2, float[][][] p3, float[][][] g) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
-    System.out.println("np="+sp.getCount());
-    System.out.println("nt="+st.getCount());
     return scan(sp,st,p2,p3,g);
   }
 
@@ -459,7 +457,7 @@ public class FaultScanner {
   ///////////////////////////////////////////////////////////////////////////
   // private
 
-  private double _sigmaPhi,_sigmaTheta;
+  private float _sigmaPhi,_sigmaTheta;
 
   private static final float NO_STRIKE = -0.00001f;
   private static final float NO_DIP    = -0.00001f;
@@ -495,8 +493,6 @@ public class FaultScanner {
     sw.start();
     for (int ip=0; ip<np; ++ip) {
       final float phi = (float)phiSampling.getValue(ip);
-      if(abs(phi- 90)<=10f) {continue;}
-      if(abs(phi-270)<=10f) {continue;}
       if (ip>0) {
         double timeUsed = sw.time();
         double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
@@ -541,19 +537,19 @@ public class FaultScanner {
   }
 
   // Sampling of angles depends on extent of smoothing.
-  private Sampling makePhiSampling(double phiMin, double phiMax) {
+  private Sampling makePhiSampling(float phiMin, float phiMax) {
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
-  private Sampling makeThetaSampling(double thetaMin, double thetaMax) {
+  private Sampling makeThetaSampling(float thetaMin, float thetaMax) {
     return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
   private static Sampling angleSampling(
-    double sigma, double amin, double amax)
+    float sigma, float amin, float amax)
   {
-    double fa = amin;
-    double da = toDegrees(0.5/sigma);
+    float fa = amin;
+    float da = toDegrees(0.5f/sigma);
     int na = 1+(int)((amax-amin)/da);
-    da = (amax>amin)?(amax-amin)/(na-1):1.0;
+    da = (amax>amin)?(amax-amin)/(na-1):1.0f;
     return new Sampling(na,da,fa);
   }
 

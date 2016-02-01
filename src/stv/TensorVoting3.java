@@ -10,6 +10,7 @@ import java.util.*;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import util.*;
@@ -36,6 +37,12 @@ public class TensorVoting3 {
     _d1 = d1;
     _d2 = d2;
     _d3 = d3;
+  }
+
+  public void setVoteWindow(int w1, int w2, int w3) {
+    _w1 = w1;
+    _w2 = w2;
+    _w3 = w3;
   }
 
   public float[][][][] applyVote(
@@ -156,6 +163,177 @@ public class TensorVoting3 {
     sub(cs,min(cs),cs);
     div(cs,max(cs),cs);
     return new float[][][][]{ss,cs,fp,ft};
+  }
+
+  public float[][][][] applyVoteFast(
+    final int n1, final int n2, final int n3, 
+    Sampling sp, Sampling st, FaultCell[] fcs) {
+      int np = sp.getCount();
+      int nt = st.getCount();
+      float[][][][][] scs = voteScale(sp,st,_sigma);
+      FaultCell[][][] fca = getCellArray(n1,n2,n3,sp,st,fcs);
+      final float[][][] g11 = new float[n3][n2][n1];
+      final float[][][] g12 = new float[n3][n2][n1];
+      final float[][][] g13 = new float[n3][n2][n1];
+      final float[][][] g22 = new float[n3][n2][n1];
+      final float[][][] g23 = new float[n3][n2][n1];
+      final float[][][] g33 = new float[n3][n2][n1];
+      Stopwatch sw = new Stopwatch();
+      sw.start();
+      for (int ip=0; ip<np-2; ++ip) {
+        final float phi = (float)sp.getValue(ip);
+        if (ip>0) {
+          double timeUsed = sw.time();
+          double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
+          int timeLeftSec = 1+(int)timeLeft;
+          trace("FaultScanner.scan: done in "+timeLeftSec+" seconds");
+        }
+        for (int it=0; it<nt; ++it) {
+          FaultCell[] fc = fca[ip][it];
+          int nc = fc.length;
+          if(nc==0) {continue;}
+          final float[][][] sci = scs[ip][it];
+          float theta = (float)st.getValue(it);
+          float[] us = faultNormalVectorFromStrikeAndDip(phi,theta);
+          final float u11 = us[0]*us[0];
+          final float u12 = us[0]*us[1];
+          final float u13 = us[0]*us[2];
+          final float u22 = us[1]*us[1];
+          final float u23 = us[1]*us[2];
+          final float u33 = us[2]*us[2];
+          for (int ic=0; ic<nc; ++ic) {
+            FaultCell cell = fc[ic];
+            float fli = cell.getFl();
+            final int c1 = cell.getI1();
+            final int c2 = cell.getI2();
+            final int c3 = cell.getI3();
+            final int d3 = c3-_w3;
+            final int d2 = c2-_w2;
+            final int d1 = c1-_w1;
+            final int b3 = max(d3,0);
+            final int b2 = max(d2,0);
+            final int b1 = max(d1,0);
+            final int e3 = min(c3+_w3,n3-1);
+            final int e2 = min(c2+_w2,n2-1);
+            final int e1 = min(c1+_w1,n1-1);
+            final int m3 = e3-b3+1;
+            final int m2 = e2-b2+1;
+            final int m1 = e1-b1+1;
+            final float g11i = u11*fli;
+            final float g12i = u12*fli;
+            final float g13i = u13*fli;
+            final float g22i = u22*fli;
+            final float g23i = u23*fli;
+            final float g33i = u33*fli;
+            loop(m3,new LoopInt() {
+            public void compute(int i3) {
+              int k3 = i3+b3;
+              for (int i2=0; i2<m2; ++i2) {
+                int k2 = i2+b2;
+                for (int i1=0; i1<m1; ++i1) {
+                  int k1 = i1+b1;
+                  int p1 = i1; if(d1<0) p1-=d1;
+                  int p2 = i2; if(d2<0) p2-=d2;
+                  int p3 = i3; if(d3<0) p3-=d3;
+                  float sct = sci[p3][p2][p1];
+                  g11[k3][k2][k1] += sct*g11i;
+                  g12[k3][k2][k1] += sct*g12i;
+                  g13[k3][k2][k1] += sct*g13i;
+                  g22[k3][k2][k1] += sct*g22i;
+                  g23[k3][k2][k1] += sct*g23i;
+                  g33[k3][k2][k1] += sct*g33i;
+              }}
+            }});
+          }
+        }
+      }
+      sw.stop();
+      trace("FaultScanner.scan: done");
+      return solveEigenproblems(g11,g12,g13,g22,g23,g33);
+  }
+
+
+  public float[][][][][] voteScale(Sampling sp, Sampling st, float sigma) {
+    int np = sp.getCount();
+    int nt = st.getCount();
+    int n3 = _w3*2+1;
+    int n2 = _w2*2+1;
+    int n1 = _w1*2+1;
+    float[][][][][] scs = new float[np][nt][][][];
+    float[][][] gx = new float[n3][n2][n1];
+    float[][][] gs = new float[n3][n2][n1];
+    gx[_w3][_w2][_w1] = 1.0f;
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+    rgf.apply000(gx,gs);
+    for (int ip=0; ip<np; ++ip) {
+    for (int it=0; it<nt; ++it) {
+      float fp = (float)sp.getValue(ip);
+      float ft = (float)st.getValue(it);
+      float[] us = faultNormalVectorFromStrikeAndDip(fp,ft);
+      scs[ip][it] = voteScale(sigma,us[0],us[1],us[2],gs);
+    }}
+    return scs;
+  }
+
+  private float[][][] voteScale(
+    float sigma, final float u1, final float u2, final float u3,
+    final float[][][] gs) 
+  {
+    final float[][][] scs = new float[_w3*2+1][_w2*2+1][_w1*2+1];
+    loop(-_w3,_w3+1,1,new LoopInt() {
+    public void compute(int i3) {
+      int k3 = i3+_w3;
+      for (int i2=-_w2; i2<=_w2; ++i2) {
+        int k2 = i2+_w2;
+      for (int i1=-_w1; i1<=_w1; ++i1) {
+        int k1 = i1+_w1;
+        float r1 = i1;
+        float r2 = i2;
+        float r3 = i3;
+        float rs = sqrt(r1*r1+r2*r2+r3*r3);
+        if (rs==0) {
+          scs[k3][k2][k1] = gs[k3][k2][k1];
+        } else {
+          r1 /= rs; r2 /= rs; r3 /= rs;
+          float ur = u1*r1+u2*r2+u3*r3;
+          ur = 1-ur*ur;
+          ur *= ur;
+          ur *= ur;
+          ur *= ur;
+          ur *= ur;
+          scs[k3][k2][k1] = gs[k3][k2][k1]*ur;
+        }
+      }}
+    }});
+    return scs;
+  }
+
+
+  private FaultCell[][][] getCellArray(
+    int n1, int n2, int n3, Sampling sp, Sampling st, FaultCell[] fcs) 
+  {
+    int np = sp.getCount();
+    int nt = st.getCount();
+    int[][] ct = new int[np][nt];
+    FaultCell[][][] fca = new FaultCell[np][nt][];
+    FaultCell[][][] fct = new FaultCell[np][nt][n1*max(n2,n3)*5];
+    for (FaultCell fci:fcs) {
+      int ip = sp.indexOfNearest(fci.getFp());
+      int it = st.indexOfNearest(fci.getFt());
+      int ic = ct[ip][it];
+      fct[ip][it][ic] = fci;
+      ct[ip][it] += 1;
+    }
+    for (int ip=0; ip<np; ++ip) {
+    for (int it=0; it<nt; ++it) {
+      int nc = ct[ip][it];
+      fca[ip][it] = new FaultCell[nc];
+      for (int ic=0; ic<nc; ++ic) {
+        fca[ip][it][ic] = fct[ip][it][ic];
+      }
+    }}
+    fct = null;
+    return fca;
   }
 
   public FaultCell[] randCells (
@@ -528,7 +706,6 @@ public class TensorVoting3 {
     return sp;
   }
 
-
   public float[][][][] solveEigenproblems(
     final float[][][] g11, final float[][][] g12, final float[][][] g13,
     final float[][][] g22, final float[][][] g23, final float[][][] g33) {
@@ -537,7 +714,8 @@ public class TensorVoting3 {
     final int n1 = g11[0][0].length;
     final float[][][] ss = new float[n3][n2][n1];
     final float[][][] cs = new float[n3][n2][n1];
-    final float[][][] js = new float[n3][n2][n1];
+    final float[][][] fp = new float[n3][n2][n1];
+    final float[][][] ft = new float[n3][n2][n1];
     loop(n3,new LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2) {
@@ -558,38 +736,26 @@ public class TensorVoting3 {
         float eui = (float)e[0];
         float evi = (float)e[1];
         float ewi = (float)e[2];
-        if (ewi<0.0f) ewi = 0.0f;
-        if (evi<ewi) evi = ewi;
-        if (eui<evi) eui = evi;
-        ss[i3][i2][i1] = eui-evi;
-        cs[i3][i2][i1] = evi-ewi;
-        js[i3][i2][i1] = ewi;
+        float u1i = (float)z[0][0];
+        float u2i = (float)z[0][1];
+        float u3i = (float)z[0][2];
+        if (u2i==0.0f&&u3i==0f){continue;}
+        if (u1i>0.0f) {
+          u1i = -u1i;
+          u2i = -u2i;
+          u3i = -u3i;
+        }
+        ss[i3][i2][i1] = (eui-evi);
+        cs[i3][i2][i1] = (evi-ewi)*(eui-evi);
+        ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+        fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
       }}
     }});
-    return new float[][][][]{ss,cs,js};
-
-  }
-
-
-  private void precompute (
-    final FaultCell[] cells,
-    final float[] w11s, final float[] w12s, final float[] w13s, 
-    final float[] w22s, final float[] w23s, final float[] w33s) {
-    final int nc = cells.length;
-    loop(nc,new Parallel.LoopInt() {
-    public void compute(int ic) {
-      FaultCell cell = cells[ic];
-      float fl = cell.getFl();
-      float w1 = cell.getW1();
-      float w2 = cell.getW2();
-      float w3 = cell.getW3();
-      w11s[ic] = fl*w1*w1;
-      w12s[ic] = fl*w1*w2;
-      w13s[ic] = fl*w1*w3;
-      w22s[ic] = fl*w2*w2;
-      w23s[ic] = fl*w2*w3;
-      w33s[ic] = fl*w3*w3;
-    }});
+    sub(ss,min(ss),ss);
+    div(ss,max(ss),ss);
+    sub(cs,min(cs),cs);
+    div(cs,max(cs),cs);
+    return new float[][][][]{ss,cs,fp,ft};
   }
 
   private float[][] solveEigenproblems(double[][] a) {
@@ -655,8 +821,12 @@ public class TensorVoting3 {
     return xs;
   }
 
+  private int _w1 = 40;
+  private int _w2 = 40;
+  private int _w3 = 40;
   private float _sigma=20f;
   private int _d1 = 10;
   private int _d2 = 10;
   private int _d3 = 10;
+
 }
