@@ -59,6 +59,7 @@ def setupForSubset(name):
   elif name=="opunakeSub":
     print "setupForSubset: opunake subset"
     seismicDir = _datdir+"opunake/sub/"
+    pngDir = "../../../png/pdgm/opunake/sub/"
     n1,n2,n3 = 350,472,184
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0

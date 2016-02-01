@@ -72,7 +72,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = getPngDir()
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -83,11 +83,11 @@ def main(args):
   #goSemblanceThin()
   #goSemblanceTv()
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
   #goThinTv()
   #goSkin()
-  #goTv()
+  goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
