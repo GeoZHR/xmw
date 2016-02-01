@@ -56,7 +56,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 2,20
+sigmaPhi,sigmaTheta = 4,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -88,7 +88,7 @@ def main(args):
   #goTvThin()
   #goThinTv()
   #goSkin()
-  goSemblance()
+  #goSemblance()
   goOrientScan()
   goTv()
   #goSkinTv()
@@ -376,8 +376,6 @@ def goSkinTv():
   plot3(gx,fl,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
   plot3(gx,fl,cmin=0.2,cmax=1.0,skins=skins1,cmap=jetRamp(1.0),png="skins")
   plot3(gx,fl,cmin=0.2,cmax=1.0,skins=skins2,cmap=jetRamp(1.0),png="skins")
-
-
 
 def goSlopes():
   print "goSlopes ..."
