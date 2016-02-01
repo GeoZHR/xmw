@@ -23,10 +23,10 @@ seismicDir = "../../../data/seis/ad/"
 #seismicDir = "../../../data/seis/stv/"
 fxfile = "fl62"
 fxfile = "cwp"
-fxfile = "pnzHorizon"
-fxfile = "atwj1s"
-fxfile = "sergey"
-fxfile = "dave2"
+#fxfile = "pnzHorizon"
+#fxfile = "atwj1s"
+#fxfile = "sergey"
+#fxfile = "dave2"
 #fxfile = "f3d267"
 #fxfile = "f3d267Sub"
 #fxfile="kidney"
@@ -48,8 +48,8 @@ n1,n2 = 101,102
 n1,n2 = 1268,1684
 n1,n2 = 500,500
 n1,n2 = 1612,2428 # cwp
-n1,n2 = 320,320 #sergey
-n1,n2 = 1080,1257 #dave 2
+#n1,n2 = 320,320 #sergey
+#n1,n2 = 1080,1257 #dave 2
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 
@@ -76,15 +76,15 @@ def main(args):
   goLineDraw()
 def goLineDraw():
   ti = TensorInterp()
-  ti.setParameters(20,5,0.5)
+  ti.setParameters(8,5,0.5)
   fx = readImage(fxfile)
   sod = StructureOrientDraw()
   sod.setSmoothings(1,10)
   sod.setThreshold(0.6)
   #hx,u1,u2=sod.applyDraw(fx,u1,u2)
   hx,u1,u2=sod.applyDraw(fx)
-  rx,r1,r2=sod.randSample(n1*n2/60,999888,hx,u1,u2) #dave
-  #rx,r1,r2=sod.randSample(n1*n2/20,988,hx,u1,u2) #cwp
+  #rx,r1,r2=sod.randSample(n1*n2/60,999888,hx,u1,u2) #dave
+  rx,r1,r2=sod.randSample(n1*n2/4,988,hx,u1,u2) #cwp
   #rx,r1,r2=sod.randSample(n1*n2/20,988,hx,u1,u2) #sergey
   sm,v1,v2= ti.apply(rx,r1,r2)
   #sm= ti.applyX(rx,r1,r2)
@@ -95,7 +95,7 @@ def goLineDraw():
   dx = sub(1,rx)
   plot(dx,png="daveS")
   sm = sub(1,sm)
-  plot(sm,cmin=min(sm),cmax=max(sm),png="daveR")
+  plot(sm,cmin=min(sm),cmax=max(sm),png="cwp")
 
   '''
   au = fillfloat(0.05,n1,n2)
@@ -825,8 +825,8 @@ def plot(f,cmap=ColorMap.GRAY,cmin=None,cmax=None,label=None,
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   frame.setSize(890,760)
-  frame.setSize(n2,n1)
-  #frame.setSize(800,800)
+  #frame.setSize(n2,n1)
+  frame.setSize(1200,800)
   #frame.setSize(1190,760)
   frame.setFontSize(36)
   if pngDir and png:

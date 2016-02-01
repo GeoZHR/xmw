@@ -16,6 +16,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 gxfile  = "gx" # input image (maybe after bilateral filtering)
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
+eptfile  = "ept" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
@@ -55,7 +56,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
+sigmaPhi,sigmaTheta = 2,10
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -80,8 +81,9 @@ def main(args):
   #goDisplay()
   #goPlanarity()
   #goSemblance()
+  goOrientScan()
   #goSemblanceThin()
-  goSemblanceTv()
+  #goSemblanceTv()
   #goSlopes()
   #goScan()
   #goThin()
@@ -98,6 +100,34 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goComparison()
+def goOrientScan():
+  gx = readImage(gxfile)
+  sem = readImage(semfile)
+  sem=sub(1,sem)
+  if not plotOnly:
+    fs = LocalOrientScanner(sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(fpfile,fp)
+    writeImage(ftfile,ft)
+  else:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+  '''
+  plot3(gx,sem,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Semblance",png="sem")
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
+        clab="Fault dip (degrees)",png="ft")
+  '''
+
 def goTvThin():
   gx = readImage(gxfile)
   fl = readImage(flfile)
@@ -131,13 +161,25 @@ def goPlanarity():
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(6.0,4.0,4.0)
+    lof = LocalOrientFilterP(16.0,2.0,2.0)
     lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    ep = sub(1,ep)
+    ep = pow(ep,0.1)
+    sub(ep,min(ep),ep)
+    div(ep,max(ep),ep)
+    lof = LocalOrientFilterP(8.0,2.0,2.0)
+    lof.applyForNormal(ep,u1,u2,u3)
+    tv3 = TensorVoting3()
+    fcs = tv3.findCells(0.1,ep,u1,u2,u3)
+    ept = zerofloat(n1,n2,n3)
+    tv3.getFlImage(fcs,ept)
     writeImage(epfile,ep)
+    writeImage(eptfile,ept)
   else:
     ep = readImage(epfile)
-  ep = sub(1,ep)
+    ept = readImage(eptfile)
   plot3(gx,ep,cmin=min(ep),cmax=max(ep),cmap=jetRamp(1.0),clab="ep")
+  plot3(gx,ept,cmin=min(ept),cmax=max(ept),cmap=jetRamp(1.0),clab="ep")
 def goSemblance():
   print "go semblance ..."
   gx = readImage(gxfile)
@@ -157,11 +199,13 @@ def goSemblanceThin():
   u1 = zerofloat(n1,n2,n3)
   u2 = zerofloat(n1,n2,n3)
   u3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  sem = readImage(semfile)
-  sem = sub(1,sem)
+  ep = readImage(epfile)
+  ep = sub(1,ep)
+  ep = pow(ep,0.2)
+  sub(ep,min(ep),ep)
+  div(ep,max(ep),ep)
   lof = LocalOrientFilterP(32.0,4.0,4.0)
-  lof.applyForNormalPlanar(sem,u1,u2,u3,ep)
+  lof.applyForNormal(ep,u1,u2,u3)
   tv3 = TensorVoting3()
   fcs = tv3.findCells(0.2,sem,u1,u2,u3)
   smt = zerofloat(n1,n2,n3)
@@ -199,11 +243,11 @@ def goSemblanceTv():
     writeImage(ftvfile,ft)
   else: 
     sm = readImage(smfile)
-  '''
   plot3(gx,sem,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="semblance",png="sm")
   plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
   '''
   #plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
+  '''
 
 
 def goTI():
