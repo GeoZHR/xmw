@@ -72,7 +72,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = getPngDir()
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -261,14 +261,14 @@ def goTv():
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
     tv3 = TensorVoting3()
-    tv3.setSigma(15)
-    tv3.setVoteWindow(20,20,20)
+    tv3.setSigma(10)
+    tv3.setVoteWindow(20,10,10)
     fsc = FaultScanner(4,20)
     sp = fsc.getPhiSampling(minPhi,maxPhi)
     st = fsc.getThetaSampling(minTheta,maxTheta)
     sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
     #sm,cm,fp,ft = tv3.applyVoteFast(n1,n2,n3,sp,st,cells)
-    sm = pow(sm,0.5)
+    sm = pow(sm,0.3)
     sub(sm,min(sm),sm)
     div(sm,max(sm),sm)
     writeImage(cmfile,cm)
@@ -885,7 +885,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(85,5,154)
+  ipg.setSlices(85,609,154)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
