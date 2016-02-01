@@ -328,12 +328,12 @@ def goSlopes():
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
+  '''
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
   ep = sub(1,ep)
-  '''
   plot3(gx,ep,cmin=min(ep),cmax=max(ep),cmap=jetRamp(1.0),
         clab="Planarity")
   '''
