@@ -159,6 +159,8 @@ public class LocalOrientScanner {
       double thetaMin, double thetaMax,float[][][] g) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    trace("np="+sp.getCount());
+    trace("nt="+st.getCount());
     return scan(sp,st,g);
   }
 
