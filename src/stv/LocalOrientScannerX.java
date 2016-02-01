@@ -12,6 +12,7 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
+import util.*;
 import static ipfx.FaultGeometry.*;
 
 /**
@@ -768,12 +769,13 @@ public class LocalOrientScannerX {
   // Horizontal smoothing of rotated snum,sden along axis 2.
   private void smooth2(final float[][][] snd) {
     final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
-    final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
+    //final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
+    final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigmaPhi);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
       float[][] s3 = extractSlice3(i3,snd);
       if (s3!=null) {
-        ref.apply2(s3,s3); 
+        rgf.applyX0(s3,s3); 
         restoreSlice3(i3,snd,s3);
       }
     }});
@@ -806,16 +808,20 @@ public class LocalOrientScannerX {
         float shear = -1.0f/tan(theta);
         float[][] sns = shear(si,shear,sn2);
         float sigma = (float)_sigmaTheta*sin(theta);
-        RecursiveExponentialFilter ref = makeRef(sigma);
-        ref.apply1(sns,sns);
+        RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+        //RecursiveExponentialFilter ref = makeRef(sigma);
+        rgf.apply0X(sns,sns);
         float[][] s2 = unshear(si,shear,sns);
         for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
           float[] s32 = s2[i3];
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
-            t32[i1] = ti;
-            f32[i1] = s32[i1];
+            float fi = s32[i1]; // semblance
+            if (fi>f32[i1]) {
+              f32[i1] = fi;
+              t32[i1] = ti;
+            }
           }
         }
       }

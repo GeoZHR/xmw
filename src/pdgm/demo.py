@@ -56,7 +56,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 2,10
+sigmaPhi,sigmaTheta = 2,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -80,8 +80,6 @@ plotOnly = False
 def main(args):
   #goDisplay()
   #goPlanarity()
-  #goSemblance()
-  goOrientScan()
   #goSemblanceThin()
   #goSemblanceTv()
   #goSlopes()
@@ -90,7 +88,9 @@ def main(args):
   #goTvThin()
   #goThinTv()
   #goSkin()
-  #goTv()
+  goSemblance()
+  goOrientScan()
+  goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
@@ -104,6 +104,9 @@ def goOrientScan():
   gx = readImage(gxfile)
   sem = readImage(semfile)
   sem=sub(1,sem)
+  sem = pow(sem,0.2)
+  sub(sem,min(sem),sem)
+  div(sem,max(sem),sem)
   if not plotOnly:
     fs = LocalOrientScannerX(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
@@ -118,9 +121,9 @@ def goOrientScan():
     fp = readImage(fpfile)
     ft = readImage(ftfile)
   '''
-  plot3(gx,sem,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+  plot3(gx,sem,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
         clab="Semblance",png="sem")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+  plot3(gx,fl,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
@@ -180,19 +183,23 @@ def goPlanarity():
     ept = readImage(eptfile)
   plot3(gx,ep,cmin=min(ep),cmax=max(ep),cmap=jetRamp(1.0),clab="ep")
   plot3(gx,ept,cmin=min(ept),cmax=max(ept),cmap=jetRamp(1.0),clab="ep")
+
 def goSemblance():
   print "go semblance ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    lof = LocalOrientFilterP(2.0,8.0,8.0)
+    lof = LocalOrientFilterP(10.0,8.0,8.0)
     ets = lof.applyForTensors(gx)
-    lsf = LocalSemblanceFilter(2,16)
+    lsf = LocalSemblanceFilter(2,2)
     sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
     writeImage(semfile,sem)
   else:
     sem = readImage(semfile)
   sem=sub(1,sem)
-  plot3(gx,sem,cmin=min(sem),cmax=max(sem),cmap=jetRamp(1.0),clab="va")
+  sem = pow(sem,0.2)
+  sub(sem,min(sem),sem)
+  div(sem,max(sem),sem)
+  #plot3(gx,sem,cmin=min(sem),cmax=max(sem),cmap=jetRamp(1.0),clab="va")
 
 def goSemblanceThin():
   gx = readImage(gxfile)
@@ -298,12 +305,18 @@ def goTv():
   if not plotOnly:
     tv3 = TensorVoting3()
     fl = readImage(flfile)
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(8.0,1.0,1.0)
-    lof.applyForNormal(fl,u1,u2,u3)
-    fct = tv3.findCells(0.5,fl,u1,u2,u3)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.2)
+    fs.setMinSkinSize(minSkinSize)
+    fcs = fs.findCells([fl,fp,ft])
+    fct=[]
+    for fci in fcs:
+      if(fci.getFl()>0.4):
+        fct.append(fci)
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
@@ -492,8 +505,10 @@ def goSkin():
   skins = fs.findSkins(cells)
   for skin in skins:
     skin.smoothCellNormals(4)
-
-  fcs = FaultSkin.getCells(skins)
+  fcs=[]
+  for fci in cells:
+    if(fci.getFl()>0.4):
+      fcs.append(fci)
   tv3 = TensorVoting3()
   flt = zerofloat(n1,n2,n3)
   tv3.getFlImage(fcs,flt)
