@@ -60,7 +60,7 @@ sigmaPhi,sigmaTheta = 4,20
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
-upperLikelihood = 0.8
+upperLikelihood = 0.6
 minSkinSize = 4000
 
 # These parameters control the computation of fault dip slips.
@@ -81,14 +81,14 @@ def main(args):
   #goPlanarity()
   #goSemblance()
   #goSemblanceThin()
-  #goSemblanceTv()
+  goSemblanceTv()
   #goSlopes()
   #goScan()
   #goThin()
   #goTvThin()
   #goThinTv()
   #goSkin()
-  goTv()
+  #goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
@@ -185,34 +185,24 @@ def goSemblanceTv():
     tv3 = TensorVoting3()
     fcs = tv3.findCells(0.2,sem,u1,u2,u3)
     cells=[]
-    for ic in range(0,len(fcs),2):
+    for ic in range(0,len(fcs),5):
       cells.append(fcs[ic])
     tv3.setSigma(15)
-    tv3.setWindow(30,20,20)
-    sm,cm,u1,u2,u3 = tv3.applyVote(n1,n2,n3,cells)
+    tv3.setVoteWindow(30,20,20)
+    sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
     sm = pow(sm,0.3)
     sub(sm,min(sm),sm)
     div(sm,max(sm),sm)
-    cells = tv3.findCells(0.1,sm,u1,u2,u3)
-
-    #plot3(gx,cells=cells,png="cells")
-    fs = FaultSkinner()
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-    skins = fs.findSkins(cells)
-    removeAllSkinFiles(fsktv)
-    writeSkins(fsktv,skins)
     writeImage(cmfile,cm)
     writeImage(smfile,sm)
+    writeImage(fpvfile,fp)
+    writeImage(ftvfile,ft)
   else: 
     sm = readImage(smfile)
-    cm = readImage(cmfile)
-    skins = readSkins(fsktv)
+  '''
   plot3(gx,sem,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="semblance",png="sm")
-  plot3(gx,cm,cmin=0.2,cmax=1.0,skins=skins,cmap=jetRamp(1.0),png="skins")
   plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
+  '''
   #plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
 
 

@@ -6,6 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package ad;
 
+import edu.mines.jtk.io.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
@@ -43,6 +44,7 @@ public class TensorInterp {
     FedStep fs = new FedStep(_t,_m,_tm);
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
+    int ik = 0;
     for (int im=0; im<_m; im++) {
     for (int ic=0; ic<nc; ++ic) {
       float tc = ts[ic];
@@ -50,6 +52,17 @@ public class TensorInterp {
       applyLaplacianX(et,-tc,copy(g12),g12);
       applyLaplacianX(et,-tc,copy(g22),g22);
       et = updateTensors(g11,g12,g22);
+    float[][][] sms = salientMap(g11,g12,g22);
+    String fileName = 
+      "/Users/xinwu/Home/research/data/seis/ad/dave/"+Integer.toString(ik)+".dat";
+    try {
+      ArrayOutputStream aos = new ArrayOutputStream(fileName);
+      aos.writeFloats(sms[0]);
+      aos.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    ik++;
     }}
     return salientMap(g11,g12,g22);
   }
