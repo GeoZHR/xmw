@@ -345,6 +345,74 @@ public class LocalOrientScanner {
     System.out.println(s);
   }
 
+  private float[][][][] scan(
+      Sampling phiSampling, Sampling thetaSampling,
+      float[][][] snd) {
+    // Algorithm: given snum,sden (semblance numerators and denominators)
+    // initialize f,p,t (fault likelihood, phi, and theta)
+    // for all phi:
+    //   rotate snum,sden so that strike vector is aligned with axis 2
+    //   smooth snum,sden along fault strike (that is, along axis 2)
+    //   compute fphi,tphi (fault likelihood and dip) in 1-3 slices
+    //   unrotate fphi,tphi to original coordinates
+    //   update f,p,t for maximum likelihood
+    final int n1 = snd[0][0].length;
+    final int n2 = snd[0].length;
+    final int n3 = snd.length;
+    final float[][][] f = new float[n3][n2][n1];
+    final float[][][] p = new float[n3][n2][n1];
+    final float[][][] t = new float[n3][n2][n1];
+    final float tmin = (float)thetaSampling.getFirst();
+    final float tmax = (float)thetaSampling.getLast();
+    int np = phiSampling.getCount();
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    for (int ip=0; ip<np; ++ip) {
+      final float phi = (float)phiSampling.getValue(ip);
+      if (ip>0) {
+        double timeUsed = sw.time();
+        double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
+        int timeLeftSec = 1+(int)timeLeft;
+        trace("FaultScanner.scan: done in "+timeLeftSec+" seconds");
+      }
+      Rotator r = new Rotator(phi,n1,n2,n3);
+      float[][][] rsnd = r.rotate(snd);
+      smooth2(rsnd);
+      float[][][][] rftp = scanTheta(thetaSampling,rsnd);
+      rsnd = null; // enable gc to collect this large array
+      float[][][][] ftp = r.unrotate(rftp);
+      final float[][][] fp = ftp[0];
+      final float[][][] tp = ftp[1];
+      loop(n3,new LoopInt() {
+      public void compute(int i3) {
+        for (int i2=0; i2<n2; ++i2) {
+          float[] f32 = f[i3][i2];
+          float[] p32 = p[i3][i2];
+          float[] t32 = t[i3][i2];
+          float[] fp32 = fp[i3][i2];
+          float[] tp32 = tp[i3][i2];
+          for (int i1=0; i1<n1; ++i1) {
+            float fpi = fp32[i1];
+            float tpi = tp32[i1];
+            if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
+            if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
+            if (tpi<tmin) tpi = tmin; // for both fault likelihood
+            if (tpi>tmax) tpi = tmax; // and fault dip theta
+            if (fpi>f32[i1]) {
+              f32[i1] = fpi;
+              p32[i1] = phi;
+              t32[i1] = tpi;
+            }
+          }
+        }
+      }});
+    }
+    sw.stop();
+    trace("FaultScanner.scan: done");
+    return new float[][][][]{f,p,t};
+  }
+
+  /*
   // This scan smooths semblance numerators and denominators along fault
   // planes by first rotating and shearing those images before applying
   // fast recursive axis-aligned smoothing filters.
@@ -414,6 +482,7 @@ public class LocalOrientScanner {
     trace("FaultScanner.scan: done");
     return new float[][][][]{f,p,t};
   }
+  */
 
   // Sampling of angles depends on extent of smoothing.
   private Sampling makePhiSampling(double phiMin, double phiMax) {
@@ -639,49 +708,6 @@ public class LocalOrientScanner {
     }});
     return new float[][][][]{f,t};
   }
-
-  /*
-  private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] g) {
-    final int n1 = n1(g), n2 = n2(g);
-    final Sampling st = thetaSampling;
-    final float[][][] f = like(g);
-    final float[][][] t = like(g);
-    final float[][][][] ft = new float[][][][]{f,t};
-    final SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    loop(n2,new LoopInt() {
-    public void compute(int i2) {
-      float[][] g2 = extractSlice2(i2,g);
-      if (g2==null)
-        return;
-      int n3 = g2.length;
-      int nt = st.getCount();
-      for (int it=0; it<nt; ++it) {
-        float ti = (float)st.getValue(it);
-        float theta = toRadians(ti);
-        float shear = -1.0f/tan(theta);
-        float[][] gs = shear(si,shear,g2);
-        float sigma = (float)_sigmaTheta*sin(theta);
-        RecursiveExponentialFilter ref = makeRef(sigma);
-        ref.apply1(gs,gs);
-        float[][] s2 = unshear(si,shear,gs);
-        for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
-          float[] s32 = s2[i3];
-          float[] f32 = f[j3][i2];
-          float[] t32 = t[j3][i2];
-          for (int i1=0; i1<n1; ++i1) {
-            float fi = s32[i1];
-            if (fi>f32[i1]) {
-              f32[i1] = fi;
-              t32[i1] = ti;
-            }
-          }
-        }
-      }
-    }});
-    return ft;
-  }
-  */
 
   // Makes an array like that specified, including any null arrays.
   private float[][][] like(float[][][] p) {
