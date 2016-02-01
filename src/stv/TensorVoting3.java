@@ -410,24 +410,26 @@ public class TensorVoting3 {
       int i1 = fc.getI1();
       int i2 = fc.getI2();
       int i3 = fc.getI3();
+      i1 = min(i1,n1-1); i1 = max(i1,0);
+      i2 = min(i2,n2-1); i2 = max(i2,0);
+      i3 = min(i3,n3-1); i3 = max(i3,0);
+      /*
       int m1 = fc.getM1();
       int m2 = fc.getM2();
       int m3 = fc.getM3();
       int p1 = fc.getP1();
       int p2 = fc.getP2();
       int p3 = fc.getP3();
-      i1 = min(i1,n1-1); i1 = max(i1,0);
-      i2 = min(i2,n2-1); i2 = max(i2,0);
-      i3 = min(i3,n3-1); i3 = max(i3,0);
       m1 = min(m1,n1-1); m1 = max(m1,0);
       m2 = min(m2,n2-1); m2 = max(m2,0);
       m3 = min(m3,n3-1); m3 = max(m3,0);
       p1 = min(p1,n1-1); p1 = max(p1,0);
       p2 = min(p2,n2-1); p2 = max(p2,0);
       p3 = min(p3,n3-1); p3 = max(p3,0);
-      fl[i3][i2][i1] = fc.getFl();
       fl[m3][m2][m1] = fc.getFl();
       fl[p3][p2][p1] = fc.getFl();
+      */
+      fl[i3][i2][i1] = fc.getFl();
     }
   }
    // Uses fault images to find cells, oriented points located on ridges.
@@ -678,42 +680,50 @@ public class TensorVoting3 {
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
+    float[][][] fl = new float[n3][n2][n1];
     float[][][] u1 = new float[n3][n2][n1];
     float[][][] u2 = new float[n3][n2][n1];
     float[][][] u3 = new float[n3][n2][n1];
-    LocalOrientFilterP lof = new LocalOrientFilterP(2.0,1.0,1.0);
+    LocalOrientFilterP lof = new LocalOrientFilterP(8.0,2.0,2.0);
     lof.applyForNormal(fx,u1,u2,u3);
-    return findRidges(fx,u1,u2,u3);
+    FaultCell[] cells = findCells(0.1f,fx,u1,u2,u3);
+    getFlImage(cells,fl);
+    //return findRidges(fs,u1,u2,u3);
+    return fl;
   }
   public float[][][] findRidges (
-    float[][][] sm, float[][][] u1, float[][][] u2, float[][][] u3) {
-    int n3 = sm.length;
-    int n2 = sm[0].length;
-    int n1 = sm[0][0].length;
-    float[][][] sp = new float[n3][n2][n1];
-    SincInterpolator si = new SincInterpolator();
-    Sampling s1 = new Sampling(n1);
-    Sampling s2 = new Sampling(n2);
-    Sampling s3 = new Sampling(n3);
-    for (int i3=0; i3<n3 ;++i3) {
-    for (int i2=0; i2<n2 ;++i2) {
-    for (int i1=0; i1<n1 ;++i1) {
-      float u1i = u1[i3][i2][i1];
-      float u2i = u2[i3][i2][i1];
-      float u3i = u3[i3][i2][i1];
-      float x1m = i1-u1i;
-      float x2m = i2-u2i;
-      float x3m = i3-u3i;
-      float x1p = i1+u1i;
-      float x2p = i2+u2i;
-      float x3p = i3+u3i;
-      float sxi = sm[i3][i2][i1];
-      float sxm = si.interpolate(s1,s2,s3,sm,x1m,x2m,x3m);
-      float sxp = si.interpolate(s1,s2,s3,sm,x1p,x2p,x3p);
-      if (sxi>sxm && sxi>sxp) {
-        sp[i3][i2][i1] = sxi;
-      }
-    }}}
+    final float[][][] sm, final float[][][] u1, 
+    final float[][][] u2, final float[][][] u3) {
+    final int n3 = sm.length;
+    final int n2 = sm[0].length;
+    final int n1 = sm[0][0].length;
+    final float[][][] sp = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    loop(n3,new LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2 ;++i2) {
+      for (int i1=0; i1<n1 ;++i1) {
+        float u1i = u1[i3][i2][i1];
+        float u2i = u2[i3][i2][i1];
+        float u3i = u3[i3][i2][i1];
+        if(abs(u1i)>0.5f) {continue;}
+        float x1m = i1-u1i;
+        float x2m = i2-u2i;
+        float x3m = i3-u3i;
+        float x1p = i1+u1i;
+        float x2p = i2+u2i;
+        float x3p = i3+u3i;
+        float sxi = sm[i3][i2][i1];
+        float sxm = si.interpolate(s1,s2,s3,sm,x1m,x2m,x3m);
+        float sxp = si.interpolate(s1,s2,s3,sm,x1p,x2p,x3p);
+        if (sxi>sxm && sxi>sxp) {
+          sp[i3][i2][i1] = sxi;
+        }
+      }}
+    }});
     return sp;
   }
 

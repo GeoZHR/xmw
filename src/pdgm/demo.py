@@ -72,7 +72,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = getPngDir()
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -85,6 +85,7 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
+  #goTvThin()
   #goThinTv()
   #goSkin()
   goTv()
@@ -97,6 +98,19 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goComparison()
+def goTvThin():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  flt1 = readImage(fltfile)
+  tv3 = TensorVoting3()
+  flt2 = tv3.thin(fl)
+  plot3(gx,flt1,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood1",png="flt")
+  plot3(gx,flt2,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood2",png="flt")
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+
 def goComparison():
   gx = readImage(gxfile)
   fl1 = readImage(fltfile)
@@ -248,21 +262,19 @@ def goTI():
 def goTv():
   gx = readImage(gxfile)
   if not plotOnly:
+    tv3 = TensorVoting3()
     fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-    fs = FaultSkinner()
-    fc = fs.findCells([fl,fp,ft])
-    fct=[]
-    for fci in fc:
-      if(fci.getFl()>0.5):
-        fct.append(fci)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilterP(8.0,1.0,1.0)
+    lof.applyForNormal(fl,u1,u2,u3)
+    fct = tv3.findCells(0.5,fl,u1,u2,u3)
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
-    tv3 = TensorVoting3()
-    tv3.setSigma(20)
-    tv3.setVoteWindow(40,40,40)
+    tv3.setSigma(10)
+    tv3.setVoteWindow(30,20,20)
     fsc = FaultScanner(4,20)
     sp = fsc.getPhiSampling(minPhi,maxPhi)
     st = fsc.getThetaSampling(minTheta,maxTheta)
@@ -360,14 +372,12 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-  '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
-  '''
 
 def goThinTv():
   print "goThin ..."
