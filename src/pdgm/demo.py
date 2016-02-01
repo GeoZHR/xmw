@@ -87,8 +87,8 @@ def main(args):
   #goThin()
   #goThinTv()
   #goSkin()
-  goTv()
-  #goSkinTv()
+  #goTv()
+  goSkinTv()
   #goTI()
   #goReSkin()
   #goSmooth()
@@ -255,18 +255,19 @@ def goTv():
     fc = fs.findCells([fl,fp,ft])
     fct=[]
     for fci in fc:
-      if(fci.getFl()>0.4):
+      if(fci.getFl()>0.5):
         fct.append(fci)
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
     tv3 = TensorVoting3()
-    tv3.setSigma(20)
-    tv3.setVoteWindow(30,30,30)
+    tv3.setSigma(15)
+    tv3.setVoteWindow(20,20,20)
     fsc = FaultScanner(4,20)
     sp = fsc.getPhiSampling(minPhi,maxPhi)
     st = fsc.getThetaSampling(minTheta,maxTheta)
-    sm,cm,fp,ft = tv3.applyVoteFast(n1,n2,n3,sp,st,cells)
+    sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
+    #sm,cm,fp,ft = tv3.applyVoteFast(n1,n2,n3,sp,st,cells)
     sm = pow(sm,0.5)
     sub(sm,min(sm),sm)
     div(sm,max(sm),sm)

@@ -28,15 +28,9 @@ public class TensorVoting3 {
 
   public void setSigma (float sigma) {
     _sigma = sigma;
-    _d3 = round(sigma);
-    _d2 = round(sigma);
-    _d1 = round(1.5f*sigma);
-  }
-
-  public void setWindow (int d1, int d2, int d3) {
-    _d1 = d1;
-    _d2 = d2;
-    _d3 = d3;
+    _w3 = round(sigma);
+    _w2 = round(sigma);
+    _w1 = round(1.5f*sigma);
   }
 
   public void setVoteWindow(int w1, int w2, int w3) {
@@ -53,7 +47,7 @@ public class TensorVoting3 {
     final float[][] us = new float[3][nc];
     setKdTreeNodes(cells,xs,us,fs);
     final KdTree kt = new KdTree(xs);
-    final float sigmas = 0.5f/(_sigma*_sigma);
+    final float[][][] ws = gaussianWeights();
     final float[][][] ss = new float[n3][n2][n1];
     final float[][][] cs = new float[n3][n2][n1];
     final float[][][] fp = new float[n3][n2][n1];
@@ -67,12 +61,12 @@ public class TensorVoting3 {
       float[] xmax = new float[3];
       for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
-        int i1min = max(i1-_d1,0);
-        int i2min = max(i2-_d2,0);
-        int i3min = max(i3-_d3,0);
-        int i1max = min(i1+_d1,n1-1);
-        int i2max = min(i2+_d2,n2-1);
-        int i3max = min(i3+_d3,n3-1);
+        int i1min = max(i1-_w1,0);
+        int i2min = max(i2-_w2,0);
+        int i3min = max(i3-_w3,0);
+        int i1max = min(i1+_w1,n1-1);
+        int i2max = min(i2+_w2,n2-1);
+        int i3max = min(i3+_w3,n3-1);
         xmin[0] = i1min; xmax[0] = i1max;
         xmin[1] = i2min; xmax[1] = i2max;
         xmin[2] = i3min; xmax[2] = i3max;
@@ -84,12 +78,7 @@ public class TensorVoting3 {
         float g12 = 0.0f;
         float g13 = 0.0f;
         float g23 = 0.0f;
-        if(nd<1) {
-          g11 = 1f;
-          g22 = 1f;
-          g33 = 1f;
-          continue;
-        }
+        if(nd<1) continue;
         double[][] a = new double[3][3];
         for (int ik=0; ik<nd; ++ik) {
           int ip = id[ik];
@@ -104,13 +93,17 @@ public class TensorVoting3 {
           float r2 = i2-x2;
           float r3 = i3-x3;
           float rs = sqrt(r1*r1+r2*r2+r3*r3);
+          int k1 = round(abs(r1));
+          int k2 = round(abs(r2));
+          int k3 = round(abs(r3));
+          float wsi = ws[k3][k2][k1]*fl;
           if (rs==0) {
-            g11 += u1*u1*fl;
-            g12 += u1*u2*fl;
-            g13 += u1*u3*fl;
-            g22 += u2*u2*fl;
-            g23 += u2*u3*fl;
-            g33 += u3*u3*fl;
+            g11 += u1*u1*wsi;
+            g12 += u1*u2*wsi;
+            g13 += u1*u3*wsi;
+            g22 += u2*u2*wsi;
+            g23 += u2*u3*wsi;
+            g33 += u3*u3*wsi;
           } else {
             r1 /= rs; r2 /= rs; r3 /= rs;
             float ur = u1*r1+u2*r2+u3*r3;
@@ -118,7 +111,7 @@ public class TensorVoting3 {
             float v1 = u1;
             float v2 = u2;
             float v3 = u3;
-            float sc = exp(-rs*rs*sigmas)*pow((1f-ur*ur),12)*fl;
+            float sc = wsi*pow((1f-ur*ur),12);
             if(abs(ur)>0.0001f) {
               float cx = 0.5f*rs/ur; // find a better way?
               float c1 = x1+u1*cx;
@@ -163,6 +156,17 @@ public class TensorVoting3 {
     sub(cs,min(cs),cs);
     div(cs,max(cs),cs);
     return new float[][][][]{ss,cs,fp,ft};
+  }
+
+  private float[][][] gaussianWeights() {
+    int n1 = _w1*2+1;
+    int n2 = _w2*2+1;
+    int n3 = _w3*2+1;
+    float[][][] fx = new float[n3][n2][n1];
+    float[][][] fs = new float[n3][n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigma);
+    rgf.apply000(fx,fs);
+    return copy(_w1+1,_w2+1,_w3+1,_w1,_w2,_w3,fs);
   }
 
   public float[][][][] applyVoteFast(
@@ -822,12 +826,8 @@ public class TensorVoting3 {
     return xs;
   }
 
-  private int _w1 = 40;
-  private int _w2 = 40;
-  private int _w3 = 40;
-  private float _sigma=20f;
-  private int _d1 = 10;
-  private int _d2 = 10;
-  private int _d3 = 10;
-
+  private int _w1 = 20;
+  private int _w2 = 20;
+  private int _w3 = 20;
+  private float _sigma=10f;
 }
