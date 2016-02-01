@@ -220,7 +220,7 @@ public class LocalOrientScannerX {
   public float[][][][] scan(
       float phiMin, float phiMax,
       float thetaMin, float thetaMax,
-      float[][][] p2, float[][][] p3, float[][][] g) {
+      float[][][] g) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
     return scan(sp,st,g);
