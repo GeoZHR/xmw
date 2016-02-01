@@ -603,6 +603,44 @@ public class LocalOrientScanner {
   // num and den are then smoothed vertically, with an extent sigma that is
   // dip-adjusted (shorter for smaller fault dips), so that after unshearing
   // the extent of smoothing is roughly the same for all fault dips.
+  private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] sn) {
+    final int n1 = n1(sn), n2 = n2(sn);
+    final Sampling st = thetaSampling;
+    final float[][][] f = like(sn);
+    final float[][][] t = like(sn);
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    loop(n2,new LoopInt() {
+    public void compute(int i2) {
+      float[][] sn2 = extractSlice2(i2,sn);
+      if (sn2==null)
+        return;
+      int n3 = sn2.length;
+      int nt = st.getCount();
+      for (int it=0; it<nt; ++it) {
+        float ti = (float)st.getValue(it);
+        float theta = toRadians(ti);
+        float shear = -1.0f/tan(theta);
+        float[][] sns = shear(si,shear,sn2);
+        float sigma = (float)_sigmaTheta*sin(theta);
+        RecursiveExponentialFilter ref = makeRef(sigma);
+        ref.apply1(sns,sns);
+        float[][] s2 = unshear(si,shear,sns);
+        for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
+          float[] s32 = s2[i3];
+          float[] f32 = f[j3][i2];
+          float[] t32 = t[j3][i2];
+          for (int i1=0; i1<n1; ++i1) {
+            t32[i1] = ti;
+            f32[i1] = s32[i1];
+          }
+        }
+      }
+    }});
+    return new float[][][][]{f,t};
+  }
+
+  /*
   private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] g) {
     final int n1 = n1(g), n2 = n2(g);
     final Sampling st = thetaSampling;
@@ -643,6 +681,7 @@ public class LocalOrientScanner {
     }});
     return ft;
   }
+  */
 
   // Makes an array like that specified, including any null arrays.
   private float[][][] like(float[][][] p) {
