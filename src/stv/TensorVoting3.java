@@ -72,9 +72,9 @@ public class TensorVoting3 {
         xmin[2] = i3min; xmax[2] = i3max;
         int[] id = kt.findInRange(xmin,xmax);
         int nd = id.length;
-        float g11 = 1.0f;
-        float g22 = 1.0f;
-        float g33 = 1.0f;
+        float g11 = 0.0f;
+        float g22 = 0.0f;
+        float g33 = 0.0f;
         float g12 = 0.0f;
         float g13 = 0.0f;
         float g23 = 0.0f;
@@ -111,7 +111,6 @@ public class TensorVoting3 {
             float v1 = u1;
             float v2 = u2;
             float v3 = u3;
-            float sc = wsi*pow((1f-ur*ur),12);
             if(abs(ur)>0.0001f) {
               float cx = 0.5f*rs/ur; // find a better way?
               float c1 = x1+u1*cx;
@@ -121,6 +120,12 @@ public class TensorVoting3 {
               float vs = 1.0f/sqrt(v1*v1+v2*v2+v3*v3);
               v1 *= vs; v2 *= vs; v3 *= vs; 
             }
+            ur = 1f-ur*ur;
+            ur *= ur;
+            ur *= ur;
+            ur *= ur;
+            ur *= ur;
+            float sc = wsi*ur;
             g11 += sc*v1*v1;
             g12 += sc*v1*v2;
             g13 += sc*v1*v3;
@@ -163,6 +168,7 @@ public class TensorVoting3 {
     int n2 = _w2*2+1;
     int n3 = _w3*2+1;
     float[][][] fx = new float[n3][n2][n1];
+    fx[_w3][_w2][_w1] = 1f;
     float[][][] fs = new float[n3][n2][n1];
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigma);
     rgf.apply000(fx,fs);

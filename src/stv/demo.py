@@ -138,8 +138,10 @@ def goVote():
   for ic in range(0,len(fcs),5):
     cells.append(fcs[ic])
   tv3 = TensorVoting3()
-  tv3.setVoteWindow(30,30,30)
-  ss,cs,fp,ft = tv3.applyVoteFast(n1,n2,n3,15,sp,st,cells)
+  tv3.setSigma(10)
+  tv3.setVoteWindow(20,20,20)
+  ss,cs,fp,ft = tv3.applyVote(n1,n2,n3,cells)
+  #ss,cs,fp,ft = tv3.applyVoteFast(n1,n2,n3,15,sp,st,cells)
   plot3(gx,ss,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),
     clab="Surfaceness",png="sm")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
