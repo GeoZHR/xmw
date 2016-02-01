@@ -55,7 +55,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,30
+sigmaPhi,sigmaTheta = 4,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -83,11 +83,11 @@ def main(args):
   #goSemblanceThin()
   #goSemblanceTv()
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goThinTv()
   #goSkin()
-  goTv()
+  #goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
