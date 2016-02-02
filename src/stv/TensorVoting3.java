@@ -250,7 +250,7 @@ public class TensorVoting3 {
               v1 *= vs; v2 *= vs; v3 *= vs; 
             }
             ur = 1f-ur*ur;
-            float sc = wsi*pow(ur,12);
+            float sc = wsi*pow(ur,16);
             g11 += sc*v1*v1;
             g12 += sc*v1*v2;
             g13 += sc*v1*v3;

@@ -89,7 +89,7 @@ def main(args):
   #goThinTv()
   #goSkin()
   #goSemblance()
-  goOrientScan()
+  #goOrientScan()
   goTv()
   #goSkinTv()
   #goTI()
