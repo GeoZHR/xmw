@@ -89,7 +89,7 @@ def main(args):
   #goThinTv()
   #goSkin()
   #goSemblance()
-  goOrientScan()
+  #goOrientScan()
   goTv()
   #goSkinTv()
   #goTI()
@@ -322,8 +322,8 @@ def goTv():
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
-    tv3.setSigma(10)
-    tv3.setVoteWindow(15,10,10)
+    tv3.setSigma(15)
+    tv3.setVoteWindow(30,20,20)
     fsc = FaultScanner(4,20)
     sp = fsc.getPhiSampling(minPhi,maxPhi)
     st = fsc.getThetaSampling(minTheta,maxTheta)
@@ -338,13 +338,13 @@ def goTv():
     cm = readImage(cmfile)
     fp = readImage(fpvfile)
     ft = readImage(ftvfile)
-  '''
+    '''
   sm = pow(sm,0.3)
   sub(sm,min(sm),sm)
   div(sm,max(sm),sm)
   plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
   plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
-  '''
+    '''
 
 def goSkinTv():
   gx = readImage(gxfile)
