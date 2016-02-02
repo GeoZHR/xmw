@@ -73,7 +73,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = getPngDir()
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -83,14 +83,14 @@ def main(args):
   #goSemblanceThin()
   #goSemblanceTv()
   #goSlopes()
-  #goScan()
+  goSemblance()
+  goScan()
   #goThin()
   #goTvThin()
   #goThinTv()
   #goSkin()
-  #goSemblance()
-  goOrientScan()
-  goTv()
+  #goOrientScan()
+  #goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
@@ -195,10 +195,10 @@ def goSemblance():
   else:
     sem = readImage(semfile)
   sem=sub(1,sem)
-  sem = pow(sem,0.5)
+  sem = pow(sem,1.0)
   sub(sem,min(sem),sem)
   div(sem,max(sem),sem)
-  plot3(gx,sem,cmin=min(sem),cmax=max(sem),cmap=jetRamp(1.0),clab="va")
+  plot3(gx,sem,cmin=min(sem),cmax=max(sem),cmap=jetRamp(1.0),clab="Semblance")
 
 def goSemblanceThin():
   gx = readImage(gxfile)
@@ -423,11 +423,11 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-  fl = pow(fl,0.2)
+  fl = pow(fl,0.5)
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
+        clab="Enhanced faults",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
@@ -949,7 +949,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(85,609,154)
+  ipg.setSlices(262,119,154)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots

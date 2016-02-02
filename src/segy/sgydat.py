@@ -12,7 +12,65 @@ global n1,n2,n3
 #############################################################################
 def main(args):
   #goHongliu()
-  goF3dUnc()
+  #goF3dUnc()
+  goJake()
+
+def goJake():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/beg/jake/subset_pari32bit.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 1796902704
+  number of traces = 1657656
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =  7350, i2max = 10660 (inline indices)
+    i3min =  3550, i3max =  4550 (crossline indices)
+    xmin = 2564.956000, xmax = 2589.114000 (x coordinates, in km)
+    ymin = 6251.884500, ymax = 6273.635000 (y coordinates, in km)
+  grid sampling:
+    n1 =   211 (number of samples per trace)
+    n2 =  3311 (number of traces in inline direction)
+    n3 =  1001 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.006250 (inline sampling interval, in km)
+    d3 = 0.012500 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =  7350, i3min =  3550, x = 2571.764000, y = 6251.884500
+    i2max = 10660, i3min =  3550, x = 2589.114000, y = 6263.151500
+    i2min =  7350, i3max =  4550, x = 2564.956000, y = 6262.367500
+    i2max = 10660, i3max =  4550, x = 2582.306000, y = 6273.634500
+  grid azimuth: 57.00 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/beg/jake/"
+  sgyfile = basedir+"subset_pari32bit.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,210,7350,10660,3550,4550
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=max(x))
+
 def goF3dUnc():
   '''
   ****** beginning of SEG-Y file info ******

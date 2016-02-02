@@ -12,13 +12,14 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
-import static ipf.FaultGeometry.*;
+import static ipfx.FaultGeometry.*;
 
 /**
- * Scans for orientations of planar features in a fault attribute image
+ * Enhance fault attributes and estimates fault strikes, and dips, 
+ * by scanning over fault orientations. 
  *
  * @author Xinming Wu, Colorado School of Mines
- * @version 2016.01.30
+ * @version 2016.02.02
  */
 public class LocalOrientScanner {
 
@@ -27,7 +28,7 @@ public class LocalOrientScanner {
    * @param sigmaPhi half-width for smoothing along strike of fault planes.
    * @param sigmaTheta half-width for smoothing along dip of fault planes.
    */
-  public LocalOrientScanner(double sigmaPhi, double sigmaTheta) {
+  public LocalOrientScanner(float sigmaPhi, float sigmaTheta) {
     _sigmaPhi = sigmaPhi;
     _sigmaTheta = sigmaTheta;
   }
@@ -37,7 +38,7 @@ public class LocalOrientScanner {
    * @param phiMin minimum fault strike, in degrees.
    * @param phiMax maximum fault strike, in degrees.
    */
-  public Sampling getPhiSampling(double phiMin, double phiMax) {
+  public Sampling getPhiSampling(float phiMin, float phiMax) {
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
 
@@ -46,7 +47,7 @@ public class LocalOrientScanner {
    * @param thetaMin minimum fault dip, in degrees.
    * @param thetaMax maximum fault dip, in degrees.
    */
-  public Sampling getThetaSampling(double thetaMin, double thetaMax) {
+  public Sampling getThetaSampling(float thetaMin, float thetaMax) {
     return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
 
@@ -86,7 +87,6 @@ public class LocalOrientScanner {
     float vfscl = (vfsum>0.0f)?1.0f/vfsum:1.0f;
     return mul(vf,vfscl);
   }
-
 
   /**
    * Returns an image with specified samples taper to zero at edges.
@@ -155,12 +155,11 @@ public class LocalOrientScanner {
    * @return array {fl,fp,ft} of fault likelihoods, strikes, and dips.
    */
   public float[][][][] scan(
-      double phiMin, double phiMax,
-      double thetaMin, double thetaMax,float[][][] g) {
+      float phiMin, float phiMax,
+      float thetaMin, float thetaMax,
+      float[][][] g) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
-    trace("np="+sp.getCount());
-    trace("nt="+st.getCount());
     return scan(sp,st,g);
   }
 
@@ -336,7 +335,7 @@ public class LocalOrientScanner {
   ///////////////////////////////////////////////////////////////////////////
   // private
 
-  private double _sigmaPhi,_sigmaTheta;
+  private float _sigmaPhi,_sigmaTheta;
 
   private static final float NO_STRIKE = -0.00001f;
   private static final float NO_DIP    = -0.00001f;
@@ -346,19 +345,15 @@ public class LocalOrientScanner {
   }
 
   private float[][][][] scan(
-      Sampling phiSampling, Sampling thetaSampling,
-      float[][][] snd) {
-    // Algorithm: given snum,sden (semblance numerators and denominators)
-    // initialize f,p,t (fault likelihood, phi, and theta)
-    // for all phi:
-    //   rotate snum,sden so that strike vector is aligned with axis 2
-    //   smooth snum,sden along fault strike (that is, along axis 2)
-    //   compute fphi,tphi (fault likelihood and dip) in 1-3 slices
-    //   unrotate fphi,tphi to original coordinates
-    //   update f,p,t for maximum likelihood
-    final int n1 = snd[0][0].length;
-    final int n2 = snd[0].length;
-    final int n3 = snd.length;
+      Sampling phiSampling, Sampling thetaSampling, float[][][] fx) {
+    // Algorithm: given a fault attribute image
+    // smooth the fault image over all posible 
+    // orientations (defined by phiSampling and thetaSampling) 
+    // to find one combination of strike and dip that yields 
+    // the maximum smoothed value for each image sample.
+    final int n1 = fx[0][0].length;
+    final int n2 = fx[0].length;
+    final int n3 = fx.length;
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
@@ -369,6 +364,8 @@ public class LocalOrientScanner {
     sw.start();
     for (int ip=0; ip<np; ++ip) {
       final float phi = (float)phiSampling.getValue(ip);
+      if(abs(phi- 90)<=10f){continue;}
+      if(abs(phi-270)<=10f){continue;}
       if (ip>0) {
         double timeUsed = sw.time();
         double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
@@ -376,10 +373,10 @@ public class LocalOrientScanner {
         trace("FaultScanner.scan: done in "+timeLeftSec+" seconds");
       }
       Rotator r = new Rotator(phi,n1,n2,n3);
-      float[][][] rsnd = r.rotate(snd);
-      smooth2(rsnd);
-      float[][][][] rftp = scanTheta(thetaSampling,rsnd);
-      rsnd = null; // enable gc to collect this large array
+      float[][][] rfx = r.rotate(fx);
+      smooth2(rfx);
+      float[][][][] rftp = scanTheta(thetaSampling,rfx);
+      rfx = null; // enable gc to collect this large array
       float[][][][] ftp = r.unrotate(rftp);
       final float[][][] fp = ftp[0];
       final float[][][] tp = ftp[1];
@@ -412,92 +409,26 @@ public class LocalOrientScanner {
     return new float[][][][]{f,p,t};
   }
 
-  /*
-  // This scan smooths semblance numerators and denominators along fault
-  // planes by first rotating and shearing those images before applying
-  // fast recursive axis-aligned smoothing filters.
-  private float[][][][] scan(
-      Sampling phiSampling, Sampling thetaSampling,
-      float[][][] g) {
-    // Algorithm: given snum,sden (semblance numerators and denominators)
-    // initialize f,p,t (fault likelihood, phi, and theta)
-    // for all phi:
-    //   rotate snum,sden so that strike vector is aligned with axis 2
-    //   smooth snum,sden along fault strike (that is, along axis 2)
-    //   compute fphi,tphi (fault likelihood and dip) in 1-3 slices
-    //   unrotate fphi,tphi to original coordinates
-    //   update f,p,t for maximum likelihood
-    final int n3 = g.length;
-    final int n2 = g[0].length;
-    final int n1 = g[0][0].length;
-    final float[][][] f = new float[n3][n2][n1];
-    final float[][][] p = new float[n3][n2][n1];
-    final float[][][] t = new float[n3][n2][n1];
-    final float tmin = (float)thetaSampling.getFirst();
-    final float tmax = (float)thetaSampling.getLast();
-    int np = phiSampling.getCount();
-    Stopwatch sw = new Stopwatch();
-    sw.start();
-    for (int ip=0; ip<np; ++ip) {
-      final float phi = (float)phiSampling.getValue(ip);
-      if (ip>0) {
-        double timeUsed = sw.time();
-        double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
-        int timeLeftSec = 1+(int)timeLeft;
-        trace("FaultScanner.scan: done in "+timeLeftSec+" seconds");
-      }
-      Rotator r = new Rotator(phi,n1,n2,n3);
-      float[][][] rg = r.rotate(g);
-      smooth2(rg);
-      float[][][][] rftp = scanTheta(thetaSampling,rg);
-      rg = null; // enable gc to collect this large array
-      float[][][][] ftp = r.unrotate(rftp);
-      final float[][][] fp = ftp[0];
-      final float[][][] tp = ftp[1];
-      loop(n3,new LoopInt() {
-      public void compute(int i3) {
-        for (int i2=0; i2<n2; ++i2) {
-          float[] f32 = f[i3][i2];
-          float[] p32 = p[i3][i2];
-          float[] t32 = t[i3][i2];
-          float[] fp32 = fp[i3][i2];
-          float[] tp32 = tp[i3][i2];
-          for (int i1=0; i1<n1; ++i1) {
-            float fpi = fp32[i1];
-            float tpi = tp32[i1];
-            if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
-            if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
-            if (tpi<tmin) tpi = tmin; // for both fault likelihood
-            if (tpi>tmax) tpi = tmax; // and fault dip theta
-            if (fpi>f32[i1]) {
-              f32[i1] = fpi;
-              p32[i1] = phi;
-              t32[i1] = tpi;
-            }
-          }
-        }
-      }});
-    }
-    sw.stop();
-    trace("FaultScanner.scan: done");
-    return new float[][][][]{f,p,t};
-  }
-  */
 
   // Sampling of angles depends on extent of smoothing.
-  private Sampling makePhiSampling(double phiMin, double phiMax) {
+  private Sampling makePhiSampling(float phiMin, float phiMax) {
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
-  private Sampling makeThetaSampling(double thetaMin, double thetaMax) {
+  private Sampling makeThetaSampling(float thetaMin, float thetaMax) {
+    /*
+    float da = 2f;
+    int na = 1+(int)((thetaMax-thetaMin)/da);
+    return new Sampling(na,da,thetaMin);
+    */
     return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
   private static Sampling angleSampling(
-    double sigma, double amin, double amax)
+    float sigma, float amin, float amax)
   {
-    double fa = amin;
-    double da = toDegrees(0.5/sigma);
+    float fa = amin;
+    float da = toDegrees(0.5f/sigma);
     int na = 1+(int)((amax-amin)/da);
-    da = (amax>amin)?(amax-amin)/(na-1):1.0;
+    da = (amax>amin)?(amax-amin)/(na-1):1.0f;
     return new Sampling(na,da,fa);
   }
 
@@ -543,14 +474,6 @@ public class LocalOrientScanner {
     return x2;
   }
 
-  private static void restoreSlice2(int i2, float[][][] x, float[][] x2) {
-    int i3lo = i3lo(i2,x);
-    int i3hi = i3hi(i2,x);
-    int m3 = 1+i3hi-i3lo;
-    assert x2.length==m3:"x2 length is correct";
-    for (int i3=0; i3<m3; ++i3)
-      copy(x2[i3],x[i3+i3lo][i2]);
-  }
   private static float[][] extractSlice3(int i3, float[][][] x) {
     int n1 = n1(x);
     int i2lo = i2lo(i3,x);
@@ -643,15 +566,16 @@ public class LocalOrientScanner {
   }
 
   // Horizontal smoothing of rotated snum,sden along axis 2.
-  private void smooth2(final float[][][] g) {
-    final int n3 = n3(g);
+  private void smooth2(final float[][][] snd) {
+    final int n3 = n3(snd);
     final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
+    //final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigmaPhi);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
-    float[][] s3 = extractSlice3(i3,g);
+      float[][] s3 = extractSlice3(i3,snd);
       if (s3!=null) {
         ref.apply2(s3,s3); 
-        restoreSlice3(i3,g,s3);
+        restoreSlice3(i3,snd,s3);
       }
     }});
   }
@@ -663,15 +587,6 @@ public class LocalOrientScanner {
     return ref;
   }
 
-  // For one fault strike, scans over all fault dips theta. The fault strike
-  // vector has already been aligned with image axis 2, and semblance
-  // numerators and denominators have already been smoothed in that direction.
-  // Therefore, this scan over fault dip can be performed independently for
-  // each i2. For each fault dip theta, this method shears semblance num and
-  // den to align any faults having that dip with image axis 1. Semblance
-  // num and den are then smoothed vertically, with an extent sigma that is
-  // dip-adjusted (shorter for smaller fault dips), so that after unshearing
-  // the extent of smoothing is roughly the same for all fault dips.
   private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] sn) {
     final int n1 = n1(sn), n2 = n2(sn);
     final Sampling st = thetaSampling;
@@ -692,6 +607,7 @@ public class LocalOrientScanner {
         float shear = -1.0f/tan(theta);
         float[][] sns = shear(si,shear,sn2);
         float sigma = (float)_sigmaTheta*sin(theta);
+        //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
         RecursiveExponentialFilter ref = makeRef(sigma);
         ref.apply1(sns,sns);
         float[][] s2 = unshear(si,shear,sns);
@@ -700,8 +616,11 @@ public class LocalOrientScanner {
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
-            t32[i1] = ti;
-            f32[i1] = s32[i1];
+            float fi = s32[i1]; // semblance
+            if (fi>f32[i1]) {
+              f32[i1] = fi;
+              t32[i1] = ti;
+            }
           }
         }
       }
@@ -709,39 +628,21 @@ public class LocalOrientScanner {
     return new float[][][][]{f,t};
   }
 
+
   // Makes an array like that specified, including any null arrays.
   private float[][][] like(float[][][] p) {
     int n1 = n1(p);
     int n2 = n2(p);
     int n3 = n3(p);
-    int np = p.length;
     float[][][] q = new float[n3][n2][];
-    for (int ip=0; ip<np; ++ip) {
-      for (int i3=0; i3<n3; ++i3) {
-        for (int i2=0; i2<n2; ++i2) {
-          q[i3][i2] = (p[i3][i2]!=null)?new float[n1]:null;
-        }
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        q[i3][i2] = (p[i3][i2]!=null)?new float[n1]:null;
       }
     }
     return q;
   }
 
-  // Makes an array like that specified, including any null arrays.
-  private float[][][][] like(float[][][][] p) {
-    int n1 = n1(p[0]);
-    int n2 = n2(p[0]);
-    int n3 = n3(p[0]);
-    int np = p.length;
-    float[][][][] q = new float[np][n3][n2][];
-    for (int ip=0; ip<np; ++ip) {
-      for (int i3=0; i3<n3; ++i3) {
-        for (int i2=0; i2<n2; ++i2) {
-          q[ip][i3][i2] = (p[ip][i3][i2]!=null)?new float[n1]:null;
-        }
-      }
-    }
-    return q;
-  }
 
   // Removes spurious faults caused by image boundaries. A sample of fault
   // likelihood, strike and dip is deemed spurious if it is both near and
@@ -899,8 +800,6 @@ public class LocalOrientScanner {
       final float[][] siTable = _siTable;
       final int nsinc = siTable.length;
       final int lsinc = siTable[0].length;
-      final Sampling s2p = _s2p;
-      final Sampling s3p = _s3p;
       final Sampling s2q = _s2q;
       final Sampling s3q = _s3q;
       final int n1 = _n1;
