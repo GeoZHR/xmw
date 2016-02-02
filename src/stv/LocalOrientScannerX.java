@@ -606,7 +606,10 @@ public class LocalOrientScannerX {
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
   private Sampling makeThetaSampling(float thetaMin, float thetaMax) {
-    return angleSampling(_sigmaTheta,thetaMin,thetaMax);
+    float da = 2f;
+    int na = 1+(int)((thetaMax-thetaMin)/da);
+    return new Sampling(na,da,thetaMin);
+    //return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
   private static Sampling angleSampling(
     float sigma, float amin, float amax)

@@ -89,7 +89,7 @@ def main(args):
   #goThinTv()
   #goSkin()
   #goSemblance()
-  #goOrientScan()
+  goOrientScan()
   goTv()
   #goSkinTv()
   #goTI()
@@ -104,9 +104,6 @@ def goOrientScan():
   gx = readImage(gxfile)
   sem = readImage(semfile)
   sem=sub(1,sem)
-  sem = pow(sem,0.2)
-  sub(sem,min(sem),sem)
-  div(sem,max(sem),sem)
   if not plotOnly:
     fs = LocalOrientScannerX(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
@@ -315,13 +312,13 @@ def goTv():
     fcs = fs.findCells([fl,fp,ft])
     fct=[]
     for fci in fcs:
-      if(fci.getFl()>0.6):
+      if(fci.getFl()>0.5):
         fct.append(fci)
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
     tv3.setSigma(10)
-    tv3.setVoteWindow(30,20,20)
+    tv3.setVoteWindow(20,20,20)
     fsc = FaultScanner(4,20)
     sp = fsc.getPhiSampling(minPhi,maxPhi)
     st = fsc.getThetaSampling(minTheta,maxTheta)

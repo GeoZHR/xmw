@@ -96,7 +96,7 @@ public class TensorVoting3 {
           int k1 = round(abs(r1));
           int k2 = round(abs(r2));
           int k3 = round(abs(r3));
-          float wsi = ws[k3][k2][k1]*fl;
+          float wsi = ws[k3][k2][k1]*fl*fl;
           if (rs==0) {
             g11 += u1*u1*wsi;
             g12 += u1*u2*wsi;
