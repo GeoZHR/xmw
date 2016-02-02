@@ -56,7 +56,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 2,10
+sigmaPhi,sigmaTheta = 4,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -89,7 +89,7 @@ def main(args):
   #goThinTv()
   #goSkin()
   #goSemblance()
-  #goOrientScan()
+  goOrientScan()
   goTv()
   #goSkinTv()
   #goTI()
@@ -117,9 +117,9 @@ def goOrientScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+  '''
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
-  '''
   plot3(gx,sem,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
         clab="Semblance",png="sem")
   plot3(gx,fl,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
@@ -367,7 +367,6 @@ def goSkinTv():
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   skins1 = fs.findSkins(cells)
-  '''
   skins2 = readSkins(fskbase)
   removeAllSkinFiles(fsktv)
   writeSkins(fsktv,skins1)
@@ -381,9 +380,8 @@ def goSkinTv():
   plot3(gx,flt2,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Falt likelihood",png="sm")
   plot3(gx,flt3,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Falt likelihood",png="sm")
   plot3(gx,fl,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
-  '''
   plot3(gx,fl,cmin=0.2,cmax=1.0,skins=skins1,cmap=jetRamp(1.0),png="skins")
-  #plot3(gx,fl,cmin=0.2,cmax=1.0,skins=skins2,cmap=jetRamp(1.0),png="skins")
+  plot3(gx,fl,cmin=0.2,cmax=1.0,skins=skins2,cmap=jetRamp(1.0),png="skins")
 
 def goSlopes():
   print "goSlopes ..."
@@ -822,7 +820,7 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,htgs=None,png=None):
+          links=False,curve=False,trace=False,htgs=None,fbs=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -955,6 +953,24 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.MAGENTA)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
   if cbar:
     sf.setSize(1037,700)
   else:
