@@ -61,7 +61,7 @@ sigmaPhi,sigmaTheta = 4,20
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
-upperLikelihood = 0.6
+upperLikelihood = 0.8
 minSkinSize = 4000
 
 # These parameters control the computation of fault dip slips.
@@ -89,7 +89,7 @@ def main(args):
   #goThinTv()
   #goSkin()
   #goSemblance()
-  goOrientScan()
+  #goOrientScan()
   goTv()
   #goSkinTv()
   #goTI()
@@ -315,7 +315,7 @@ def goTv():
     fcs = fs.findCells([fl,fp,ft])
     fct=[]
     for fci in fcs:
-      if(fci.getFl()>0.4):
+      if(fci.getFl()>0.6):
         fct.append(fci)
     cells=[]
     for ic in range(0,len(fct),5):
