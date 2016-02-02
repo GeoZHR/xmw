@@ -773,14 +773,14 @@ public class LocalOrientScannerX {
 
   // Horizontal smoothing of rotated snum,sden along axis 2.
   private void smooth2(final float[][][] snd) {
-    final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
-    //final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
-    final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigmaPhi);
+    final int n3 = n3(snd);
+    final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
+    //final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigmaPhi);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
       float[][] s3 = extractSlice3(i3,snd);
       if (s3!=null) {
-        rgf.applyX0(s3,s3); 
+        ref.apply2(s3,s3); 
         restoreSlice3(i3,snd,s3);
       }
     }});
@@ -813,9 +813,9 @@ public class LocalOrientScannerX {
         float shear = -1.0f/tan(theta);
         float[][] sns = shear(si,shear,sn2);
         float sigma = (float)_sigmaTheta*sin(theta);
-        RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
-        //RecursiveExponentialFilter ref = makeRef(sigma);
-        rgf.apply0X(sns,sns);
+        //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+        RecursiveExponentialFilter ref = makeRef(sigma);
+        ref.apply1(sns,sns);
         float[][] s2 = unshear(si,shear,sns);
         for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
           float[] s32 = s2[i3];

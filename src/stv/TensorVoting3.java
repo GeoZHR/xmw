@@ -39,8 +39,10 @@ public class TensorVoting3 {
     _w3 = w3;
   }
 
+  /*
   public float[][][][] applyVote(
-    final int n1, final int n2, final int n3, FaultCell[] cells) {
+    final float[][][] fl, final float[][][] fp, final float[][][] ft) 
+  {
     int nc = cells.length;
     final float[] fs = new float[nc]; 
     final float[][] xs = new float[3][nc];
@@ -127,6 +129,128 @@ public class TensorVoting3 {
             ur *= ur;
             ur *= ur;
             float sc = wsi*ur;
+            g11 += sc*v1*v1;
+            g12 += sc*v1*v2;
+            g13 += sc*v1*v3;
+            g22 += sc*v2*v2;
+            g23 += sc*v2*v3;
+            g33 += sc*v3*v3;
+          }
+        }
+        a[0][0] = g11; a[0][1] = g12; a[0][2] = g13;
+        a[1][0] = g12; a[1][1] = g22; a[1][2] = g23;
+        a[2][0] = g13; a[2][1] = g23; a[2][2] = g33;
+        float[][] ue = solveEigenproblems(a);
+        float eui = ue[1][0];
+        float evi = ue[1][1];
+        float ewi = ue[1][2];
+        float u1i = ue[0][0];
+        float u2i = ue[0][1];
+        float u3i = ue[0][2];
+        if (u2i==0.0f&&u3i==0f){continue;}
+        if (u1i>0.0f) {
+          u1i = -u1i;
+          u2i = -u2i;
+          u3i = -u3i;
+        }
+        ss[i3][i2][i1] = (eui-evi);
+        cs[i3][i2][i1] = (evi-ewi)*(eui-evi);
+        ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+        fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+      }}
+    }});
+    sub(ss,min(ss),ss);
+    div(ss,max(ss),ss);
+    sub(cs,min(cs),cs);
+    div(cs,max(cs),cs);
+    return new float[][][][]{ss,cs,fp,ft};
+  }
+  */
+
+
+  public float[][][][] applyVote(
+    final int n1, final int n2, final int n3, FaultCell[] cells) {
+    int nc = cells.length;
+    final float[] fs = new float[nc]; 
+    final float[][] xs = new float[3][nc];
+    final float[][] us = new float[3][nc];
+    setKdTreeNodes(cells,xs,us,fs);
+    final KdTree kt = new KdTree(xs);
+    final float[][][] ws = gaussianWeights();
+    final float[][][] ss = new float[n3][n2][n1];
+    final float[][][] cs = new float[n3][n2][n1];
+    final float[][][] fp = new float[n3][n2][n1];
+    final float[][][] ft = new float[n3][n2][n1];
+    final int[] c = new int[1];
+    loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      c[0] = c[0]+1;
+      System.out.println("c="+c[0]);
+      float[] xmin = new float[3];
+      float[] xmax = new float[3];
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        int i1min = max(i1-_w1,0);
+        int i2min = max(i2-_w2,0);
+        int i3min = max(i3-_w3,0);
+        int i1max = min(i1+_w1,n1-1);
+        int i2max = min(i2+_w2,n2-1);
+        int i3max = min(i3+_w3,n3-1);
+        xmin[0] = i1min; xmax[0] = i1max;
+        xmin[1] = i2min; xmax[1] = i2max;
+        xmin[2] = i3min; xmax[2] = i3max;
+        int[] id = kt.findInRange(xmin,xmax);
+        int nd = id.length;
+        float g11 = 1.0f;
+        float g22 = 1.0f;
+        float g33 = 1.0f;
+        float g12 = 0.0f;
+        float g13 = 0.0f;
+        float g23 = 0.0f;
+        if(nd<1) continue;
+        double[][] a = new double[3][3];
+        for (int ik=0; ik<nd; ++ik) {
+          int ip = id[ik];
+          float fl = fs[ip];
+          float x1 = xs[0][ip];
+          float x2 = xs[1][ip];
+          float x3 = xs[2][ip];
+          float u1 = us[0][ip];
+          float u2 = us[1][ip];
+          float u3 = us[2][ip];
+          float r1 = i1-x1;
+          float r2 = i2-x2;
+          float r3 = i3-x3;
+          float rs = sqrt(r1*r1+r2*r2+r3*r3);
+          int k1 = round(abs(r1));
+          int k2 = round(abs(r2));
+          int k3 = round(abs(r3));
+          float wsi = ws[k3][k2][k1]*fl*fl;
+          if (rs==0) {
+            g11 += u1*u1*wsi;
+            g12 += u1*u2*wsi;
+            g13 += u1*u3*wsi;
+            g22 += u2*u2*wsi;
+            g23 += u2*u3*wsi;
+            g33 += u3*u3*wsi;
+          } else {
+            r1 /= rs; r2 /= rs; r3 /= rs;
+            float ur = u1*r1+u2*r2+u3*r3;
+            if (abs(ur)>0.5f){continue;}
+            float v1 = u1;
+            float v2 = u2;
+            float v3 = u3;
+            if(abs(ur)>0.0001f) {
+              float cx = 0.5f*rs/ur; // find a better way?
+              float c1 = x1+u1*cx;
+              float c2 = x2+u2*cx;
+              float c3 = x3+u3*cx;
+              v1 = c1-i1; v2 = c2-i2; v3 = c3-i3;
+              float vs = 1.0f/sqrt(v1*v1+v2*v2+v3*v3);
+              v1 *= vs; v2 *= vs; v3 *= vs; 
+            }
+            ur = 1f-ur*ur;
+            float sc = wsi*pow(ur,12);
             g11 += sc*v1*v1;
             g12 += sc*v1*v2;
             g13 += sc*v1*v3;
