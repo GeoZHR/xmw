@@ -138,7 +138,7 @@ def goVote():
   for ic in range(0,len(fcs),5):
     cells.append(fcs[ic])
   tv3 = TensorVoting3()
-  tv3.setSigma(10)
+  tv3.setSigma(20)
   tv3.setVoteWindow(20,20,20)
   ss,cs,fp,ft = tv3.applyVote(n1,n2,n3,cells)
   #ss,cs,fp,ft = tv3.applyVoteFast(n1,n2,n3,15,sp,st,cells)

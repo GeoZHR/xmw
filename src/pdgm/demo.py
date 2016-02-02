@@ -320,16 +320,13 @@ def goTv():
     cells=[]
     for ic in range(0,len(fct),5):
       cells.append(fct[ic])
-    tv3.setSigma(10)
+    tv3.setSigma(20)
     tv3.setVoteWindow(20,20,20)
     fsc = FaultScanner(4,20)
     sp = fsc.getPhiSampling(minPhi,maxPhi)
     st = fsc.getThetaSampling(minTheta,maxTheta)
     sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
     #sm,cm,fp,ft = tv3.applyVoteFast(n1,n2,n3,sp,st,cells)
-    sm = pow(sm,0.5)
-    sub(sm,min(sm),sm)
-    div(sm,max(sm),sm)
     writeImage(cmfile,cm)
     writeImage(smfile,sm)
     writeImage(fpvfile,fp)

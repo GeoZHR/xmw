@@ -72,9 +72,9 @@ public class TensorVoting3 {
         xmin[2] = i3min; xmax[2] = i3max;
         int[] id = kt.findInRange(xmin,xmax);
         int nd = id.length;
-        float g11 = 0.0f;
-        float g22 = 0.0f;
-        float g33 = 0.0f;
+        float g11 = 1.0f;
+        float g22 = 1.0f;
+        float g33 = 1.0f;
         float g12 = 0.0f;
         float g13 = 0.0f;
         float g23 = 0.0f;
@@ -121,7 +121,6 @@ public class TensorVoting3 {
               v1 *= vs; v2 *= vs; v3 *= vs; 
             }
             ur = 1f-ur*ur;
-            ur *= ur;
             ur *= ur;
             ur *= ur;
             ur *= ur;
