@@ -125,6 +125,8 @@ public class TensorVoting3 {
             ur *= ur;
             ur *= ur;
             ur *= ur;
+            ur *= ur;
+            ur *= ur;
             float sc = wsi*ur;
             g11 += sc*v1*v1;
             g12 += sc*v1*v2;

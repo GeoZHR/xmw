@@ -73,7 +73,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = getPngDir()
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -89,7 +89,7 @@ def main(args):
   #goThinTv()
   #goSkin()
   #goSemblance()
-  goOrientScan()
+  #goOrientScan()
   goTv()
   #goSkinTv()
   #goTI()
@@ -304,6 +304,9 @@ def goTv():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+    fl = pow(fl,0.2)
+    sub(fl,min(fl),fl)
+    div(fl,max(fl),fl)
     fs = FaultSkinner()
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fs.setMaxDeltaStrike(10)
@@ -414,6 +417,9 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+  fl = pow(fl,0.2)
+  sub(fl,min(fl),fl)
+  div(fl,max(fl),fl)
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
@@ -492,18 +498,22 @@ def goSkin():
   fp = readImage(fpfile)
   ft = readImage(ftfile)
   fs = FaultSkinner()
+  fl = pow(fl,0.2)
+  sub(fl,min(fl),fl)
+  div(fl,max(fl),fl)
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
   fs.setMaxPlanarDistance(0.2)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  for skin in skins:
-    skin.smoothCellNormals(4)
+  #skins = fs.findSkins(cells)
   fcs=[]
   for fci in cells:
-    if(fci.getFl()>0.4):
+    fpi = fci.getFp()
+    if(fci.getFl()>0.6 and abs(fpi-90)>10 and abs(fpi-270)>10):
       fcs.append(fci)
+  plot3(gx,cells=fcs,png="cells")
+  '''
   tv3 = TensorVoting3()
   flt = zerofloat(n1,n2,n3)
   tv3.getFlImage(fcs,flt)
@@ -514,8 +524,8 @@ def goSkin():
   print "number of cells in skins =",FaultSkin.countCells(skins)
   removeAllSkinFiles(fskbase)
   writeSkins(fskbase,skins)
-  plot3(gx,cells=cells,png="cells")
   plot3(gx,skins=skins)
+  '''
   '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
