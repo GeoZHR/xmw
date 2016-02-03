@@ -77,8 +77,8 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  #goSkin()
-  goReSkinX()
+  goSkin()
+  #goReSkinX()
   #goTv()
   #goSkinTv()
   #goReSkin()
@@ -190,10 +190,13 @@ def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    fl = readImage(flfile)
+    fc = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
     fs = FaultSkinner()
+    fl = zerofloat(n1,n2,n3)
+    rgf = RecursiveGaussianFilterP(2.0)
+    rgf.applyX00(fc,fl)
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fs.setMaxDeltaStrike(10)
     fs.setMaxPlanarDistance(0.2)
@@ -210,8 +213,8 @@ def goSkin():
     #plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
-  plot3(gx,skins=skins)
   '''
+  plot3(gx,skins=skins)
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''
@@ -279,9 +282,9 @@ def goReSkinX():
   '''
   for skin in skins:
     skin.smoothCellNormals(4)
-  #plot3(gx,skins=skins,png="skinsNew")
-  plot3(gx,skins=skins,links=True,png="skinsNewLinks")
   '''
+  plot3(gx,skins=skins,png="skinsNew")
+  #plot3(gx,skins=skins,links=True,png="skinsNewLinks")
 
 def goReSkin():
   print "goReSkin ..."
