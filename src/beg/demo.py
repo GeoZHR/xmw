@@ -190,14 +190,13 @@ def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    fl = readImage(flfile)
+    fc = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
     fs = FaultSkinner()
-    fc = zerofloat(n1,n2,n3)
+    fl = zerofloat(n1,n2,n3)
     rgf = RecursiveGaussianFilterP(2.0)
-    rgf.applyX0X(fl,fc)
-    rgf.applyXX0(fc,fl)
+    rgf.apply000(fc,fl)
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fs.setMaxDeltaStrike(10)
     fs.setMaxPlanarDistance(0.2)
