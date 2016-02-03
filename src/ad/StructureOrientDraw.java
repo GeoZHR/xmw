@@ -183,12 +183,11 @@ public class StructureOrientDraw {
         int i1 = r.nextInt(n1);
         int i2 = r.nextInt(n2);
         boolean ok = true;
-        int m = 1;
+        int m = 2;
         for (int j2=max(0,i2-m); j2<min(n2,i2+m+1); ++j2){
-        //for (int j1=max(0,i1-m); j1<min(n1,i1+m+1); ++j1){
-          if (mark[j2][i1]>0) ok = false;
-        }
-        //}
+        for (int j1=max(0,i1-m); j1<min(n1,i1+m+1); ++j1){
+          if (mark[j2][j1]>0) ok = false;
+        }}
         if (ok) {
           marked = true;
           mark[i2][i1] = 1;

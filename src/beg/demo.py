@@ -72,9 +72,9 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goTv()
   #goReSkin()
   #goSmooth()
@@ -126,11 +126,13 @@ def goScan():
   else:
     gx = readImage(gxfile)
     fl = readImage(flfile)
+  '''
     fp = readImage(fpfile)
     ft = readImage(ftfile)
   '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
+  '''
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
@@ -202,10 +204,10 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
-    plot3(gx,cells=cells,png="cells")
+    #plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
-  plot3(gx,skins=skins)
+  #plot3(gx,skins=skins)
   '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
