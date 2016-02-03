@@ -50,7 +50,7 @@ cmfile = "cm"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 70,88
+minTheta,maxTheta = 65,85
 sigmaPhi,sigmaTheta = 6,25
 
 # These parameters control the construction of fault skins.
@@ -75,9 +75,10 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
+  goReSkinX()
   #goTv()
   #goSkinTv()
   #goReSkin()
@@ -129,17 +130,17 @@ def goScan():
     writeImage(ftfile,ft)
   else:
     gx = readImage(gxfile)
-    fl = readImage(flfile)
-  '''
-    fp = readImage(fpfile)
+    #fl = readImage(flfile)
+    #fp = readImage(fpfile)
     ft = readImage(ftfile)
+    '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
+    '''
+  plot3(gx,ft,cmin=65,cmax=85,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
-  '''
 
 def goThin():
   print "goThin ..."
@@ -209,8 +210,8 @@ def goSkin():
     #plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
-  '''
   plot3(gx,skins=skins)
+  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''
@@ -261,6 +262,26 @@ def goSkinTv():
   else:
     skins = readSkins(fskgood)
   plot3(gx,skins=skins)
+
+def goReSkinX():
+  print "goReSkin ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(flfile)
+    sk = readSkins(fskbase)
+    fsx = FaultSkinnerX()
+    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsx.setMinSkinSize(minSkinSize)
+    skins = fsx.reskin(sk,fl)
+    removeAllSkinFiles(fskgood)
+    writeSkins(fskgood,skins)
+  skins = readSkins(fskgood)
+  '''
+  for skin in skins:
+    skin.smoothCellNormals(4)
+  #plot3(gx,skins=skins,png="skinsNew")
+  plot3(gx,skins=skins,links=True,png="skinsNewLinks")
+  '''
 
 def goReSkin():
   print "goReSkin ..."
