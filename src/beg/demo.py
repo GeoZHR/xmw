@@ -51,13 +51,13 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 6,20
+sigmaPhi,sigmaTheta = 8,16
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.1
 upperLikelihood = 0.3
-minSkinSize = 3000
+minSkinSize = 10000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -75,11 +75,11 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
-  #goSkin()
-  goTv()
-  goSkinTv()
+  goSkin()
+  #goTv()
+  #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -133,10 +133,8 @@ def goScan():
   '''
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-  '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
-  '''
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
@@ -262,6 +260,7 @@ def goSkinTv():
     writeSkins(fskgood,skins)
   else:
     skins = readSkins(fskgood)
+  plot3(gx,skins=skins)
 
 def goReSkin():
   print "goReSkin ..."
