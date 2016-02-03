@@ -77,7 +77,7 @@ def main(args):
   #goSlopes()
   goScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goTv()
   #goSkinTv()
   #goReSkin()
@@ -209,8 +209,8 @@ def goSkin():
     #plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
-  plot3(gx,skins=skins)
   '''
+  plot3(gx,skins=skins)
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''
