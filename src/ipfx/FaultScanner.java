@@ -238,8 +238,8 @@ public class FaultScanner {
   public float[][][][] scan(
       Sampling phiSampling, Sampling thetaSampling,
       float[][][] p2, float[][][] p3, float[][][] g) {
-    //float[][][][] snd = semblanceNumDen(p2,p3,g);
-    float[][][][] snd = semblanceNumDen(4,p2,p3,g);
+    float[][][][] snd = semblanceNumDen(p2,p3,g);
+    //float[][][][] snd = semblanceNumDen(2,p2,p3,g);
     return scan(phiSampling,thetaSampling,snd);
   }
 

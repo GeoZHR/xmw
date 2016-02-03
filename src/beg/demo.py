@@ -50,8 +50,8 @@ cmfile = "cm"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,16
+minTheta,maxTheta = 70,88
+sigmaPhi,sigmaTheta = 6,25
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -77,7 +77,7 @@ def main(args):
   #goSlopes()
   goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goTv()
   #goSkinTv()
   #goReSkin()

@@ -72,11 +72,11 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goUnfault()
+  #goUnfault()
   #goUnfaultS()
   #goUncScan()
   #goUncConvert()
-  #goFlatten()
+  goFlatten()
   #goHorizons()
 def goTest():
   rgt = readImage(rgtfile)
@@ -533,6 +533,14 @@ def goFlatten():
   fg = gain(fg)
   #plot3(fw)
   #plot3(fg,png="fg")
+  fs = zerofloat(n1,n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        fs[i3][i2][i1] = rgt[i3][i2][i1]-i1
+  fs = mul(fs,4) # convert to ms
+  plot3(fw,fs,cmin=-110,cmax=70,cmap=jetFill(1.0),
+        clab="Vertical shift (ms)",png="shifts")
   plot3(fw,rgt,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
         clab="Relative geologic time",png="rgt")
 
