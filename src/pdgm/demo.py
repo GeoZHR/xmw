@@ -73,7 +73,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = getPngDir()
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
