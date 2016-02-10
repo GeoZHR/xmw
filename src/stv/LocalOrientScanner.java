@@ -405,7 +405,7 @@ public class LocalOrientScanner {
       }});
     }
     final float[][][] m = new float[n3][n2][n1];
-    RecursiveExponentialFilter ref = makeRef(_sigmaTheta*1.5f);
+    RecursiveExponentialFilter ref = makeRef(_sigmaTheta);
     ref.apply(fx,m);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
