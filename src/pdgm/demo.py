@@ -61,8 +61,8 @@ sigmaPhi,sigmaTheta = 8,20
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
-upperLikelihood = 0.6
-minSkinSize = 4000
+upperLikelihood = 0.5
+minSkinSize = 3000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -73,7 +73,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = getPngDir()
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -109,31 +109,6 @@ def main(args):
   writeImage("gxSub",gxs)
   writeImage("semSub",sems)
   '''
-def goAccumulate():
-  gx = readImage(gxfile)
-  sem = readImage(semfile)
-  sem=sub(1,sem)
-  if not plotOnly:
-    fs = LocalOrientScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.accumulate(minPhi,maxPhi,minTheta,maxTheta,sem)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "fp min =",min(fp)," max =",max(fp)
-    print "ft min =",min(ft)," max =",max(ft)
-    writeImage(flfile,fl)
-    writeImage(fpfile,fp)
-    writeImage(ftfile,ft)
-  else:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-  plot3(gx,sem,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
-        clab="Semblance",png="sem")
-  plot3(gx,fl,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
 
 def goOrientScan():
   gx = readImage(gxfile)
@@ -543,11 +518,8 @@ def goSkin():
   fp = readImage(fpfile)
   ft = readImage(ftfile)
   fs = FaultSkinner()
-  '''
-  fl = pow(fl,0.2)
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
-  '''
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
   fs.setMaxPlanarDistance(0.2)
