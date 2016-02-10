@@ -12,6 +12,8 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
+import util.*;
+
 /**
  * Computes fault likelihoods, strikes, and dips, by scanning over fault
  * orientations. Fault likelihoods are in the range [0,1], where 0 and 1
@@ -228,7 +230,7 @@ public class ChannelScanner {
    * @param phiSampling sampling of fault strikes, in degrees.
    * @param thetaSampling sampling of fault dip angles, in degrees.
    * @param p2 slopes in the 2nd dimension.
-   * @param p3 slopes in the 3rd dimension.
+  * @param p3 slopes in the 3rd dimension.
    * @param g the image to be scanned.
    * @return array {fl,fp,ft} of fault likelihoods, strikes, and dips.
    */
@@ -240,20 +242,68 @@ public class ChannelScanner {
   }
 
   public float[][][] scan(
-    float sigma1, float sigma2, float sigma3, 
-    float[][][] g, float[][][] p2, float[][][] p3) 
+    float sigma, float[][][] p2, float[][][] p3, float[][][] g) 
   {
-    //float[][][][] snd = semblanceNumDen(p2,p3,g);
-    float[][][] sd = mul(g,g);
-    float[][][] sn = smooth1(sigma1,p2,p3,g);
-    sn = mul(sn,sn);
-    sn = smooth3(sigma3,p2,p3,sn);
-    sn = smooth2(sigma2,p2,p3,sn);
-
-    sd = smooth1(sigma1,p2,p3,sd);
-    sd = smooth3(sigma3,p2,p3,sd);
-    sd = smooth2(sigma2,p2,p3,sd);
+    float[][][][] snd = semblanceNumDen(p2,p3,g);
+    float[][][] sn = smooth3(sigma,p2,p3,snd[0]);
+    float[][][] sd = smooth3(sigma,p2,p3,snd[1]);
     return semblanceFromNumDen(sn,sd);
+  }
+
+  public float[][][] gradient(
+    float sigma, float sigma1, float sigma2, float[][][] f) {
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+    float[][][] g1 = new float[n3][n2][n1];
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    float[][][] v1 = new float[n3][n2][n1];
+    float[][][] v2 = new float[n3][n2][n1];
+    float[][][] v3 = new float[n3][n2][n1];
+    float[][][] w1 = new float[n3][n2][n1];
+    float[][][] w2 = new float[n3][n2][n1];
+    float[][][] w3 = new float[n3][n2][n1];
+    float[][][] gg = new float[n3][n2][n1];
+    float[][][] gs = new float[n3][n2][n1];
+    float[][][] eu = fillfloat(0.00001f,n1,n2,n3);
+    float[][][] ev = fillfloat(0.00001f,n1,n2,n3);
+    float[][][] ew = fillfloat(1.00000f,n1,n2,n3);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
+    LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2,sigma2);
+    rgf.apply100(f,g1);
+    rgf.apply010(f,g2);
+    rgf.apply001(f,g3);
+    lof.apply(f,null,null,
+              u1,u2,u3,
+              v1,v2,v3,
+              w1,w2,w3,
+              null,null,null,
+              null,null);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g1i = g1[i3][i2][i1];
+      float g2i = g2[i3][i2][i1];
+      float g3i = g3[i3][i2][i1];
+      float v1i = v1[i3][i2][i1];
+      float v2i = v2[i3][i2][i1];
+      float v3i = v3[i3][i2][i1];
+      float w1i = w1[i3][i2][i1];
+      float w2i = w2[i3][i2][i1];
+      float w3i = w3[i3][i2][i1];
+      float gvi = g1i*v1i+g2i*v2i+g3i*v3i;
+      float gwi = g1i*w1i+g2i*w2i+g3i*w3i;
+      gg[i3][i2][i1] = sqrt(gvi*gvi+gwi*gwi);
+    }}}
+    float c = sigma*sigma*0.5f;
+    EigenTensors3 ets = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(ets,c,gg,gs);
+    return gs;
   }
 
 
@@ -302,11 +352,11 @@ public class ChannelScanner {
 
   public static float[][][] smooth3(
     double sigma, float[][][] p2, float[][][] p3, float[][][] g) {
-    int n1 = g[0][0].length;
-    int n2 = g[0].length;
     int n3 = g.length;
+    int n2 = g[0].length;
+    int n1 = g[0][0].length;
     EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
-    d.setEigenvalues(1.0001f,0.0001f,0.0001f);
+    d.setEigenvalues(0.2000f,0.0001f,1.0000f);
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=0; i1<n1; ++i1) {

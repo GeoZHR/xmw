@@ -69,7 +69,7 @@ maxThrow = 25.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -98,6 +98,8 @@ def goSlopes():
   gx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+
+  '''
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
@@ -213,8 +215,8 @@ def goSkin():
     #plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
-  '''
   plot3(gx,skins=skins)
+  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''

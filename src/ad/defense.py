@@ -21,9 +21,9 @@ pngDir = "../../../png/ad/defense/"
 seismicDir = "../../../data/seis/ad/defense/"
 #fxfile = "bb"
 #fxfile = "dd"
-#fxfile = "hh"
+fxfile = "hh"
 #fxfile = "ss"
-fxfile = "tt"
+#fxfile = "tt"
 #fxfile = "f3d267"
 #fxfile = "f3d267Sub"
 #fxfile="kidney"
@@ -37,9 +37,9 @@ f1,f2 = 0,0
 d1,d2 = 1,1
 #n1,n2 = 1208,1000  #bialecki
 #n1,n2 = 1440,1134  #davis
-#n1,n2 = 968, 868  #hale
+n1,n2 = 968, 868  #hale
 #n1,n2 =  960, 707  #sava
-n1,n2 =  651, 593  #tang
+#n1,n2 =  651, 593  #tang
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 
@@ -66,7 +66,7 @@ def main(args):
   goLineDraw()
 def goLineDraw():
   ti = TensorInterp()
-  ti.setParameters(12,5,0.5)
+  ti.setParameters(15,5,0.5)
   fx = readImage(fxfile)
   plot(fx,cmin=min(fx),cmax=max(fx),png=fxfile+"fx")
   sod = StructureOrientDraw()
@@ -75,7 +75,7 @@ def goLineDraw():
   #hx,u1,u2=sod.applyDraw(fx,u1,u2)
   hx,u1,u2=sod.applyDraw(fx)
   plot(hx,cmin=min(hx),cmax=max(hx),png=fxfile+"hx")
-  rx,r1,r2=sod.randSample(n1*n2/20,988,hx,u1,u2) #dave
+  rx,r1,r2=sod.randSample(n1*n2/4,988,hx,u1,u2) #dave
   #rx,r1,r2=sod.randSample(n1*n2/10,999888,hx,u1,u2) #dave
   #rx,r1,r2=sod.randSample(n1*n2/20,988,hx,u1,u2) #cwp
   #rx,r1,r2=sod.randSample(n1*n2/20,988,hx,u1,u2) #sergey
@@ -86,7 +86,7 @@ def goLineDraw():
   plot(hx,png="daveL")
   '''
   dx = sub(1,rx)
-  plot(dx,png=fxfile+"dx")
+  #plot(dx,png=fxfile+"dx")
   sm = sub(1,sm)
   plot(sm,cmin=min(sm),cmax=max(sm),png=fxfile+"sm")
 
@@ -817,14 +817,14 @@ def plot(f,cmap=ColorMap.GRAY,cmin=None,cmax=None,label=None,
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
-  frame.setSize(890,760)
+  frame.setSize(890,680)
   frame.setSize(n2,n1)
-  frame.setSize(350,425)
+  #frame.setSize(350,425)
   #frame.setSize(800,800)
   #frame.setSize(1190,760)
   frame.setFontSize(36)
   if pngDir and png:
-    frame.paintToPng(300,3.333,pngDir+png+".png")
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 def plot2(f,s1,s2,g=None,cmin=None,cmax=None,label=None,png=None,et=None):
   n2 = len(f)

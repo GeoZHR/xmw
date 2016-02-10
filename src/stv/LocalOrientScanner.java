@@ -12,6 +12,7 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
+import util.*;
 import static ipfx.FaultGeometry.*;
 
 /**
@@ -163,7 +164,6 @@ public class LocalOrientScanner {
     return scan(sp,st,g);
   }
 
-
   /**
    * Thins fault images to include only ridges in fault likelihoods.
    * After thinning, may be only one voxel wide. Thinned fault strikes and
@@ -179,7 +179,7 @@ public class LocalOrientScanner {
     float[][][] p = flpt[1];
     float[][][] t = flpt[2];
     f = copy(f);
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.applyX0X(f,f);
     rgf.applyXX0(f,f);
     float[][][] ff = new float[n3][n2][n1];
@@ -343,6 +343,9 @@ public class LocalOrientScanner {
   private static void trace(String s) {
     System.out.println(s);
   }
+
+
+
 
   private float[][][][] scan(
       Sampling phiSampling, Sampling thetaSampling, float[][][] fx) {
@@ -575,6 +578,7 @@ public class LocalOrientScanner {
       float[][] s3 = extractSlice3(i3,snd);
       if (s3!=null) {
         ref.apply2(s3,s3); 
+        //rgf.applyX0(s3,s3); 
         restoreSlice3(i3,snd,s3);
       }
     }});
@@ -582,10 +586,12 @@ public class LocalOrientScanner {
 
   // Smoothing filter
   private static RecursiveExponentialFilter makeRef(double sigma) {
-    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma*1.5f);
     ref.setEdges(RecursiveExponentialFilter.Edges.INPUT_ZERO_SLOPE);
     return ref;
   }
+
+
 
   private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] sn) {
     final int n1 = n1(sn), n2 = n2(sn);
@@ -608,6 +614,7 @@ public class LocalOrientScanner {
         float[][] sns = shear(si,shear,sn2);
         float sigma = (float)_sigmaTheta*sin(theta);
         //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+        //rgf.apply0X(sns,sns);
         RecursiveExponentialFilter ref = makeRef(sigma);
         ref.apply1(sns,sns);
         float[][] s2 = unshear(si,shear,sns);
@@ -616,7 +623,7 @@ public class LocalOrientScanner {
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
-            float fi = s32[i1]; // semblance
+            float fi = s32[i1];
             if (fi>f32[i1]) {
               f32[i1] = fi;
               t32[i1] = ti;

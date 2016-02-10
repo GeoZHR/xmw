@@ -18,6 +18,7 @@ p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
 p3kfile = "p3k" # crossline slopes (known)
 flfile  = "fl" # fault likelihood
+clfile  = "cl" # channel likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
@@ -75,15 +76,23 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goSubset()
-  goSemblance()
+  #goSemblance()
+  goTest()
+
+def goTest():
+  gx = readImage("gxb")
+  gx = div(gx,max(gx)*0.1)
+  cs = ChannelScanner(8,20)
+  cl = cs.gradient(64,4,2,gx)
+  writeImage(clfie,cl)
+  plot3(gx,cl,cmin=0,cmax=0.4,cmap=jetRamp(1.0),
+        clab="Channel likelihoods")
 
 def goSemblance():
   gx = readImage("gxb")
   #gs = copy(136,n2,n3,186,0,0,gx)
   #writeImage("gxb",gs)
-  gx = div(gx,max(gx)*0.1)
   plot3(gx)
-  '''
   g1 = zerofloat(n1,n2,n3)
   g2 = zerofloat(n1,n2,n3)
   lof = LocalOrientFilter(2,2)
@@ -97,6 +106,7 @@ def goSemblance():
   plot3(gx)
   plot3(g1)
   plot3(g2)
+  '''
   plot3(sub(g2,g1))
   cs = ChannelScanner(8,20)
   sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
@@ -112,8 +122,9 @@ def goSemblance():
 
 def goSlopes():
   print "goSlopes ..."
-  gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 8.0,1.0,1.0,5.0
+  gx = readImage("gxb")
+  gx = div(gx,max(gx)*0.1)
+  sigma1,sigma2,sigma3,pmax = 2.0,3.0,3.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
