@@ -357,7 +357,6 @@ public class LocalOrientScanner {
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
-    final float[][][] m = fillfloat(max(fx),n1,n2,n3);
     final float tmin = (float)thetaSampling.getFirst();
     final float tmax = (float)thetaSampling.getLast();
     int np = phiSampling.getCount();
@@ -379,21 +378,17 @@ public class LocalOrientScanner {
       float[][][][] rftp = scanTheta(thetaSampling,rfx);
       rfx = null; // enable gc to collect this large array
       float[][][][] ftp = r.unrotate(rftp);
-      final float[][][] mp = ftp[0];
-      final float[][][] fp = ftp[1];
-      final float[][][] tp = ftp[2];
+      final float[][][] fp = ftp[0];
+      final float[][][] tp = ftp[1];
       loop(n3,new LoopInt() {
       public void compute(int i3) {
         for (int i2=0; i2<n2; ++i2) {
-          float[] m32 = m[i3][i2];
           float[] f32 = f[i3][i2];
           float[] p32 = p[i3][i2];
           float[] t32 = t[i3][i2];
-          float[] mp32 = mp[i3][i2];
           float[] fp32 = fp[i3][i2];
           float[] tp32 = tp[i3][i2];
           for (int i1=0; i1<n1; ++i1) {
-            float mpi = mp32[i1];
             float fpi = fp32[i1];
             float tpi = tp32[i1];
             if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
@@ -405,11 +400,15 @@ public class LocalOrientScanner {
               p32[i1] = phi;
               t32[i1] = tpi;
             }
-            if (mpi<m32[i1]) {m32[i1]=mpi;}
           }
         }
       }});
     }
+    final float[][][] m = new float[n3][n2][n1];
+    RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(_sigmaPhi);
+    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(_sigmaTheta);
+    rgf1.applyXX0(fx,m);
+    rgf2.applyX0X(m ,m);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2) {
@@ -613,7 +612,6 @@ public class LocalOrientScanner {
     final Sampling st = thetaSampling;
     final float[][][] f = like(sn);
     final float[][][] t = like(sn);
-    final float[][][] m = fillWithMax(sn);
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     loop(n2,new LoopInt() {
@@ -632,11 +630,11 @@ public class LocalOrientScanner {
         //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
         //rgf.apply0X(sns,sns);
         RecursiveExponentialFilter ref = makeRef(sigma);
+
         ref.apply1(sns,sns);
         float[][] s2 = unshear(si,shear,sns);
         for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
           float[] s32 = s2[i3];
-          float[] m32 = m[j3][i2];
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
@@ -645,12 +643,11 @@ public class LocalOrientScanner {
               f32[i1] = fi;
               t32[i1] = ti;
             }
-            if (fi<m32[i1]) {m32[i1]=fi;}
           }
         }
       }
     }});
-    return new float[][][][]{m,f,t};
+    return new float[][][][]{f,t};
   }
 
 
