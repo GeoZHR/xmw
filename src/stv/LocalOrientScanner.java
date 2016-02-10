@@ -612,8 +612,8 @@ public class LocalOrientScanner {
     final int n1 = n1(sn), n2 = n2(sn);
     final Sampling st = thetaSampling;
     final float[][][] f = like(sn);
-    final float[][][] m = like(sn);
     final float[][][] t = like(sn);
+    final float[][][] m = fillWithMax(sn);
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     loop(n2,new LoopInt() {
@@ -667,6 +667,29 @@ public class LocalOrientScanner {
     }
     return q;
   }
+
+  private float[][][] fillWithMax(float[][][] p) {
+    int n1 = n1(p);
+    int n2 = n2(p);
+    int n3 = n3(p);
+    float pm = 0.0f;
+    float[][][] q = new float[n3][n2][];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float[] p32 = p[i3][i2];
+      if (p32!=null) {
+        float m32 = max(p32);
+        if(m32>pm) {pm=m32;}
+      }
+    }}
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        q[i3][i2] = (p[i3][i2]!=null)?fillfloat(pm,n1):null;
+      }
+    }
+    return q;
+  }
+
 
 
   // Removes spurious faults caused by image boundaries. A sample of fault
