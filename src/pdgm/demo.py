@@ -62,7 +62,7 @@ sigmaPhi,sigmaTheta = 8,20
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
 upperLikelihood = 0.5
-minSkinSize = 3000
+minSkinSize = 4000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -73,7 +73,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = getPngDir()
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -113,7 +113,7 @@ def main(args):
 def goOrientScan():
   gx = readImage(gxfile)
   sem = readImage(semfile)
-  sem=sub(1,sem)
+  #sem=sub(1,sem)
   if not plotOnly:
     fs = LocalOrientScanner(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
@@ -130,9 +130,9 @@ def goOrientScan():
     '''
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
-  plot3(gx,sem,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
+  plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         clab="Semblance",png="sem")
-  plot3(gx,fl,cmin=0.0,cmax=1,cmap=jetRamp(1.0),
+  plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
@@ -956,7 +956,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(262,119,154)
+  ipg.setSlices(262,80,207)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
@@ -988,9 +988,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov = sf.getOrbitView()
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
+  ov.setScale(1.6)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,-0.05))
+  ov.setTranslate(Vector3(0.0,-0.04,-0.06))
   ov.setAzimuthAndElevation(-56.0,35.0)
   sf.setVisible(True)
   if png and pngDir:

@@ -414,6 +414,10 @@ public class LocalOrientScanner {
         float[] f32 = f[i3][i2];
         for (int i1=0; i1<n1; ++i1) {
           float mi = m32[i1];
+          mi = mi*mi; // semblance^2
+          mi = mi*mi; // semblance^4
+          mi = mi*mi; // semblance^8
+          mi = 1f-mi;
           float fi = f32[i1];
           if (fi>=mi) {f32[i1] = (fi-mi)/fi;}
           else {f32[i1]=0.0f;}
@@ -632,7 +636,11 @@ public class LocalOrientScanner {
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
-            float fi = s32[i1];
+            float st = s32[i1];
+            st = st*st; // semblance^2
+            st = st*st; // semblance^4
+            st = st*st; // semblance^8
+            float fi = 1.0f-st;
             if (fi>f32[i1]) {
               f32[i1] = fi;
               t32[i1] = ti;
