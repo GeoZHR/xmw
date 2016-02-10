@@ -357,7 +357,7 @@ public class LocalOrientScanner {
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
-    final float[][][] m = fillfloat(max(fx),n1,n2,n3);
+    final float[][][] m = fillfloat(1.0f,n1,n2,n3);
     final float tmin = (float)thetaSampling.getFirst();
     final float tmax = (float)thetaSampling.getLast();
     int np = phiSampling.getCount();
@@ -396,6 +396,8 @@ public class LocalOrientScanner {
             float mpi = mp32[i1];
             float fpi = fp32[i1];
             float tpi = tp32[i1];
+            if (mpi<0.0f) mpi = 0.0f; // necessary because of sinc
+            if (mpi>1.0f) mpi = 1.0f; // necessary because of sinc
             if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
             if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
             if (tpi<tmin) tpi = tmin; // for both fault likelihood
@@ -405,9 +407,7 @@ public class LocalOrientScanner {
               p32[i1] = phi;
               t32[i1] = tpi;
             }
-            if (mpi<m32[i1]) {
-              m32[i1] = mpi;
-            }
+            if (mpi<m32[i1]) {m32[i1] = mpi;}
           }
         }
       }});
@@ -426,9 +426,10 @@ public class LocalOrientScanner {
         float[] m32 = m[i3][i2];
         float[] f32 = f[i3][i2];
         for (int i1=0; i1<n1; ++i1) {
-          float mpi = m32[i1];
-          float fpi = f32[i1];
-          if (fpi>=mpi) {f32[i1] = (fpi-mpi)/fpi;}
+          float mi = m32[i1];
+          float fi = f32[i1];
+          if (fi>=mi) {f32[i1] = (fi-mi)/fi;}
+          else {f32[i1]=0.0f;}
         }
       }
     }});
@@ -650,9 +651,8 @@ public class LocalOrientScanner {
             if (fi>f32[i1]) {
               f32[i1] = fi;
               t32[i1] = ti;
-            } else {
-              m32[i1] = fi;
-            }
+            } 
+            if (fi<m32[i1]) {m32[i1] = fi;}
           }
         }
       }
@@ -690,7 +690,7 @@ public class LocalOrientScanner {
     }}
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
-        q[i3][i2] = (p[i3][i2]!=null)?fillfloat(pm,n1):null;
+        q[i3][i2] = (p[i3][i2]!=null)?fillfloat(1.0f,n1):null;
       }
     }
     return q;
