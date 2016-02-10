@@ -354,10 +354,10 @@ public class LocalOrientScanner {
     final int n1 = fx[0][0].length;
     final int n2 = fx[0].length;
     final int n3 = fx.length;
-    final float[][][] m = new float[n3][n2][n1];
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
+    final float[][][] m = fillfloat(max(fx),n1,n2,n3);
     final float tmin = (float)thetaSampling.getFirst();
     final float tmax = (float)thetaSampling.getLast();
     int np = phiSampling.getCount();
@@ -418,7 +418,7 @@ public class LocalOrientScanner {
         for (int i1=0; i1<n1; ++i1) {
           float mpi = m32[i1];
           float fpi = f32[i1];
-          if (fpi>0.0f) {f32[i1] = (fpi-mpi)/fpi;}
+          if (fpi>=mpi) {f32[i1] = (fpi-mpi)/fpi;}
         }
       }
     }});
