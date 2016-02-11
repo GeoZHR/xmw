@@ -365,8 +365,8 @@ public class LocalOrientScanner {
     sw.start();
     for (int ip=0; ip<np; ++ip) {
       final float phi = (float)phiSampling.getValue(ip);
-      if(abs(phi- 90)<=10f){continue;}
-      if(abs(phi-270)<=10f){continue;}
+      //if(abs(phi- 90)<=10f){continue;}
+      //if(abs(phi-270)<=10f){continue;}
       if (ip>0) {
         double timeUsed = sw.time();
         double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
@@ -412,6 +412,8 @@ public class LocalOrientScanner {
         }
       }});
     }
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2.0);
+    rgf.apply000(m,m);
     final float sc = np*thetaSampling.getCount();
     loop(n3,new LoopInt() {
     public void compute(int i3) {
