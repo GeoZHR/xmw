@@ -54,7 +54,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 70,85
-sigmaPhi,sigmaTheta = 8,25
+sigmaPhi,sigmaTheta = 8,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
