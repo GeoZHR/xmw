@@ -412,8 +412,8 @@ public class LocalOrientScanner {
         }
       }});
     }
-    //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2.0);
-    //rgf.apply000(m,m);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2.0);
+    rgf.apply000(m,m);
     final float sc = np*thetaSampling.getCount();
     loop(n3,new LoopInt() {
     public void compute(int i3) {
