@@ -5,7 +5,7 @@ the Common Public License - v1.0, which accompanies this distribution, and is
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 
-package stv;
+package mef;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Stopwatch;

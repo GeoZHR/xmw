@@ -5,10 +5,8 @@ Version: 2016.01.28
 """
 
 from utils import *
-#setupForSubset("clyde")
-setupForSubset("clydeSub")
-#setupForSubset("opunakeSub")
-#setupForSubset("parihaka")
+#setupForSubset("f3d")
+setupForSubset("clyde")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -73,24 +71,19 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = getPngDir()
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  #goPlanarity()
-  #goSemblanceThin()
-  #goSemblanceTv()
-  #goSlopes()
-  #goSemblance()
-  #goAccumulate()
+  goSemblance()
+  goOrientScan()
   #goScan()
   #goThin()
   #goTvThin()
   #goThinTv()
   #goSkin()
-  goOrientScan()
   #goTv()
   #goSkinTv()
   #goTI()
@@ -113,7 +106,7 @@ def main(args):
 def goOrientScan():
   gx = readImage(gxfile)
   sem = readImage(semfile)
-  #sem=sub(1,sem)
+  sem=sub(1,sem)
   if not plotOnly:
     fs = LocalOrientScanner(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
@@ -127,6 +120,7 @@ def goOrientScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+    '''
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
   plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
@@ -137,175 +131,23 @@ def goOrientScan():
         clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
-
-def goTvThin():
-  gx = readImage(gxfile)
-  fl = readImage(flfile)
-  flt1 = readImage(fltfile)
-  tv3 = TensorVoting3()
-  flt2 = tv3.thin(fl)
-  plot3(gx,flt1,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood1",png="flt")
-  plot3(gx,flt2,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood2",png="flt")
-  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-
-def goComparison():
-  gx = readImage(gxfile)
-  fl1 = readImage(fltfile)
-  fsk = readSkins(fskbase)
-  fcs = FaultSkin.getCells(fsk)
-  tv3 = TensorVoting3()
-  fl2 = zerofloat(n1,n2,n3)
-  tv3.getFlImage(fcs,fl2)
-  plot3(gx,fl1,cmin=min(fl1),cmax=max(fl1),cmap=jetRamp(1.0),
-    clab="fl1")
-  plot3(gx,fl2,cmin=min(fl2),cmax=max(fl2),cmap=jetRamp(1.0),
-    clab="flt2")
-
-def goPlanarity():
-  gx = readImage("gx")
-  if not plotOnly:
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(16.0,2.0,2.0)
-    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-    ep = sub(1,ep)
-    ep = pow(ep,0.1)
-    sub(ep,min(ep),ep)
-    div(ep,max(ep),ep)
-    lof = LocalOrientFilterP(8.0,2.0,2.0)
-    lof.applyForNormal(ep,u1,u2,u3)
-    tv3 = TensorVoting3()
-    fcs = tv3.findCells(0.1,ep,u1,u2,u3)
-    ept = zerofloat(n1,n2,n3)
-    tv3.getFlImage(fcs,ept)
-    writeImage(epfile,ep)
-    writeImage(eptfile,ept)
-  else:
-    ep = readImage(epfile)
-    ept = readImage(eptfile)
-  plot3(gx,ep,cmin=min(ep),cmax=max(ep),cmap=jetRamp(1.0),clab="ep")
-  plot3(gx,ept,cmin=min(ept),cmax=max(ept),cmap=jetRamp(1.0),clab="ep")
+    '''
 
 def goSemblance():
   print "go semblance ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    lof = LocalOrientFilterP(10.0,8.0,8.0)
+    lof = LocalOrientFilterP(6.0,3.0,3.0)
     ets = lof.applyForTensors(gx)
-    lsf = LocalSemblanceFilter(2,2)
+    lsf = LocalSemblanceFilter(4,2)
     sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
     writeImage(semfile,sem)
   else:
     sem = readImage(semfile)
+    '''
   sem=sub(1,sem)
-  sem = pow(sem,1.0)
-  sub(sem,min(sem),sem)
-  div(sem,max(sem),sem)
-  plot3(gx,sem,cmin=min(sem),cmax=max(sem),cmap=jetRamp(1.0),clab="Semblance")
-
-def goSemblanceThin():
-  gx = readImage(gxfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  ep = readImage(epfile)
-  ep = sub(1,ep)
-  ep = pow(ep,0.2)
-  sub(ep,min(ep),ep)
-  div(ep,max(ep),ep)
-  lof = LocalOrientFilterP(32.0,4.0,4.0)
-  lof.applyForNormal(ep,u1,u2,u3)
-  tv3 = TensorVoting3()
-  fcs = tv3.findCells(0.2,sem,u1,u2,u3)
-  smt = zerofloat(n1,n2,n3)
-  tv3.getFlImage(fcs,smt)
-  #plot3(gx,cells=fcs)
-  plot3(gx,smt,cmin=min(smt),cmax=max(smt),cmap=jetRamp(1.0),
-    clab="Fault likelihood")
-  plot3(gx,ep,cmin=min(ep),cmax=max(ep),cmap=jetRamp(1.0),
-    clab="ep")
-
-def goSemblanceTv():
-  gx = readImage(gxfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  sem = readImage(semfile)
-  sem = sub(1,sem)
-  if not plotOnly:
-    lof = LocalOrientFilterP(32.0,4.0,4.0)
-    lof.applyForNormal(sem,u1,u2,u3)
-    tv3 = TensorVoting3()
-    fcs = tv3.findCells(0.2,sem,u1,u2,u3)
-    cells=[]
-    for ic in range(0,len(fcs),5):
-      cells.append(fcs[ic])
-    tv3.setSigma(15)
-    tv3.setVoteWindow(30,20,20)
-    sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
-    sm = pow(sm,0.3)
-    sub(sm,min(sm),sm)
-    div(sm,max(sm),sm)
-    writeImage(cmfile,cm)
-    writeImage(smfile,sm)
-    writeImage(fpvfile,fp)
-    writeImage(ftvfile,ft)
-  else: 
-    sm = readImage(smfile)
-  plot3(gx,sem,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="semblance",png="sm")
-  plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
-  '''
-  #plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
-  '''
-
-
-def goTI():
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.5)
-  fs.setMinSkinSize(minSkinSize)
-  fx = randfloat(n1,n2,n3)
-  gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  plot3(gx,skins=sk,png="skins")
-  '''
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fcs = fs.findCells([fl,fp,ft])
-  fcs = FaultSkin.getCells(sk)
-  plot3(gx,skins=sk,png="oldSkins")
-  fls = zerofloat(n1,n2,n3)
-  cells=[]
-  for ic in range(0,len(fcs),1):
-    cell = fcs[ic]
-    cells.append(cell)
-    ks = cell.getI()
-    ms = cell.getIm()
-    ps = cell.getIp()
-    fls[ks[2]][ks[1]][ks[0]] = cell.getFl()
-    fls[ms[2]][ms[1]][ms[0]] = cell.getFl()
-    fls[ps[2]][ps[1]][ps[0]] = cell.getFl()
-  plot3(gx,fls,cmin=min(fls),cmax=max(fls),cmap=jetRamp(1.0),
-    clab="Fault likelihood",png="sm")
-  '''
-  cells = FaultSkin.getCells(sk)
-  ti = TensorInterp()
-  ti.setParameters(80,5,0.5)
-  sm,u1,u2,u3 = ti.apply(n1,n2,n3,cells)
-  plot3(gx,sm,cmin=min(sm),cmax=max(sm),cmap=jetRamp(1.0),
-    clab="Salient map",png="sm")
-  tv3 = TensorVoting3()
-  cells = tv3.findCells(0.2,sm,u1,u2,u3)
-  plot3(gx,cells=cells,png="cells")
-  skins = fs.findSkins(cells)
-  plot3(gx,skins=skins,png="skins")
+  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
+    '''
 
 def goTv():
   gx = readImage(gxfile)
