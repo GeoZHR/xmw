@@ -131,9 +131,9 @@ def goOrientScan():
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
   plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault attribute",png="sem")
+        clab="Fault attribute",cint=0.2,png="sem")
   plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
+        clab="Fault likelihood",cint=0.2,png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
   ftc = convertDips(ft)
