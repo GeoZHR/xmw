@@ -71,13 +71,13 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = getPngDir()
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  #goSemblance()
+  goSemblance()
   goOrientScan()
   #goScan()
   #goThin()
@@ -94,15 +94,22 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goComparison()
-  '''
-  gx = readImage(gxfile)
-  sem = readImage(semfile)
-  gxs  = copy(300,300,300,50,400,0,gx)
-  sems = copy(300,300,300,50,400,0,sem)
-  writeImage("gxSub",gxs)
-  writeImage("semSub",sems)
-  '''
 
+def goSemblance():
+  print "go semblance ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    lof = LocalOrientFilterP(8.0,4.0,4.0)
+    ets = lof.applyForTensors(gx)
+    lsf = LocalSemblanceFilter(3,2)
+    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
+    writeImage(semfile,sem)
+  else:
+    sem = readImage(semfile)
+    '''
+  sem=sub(1,sem)
+  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
+    '''
 def goOrientScan():
   gx = readImage(gxfile)
   sem = readImage(semfile)
@@ -133,21 +140,6 @@ def goOrientScan():
         clab="Fault dip (degrees)",png="ft")
     '''
 
-def goSemblance():
-  print "go semblance ..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    lof = LocalOrientFilterP(6.0,3.0,3.0)
-    ets = lof.applyForTensors(gx)
-    lsf = LocalSemblanceFilter(2,2)
-    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
-    writeImage(semfile,sem)
-  else:
-    sem = readImage(semfile)
-    '''
-  sem=sub(1,sem)
-  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
-    '''
 
 def goTv():
   gx = readImage(gxfile)
@@ -796,7 +788,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(262,80,207)
+  ipg.setSlices(262,80,176)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
