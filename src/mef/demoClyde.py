@@ -54,12 +54,12 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 70,85
-sigmaPhi,sigmaTheta = 8,25
+sigmaPhi,sigmaTheta = 8,35
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
-upperLikelihood = 0.6
+upperLikelihood = 0.7
 minSkinSize = 4000
 
 # These parameters control the computation of fault dip slips.
@@ -77,7 +77,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goSemblance()
+  #goSemblance()
   goOrientScan()
   #goScan()
   #goThin()
@@ -139,7 +139,6 @@ def goOrientScan():
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
     '''
-
 
 def goTv():
   gx = readImage(gxfile)
