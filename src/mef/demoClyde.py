@@ -54,7 +54,7 @@ semfile = "sem"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 70,85
-sigmaPhi,sigmaTheta = 8,35
+sigmaPhi,sigmaTheta = 8,25
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -77,7 +77,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  #goSemblance()
+  goSemblance()
   goOrientScan()
   #goScan()
   #goThin()
@@ -101,7 +101,7 @@ def goSemblance():
   if not plotOnly:
     lof = LocalOrientFilterP(8.0,4.0,4.0)
     ets = lof.applyForTensors(gx)
-    lsf = LocalSemblanceFilter(3,2)
+    lsf = LocalSemblanceFilter(4,2)
     sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
     writeImage(semfile,sem)
   else:

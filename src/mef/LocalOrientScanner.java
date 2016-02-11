@@ -632,7 +632,7 @@ public class LocalOrientScanner {
         float shear = -1.0f/tan(theta);
         float[][] sns = shear(si,shear,sn2);
         float sigma = (float)_sigmaTheta*sin(theta);
-        RecursiveExponentialFilter ref = makeRef(sigma);
+        RecursiveExponentialFilter ref = makeRef(sigma*1.5f);
         ref.apply1(sns,sns);
         float[][] s2 = unshear(si,shear,sns);
         for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
