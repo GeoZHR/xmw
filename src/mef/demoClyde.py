@@ -69,8 +69,8 @@ maxThrow = 25.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = getPngDir()
 pngDir = None
+pngDir = getPngDir()
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -99,7 +99,7 @@ def goSemblance():
   print "go semblance ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    lof = LocalOrientFilterP(8.0,4.0,4.0)
+    lof = LocalOrientFilterP(6.0,3.0,3.0)
     ets = lof.applyForTensors(gx)
     lsf = LocalSemblanceFilter(4,2)
     sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
@@ -108,8 +108,10 @@ def goSemblance():
     sem = readImage(semfile)
     '''
   sem=sub(1,sem)
-  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
+  plot3(gx,clab="Amplitude",png="seis")
+  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Fault attribute",png="sem")
     '''
+
 def goOrientScan():
   gx = readImage(gxfile)
   sem = readImage(semfile)
