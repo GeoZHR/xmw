@@ -5,8 +5,8 @@ Version: 2016.01.28
 """
 
 from utils import *
-#setupForSubset("f3d")
-setupForSubset("clyde")
+setupForSubset("f3d")
+#setupForSubset("clyde")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -53,14 +53,14 @@ semfile = "sem"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,20
+minTheta,maxTheta = 70,85
+sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.3
+lowerLikelihood = 0.2
 upperLikelihood = 0.5
-minSkinSize = 4000
+minSkinSize = 2000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -77,7 +77,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goSemblance()
+  #goSemblance()
   goOrientScan()
   #goScan()
   #goThin()
@@ -102,6 +102,19 @@ def main(args):
   writeImage("gxSub",gxs)
   writeImage("semSub",sems)
   '''
+def goSemblance():
+  print "go semblance ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    lof = LocalOrientFilterP(6.0,3.0,3.0)
+    ets = lof.applyForTensors(gx)
+    lsf = LocalSemblanceFilter(2,2)
+    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
+    writeImage(semfile,sem)
+  else:
+    sem = readImage(semfile)
+  sem=sub(1,sem)
+  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
 
 def goOrientScan():
   gx = readImage(gxfile)
@@ -120,7 +133,6 @@ def goOrientScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-    '''
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
   plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
@@ -131,23 +143,7 @@ def goOrientScan():
         clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
-    '''
 
-def goSemblance():
-  print "go semblance ..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    lof = LocalOrientFilterP(6.0,3.0,3.0)
-    ets = lof.applyForTensors(gx)
-    lsf = LocalSemblanceFilter(4,2)
-    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
-    writeImage(semfile,sem)
-  else:
-    sem = readImage(semfile)
-    '''
-  sem=sub(1,sem)
-  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
-    '''
 
 def goTv():
   gx = readImage(gxfile)
@@ -371,6 +367,7 @@ def goSkin():
   print "number of cells in skins =",FaultSkin.countCells(skins)
   removeAllSkinFiles(fskbase)
   writeSkins(fskbase,skins)
+  plot3(gx,cells=cells)
   plot3(gx,skins=skins)
   '''
   for iskin,skin in enumerate(skins):
@@ -796,48 +793,29 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(262,80,207)
-  #ipg.setSlices(85,5,43)
-  #ipg.setSlices(85,5,102)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
-  if fbs:
-    mc = MarchingCubes(s1,s2,s3,fbs)
-    ct = mc.getContour(0.0)
-    tg = TriangleGroup(ct.i,ct.x,ct.u)
-    states = StateSet()
-    cs = ColorState()
-    cs.setColor(Color.MAGENTA)
-    states.add(cs)
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    states.add(lms)
-    ms = MaterialState()
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    ms.setSpecular(Color.WHITE)
-    ms.setShininess(100.0)
-    states.add(ms)
-    tg.setStates(states);
-    sf.world.addChild(tg)
+  ipg.setSlices(106,80,207)
+  ipg.setSlices(110,25,249)
+  #ipg.setSlices(115,25,167)
   if cbar:
-    sf.setSize(1037,700)
+    sf.setSize(987,720)
   else:
-    sf.setSize(900,700)
+    sf.setSize(850,720)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.6)
+  ov.setScale(1.3)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.04,-0.06))
+  ov.setTranslate(Vector3(0.0,0.15,0.05))
   ov.setAzimuthAndElevation(-56.0,35.0)
+  #ov.setAzimuthAndElevation(-56.0,40.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
 
 #############################################################################
 run(main)

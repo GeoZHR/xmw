@@ -354,6 +354,7 @@ public class LocalOrientScanner {
     final int n1 = fx[0][0].length;
     final int n2 = fx[0].length;
     final int n3 = fx.length;
+    final float[][][] m = new float[n3][n2][n1];
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
@@ -364,8 +365,8 @@ public class LocalOrientScanner {
     sw.start();
     for (int ip=0; ip<np; ++ip) {
       final float phi = (float)phiSampling.getValue(ip);
-      if(abs(phi- 90)<=10f){continue;}
-      if(abs(phi-270)<=10f){continue;}
+      //if(abs(phi- 90)<=10f){continue;}
+      //if(abs(phi-270)<=10f){continue;}
       if (ip>0) {
         double timeUsed = sw.time();
         double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
@@ -378,23 +379,30 @@ public class LocalOrientScanner {
       float[][][][] rftp = scanTheta(thetaSampling,rfx);
       rfx = null; // enable gc to collect this large array
       float[][][][] ftp = r.unrotate(rftp);
-      final float[][][] fp = ftp[0];
-      final float[][][] tp = ftp[1];
+      final float[][][] fs = ftp[0];
+      final float[][][] fp = ftp[1];
+      final float[][][] tp = ftp[2];
       loop(n3,new LoopInt() {
       public void compute(int i3) {
         for (int i2=0; i2<n2; ++i2) {
+          float[] m32 = m[i3][i2];
           float[] f32 = f[i3][i2];
           float[] p32 = p[i3][i2];
           float[] t32 = t[i3][i2];
+          float[] fs32 = fs[i3][i2];
           float[] fp32 = fp[i3][i2];
           float[] tp32 = tp[i3][i2];
           for (int i1=0; i1<n1; ++i1) {
+            float fsi = fs32[i1];
             float fpi = fp32[i1];
             float tpi = tp32[i1];
+            if (fsi<0.0f) fsi = 0.0f; // necessary because of sinc
+            if (fsi>1.0f) fsi = 1.0f; // interpolation in unrotate,
             if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
             if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
             if (tpi<tmin) tpi = tmin; // for both fault likelihood
             if (tpi>tmax) tpi = tmax; // and fault dip theta
+            m32[i1] += fsi;
             if (fpi>f32[i1]) {
               f32[i1] = fpi;
               p32[i1] = phi;
@@ -404,19 +412,16 @@ public class LocalOrientScanner {
         }
       }});
     }
-    final float[][][] m = new float[n3][n2][n1];
-    RecursiveExponentialFilter ref = makeRef(_sigmaTheta);
-    ref.apply(fx,m);
+    final float sc = np*thetaSampling.getCount();
     loop(n3,new LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2) {
         float[] m32 = m[i3][i2];
         float[] f32 = f[i3][i2];
         for (int i1=0; i1<n1; ++i1) {
-          float mi = m32[i1];
           float fi = f32[i1];
-          if (fi>=mi) {f32[i1] = (fi-mi)/fi;}
-          else {f32[i1]=0.0f;}
+          float mi = m32[i1]/sc;
+          f32[i1] = fi/(fi+mi);
         }
       }
     }});
@@ -584,7 +589,7 @@ public class LocalOrientScanner {
   // Horizontal smoothing of rotated snum,sden along axis 2.
   private void smooth2(final float[][][] snd) {
     final int n3 = n3(snd);
-    final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
+    final RecursiveExponentialFilter ref = makeRef(_sigmaPhi*2f);
     //final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigmaPhi);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
@@ -599,7 +604,7 @@ public class LocalOrientScanner {
 
   // Smoothing filter
   private static RecursiveExponentialFilter makeRef(double sigma) {
-    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma*1.5f);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
     ref.setEdges(RecursiveExponentialFilter.Edges.INPUT_ZERO_SLOPE);
     return ref;
   }
@@ -607,6 +612,7 @@ public class LocalOrientScanner {
   private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] sn) {
     final int n1 = n1(sn), n2 = n2(sn);
     final Sampling st = thetaSampling;
+    final float[][][] m = like(sn);
     final float[][][] f = like(sn);
     final float[][][] t = like(sn);
     final SincInterpolator si = new SincInterpolator();
@@ -629,10 +635,14 @@ public class LocalOrientScanner {
         float[][] s2 = unshear(si,shear,sns);
         for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
           float[] s32 = s2[i3];
+          float[] m32 = m[j3][i2];
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
             float fi = s32[i1];
+            fi *= fi;
+            fi *= fi;
+            m32[i1] += fi;
             if (fi>f32[i1]) {
               f32[i1] = fi;
               t32[i1] = ti;
@@ -641,7 +651,7 @@ public class LocalOrientScanner {
         }
       }
     }});
-    return new float[][][][]{f,t};
+    return new float[][][][]{m,f,t};
   }
 
 
