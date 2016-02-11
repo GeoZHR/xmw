@@ -77,7 +77,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goSemblance()
+  #goSemblance()
   goOrientScan()
   #goScan()
   #goThin()
@@ -106,11 +106,9 @@ def goSemblance():
     writeImage(semfile,sem)
   else:
     sem = readImage(semfile)
-    '''
   sem=sub(1,sem)
   plot3(gx,clab="Amplitude",png="seis")
   plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Fault attribute",png="sem")
-    '''
 
 def goOrientScan():
   gx = readImage(gxfile)
@@ -138,7 +136,10 @@ def goOrientScan():
         clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
+  ftc = convertDips(ft)
+  print min(ftc)
+  print max(ftc)
+  plot3(gx,ftc,cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
     '''
 
