@@ -107,8 +107,9 @@ def goSemblance():
   else:
     sem = readImage(semfile)
   sem=sub(1,sem)
-  plot3(gx,clab="Amplitude",png="seis")
-  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Fault attribute",png="sem")
+  plot3(gx,clab="Amplitude",cint=1.0,png="seis")
+  plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),
+        clab="Fault attribute",cint=0.2,png="sem")
 
 def goOrientScan():
   gx = readImage(gxfile)
