@@ -131,7 +131,7 @@ def goOrientScan():
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
   plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Semblance",png="sem")
+        clab="Fault attribute",png="sem")
   plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),

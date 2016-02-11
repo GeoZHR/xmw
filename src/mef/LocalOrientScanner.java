@@ -642,8 +642,6 @@ public class LocalOrientScanner {
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
             float fi = s32[i1];
-            fi *= fi;
-            fi *= fi;
             m32[i1] += fi;
             if (fi>f32[i1]) {
               f32[i1] = fi;
