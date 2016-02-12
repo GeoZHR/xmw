@@ -59,8 +59,8 @@ sigmaPhi,sigmaTheta = 8,30
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
-upperLikelihood = 0.7
-minSkinSize = 4000
+upperLikelihood = 0.55
+minSkinSize = 4500
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -76,24 +76,10 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDisplay()
   #goSemblance()
   goOrientScan()
+  #goThinX()
   #goSkin()
-  #goScan()
-  #goThin()
-  #goTvThin()
-  #goThinTv()
-  #goTv()
-  #goSkinTv()
-  #goTI()
-  #goReSkin()
-  #goSmooth()
-  #goSlip()
-  #goUnfaultS()
-  #goFlatten()
-  #goHorizonExtraction()
-  #goComparison()
 
 def goSemblance():
   print "go semblance ..."
@@ -162,30 +148,41 @@ def goThin():
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
   plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,flt,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
 
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
+def goThinX():
+  print "goThin ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    sub(fl,min(fl),fl)
+    div(fl,max(fl),fl)
+    flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+    fd = FaultDisplay()
+    flt = fd.setSlices(262,80,200,flt)
+    fpt = fd.setSlices(262,80,200,fpt)
+    ftt = fd.setSlices(262,80,200,ftt)
+    writeImage(fltfile,flt)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
+  else:
+    flt = readImage(fltfile)
+    fpt = readImage(fptfile)
+    ftt = readImage(fttfile)
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gx,flt,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
 
 def goSkin():
   print "goSkin ..."
@@ -194,11 +191,11 @@ def goSkin():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-    fs = FaultSkinner()
     sub(fl,min(fl),fl)
     div(fl,max(fl),fl)
+    fs = FaultSkinner()
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
+    fs.setMaxDeltaStrike(8)
     fs.setMaxPlanarDistance(0.2)
     fs.setMinSkinSize(minSkinSize)
     cells = fs.findCells([fl,fp,ft])
@@ -208,48 +205,13 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
-    plot3(gx,cells=cells)
+    plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
-  tv3 = TensorVoting3()
-  flt = zerofloat(n1,n2,n3)
-  tv3.getFlImage(FaultSkin.getCells(skins),flt)
-  plot3(gx,flt,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Enhanced fault attribute",png="fltSkin")
-  plot3(gx,skins=skins)
+  plot3(gx,skins=skins,png="skins")
   '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
-  '''
-
-def goReSkin():
-
-  print "goReSkin ..."
-  useOldCells = True
-  gx = readImage(gxfile)
-  if not plotOnly:
-    fl = readImage(flfile)
-    sk = readSkins(fskbase)
-    fsx = FaultSkinnerX()
-    fsx.setParameters(10,10,0.2)
-    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsx.setMinSkinSize(minSkinSize)
-    fsx.setMaxPlanarDistance(0.2)
-    fsx.setSkinning(useOldCells)
-    cells = FaultSkin.getCells(sk)
-    fsx.resetCells(cells)
-    skins = fsx.findSkinsXX(cells,fl)
-    removeAllSkinFiles(fskgood)
-    writeSkins(fskgood,skins)
-  skins = readSkins(fskgood)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  #plot3(gx,skins=skins,png="skinsNew")
-  plot3(gx,skins=skins,links=True,png="skinsNewLinks")
-  #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
-  '''
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
   '''
 
 def goSmooth():
@@ -584,7 +546,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sg = Group()
     ss = StateSet()
     lms = LightModelState()
-    lms.setLocalViewer(True)
+    lms.setLocalViewer(False)
     lms.setTwoSide(True)
     ss.add(lms)
     ms = MaterialState()
@@ -641,7 +603,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(262,80,176)
+  ipg.setSlices(262,80,200)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
@@ -671,12 +633,12 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.55*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.6)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.04,-0.06))
-  ov.setAzimuthAndElevation(-60.0,30.0)
+  ov.setTranslate(Vector3(0.0,-0.08,-0.06))
+  ov.setAzimuthAndElevation(-60.0,32.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

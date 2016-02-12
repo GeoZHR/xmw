@@ -259,7 +259,6 @@ public class TensorVoting3 {
       return solveEigenproblems(g11,g12,g13,g22,g23,g33);
   }
 
-
   public float[][][][][] voteScale(Sampling sp, Sampling st, float sigma) {
     int np = sp.getCount();
     int nt = st.getCount();
@@ -399,6 +398,7 @@ public class TensorVoting3 {
     }}}
     return cellList.toArray(new FaultCell[0]);
   }
+
   public void getFlImage(FaultCell[] fcs, float[][][] fl) {
     int n3 = fl.length;
     int n2 = fl[0].length;
@@ -410,7 +410,6 @@ public class TensorVoting3 {
       i1 = min(i1,n1-1); i1 = max(i1,0);
       i2 = min(i2,n2-1); i2 = max(i2,0);
       i3 = min(i3,n3-1); i3 = max(i3,0);
-      /*
       int m1 = fc.getM1();
       int m2 = fc.getM2();
       int m3 = fc.getM3();
@@ -425,7 +424,6 @@ public class TensorVoting3 {
       p3 = min(p3,n3-1); p3 = max(p3,0);
       fl[m3][m2][m1] = fc.getFl();
       fl[p3][p2][p1] = fc.getFl();
-      */
       fl[i3][i2][i1] = fc.getFl();
     }
   }

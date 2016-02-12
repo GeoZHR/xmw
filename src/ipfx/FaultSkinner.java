@@ -9,9 +9,9 @@ package ipfx;
 import java.util.*;
 
 import edu.mines.jtk.awt.*;
-import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 
+import util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static ipfx.FaultGeometry.*;
 
@@ -273,7 +273,7 @@ public class FaultSkinner {
     // finite-difference approximations (parabolic interpolation) used to
     // locate ridges.
     float[][][] fs = new float[n3][n2][n1];
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.applyX0X(f,fs);
     rgf.applyXX0(fs,fs);
     f = fs;

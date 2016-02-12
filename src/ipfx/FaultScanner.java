@@ -12,6 +12,7 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
+import util.*;
 import static ipfx.FaultGeometry.*;
 
 /**
@@ -301,7 +302,7 @@ public class FaultScanner {
     float[][][] p = flpt[1];
     float[][][] t = flpt[2];
     f = copy(f);
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.applyX0X(f,f);
     rgf.applyXX0(f,f);
     float[][][] ff = new float[n3][n2][n1];
