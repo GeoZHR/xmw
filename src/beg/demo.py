@@ -51,7 +51,7 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 6,25
+sigmaPhi,sigmaTheta = 8,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -69,15 +69,15 @@ maxThrow = 25.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
-  #goThin()
+  goSlopes()
+  goScan()
   goSkin()
+  #goThin()
   #goReSkinX()
   #goTv()
   #goSkinTv()
@@ -96,17 +96,15 @@ def goDisplay():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  sigma1,sigma2,sigma3,pmax = 8.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-
-  '''
   writeImage(p2file,p2)
   writeImage(p3file,p3)
+  '''
   writeImage(epfile,ep)
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
-  '''
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
@@ -132,17 +130,17 @@ def goScan():
     writeImage(ftfile,ft)
   else:
     gx = readImage(gxfile)
-    #fl = readImage(flfile)
-    #fp = readImage(fpfile)
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
     ft = readImage(ftfile)
     '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
-    '''
   plot3(gx,ft,cmin=65,cmax=85,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
+    '''
 
 def goThin():
   print "goThin ..."
@@ -192,13 +190,10 @@ def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    fc = readImage(flfile)
+    fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
     fs = FaultSkinner()
-    fl = zerofloat(n1,n2,n3)
-    rgf = RecursiveGaussianFilterP(2.0)
-    rgf.apply000(fc,fl)
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fs.setMaxDeltaStrike(10)
     fs.setMaxPlanarDistance(0.2)
@@ -214,9 +209,9 @@ def goSkin():
     writeSkins(fskbase,skins)
     #plot3(gx,cells=cells,png="cells")
   else:
-    skins = readSkins(fskbase)
-  plot3(gx,skins=skins)
+    skins = readSkins(fskgood)
   '''
+  plot3(gx,skins=skins)
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''

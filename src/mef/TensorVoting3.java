@@ -39,7 +39,6 @@ public class TensorVoting3 {
     _w3 = w3;
   }
 
-
   public float[][][][] applyVote(
     final int n1, final int n2, final int n3, FaultCell[] cells) {
     int nc = cells.length;
@@ -49,6 +48,7 @@ public class TensorVoting3 {
     setKdTreeNodes(cells,xs,us,fs);
     final KdTree kt = new KdTree(xs);
     final float[][][] ws = gaussianWeights();
+    final float wm = max(ws);
     final float[][][] ss = new float[n3][n2][n1];
     final float[][][] cs = new float[n3][n2][n1];
     final float[][][] fp = new float[n3][n2][n1];
@@ -57,7 +57,7 @@ public class TensorVoting3 {
     loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       c[0] = c[0]+1;
-      System.out.println("c="+c[0]);
+      System.out.println("c="+c[0]+"/"+n3);
       float[] xmin = new float[3];
       float[] xmax = new float[3];
       for (int i2=0; i2<n2; ++i2) {
@@ -73,13 +73,18 @@ public class TensorVoting3 {
         xmin[2] = i3min; xmax[2] = i3max;
         int[] id = kt.findInRange(xmin,xmax);
         int nd = id.length;
-        float g11 = 1.0f;
-        float g22 = 1.0f;
-        float g33 = 1.0f;
+        float g11 = 0.0f;
+        float g22 = 0.0f;
+        float g33 = 0.0f;
         float g12 = 0.0f;
         float g13 = 0.0f;
         float g23 = 0.0f;
-        if(nd<1) continue;
+        if(nd<1) {
+          g11 = wm;
+          g22 = wm;
+          g33 = wm;
+          continue;
+        }
         double[][] a = new double[3][3];
         for (int ik=0; ik<nd; ++ik) {
           int ip = id[ik];
@@ -97,7 +102,7 @@ public class TensorVoting3 {
           int k1 = round(abs(r1));
           int k2 = round(abs(r2));
           int k3 = round(abs(r3));
-          float wsi = ws[k3][k2][k1]*fl*fl;
+          float wsi = ws[k3][k2][k1]*fl;
           if (rs==0) {
             g11 += u1*u1*wsi;
             g12 += u1*u2*wsi;
@@ -122,7 +127,10 @@ public class TensorVoting3 {
               v1 *= vs; v2 *= vs; v3 *= vs; 
             }
             ur = 1f-ur*ur;
-            float sc = wsi*pow(ur,16);
+            ur *= ur;
+            ur *= ur;
+            ur *= ur;
+            float sc = wsi*ur;
             g11 += sc*v1*v1;
             g12 += sc*v1*v2;
             g13 += sc*v1*v3;
@@ -148,7 +156,7 @@ public class TensorVoting3 {
           u3i = -u3i;
         }
         ss[i3][i2][i1] = (eui-evi);
-        cs[i3][i2][i1] = (evi-ewi)*(eui-evi);
+        cs[i3][i2][i1] = (evi-ewi);//*(eui-evi);
         ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
         fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
       }}

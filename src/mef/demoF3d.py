@@ -52,7 +52,7 @@ semfile = "sem"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minPhi,maxPhi = 0,360
+minPhi,maxPhi = 0,150
 minTheta,maxTheta = 75,85
 sigmaPhi,sigmaTheta = 10,25
 
@@ -71,7 +71,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = getPngDir()
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -135,6 +135,20 @@ def goOrientScan():
     ft = readImage(ftfile)
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
+  plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  fcs=[]
+  for ic in range(0,len(cells),5):
+    fcs.append(cells[ic])
+  tv3 = TensorVoting3()
+  tv3.setVoteWindow(15,10,10)
+  fl,fc,fp,ft = tv3.applyVote(n1,n2,n3,fcs)
   plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         clab="Semblance",png="sem")
   plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),

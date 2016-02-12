@@ -156,6 +156,128 @@ public class LocalOrientScanner {
     return g;
   }
 
+  public float[][][][] recomputeFaultImages(
+    final float[][][] fl, final float[][][] fp, final float[][][] ft) {
+    final int n3 = fl.length;
+    final int n2 = fl[0].length;
+    final int n1 = fl[0][0].length;
+    final float[][][] g11 = new float[n3][n2][n1];
+    final float[][][] g12 = new float[n3][n2][n1];
+    final float[][][] g13 = new float[n3][n2][n1];
+    final float[][][] g22 = new float[n3][n2][n1];
+    final float[][][] g23 = new float[n3][n2][n1];
+    final float[][][] g33 = new float[n3][n2][n1];
+    final EigenTensors3 ets = new EigenTensors3(n1,n2,n3,true);
+    loop(n3,new LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float fli = fl[i3][i2][i1];
+        float fpi = fp[i3][i2][i1];
+        float fti = ft[i3][i2][i1];
+        float[] us = faultNormalVectorFromStrikeAndDip(fpi,fti);
+        float[] ws = faultDipVectorFromStrikeAndDip(fpi,fti);
+        float u1i = us[0];
+        float u2i = us[1];
+        float u3i = us[2];
+        g11[i3][i2][i1] = u1i*u1i*fli;
+        g12[i3][i2][i1] = u1i*u2i*fli;
+        g13[i3][i2][i1] = u1i*u3i*fli;
+        g22[i3][i2][i1] = u2i*u2i*fli;
+        g23[i3][i2][i1] = u2i*u3i*fli;
+        g33[i3][i2][i1] = u3i*u3i*fli;
+        ets.setEigenvectorU(i1,i2,i3,us);
+        ets.setEigenvectorW(i1,i2,i3,ws);
+        ets.setEigenvalues(i1,i2,i3,0.01f,1.0f,1.0f);
+      }}
+    }});
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(ets,22,g11,g11);
+    lsf.apply(ets,22,g12,g12);
+    lsf.apply(ets,22,g13,g13);
+    lsf.apply(ets,22,g22,g22);
+    lsf.apply(ets,22,g23,g23);
+    lsf.apply(ets,22,g33,g33);
+    /*
+    RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(8.0);
+    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(2.0);
+    rgf1.apply0XX(g11,g11);
+    rgf1.apply0XX(g12,g12);
+    rgf1.apply0XX(g13,g13);
+    rgf1.apply0XX(g22,g22);
+    rgf1.apply0XX(g23,g23);
+    rgf1.apply0XX(g33,g33);
+
+    rgf2.applyX0X(g11,g11);
+    rgf2.applyX0X(g12,g12);
+    rgf2.applyX0X(g13,g13);
+    rgf2.applyX0X(g22,g22);
+    rgf2.applyX0X(g23,g23);
+    rgf2.applyX0X(g33,g33);
+
+    rgf2.applyXX0(g11,g11);
+    rgf2.applyXX0(g12,g12);
+    rgf2.applyXX0(g13,g13);
+    rgf2.applyXX0(g22,g22);
+    rgf2.applyXX0(g23,g23);
+    rgf2.applyXX0(g33,g33);
+    */
+    return solveEigenproblems(g11,g12,g13,g22,g23,g33);
+  }
+
+  public float[][][][] solveEigenproblems(
+    final float[][][] g11, final float[][][] g12, final float[][][] g13,
+    final float[][][] g22, final float[][][] g23, final float[][][] g33) {
+    final int n3 = g11.length;
+    final int n2 = g11[0].length;
+    final int n1 = g11[0][0].length;
+    final float[][][] ss = new float[n3][n2][n1];
+    final float[][][] cs = new float[n3][n2][n1];
+    final float[][][] fp = new float[n3][n2][n1];
+    final float[][][] ft = new float[n3][n2][n1];
+    loop(n3,new LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        double[] e = new double[3];
+        double[][] z = new double[3][3];
+        double[][] a = new double[3][3];
+        float g11i = g11[i3][i2][i1];
+        float g12i = g12[i3][i2][i1];
+        float g13i = g13[i3][i2][i1];
+        float g22i = g22[i3][i2][i1];
+        float g23i = g23[i3][i2][i1];
+        float g33i = g33[i3][i2][i1];
+        a[0][0]=g11i; a[0][1]=g12i; a[0][2]=g13i;
+        a[1][0]=g12i; a[1][1]=g22i; a[1][2]=g23i;
+        a[2][0]=g13i; a[2][1]=g23i; a[2][2]=g33i;
+        Eigen.solveSymmetric33(a,z,e);
+        float eui = (float)e[0];
+        float evi = (float)e[1];
+        float ewi = (float)e[2];
+        float u1i = (float)z[0][0];
+        float u2i = (float)z[0][1];
+        float u3i = (float)z[0][2];
+        if (u2i==0.0f&&u3i==0f){continue;}
+        if (u1i>0.0f) {
+          u1i = -u1i;
+          u2i = -u2i;
+          u3i = -u3i;
+        }
+        ss[i3][i2][i1] = (eui-evi)/eui;
+        cs[i3][i2][i1] = (evi-ewi)/evi;
+        ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+        fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+      }}
+    }});
+    sub(ss,min(ss),ss);
+    div(ss,max(ss),ss);
+    sub(cs,min(cs),cs);
+    div(cs,max(cs),cs);
+    return new float[][][][]{ss,fp,ft};
+  }
+
+
   /**
    * Scans a specified image for fault strikes and dips.
    * @param phiMin minimum fault strike, in degrees.
@@ -409,8 +531,8 @@ public class LocalOrientScanner {
             float fsi = fs32[i1];
             float fpi = fp32[i1];
             float tpi = tp32[i1];
-            if (fsi<0.0f) fsi = 0.0f; // necessary because of sinc
-            if (fsi>1.0f) fsi = 1.0f; // interpolation in unrotate,
+            if (fsi<0.0f) fsi = 0.0f; 
+            if (fsi>1.0f) fsi = 1.0f; 
             if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
             if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
             if (tpi<tmin) tpi = tmin; // for both fault likelihood
@@ -425,8 +547,8 @@ public class LocalOrientScanner {
         }
       }});
     }
-    //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
-    //rgf.apply000(m,m);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigmaTheta*1.5f);
+    rgf.apply000(fx,m);
     final float sc = np*thetaSampling.getCount();
     loop(n3,new LoopInt() {
     public void compute(int i3) {
@@ -435,7 +557,7 @@ public class LocalOrientScanner {
         float[] f32 = f[i3][i2];
         for (int i1=0; i1<n1; ++i1) {
           float fi = f32[i1];
-          float mi = m32[i1]/sc;
+          float mi = m32[i1];///sc;
           f32[i1] = fi/(fi+mi);
         }
       }
