@@ -412,7 +412,7 @@ public class LocalOrientScanner {
         }
       }});
     }
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.apply000(m,m);
     final float sc = np*thetaSampling.getCount();
     loop(n3,new LoopInt() {
@@ -642,7 +642,7 @@ public class LocalOrientScanner {
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
             float fi = s32[i1];
-            fi *= fi*fi*fi;
+            fi = fi*fi*fi;
             m32[i1] += fi;
             if (fi>f32[i1]) {
               f32[i1] = fi;
