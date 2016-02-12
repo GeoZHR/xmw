@@ -77,13 +77,13 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goSemblance()
+  #goSemblance()
   goOrientScan()
   #goScan()
   #goThin()
   #goTvThin()
   #goThinTv()
-  goSkin()
+  #goSkin()
   #goTv()
   #goSkinTv()
   #goTI()
@@ -121,7 +121,7 @@ def goOrientScan():
   sem = readImage(semfile)
   sem=sub(1,sem)
   if not plotOnly:
-    fs = LocalOrientScanner(sigmaPhi,sigmaTheta)
+    fs = LocalOrientScanner(1,sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)

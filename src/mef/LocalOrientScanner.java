@@ -35,6 +35,18 @@ public class LocalOrientScanner {
   }
 
   /**
+   * Constructs a fault scanner with specified parameters.
+   * @param sigmaPhi half-width for smoothing along strike of fault planes.
+   * @param sigmaTheta half-width for smoothing along dip of fault planes.
+   */
+  public LocalOrientScanner(float power, float sigmaPhi, float sigmaTheta) {
+    _power = power;
+    _sigmaPhi = sigmaPhi;
+    _sigmaTheta = sigmaTheta;
+  }
+
+
+  /**
    * Gets a sampling of fault strike phi appropriate for this scanner.
    * @param phiMin minimum fault strike, in degrees.
    * @param phiMax maximum fault strike, in degrees.
@@ -335,6 +347,7 @@ public class LocalOrientScanner {
   ///////////////////////////////////////////////////////////////////////////
   // private
 
+  private float _power = 2f;
   private float _sigmaPhi,_sigmaTheta;
 
   private static final float NO_STRIKE = -0.00001f;
@@ -642,7 +655,6 @@ public class LocalOrientScanner {
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
             float fi = s32[i1];
-            fi = fi*fi*fi;
             m32[i1] += fi;
             if (fi>f32[i1]) {
               f32[i1] = fi;

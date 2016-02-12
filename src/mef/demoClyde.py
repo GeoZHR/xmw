@@ -102,7 +102,7 @@ def goOrientScan():
   sem = readImage(semfile)
   sem=sub(1,sem)
   if not plotOnly:
-    fs = LocalOrientScanner(sigmaPhi,sigmaTheta)
+    fs = LocalOrientScanner(3,sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
@@ -120,13 +120,13 @@ def goOrientScan():
   plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         clab="Fault attribute",cint=0.2,png="sem")
   plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",cint=0.2,png="fl")
+        clab="Enhanced fault attribute",cint=0.2,png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
   ftc = convertDips(ft)
   print min(ftc)
   print max(ftc)
-  plot3(gx,ftc,cmin=25,cmax=65,cmap=jetFill(1.0),
+  plot3(gx,ftc,cmin=20,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
     '''
 
@@ -148,11 +148,11 @@ def goThin():
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
   plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,flt,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="flt")
+  plot3(gx,flt,cmin=0.1,cmax=1.0,cint=0.2,cmap=jetRamp(1.0),
+        clab="Enhanced fault attribute",png="flt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
+  plot3(gx,convertDips(ftt),cmin=20,cmax=65,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
 
 def goThinX():
@@ -164,8 +164,17 @@ def goThinX():
     ft = readImage(ftfile)
     sub(fl,min(fl),fl)
     div(fl,max(fl),fl)
-    flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMaxDeltaStrike(8)
+    fs.setMaxPlanarDistance(0.2)
+    fs.setMinSkinSize(minSkinSize)
+    cells = fs.findCells([fl,fp,ft])
     fd = FaultDisplay()
+    flt = fillfloat(-0.0001,n1,n2,n3)
+    fpt = fillfloat(-0.0001,n1,n2,n3)
+    ftt = fillfloat(-0.0001,n1,n2,n3)
+    fd.getFaultImages(cells,flt,fpt,ftt)
     flt = fd.setSlices(262,80,200,flt)
     fpt = fd.setSlices(262,80,200,fpt)
     ftt = fd.setSlices(262,80,200,ftt)
@@ -177,11 +186,11 @@ def goThinX():
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
   plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,flt,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="flt")
+  plot3(gx,flt,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",cint=0.2,png="flt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
+  plot3(gx,convertDips(ftt),cmin=20,cmax=65,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
 
 def goSkin():
@@ -209,6 +218,8 @@ def goSkin():
   else:
     skins = readSkins(fskbase)
   plot3(gx,skins=skins,png="skins")
+  for k in range(20,30,1):
+    plot3(gx,skins=[skins[k]],clab="skin"+str(k))
   '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)

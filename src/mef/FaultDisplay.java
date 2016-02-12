@@ -157,4 +157,43 @@ public class FaultDisplay {
       fl[i3][i2][i1] = fc.getFl();
     }
   }
+
+  public void getFaultImages(
+    FaultCell[] fcs, float[][][] fl, float[][][] fp, float[][][] ft) 
+  {
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    for (FaultCell fc:fcs) {
+      int i1 = fc.getI1();
+      int i2 = fc.getI2();
+      int i3 = fc.getI3();
+      i1 = min(i1,n1-1); i1 = max(i1,0);
+      i2 = min(i2,n2-1); i2 = max(i2,0);
+      i3 = min(i3,n3-1); i3 = max(i3,0);
+      fl[i3][i2][i1] = fc.getFl();
+      fp[i3][i2][i1] = fc.getFp();
+      ft[i3][i2][i1] = fc.getFt();
+      /*
+      int m1 = fc.getM1();
+      int m2 = fc.getM2();
+      int m3 = fc.getM3();
+      int p1 = fc.getP1();
+      int p2 = fc.getP2();
+      int p3 = fc.getP3();
+      m1 = min(m1,n1-1); m1 = max(m1,0);
+      m2 = min(m2,n2-1); m2 = max(m2,0);
+      m3 = min(m3,n3-1); m3 = max(m3,0);
+      p1 = min(p1,n1-1); p1 = max(p1,0);
+      p2 = min(p2,n2-1); p2 = max(p2,0);
+      p3 = min(p3,n3-1); p3 = max(p3,0);
+      fl[m3][m2][m1] = fc.getFl();
+      fl[p3][p2][p1] = fc.getFl();
+      fp[m3][m2][m1] = fc.getFp();
+      fp[p3][p2][p1] = fc.getFp();
+      ft[m3][m2][m1] = fc.getFt();
+      ft[p3][p2][p1] = fc.getFt();
+      */
+    }
+  }
 }
