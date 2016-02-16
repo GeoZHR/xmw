@@ -236,12 +236,12 @@ public class FaultSlipConstraints {
       float[] x2a = x2l.trim();
       float[] x3a = x3l.trim();
       float[] s1a = s1l.trim();
+      float x1min = 0;
       float x2min = 0;
       float x3min = 0;
-      float x2max = max(x2a)+10;
-      float x3max = max(x3a)+10;
-      float x1min = min(x1a);
-      float x1max = max(x1a);
+      float x1max = n1;
+      float x2max = n2;
+      float x3max = n3;
       SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
       s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
       s1i.setGradientPower(2.0);
