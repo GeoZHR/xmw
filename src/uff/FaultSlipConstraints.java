@@ -197,7 +197,8 @@ public class FaultSlipConstraints {
       cs[3][1][is] = ps[3][1];
       cs[3][2][is] = ps[3][2];
     }
-    return cs;
+    return mul(cs,10f);
+    //return cs;
   }
 
   private void computeUnfaultShifts(
