@@ -34,13 +34,8 @@ public class FaultSlipConstraints {
     short[][][] k1 = new short[n3][n2][n1];
     short[][][] k2 = new short[n3][n2][n1];
     short[][][] k3 = new short[n3][n2][n1];
-    int nk = _sks.length;
-    for (int ik=0; ik<nk; ++ik) {
-      FaultSkin skin = _sks[ik];
-      FaultCell[] cells = skin.getCells();
-      int nc = cells.length;
-      for (int ic=0; ic<nc; ++ic) {
-      FaultCell cell=cells[ic];
+    for (FaultSkin sk:_sks) {
+      for (FaultCell cell:sk) {
       int i1 = cell.getI1();
       int i2 = cell.getI2();
       int i3 = cell.getI3();
@@ -207,7 +202,7 @@ public class FaultSlipConstraints {
   private void computeUnfaultShifts(
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
     final int nk = skins.length;
-    for (int ik=0; ik<nk;++ik) {
+    for (int ik=2; ik<3;++ik) {
       System.out.println("skin="+ik);
       final FaultCell[] cells = skins[ik].getCells();
       final int nc = cells.length;
@@ -235,7 +230,7 @@ public class FaultSlipConstraints {
       final SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
       s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
       for (int ic=0; ic<nc; ++ic) {
-        System.out.println("ic="+ic);
+        System.out.println("ic="+ic+"/"+nc);
       //Parallel.loop(nc,new Parallel.LoopInt() {
       //public void compute(int ic) {
         FaultCell cell = cells[ic];
@@ -334,9 +329,7 @@ public class FaultSlipConstraints {
 
 
   private void flNormalization() {
-    int nk = _sks.length;
-    for (int ik=0; ik<nk; ++ik) {
-      FaultSkin skin = _sks[ik];
+    for (FaultSkin skin:_sks){
       FaultCell[] fcs = FaultSkin.getCells(new FaultSkin[]{skin});
       int nc = fcs.length;
       float[] fls = new float[nc];
@@ -352,12 +345,8 @@ public class FaultSlipConstraints {
 
   private void setCells(int n1, int n2, int n3) {
     FaultCell[][][] cells = new FaultCell[n3][n2][n1];
-    int np = _sks.length;
-    for (int ip=0; ip<np; ++ip) {
-      FaultCell[] fcs = _sks[ip].getCells();
-      int nc = fcs.length;
-      for (int ic=0; ic<nc; ++ic) {
-        FaultCell fc = fcs[ic];
+    for (FaultSkin sk:_sks) {
+      for (FaultCell fc:sk) {
         int i1i = fc.getI1();
         int i2i = fc.getI2();
         int i3i = fc.getI3();
@@ -411,12 +400,8 @@ public class FaultSlipConstraints {
 
   private void setCellsC(int n1, int n2, int n3) {
     FaultCell[][][] cells = new FaultCell[n3][n2][n1];
-    int n = _sks.length;
-    for (int i=0; i<n; ++i) {
-      FaultCell[] fcs = _sks[i].getCells();
-      int nc = fcs.length;
-      for (int ic=0; ic<nc; ++ic) {
-        FaultCell fc = fcs[ic];
+    for (FaultSkin sk:_sks) {
+      for (FaultCell fc:sk) {
         int i1i = fc.getI1();
         int i2i = fc.getI2();
         int i3i = fc.getI3();
@@ -441,9 +426,7 @@ public class FaultSlipConstraints {
         int[] i2s = new int[]{i2m,i2p};
         int[] i3s = new int[]{i3m,i3p};
         int ik = -1;
-        int np = cls.length;
-        for (int ip=0; ip<np; ++ip) {
-          FaultCell cell=cls[ip];
+        for (FaultCell cell:cls) {
           ik ++;
           int i1 = i1i;
           int i2 = i2s[ik];
