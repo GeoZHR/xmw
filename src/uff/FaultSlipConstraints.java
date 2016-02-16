@@ -202,7 +202,7 @@ public class FaultSlipConstraints {
   private void computeUnfaultShifts(
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
     final int nk = skins.length;
-    for (int ik=0; ik<nk; ++ik) {
+    for (int ik=1; ik<nk; ++ik) {
     //Parallel.loop(nk,new Parallel.LoopInt() {
     //public void compute(int ik) {
       System.out.println("skin="+ik);
@@ -231,7 +231,7 @@ public class FaultSlipConstraints {
       float x3max = min(max(x3a),n3-1);
       SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
       s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
-      for (int ic=1; ic<nc; ++ic) {
+      for (int ic=0; ic<nc; ++ic) {
         //System.out.println("ic="+ic);
         FaultCell cell = cells[ic];
         float s1 = cell.getS1();
