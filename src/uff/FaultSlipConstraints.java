@@ -244,7 +244,7 @@ public class FaultSlipConstraints {
       float x2max = min(max(x2a)+50,n2-1);
       float x3max = min(max(x3a)+50,n3-1);
       SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
-      s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
+      //s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
       for (int ic=0; ic<nc; ++ic) {
         FaultCell cell = cells[ic];
         float s1 = cell.getS1();
