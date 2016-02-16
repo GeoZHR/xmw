@@ -202,7 +202,7 @@ public class FaultSlipConstraints {
   private void computeUnfaultShifts(
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
     final int nk = skins.length;
-    for (int ik=2; ik<3;++ik) {
+    for (int ik=1; ik<nk;++ik) {
       System.out.println("skin="+ik);
       final FaultCell[] cells = skins[ik].getCells();
       final int nc = cells.length;
