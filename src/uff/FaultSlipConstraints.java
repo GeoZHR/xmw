@@ -216,16 +216,14 @@ public class FaultSlipConstraints {
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
     final int nk = skins.length;
     for (int ik=0; ik<nk;++ik) {
-    //Parallel.loop(nk,new Parallel.LoopInt() {
-    //public void compute(int ik) {
       System.out.println("skin="+ik);
       FaultSkin skin = skins[ik];
       FloatList x1l = new FloatList();
       FloatList x2l = new FloatList();
       FloatList x3l = new FloatList();
       FloatList s1l = new FloatList();
-      FaultCell[] cells = skin.getCells();
-      int nc = cells.length;
+      final FaultCell[] cells = skin.getCells();
+      final int nc = cells.length;
       for (int ic=0; ic<nc; ++ic) {
         FaultCell cell = cells[ic];
         x1l.add(cell.getX1());
@@ -237,16 +235,15 @@ public class FaultSlipConstraints {
       float[] x2a = x2l.trim();
       float[] x3a = x3l.trim();
       float[] s1a = s1l.trim();
-      float x1min = max(min(x1a)-50,0);
-      float x2min = max(min(x2a)-50,0);
-      float x3min = max(min(x3a)-50,0);
-      float x1max = min(max(x1a)+50,n1-1);
-      float x2max = min(max(x2a)+50,n2-1);
-      float x3max = min(max(x3a)+50,n3-1);
-      SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
-      //s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
-      for (int ic=0; ic<nc; ++ic) {
-        System.out.println("ic="+ic);
+      final float x1min = max(min(x1a),0);
+      final float x2min = max(min(x2a),0);
+      final float x3min = max(min(x3a),0);
+      final float x1max = min(max(x1a),n1-1);
+      final float x2max = min(max(x2a),n2-1);
+      final float x3max = min(max(x3a),n3-1);
+      final SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
+      Parallel.loop(nc,new Parallel.LoopInt() {
+      public void compute(int ic) {
         FaultCell cell = cells[ic];
         float s1 = cell.getS1();
         float s2 = cell.getS2();
@@ -275,9 +272,8 @@ public class FaultSlipConstraints {
         float dm = s1-s1i.interpolate(m1,m2,m3);
         s1 -= (dp+dm)*0.5f;
         cell.setUnfaultShifts(new float[]{s1,s2,s3});
-      }
+      }});
     }
-    //}});
     //checkUnfaultShifts();
   }
 
