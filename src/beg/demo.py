@@ -9,7 +9,7 @@ from utils import *
 setupForSubset("jake")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
-sys.setrecursionlimit(100000000)
+sys.setrecursionlimit(1000000000)
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
 gwfile  = "gw" # input image (maybe after bilateral filtering)
