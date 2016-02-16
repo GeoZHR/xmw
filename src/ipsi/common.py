@@ -23,6 +23,7 @@ from rgi import *
 from ipfx import *
 from unct import *
 from uff import *
+from ipsi import *
 
 #############################################################################
 # Run the function main on the Swing thread

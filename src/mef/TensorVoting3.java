@@ -14,8 +14,8 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import util.*;
-import ipfx.FaultCell;
-import static ipfx.FaultGeometry.*;
+import mef.FaultCell;
+import static mef.FaultGeometry.*;
 
 /**
  * 3D tensor voting. 
@@ -28,9 +28,6 @@ public class TensorVoting3 {
 
   public void setSigma (float sigma) {
     _sigma = sigma;
-    _w3 = round(sigma);
-    _w2 = round(sigma);
-    _w1 = round(1.5f*sigma);
   }
 
   public void setVoteWindow(int w1, int w2, int w3) {
@@ -89,6 +86,7 @@ public class TensorVoting3 {
         for (int ik=0; ik<nd; ++ik) {
           int ip = id[ik];
           float fl = fs[ip];
+          fl *= fl; 
           float x1 = xs[0][ip];
           float x2 = xs[1][ip];
           float x3 = xs[2][ip];
@@ -127,6 +125,7 @@ public class TensorVoting3 {
               v1 *= vs; v2 *= vs; v3 *= vs; 
             }
             ur = 1f-ur*ur;
+            ur *= ur;
             ur *= ur;
             ur *= ur;
             ur *= ur;

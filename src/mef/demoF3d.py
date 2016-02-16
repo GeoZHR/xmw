@@ -52,15 +52,15 @@ semfile = "sem"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minPhi,maxPhi = 0,150
+minPhi,maxPhi = 0,360
 minTheta,maxTheta = 75,85
-sigmaPhi,sigmaTheta = 10,25
+sigmaPhi,sigmaTheta = 10,12
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.2
 upperLikelihood = 0.5
-minSkinSize = 2000
+minSkinSize = 500
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -69,22 +69,23 @@ maxThrow = 25.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = getPngDir()
 pngDir = None
+pngDir = getPngDir()
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDisplay()
   #goSemblance()
-  goOrientScan()
+  #goOrientScan()
+  #goSlopes()
   #goScan()
   #goThin()
   #goTvThin()
   #goThinTv()
   #goSkin()
-  #goTv()
+  #goCells()
+  goTv()
   #goSkinTv()
   #goTI()
   #goReSkin()
@@ -96,6 +97,9 @@ def main(args):
   #goComparison()
   '''
   gx = readImage(gxfile)
+  plot3(gx)
+  fx = copy(65,n2,n3,25,0,0,gx)
+  writeImage(gxfile,fx)
   sem = readImage(semfile)
   gxs  = copy(300,300,300,50,400,0,gx)
   sems = copy(300,300,300,50,400,0,sem)
@@ -106,9 +110,9 @@ def goSemblance():
   print "go semblance ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    lof = LocalOrientFilterP(8.0,4.0,4.0)
+    lof = LocalOrientFilterP(8.0,2.0,2.0)
     ets = lof.applyForTensors(gx)
-    lsf = LocalSemblanceFilter(3,2)
+    lsf = LocalSemblanceFilter(3,3)
     sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
     writeImage(semfile,sem)
   else:
@@ -135,60 +139,56 @@ def goOrientScan():
     ft = readImage(ftfile)
   sub(fl,min(fl),fl)
   div(fl,max(fl),fl)
-  plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.2)
-  fs.setMinSkinSize(minSkinSize)
-  cells = fs.findCells([fl,fp,ft])
-  fcs=[]
-  for ic in range(0,len(cells),5):
-    fcs.append(cells[ic])
-  tv3 = TensorVoting3()
-  tv3.setVoteWindow(15,10,10)
-  fl,fc,fp,ft = tv3.applyVote(n1,n2,n3,fcs)
+  plot3(gx,clab = "Amplitude",png="gx")
   plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Semblance",png="sem")
+        clab="Fault attribute",png="fa")
   plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
+        clab="Enhanced fault attribute",png="efa")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
         clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
         clab="Fault dip (degrees)",png="ft")
 
+def goCells():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  sub(fl,min(fl),fl)
+  div(fl,max(fl),fl)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fcs = fs.findCells([fl,fp,ft])
+  cells=[]
+  for ic in range(0,len(fcs),4):
+    cells.append(fcs[ic])
+  plot3(gx,cells=fcs,png="cells")
+  plot3(gx,cells=cells,png="cellSub")
 
 def goTv():
   gx = readImage(gxfile)
   if not plotOnly:
-    tv3 = TensorVoting3()
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-    fl = pow(fl,0.3)
     sub(fl,min(fl),fl)
     div(fl,max(fl),fl)
     fs = FaultSkinner()
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
     fcs = fs.findCells([fl,fp,ft])
-    fct=[]
-    for fci in fcs:
-      if(fci.getFl()>0.5):
-        fct.append(fci)
     cells=[]
-    for ic in range(0,len(fct),5):
-      cells.append(fct[ic])
-    tv3.setSigma(15)
-    tv3.setVoteWindow(30,20,20)
-    fsc = FaultScanner(4,20)
-    sp = fsc.getPhiSampling(minPhi,maxPhi)
-    st = fsc.getThetaSampling(minTheta,maxTheta)
+    for ic in range(0,len(fcs),4):
+      cells.append(fcs[ic])
+    tv3 = TensorVoting3()
+    tv3.setSigma(10)
+    tv3.setVoteWindow(10,20,20)
     sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
-    #sm,cm,fp,ft = tv3.applyVoteFast(n1,n2,n3,sp,st,cells)
+    sm = pow(sm,0.4)
+    sub(sm,min(sm),sm)
+    div(sm,max(sm),sm)
+    cm = pow(cm,0.4)
+    sub(cm,min(cm),cm)
+    div(cm,max(cm),cm)
     writeImage(cmfile,cm)
     writeImage(smfile,sm)
     writeImage(fpvfile,fp)
@@ -198,35 +198,35 @@ def goTv():
     cm = readImage(cmfile)
     fp = readImage(fpvfile)
     ft = readImage(ftvfile)
-    '''
-  sm = pow(sm,0.3)
-  sub(sm,min(sm),sm)
-  div(sm,max(sm),sm)
-  plot3(gx,sm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
-  plot3(gx,cm,cmin=0.0,cmax=1.0,cmap=jetRamp(1.0),clab="Junction",png="cm")
-    '''
+  fd = FaultDisplay()
+  plot3(gx,sm,cmin=0.15,cmax=0.8,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
+  plot3(gx,cm,cmin=0.15,cmax=0.8,cmap=jetRamp(1.0),
+        clab="Intersection",png="cm")
 
 def goSkinTv():
   gx = readImage(gxfile)
-  '''
-  fl = readImage("sm1")
-  fp = readImage("fp1")
-  ft = readImage("ft1")
-  '''
   fl = readImage(smfile)
-  fl = pow(fl,0.3)
-  sub(fl,min(fl),fl)
-  div(fl,max(fl),fl)
+  fc = readImage(cmfile)
   fp = readImage(fpvfile)
   ft = readImage(ftvfile)
+  fsx = FaultSkinnerTv()
+  fsx.setParameters(10,10,0.2)
+  fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fsx.setMinSkinSize(minSkinSize)
+  fsx.setMaxPlanarDistance(0.2)
+  fsx.setSkinning(True)
+  cells = fsx.findCells([fl,fp,ft])
+  skins1 = fsx.findSkins(cells,fl,fc)
+  '''
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaDip(5)
   fs.setMaxDeltaStrike(5)
-  fs.setMaxPlanarDistance(0.1)
+  fs.setMaxDeltaStrike(5)
+  fs.setMaxPlanarDistance(0.2)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   skins1 = fs.findSkins(cells)
+  '''
   skins2 = readSkins(fskbase)
   removeAllSkinFiles(fsktv)
   writeSkins(fsktv,skins1)
@@ -246,7 +246,7 @@ def goSkinTv():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 8.0,4.0,4.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -254,7 +254,6 @@ def goSlopes():
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
-  '''
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
@@ -262,7 +261,6 @@ def goSlopes():
   ep = sub(1,ep)
   plot3(gx,ep,cmin=min(ep),cmax=max(ep),cmap=jetRamp(1.0),
         clab="Planarity")
-  '''
 
 def goScan():
   print "goScan ..."
@@ -283,9 +281,6 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-  fl = pow(fl,0.5)
-  sub(fl,min(fl),fl)
-  div(fl,max(fl),fl)
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Enhanced faults",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
@@ -321,7 +316,6 @@ def goThin():
   gx = readImage(gxfile)
   if not plotOnly:
     fl = readImage(flfile)
-    fl = pow(fl,0.3)
     sub(fl,min(fl),fl)
     div(fl,max(fl),fl)
 
@@ -808,7 +802,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         #ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(106,80,207)
-  ipg.setSlices(110,25,249)
+  ipg.setSlices(56,25,436)
   #ipg.setSlices(115,25,167)
   if cbar:
     sf.setSize(987,720)
@@ -818,11 +812,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.3*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.3)
+  ov.setScale(1.4)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.15,0.05))
+  ov.setTranslate(Vector3(0.0,0.20,0.12))
   ov.setAzimuthAndElevation(-56.0,35.0)
   #ov.setAzimuthAndElevation(-56.0,40.0)
   sf.setVisible(True)

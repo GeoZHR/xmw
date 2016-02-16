@@ -59,13 +59,14 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
 pngDir = "../../../png/ipsi/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  #goTopHorizon()
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goThinImages()
   #goSkin()
@@ -76,7 +77,7 @@ def main(args):
   #goUnfaultS()
   #goUncScan()
   #goUncConvert()
-  goFlatten()
+  #goFlatten()
   #goHorizons()
 def goTest():
   rgt = readImage(rgtfile)
@@ -94,7 +95,27 @@ def goTest():
   for x1i in cx1:
     for xk in x1i:
       print xk
-  
+
+def goTopHorizon():
+  k11 = [22, 11, 12, 38, 30, 33, 40]
+  k12 = [70,126,152,283, 55, 85,271]
+  k13 = [60, 60, 60,191,191,255,234]
+  gx = readImage(gxfile)
+  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  wp = pow(ep,10.0) 
+  lmt = n1-1
+  se = SurfaceExtractorC()
+  se.setWeights(0.0)
+  se.setSmoothings(4.0,4.0)
+  se.setCG(0.01,100)
+  surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
+  se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
+  fh = FaultHelper()
+  fh.mask(surf,gx)
+  writeImage(gxfile,gx)
+  plot3(gx)
+ 
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
@@ -115,31 +136,32 @@ def goSlopes():
 
 def goScan():
   print "goScan ..."
+  gx = readImage(gxfile)
+  gx = gain(gx)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    gx = readImage(gxfile)
     gx = FaultScanner.taper(10,0,0,gx)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
     print "ft min =",min(ft)," max =",max(ft)
+    '''
     writeImage(flfile,fl)
     writeImage(fpfile,fp)
     writeImage(ftfile,ft)
+    '''
   else:
-    gx = readImage(gxfile)
-    gx = gain(gx)
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-    plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-    plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-    plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
 
 def goThin():
   print "goThin ..."

@@ -27,6 +27,20 @@ import static ipfx.FaultGeometry.*;
 public class FaultDisplay {
 
 
+  public float[][][] setValues(float fmin, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][][] gx = fillfloat(0.00f,n1,n2,n3);
+    for (int i3=0;i3<n3; ++i3) {
+    for (int i2=0;i2<n2; ++i2) {
+    for (int i1=0;i1<n1; ++i1) {
+      float fxi = fx[i3][i2][i1];
+      if(fxi>fmin) gx[i3][i2][i1] = fxi;
+    }}}
+    return gx;
+  }
+
   public float[][][] setSlices(int k1, int k2, int k3, float[][][] fl) {
     int n3 = fl.length;
     int n2 = fl[0].length;

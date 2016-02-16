@@ -12,6 +12,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
+gwfile  = "gw" # input image (maybe after bilateral filtering)
 hxfile  = "horizon"
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
@@ -62,28 +63,28 @@ minSkinSize = 10000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 25.0
+maxThrow = 60.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
-  goScan()
-  goSkin()
+  #goSlopes()
+  #goScan()
+  #goSkin()
   #goThin()
   #goReSkinX()
   #goTv()
   #goSkinTv()
   #goReSkin()
-  #goSmooth()
-  #goSlip()
+  goSmooth()
+  goSlip()
   #goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
@@ -210,8 +211,9 @@ def goSkin():
     #plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskgood)
-  '''
+  plot3(gx)
   plot3(gx,skins=skins)
+  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''
@@ -328,49 +330,59 @@ def goSmooth():
   writeImage(p3file,p3)
   writeImage(epfile,ep)
   writeImage(gsxfile,gsx)
+  '''
   plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fli")
   plot3(gsx,png="gsx")
+  '''
 
 def goSlip():
   print "goSlip ..."
   gx = readImage(gxfile)
-  gsx = readImage(gsxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  skins = readSkins(fskgood)
-  fsl = FaultSlipper(gsx,p2,p3)
-  fsl.setOffset(2.0) # the default is 2.0 samples
-  fsl.setZeroSlope(False) # True only if we want to show the error
-  fsl.computeDipSlips(skins,minThrow,maxThrow)
-  print "  dip slips computed, now reskinning ..."
-  print "  number of skins before =",len(skins),
-  fsk = FaultSkinner() # as in goSkin
-  fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fsk.setMinSkinSize(minSkinSize)
-  fsk.setMinMaxThrow(minThrow,maxThrow)
-  skins = fsk.reskin(skins)
-  print ", after =",len(skins)
-  removeAllSkinFiles(fslbase)
-  writeSkins(fslbase,skins)
-  smark = -999.999
-  s1,s2,s3 = fsl.getDipSlips(skins,smark)
-  writeImage(fs1file,s1)
-  writeImage(fs2file,s2)
-  writeImage(fs3file,s3)
-  plot3(gx,skins=skins,smax=10.0,slices=[85,5,60],png="skinss1")
+  if not plotOnly:
+    gsx = readImage(gsxfile)
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    skins = readSkins(fskgood)
+    fsl = FaultSlipper(gsx,p2,p3)
+    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.setZeroSlope(False) # True only if we want to show the error
+    fsl.computeDipSlips(skins,minThrow,maxThrow)
+    print "  dip slips computed, now reskinning ..."
+    print "  number of skins before =",len(skins),
+    fsk = FaultSkinner() # as in goSkin
+    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsk.setMinSkinSize(minSkinSize)
+    fsk.setMinMaxThrow(minThrow,maxThrow)
+    skins = fsk.reskin(skins)
+    print ", after =",len(skins)
+    removeAllSkinFiles(fslbase)
+    writeSkins(fslbase,skins)
+    smark = -999.999
+    s1,s2,s3 = fsl.getDipSlips(skins,smark)
+    s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+    gw = fsl.unfault([s1,s2,s3],gx)
+    writeImage(gwfile,gw)
+    writeImage(fs1file,s1)
+    writeImage(fs2file,s2)
+    writeImage(fs3file,s3)
+  else:
+    gw = readImage(gwfile)
+    s1 = readImage(fs1file)
+    skins = readSkins(fslbase)
+  '''
+  plot3(gx,skins=skins,smax=10.0,png="skinss1")
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
-  s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
-  gw = fsl.unfault([s1,s2,s3],gx)
   plot3(gx)
-  plot3(gw,clab="Amplitude",png="gw")
+  plot3(gw,png="gw")
+  '''
 
 def goUnfaultS():
   if not plotOnly:
