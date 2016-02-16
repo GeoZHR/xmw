@@ -388,9 +388,11 @@ def goUnfaultS():
   gx = readImage(gxfile)
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
+    '''
     lof = LocalOrientFilter(8.0,2.0,2.0)
     et = lof.applyForTensors(gx)
     et.setEigenvalues(0.001,1.0,1.0)
+    '''
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
