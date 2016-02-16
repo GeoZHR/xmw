@@ -83,7 +83,7 @@ def main(args):
   #goTv()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlatten()
