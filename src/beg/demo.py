@@ -84,8 +84,8 @@ def main(args):
   #goSkinTv()
   #goReSkin()
   #goSmooth()
-  #goSlip()
-  goUnfaultS()
+  goSlip()
+  #goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
   #goDisplay()
@@ -354,10 +354,11 @@ def goSlip():
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMinSkinSize(minSkinSize)
     fsk.setMinMaxThrow(minThrow,maxThrow)
-    skins = fsk.reskin(skins)
+    #skins = fsk.reskin(skins)
     print ", after =",len(skins)
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
+    '''
     smark = -999.999
     s1,s2,s3 = fsl.getDipSlips(skins,smark)
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
@@ -366,6 +367,7 @@ def goSlip():
     writeImage(fs1file,s1)
     writeImage(fs2file,s2)
     writeImage(fs3file,s3)
+    '''
   else:
     gw = readImage(gwfile)
     #s1 = readImage(fs1file)
@@ -388,11 +390,9 @@ def goUnfaultS():
   gx = readImage(gxfile)
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
-    '''
     lof = LocalOrientFilter(8.0,2.0,2.0)
     et = lof.applyForTensors(gx)
     et.setEigenvalues(0.001,1.0,1.0)
-    '''
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
