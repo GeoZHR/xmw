@@ -202,8 +202,9 @@ public class FaultSlipConstraints {
   private void computeUnfaultShifts(
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
     final int nk = skins.length;
-    Parallel.loop(nk,new Parallel.LoopInt() {
-    public void compute(int ik) {
+    for (int ik=0; ik<nk; ++ik) {
+    //Parallel.loop(nk,new Parallel.LoopInt() {
+    //public void compute(int ik) {
       System.out.println("skin="+ik);
       final FaultCell[] cells = skins[ik].getCells();
       final int nc = cells.length;
@@ -260,7 +261,8 @@ public class FaultSlipConstraints {
         s1 -= (dp+dm)*0.5f;
         cell.setUnfaultShifts(new float[]{s1,s2,s3});
       }
-    }});
+    }
+    //}});
     //checkUnfaultShifts();
   }
 
