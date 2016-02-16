@@ -63,15 +63,11 @@ public class FaultSlipConstraints {
     int n3 = ws.length;
     int n2 = ws[0].length;
     int n1 = ws[0][0].length;
-    int nk = _sks.length;
     computeUnfaultShifts(n1,n2,n3,_sks);
     setCellsC(n1,n2,n3);
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
-    for (int ik=0; ik<nk; ++ik) {
-      FaultCell[] cells = _sks[ik].getCells();
-      int nc = cells.length;
-    for (int ic=0; ic<nc; ++ic) {
-      FaultCell fc = cells[ic];
+    for (FaultSkin sk:_sks) {
+      for (FaultCell fc:sk) {
       float fl = fc.getFl();
       if(fl==0.0f) {continue;}
       float[] hx = new float[3];
@@ -128,16 +124,12 @@ public class FaultSlipConstraints {
     int n3 = wp.length;
     int n2 = wp[0].length;
     int n1 = wp[0][0].length;
-    int nk = _sks.length;
     computeUnfaultShifts(n1,n2,n3,_sks);
     setCells(n1,n2,n3);
     flNormalization();
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
-    for (int ik=0; ik<nk; ++ik) {
-      FaultCell[] cells = _sks[ik].getCells();
-      int nc = cells.length;
-    for (int ic=0; ic<nc; ++ic) {
-      FaultCell fc = cells[ic];
+    for (FaultSkin sk:_sks) {
+      for (FaultCell fc:sk) {
         float fl = fc.getFl();
         float[] h1 = new float[3];
         float[] f1 = new float[3];
@@ -217,13 +209,12 @@ public class FaultSlipConstraints {
     final int nk = skins.length;
     for (int ik=0; ik<nk;++ik) {
       System.out.println("skin="+ik);
-      FaultSkin skin = skins[ik];
+      final FaultCell[] cells = skins[ik].getCells();
+      final int nc = cells.length;
       FloatList x1l = new FloatList();
       FloatList x2l = new FloatList();
       FloatList x3l = new FloatList();
       FloatList s1l = new FloatList();
-      final FaultCell[] cells = skin.getCells();
-      final int nc = cells.length;
       for (int ic=0; ic<nc; ++ic) {
         FaultCell cell = cells[ic];
         x1l.add(cell.getX1());
@@ -242,8 +233,11 @@ public class FaultSlipConstraints {
       final float x2max = min(max(x2a),n2-1);
       final float x3max = min(max(x3a),n3-1);
       final SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
-      Parallel.loop(nc,new Parallel.LoopInt() {
-      public void compute(int ic) {
+      s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
+      for (int ic=0; ic<nc; ++ic) {
+        System.out.println("ic="+ic);
+      //Parallel.loop(nc,new Parallel.LoopInt() {
+      //public void compute(int ic) {
         FaultCell cell = cells[ic];
         float s1 = cell.getS1();
         float s2 = cell.getS2();
@@ -272,7 +266,8 @@ public class FaultSlipConstraints {
         float dm = s1-s1i.interpolate(m1,m2,m3);
         s1 -= (dp+dm)*0.5f;
         cell.setUnfaultShifts(new float[]{s1,s2,s3});
-      }});
+      }
+      //}});
     }
     //checkUnfaultShifts();
   }
