@@ -366,9 +366,9 @@ def goUnfaultS():
     #writeImage(ftx1file,t1)
     #writeImage(ftx2file,t2)
     #writeImage(ftx3file,t3)
-    writeImage(ft1file,t1)
-    writeImage(ft2file,t2)
-    writeImage(ft3file,t3)
+    #writeImage(ft1file,t1)
+    #writeImage(ft2file,t2)
+    #writeImage(ft3file,t3)
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)
