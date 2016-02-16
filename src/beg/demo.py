@@ -70,7 +70,7 @@ maxThrow = 60.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -84,8 +84,8 @@ def main(args):
   #goSkinTv()
   #goReSkin()
   #goSmooth()
-  goSlip()
-  #goUnfaultS()
+  #goSlip()
+  goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
   #goDisplay()
@@ -368,8 +368,8 @@ def goSlip():
     writeImage(fs3file,s3)
   else:
     gw = readImage(gwfile)
-    s1 = readImage(fs1file)
-    skins = readSkins(fslbase)
+    #s1 = readImage(fs1file)
+    #skins = readSkins(fslbase)
   '''
   plot3(gx,skins=skins,smax=10.0,png="skinss1")
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
@@ -380,13 +380,13 @@ def goSlip():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+  '''
   plot3(gx)
   plot3(gw,png="gw")
-  '''
 
 def goUnfaultS():
+  gx = readImage(gxfile)
   if not plotOnly:
-    gx = readImage(gxfile)
     fw = zerofloat(n1,n2,n3)
     lof = LocalOrientFilter(8.0,2.0,2.0)
     et = lof.applyForTensors(gx)
@@ -402,15 +402,15 @@ def goUnfaultS():
     uf.setTensors(et)
     mul(sp[3][0],10,sp[3][0])
     [t1,t2,t3] = uf.findShifts(sp,wp)
-    uf.convertShifts(40,[t1,t2,t3])
+    #uf.convertShifts(40,[t1,t2,t3])
     uf.applyShifts([t1,t2,t3],gx,fw)
     writeImage(fwsfile,fw)
     writeImage(sw1file,t1)
     writeImage(sw2file,t2)
     writeImage(sw3file,t3)
   else :
-    gx = readImage(gxfile)
     fw = readImage(fwsfile)
+    '''
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
   skins = readSkins(fslbase)
@@ -425,6 +425,7 @@ def goUnfaultS():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
+    '''
 
 def goFlatten():
   fw = readImage(fwsfile)

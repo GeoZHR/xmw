@@ -11,7 +11,7 @@ import java.io.Serializable;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import static ifs.FaultGeometry.*;
+import static mef.FaultGeometry.*;
 
 /**
  * A fault cell is an oriented point located on a fault. Fault cells can
@@ -517,7 +517,6 @@ public class FaultCell implements Serializable {
   float s1,s2,s3; // fault dip-slip vector
   float r1,r2,r3; // fault dip-slip vector
   float t1,t2,t3; // fault dip-slip vector
-  boolean notInQ;
   boolean interp;
   boolean notUsed;
   boolean intersect;
@@ -703,7 +702,6 @@ public class FaultCell implements Serializable {
     notUsed = true;
     needInterp = true;
     interp = false;
-    notInQ = true;
     float[] u = faultDipVectorFromStrikeAndDip(fp,ft);
     float[] v = faultStrikeVectorFromStrikeAndDip(fp,ft);
     float[] w = faultNormalVectorFromStrikeAndDip(fp,ft);

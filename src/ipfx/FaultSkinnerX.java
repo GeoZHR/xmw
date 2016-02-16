@@ -967,7 +967,7 @@ public class FaultSkinnerX {
 
 
   private void updateCells(
-    FaultSkin fs, FaultCell[] cells, HashSet<FaultCell> hsc) 
+    FaultSkin fs, FaultCell[] cells) 
   {
     int d = 3;
     FaultCell[] fcs = FaultSkin.getCells(new FaultSkin[]{fs});
@@ -994,10 +994,10 @@ public class FaultSkinnerX {
         int ip = id[ik];
         float dp = fp-cells[ip].fp;
         dp = min(abs(dp),abs(dp+360f),abs(dp-360f));
-        if(dp<10f){cells[ip].notUsed=false; hsc.remove(cells[ip]);}
+        if(dp<10f){cells[ip].notUsed=false;}
       }
     }
-    _cells = new FaultCellGrid(hsc.toArray(new FaultCell[0]));
+    _cells = new FaultCellGrid(getUnusedCells(cells));
   }
 
   private KdTree setKdTree(FaultCell[] cells) {
@@ -1019,8 +1019,6 @@ public class FaultSkinnerX {
     int n1 = fl[0][0].length;
     int ncell = cells.length;
     _cells = new FaultCellGrid(cells);
-    HashSet<FaultCell> hsc = new HashSet<FaultCell>();
-    for (FaultCell fc:cells) {hsc.add(fc);}
 
     // Empty list of skins.
     ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
@@ -1069,7 +1067,7 @@ public class FaultSkinnerX {
         sk++;
         FaultCell seed = seedList.get(kseed);
 
-        _fcg = new FaultCellGrow(getCells(hsc),fl);
+        _fcg = new FaultCellGrow(getUnusedCells(cells),fl);
         _fcg.setParameters(_dfpmax1,_dftmax1,_dnpmax1);
         _cellsX = new FaultCellGridX(n1,n2,n3);
         // Make a new empty skin.
@@ -1092,9 +1090,6 @@ public class FaultSkinnerX {
           // add any mutually best nabors to the grow queue.
           FaultCell cell = growQueue.poll();
           if (cell.skin==null) {
-            for(FaultCell fc:skin) {
-              fc.notInQ = true;
-            }
             boolean missNabors = true;
             if(_useOldCells) {
               missNabors = findInOldCells(cell);
@@ -1139,7 +1134,7 @@ public class FaultSkinnerX {
         // prevent them from becoming parts of other skins.) Instead, we
         // simply put all skins in the list, and filter that list later.
         skinList.add(skin);
-        updateCells(skin,cells,hsc);
+        updateCells(skin,cells);
       }
     }
 
@@ -1162,82 +1157,16 @@ public class FaultSkinnerX {
     return bigSkinList.toArray(new FaultSkin[0]);
   }
 
-  private boolean checkPlanar(FaultCell cell) {
-    float nc = 0.0f;
-    float dp = 0.0f;
-    Queue<FaultCell> naborQueue = new LinkedList<FaultCell>();
-    naborQueue.add(cell);
-    while(!naborQueue.isEmpty()) {
-      FaultCell fc = naborQueue.poll();
-      FaultCell ca = fc.ca;
-      FaultCell cb = fc.cb;
-      FaultCell cl = fc.cl;
-      FaultCell cr = fc.cr;
-      if(ca!=null) {
-        float[] ds = distance(ca,cell);
-        if(ds[0]<10f) {
-          nc += 1.0f;
-          dp += ds[1];
-          if(ca.notInQ) {
-            ca.notInQ = false;
-            naborQueue.add(ca);
-          }
-        }
-      }
-
-      if(cb!=null) {
-        float[] ds = distance(cb,cell);
-        if(ds[0]<10f) {
-          nc += 1.0f;
-          dp += ds[1];
-          if(cb.notInQ) {
-            cb.notInQ = false;
-            naborQueue.add(cb);
-          }
-        }
-      }
-
-      if(cl!=null) {
-        float[] ds = distance(cl,cell);
-        if(ds[0]<10f) {
-          nc += 1.0f;
-          dp += ds[1];
-          if(cl.notInQ) {
-            cl.notInQ = false;
-            naborQueue.add(cl);
-          }
-        }
-      }
-
-      if(cr!=null) {
-        float[] ds = distance(cr,cell);
-        if(ds[0]<10f) {
-          nc += 1.0f;
-          dp += ds[1];
-          if(cr.notInQ) {
-            cr.notInQ = false;
-            naborQueue.add(cr);
-          }
-        }
+  private FaultCell[] getUnusedCells(FaultCell[] cells) {
+    ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
+    for (FaultCell cell:cells) {
+      if(cell.notUsed) {
+        cellList.add(cell);
       }
     }
-    
-    if(nc==0.0f)  {return true;}
-    if(dp/nc<3f*_dnpmax){return true;}
-    else          {return false;}
+    return cellList.toArray(new FaultCell[0]);
   }
 
-  private float[] distance(FaultCell ca, FaultCell cb) {
-    float wa1 = ca.w1;
-    float wa2 = ca.w2;
-    float wa3 = ca.w3;
-    float dx1 = cb.x1-ca.x1;
-    float dx2 = cb.x2-ca.x2;
-    float dx3 = cb.x3-ca.x3;
-    float dnp = abs(wa1*dx1+wa2*dx2+wa3*dx3);
-    float dxs = sqrt(dx1*dx1+dx2*dx2+dx3*dx3);
-    return new float[]{dxs,dnp};   
-  }
 
   private boolean findInOldCells(FaultCell cell) {
     FaultCell ca = cell.ca;

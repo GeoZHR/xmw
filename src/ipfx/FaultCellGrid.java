@@ -34,6 +34,7 @@ public class FaultCellGrid {
     int i2max = -i2min;
     int i3max = -i3min;
     for (FaultCell cell:cells) {
+      if(!cell.notUsed) {continue;}
       if (cell.i1<i1min) i1min = cell.i1;
       if (cell.i2<i2min) i2min = cell.i2;
       if (cell.i3<i3min) i3min = cell.i3;
@@ -48,8 +49,8 @@ public class FaultCellGrid {
     _n2 = 1+i2max-i2min;
     _n3 = 1+i3max-i3min;
     _cells = new FaultCell[_n3][_n2][_n1];
-    for (FaultCell cell:cells)
-      set(cell);
+    for (FaultCell cell:cells) 
+      if(cell.notUsed) {set(cell);}
   }
 
   public void setCell(FaultCell cell) {

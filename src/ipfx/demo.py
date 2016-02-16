@@ -64,11 +64,11 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  goSlopes()
-  goScan()
-  goThin()
-  goSkin()
-  #goReSkin()
+  #goSlopes()
+  #goScan()
+  #goThin()
+  #goSkin()
+  goReSkin()
   '''
   goSmooth()
   goSlip()

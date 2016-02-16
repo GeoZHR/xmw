@@ -13,6 +13,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 
 import static mef.FaultGeometry.*;
+
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -41,12 +42,12 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * @author Xinming Wu and Dave Hale, Colorado School of Mines
  * @version 2015.01.22
  */
-public class FaultSkinnerTv {
+public class FaultSkinnerX {
 
   /**
    * Constructs a fault skinner with default parameters.
    */
-  public FaultSkinnerTv() {
+  public FaultSkinnerX() {
     _fs1min = -Float.MAX_VALUE;
     _fs1max =  Float.MAX_VALUE;
     _fllo = 0.2f;
@@ -429,10 +430,8 @@ public class FaultSkinnerTv {
     return fs.findCells(flpt);
   }
 
-  public FaultSkin[] findSkins(
-    FaultCell[] cells, float[][][] fl, float[][][] fc) 
-  {
-    FaultSkin[] sks = skins(cells,fl,fc);
+  public FaultSkin[] findSkins(FaultCell[] cells, float[][][] fl) {
+    FaultSkin[] sks = skinsXX(cells,fl);
     return sks;
     //return reskin(sks,fl);
     //return resetSkins(sks,fl);
@@ -761,6 +760,52 @@ public class FaultSkinnerTv {
     return bs;
   }
 
+  public void cpt(FaultCell[] fc, float[][][] fp) {
+    int nc = fc.length;
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    short[][][] k1 = new short[n3][n2][n1];
+    short[][][] k2 = new short[n3][n2][n1];
+    short[][][] k3 = new short[n3][n2][n1];
+    float[][][] dt = new float[n3][n2][n1];
+    float[][][] pt = new float[n3][n2][n1];
+    float[][][] w1 = new float[n3][n2][n1];
+    float[][][] w2 = new float[n3][n2][n1];
+    float[][][] w3 = new float[n3][n2][n1];
+    for (int ic=0; ic<nc; ic++) {
+      int i1 = fc[ic].i1;
+      int i2 = fc[ic].i2;
+      int i3 = fc[ic].i3;
+      pt[i3][i2][i1] = 1.0f;
+      w1[i3][i2][i1] = fc[ic].w1;
+      w2[i3][i2][i1] = fc[ic].w2;
+      w3[i3][i2][i1] = fc[ic].w3;
+    }
+    ClosestPointTransform cpt = new ClosestPointTransform();
+    cpt.apply(0.0f,pt,dt,k1,k2,k3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float di = dt[i3][i2][i1];
+      if(di<=30f) {
+        int j1 = k1[i3][i2][i1];
+        int j2 = k2[i3][i2][i1];
+        int j3 = k3[i3][i2][i1];
+        float d1 = i1-j1;
+        float d2 = i2-j2;
+        float d3 = i3-j3;
+        float u1 = w1[j3][j2][j1];
+        float u2 = w2[j3][j2][j1];
+        float u3 = w3[j3][j2][j1];
+        float ds = abs(u1*d1+u2*d2+u3*d3);
+        if(ds<=2.0f) {
+          fp[i3][i2][i1] = 1.0f;
+        }
+      }
+    }}}
+  }
+
 
   private void setKdTreeNodes(
     FaultCell[] fc, float[][] xc, float[][][] fp) {
@@ -928,7 +973,7 @@ public class FaultSkinnerTv {
 
 
   private void updateCells(
-    FaultSkin fs, FaultCell[] cells, HashSet<FaultCell> hsc) 
+    FaultSkin fs, FaultCell[] cells) 
   {
     int d = 3;
     FaultCell[] fcs = FaultSkin.getCells(new FaultSkin[]{fs});
@@ -955,10 +1000,10 @@ public class FaultSkinnerTv {
         int ip = id[ik];
         float dp = fp-cells[ip].fp;
         dp = min(abs(dp),abs(dp+360f),abs(dp-360f));
-        if(dp<10f){cells[ip].notUsed=false; hsc.remove(cells[ip]);}
+        if(dp<10f){cells[ip].notUsed=false;}
       }
     }
-    _cells = new FaultCellGrid(hsc.toArray(new FaultCell[0]));
+    _cells = new FaultCellGrid(getUnusedCells(cells));
   }
 
   private KdTree setKdTree(FaultCell[] cells) {
@@ -973,15 +1018,13 @@ public class FaultSkinnerTv {
   }
 
   // Returns skins constructed from specified cells.
-  private FaultSkin[] skins(FaultCell[] cells, float[][][] fl, float[][][] fc) {
+  private FaultSkin[] skinsXX(FaultCell[] cells, float[][][] fl) {
     int sk = 0;
     int n3 = fl.length;
     int n2 = fl[0].length;
     int n1 = fl[0][0].length;
     int ncell = cells.length;
     _cells = new FaultCellGrid(cells);
-    HashSet<FaultCell> hsc = new HashSet<FaultCell>();
-    for (FaultCell cell:cells) {hsc.add(cell);}
 
     // Empty list of skins.
     ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
@@ -1030,10 +1073,9 @@ public class FaultSkinnerTv {
         sk++;
         FaultCell seed = seedList.get(kseed);
 
-        _fcg = new FaultCellGrow(getCells(hsc),fl);
+        _fcg = new FaultCellGrow(getUnusedCells(cells),fl);
         _fcg.setParameters(_dfpmax1,_dftmax1,_dnpmax1);
         _cellsX = new FaultCellGridX(n1,n2,n3);
-
         // Make a new empty skin.
         FaultSkin skin = new FaultSkin();
 
@@ -1058,7 +1100,7 @@ public class FaultSkinnerTv {
             if(_useOldCells) {
               missNabors = findInOldCells(cell);
             }
-            //if(missNabors&&fc[c3][c2][c1]>1.8f) {findInNewCells(cell);}
+            if(missNabors) {findInNewCells(cell);}
             FaultCell ca,cb,cl,cr;
             ca = findNaborAbove(cell);
             cb = findNaborBelow(ca);
@@ -1098,7 +1140,7 @@ public class FaultSkinnerTv {
         // prevent them from becoming parts of other skins.) Instead, we
         // simply put all skins in the list, and filter that list later.
         skinList.add(skin);
-        updateCells(skin,cells,hsc);
+        updateCells(skin,cells);
       }
     }
 
@@ -1119,6 +1161,16 @@ public class FaultSkinnerTv {
       }
     }
     return bigSkinList.toArray(new FaultSkin[0]);
+  }
+
+  private FaultCell[] getUnusedCells(FaultCell[] cells) {
+    ArrayList<FaultCell> cellList = new ArrayList<FaultCell>();
+    for (FaultCell cell:cells) {
+      if(cell.notUsed) {
+        cellList.add(cell);
+      }
+    }
+    return cellList.toArray(new FaultCell[0]);
   }
 
 
