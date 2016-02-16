@@ -202,7 +202,7 @@ public class FaultSlipConstraints {
   private void computeUnfaultShifts(
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
     final int nk = skins.length;
-    for (int ik=1; ik<nk; ++ik) {
+    for (int ik=0; ik<nk; ++ik) {
     //Parallel.loop(nk,new Parallel.LoopInt() {
     //public void compute(int ik) {
       System.out.println("skin="+ik);
