@@ -232,6 +232,7 @@ public class FaultSlipConstraints {
       SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
       s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
       for (int ic=0; ic<nc; ++ic) {
+        System.out.println("ic="+ic);
         FaultCell cell = cells[ic];
         float s1 = cell.getS1();
         float s2 = cell.getS2();
