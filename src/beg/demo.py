@@ -89,6 +89,11 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goDisplay()
+  '''
+  gx = readImage(gxfile)
+  sk = readSkins(fslbase)
+  plot3(gx,skins=[sk[2]])
+  '''
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -382,19 +387,17 @@ def goSlip():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
-  '''
   plot3(gx)
   plot3(gw,png="gw")
+  '''
 
 def goUnfaultS():
   gx = readImage(gxfile)
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
-    '''
     lof = LocalOrientFilter(8.0,2.0,2.0)
     et = lof.applyForTensors(gx)
     et.setEigenvalues(0.001,1.0,1.0)
-    '''
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
