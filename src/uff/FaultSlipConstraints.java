@@ -236,8 +236,8 @@ public class FaultSlipConstraints {
       float[] x2a = x2l.trim();
       float[] x3a = x3l.trim();
       float[] s1a = s1l.trim();
-      float x2min = min(x2a);
-      float x3min = min(x3a);
+      float x2min = 0;
+      float x3min = 0;
       float x2max = max(x2a)+10;
       float x3max = max(x3a)+10;
       float x1min = min(x1a);
