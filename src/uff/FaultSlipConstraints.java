@@ -237,7 +237,10 @@ public class FaultSlipConstraints {
       SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
       s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
       s1i.setGradientPower(2.0);
-      for (FaultCell cell:skin) {
+      FaultCell[] cells = skin.getCells();
+      int nc = cells.length;
+      for (int ic=0; ic<nc; ++ic) {
+        FaultCell cell = cells[ic];
         float s1 = cell.getS1();
         float s2 = cell.getS2();
         float s3 = cell.getS3();
@@ -347,7 +350,10 @@ public class FaultSlipConstraints {
   private void setCells(int n1, int n2, int n3) {
     FaultCell[][][] cells = new FaultCell[n3][n2][n1];
     for (FaultSkin sk:_sks) {
-      for (FaultCell fc:sk) {
+      FaultCell[] fcs = sk.getCells();
+      int nc = fcs.length;
+      for (int ic=0; ic<nc; ++ic) {
+        FaultCell fc = fcs[ic];
         int i1i = fc.getI1();
         int i2i = fc.getI2();
         int i3i = fc.getI3();
