@@ -9,7 +9,6 @@ from utils import *
 setupForSubset("jake")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
-sys.setrecursionlimit(1000000000)
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
 gwfile  = "gw" # input image (maybe after bilateral filtering)
@@ -395,11 +394,9 @@ def goUnfaultS():
   gx = readImage(gxfile)
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
-    '''
     lof = LocalOrientFilter(8.0,2.0,2.0)
     et = lof.applyForTensors(gx)
     et.setEigenvalues(0.001,1.0,1.0)
-    '''
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)

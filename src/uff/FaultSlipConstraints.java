@@ -119,7 +119,8 @@ public class FaultSlipConstraints {
     int n3 = wp.length;
     int n2 = wp[0].length;
     int n1 = wp[0][0].length;
-    computeUnfaultShifts(n1,n2,n3,_sks);
+    computeUnfaultShifts(_sks);
+    //computeUnfaultShifts(n1,n2,n3,_sks);
     setCells(n1,n2,n3);
     flNormalization();
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
@@ -199,6 +200,99 @@ public class FaultSlipConstraints {
     return cs;
   }
 
+
+  private void computeUnfaultShifts(FaultSkin[] skins) {
+    int ik = 0;
+    for (FaultSkin skin:skins) {
+      System.out.println("ik="+ik);
+      ik++;
+      final FaultCell[] cells = skin.getCells();
+      final int nc = cells.length;
+      final float[][] sc = new float[3][nc];
+      final float[][] xc = new float[3][nc];
+      for (int ic=0; ic<nc; ++ic) {
+        sc[0][ic] = cells[ic].getS1();
+        sc[1][ic] = cells[ic].getS2();
+        sc[2][ic] = cells[ic].getS3();
+        xc[0][ic] = cells[ic].getX1();
+        xc[1][ic] = cells[ic].getX2();
+        xc[2][ic] = cells[ic].getX3();
+      }
+      final KdTree kt = new KdTree(xc);
+      Parallel.loop(nc,new Parallel.LoopInt() {
+      public void compute(int ic) {
+      //for (int ic=0; ic<nc; ++ic) {
+        FaultCell cell = cells[ic];
+        float[] xminp = new float[3];
+        float[] xmaxp = new float[3];
+        float[] xminm = new float[3];
+        float[] xmaxm = new float[3];
+        float s1 = sc[0][ic];
+        float s2 = sc[1][ic];
+        float s3 = sc[2][ic];
+        float x1 = xc[0][ic];
+        float x2 = xc[1][ic];
+        float x3 = xc[2][ic];
+        float p1 = x1+s1;
+        float p2 = x2+s2;
+        float p3 = x3+s3;
+        float m1 = x1-s1;
+        float m2 = x2-s2;
+        float m3 = x3-s3;
+        xminp[0] = p1-5;
+        xminp[1] = p2-5;
+        xminp[2] = p3-5;
+        xmaxp[0] = p1+5;
+        xmaxp[1] = p2+5;
+        xmaxp[2] = p3+5;
+        xminm[0] = m1-5;
+        xminm[1] = m2-5;
+        xminm[2] = m3-5;
+        xmaxm[0] = m1+5;
+        xmaxm[1] = m2+5;
+        xmaxm[2] = m3+5;
+        int[] idp = kt.findInRange(xminp,xmaxp);
+        int[] idm = kt.findInRange(xminm,xmaxm);
+        int ndp = idp.length;
+        int ndm = idm.length;
+        if (ndp>1&&ndm>1){
+          float[] s1p = new float[ndp];
+          float[] x1p = new float[ndp];
+          float[] x2p = new float[ndp];
+          float[] x3p = new float[ndp];
+          float[] s1m = new float[ndm];
+          float[] x1m = new float[ndm];
+          float[] x2m = new float[ndm];
+          float[] x3m = new float[ndm];
+          for (int ip=0; ip<ndp; ++ip) {
+            int pc = idp[ip];
+            s1p[ip] = sc[0][pc];
+            x1p[ip] = xc[0][pc];
+            x2p[ip] = xc[1][pc];
+            x3p[ip] = xc[2][pc];
+          }
+          SibsonInterp sip = new SibsonInterp(s1p,x1p,x2p,x3p);
+          sip.setBounds(min(x1p)-5,max(x1p)+5,min(x2p)-5,max(x2p)+5,
+                        min(x3p)-5,max(x3p)+5);
+          float dp = sip.interpolate(p1,p2,p3)-s1;
+          for (int im=0; im<ndm; ++im) {
+            int mc = idm[im];
+            s1m[im] = sc[0][mc];
+            x1m[im] = xc[0][mc];
+            x2m[im] = xc[1][mc];
+            x3m[im] = xc[2][mc];
+          }
+          SibsonInterp sim = new SibsonInterp(s1m,x1m,x2m,x3m);
+          sim.setBounds(min(x1m)-5,max(x1m)+5,min(x2m)-5,max(x2m)+5,
+                        min(x3m)-5,max(x3m)+5);
+          float dm = s1-sim.interpolate(m1,m2,m3);
+          s1 -= (dp+dm)*0.5f;
+        }
+        cell.setUnfaultShifts(new float[]{s1,s2,s3});
+      }});
+
+    }
+  }
   private void computeUnfaultShifts(
     final int n1, final int n2, final int n3, final FaultSkin[] skins) {
     final int nk = skins.length;
