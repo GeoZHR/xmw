@@ -69,7 +69,7 @@ maxThrow = 60.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -83,7 +83,7 @@ def main(args):
   #goSkinTv()
   #goReSkin()
   #goSmooth()
-  #goSlip()
+  goSlip()
   goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
@@ -358,7 +358,7 @@ def goSlip():
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMinSkinSize(minSkinSize)
     fsk.setMinMaxThrow(minThrow,maxThrow)
-    #skins = fsk.reskin(skins)
+    skins = fsk.reskin(skins)
     print ", after =",len(skins)
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
@@ -394,7 +394,7 @@ def goUnfaultS():
   gx = readImage(gxfile)
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,2.0,2.0)
+    lof = LocalOrientFilter(8.0,4.0,4.0)
     et = lof.applyForTensors(gx)
     et.setEigenvalues(0.001,1.0,1.0)
 
@@ -404,7 +404,7 @@ def goUnfaultS():
     sp = fsc.screenPoints(wp)
     mul(sp[3][0],10,sp[3][0])
 
-    uf = UnfaultS(4.0,2.0)
+    uf = UnfaultS(8.0,8.0)
     uf.setIters(100)
     uf.setTensors(et)
     [t1,t2,t3] = uf.findShifts(sp,wp)
@@ -416,9 +416,11 @@ def goUnfaultS():
     writeImage(sw3file,t3)
   else :
     fw = readImage(fwsfile)
-    '''
+    gw = readImage(gwfile)
+  '''
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
+  plot3(gw,png="fwuf")
   skins = readSkins(fslbase)
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)
@@ -431,7 +433,7 @@ def goUnfaultS():
         clab="Inline shift (samples)",png="gxs2i")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
-    '''
+  '''
 
 def goFlatten():
   fw = readImage(fwsfile)
