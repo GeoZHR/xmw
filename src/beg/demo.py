@@ -541,7 +541,7 @@ def goFlattenC():
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    ep = readImage(epfile)
+    wp = readImage(wpfile)
     hz1 = readHorizon("hz1")
     hz2 = readHorizon("hz2")
     hz3 = readHorizon("hz3")
@@ -558,7 +558,7 @@ def goFlattenC():
     fl.setSmoothings(6.0,6.0)
     fl.setWeight1(0.05)  
     fl.setScale(0.001)
-    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep,k4,k1,k2,k3)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp,k4,k1,k2,k3)
     gu = fm.flatten(gx) # flattened image
     gt = fm.u1 # rgt volume
     gh = fm.x1 # horizon volume
