@@ -73,7 +73,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -82,7 +82,6 @@ def main(args):
   #goScan()
   #goSkin()
   #goThin()
-  #goReSkinX()
   #goTv()
   #goSkinTv()
   #goReSkin()
@@ -93,12 +92,21 @@ def main(args):
   #goHorizonExtraction1()
   #goHorizonExtraction2()
   #goHorizonExtraction3()
-  goFlattenC()
+  #goFlattenC()
   #goDisplay()
+  #gu = readImage(gufile)
+  #plot3(gu)
+  #sk = readSkins(fskgood)
+  #plot3(gx,skins=sk)
 
 def goDisplay():
-  gx = readImage(gxfile)
-  plot3(gx,cmin=-1.0,cmax=1.0)
+  gx  = readImage(gxfile)
+  hz1 = readHorizon("hz1")
+  hz2 = readHorizon("hz2")
+  hz3 = readHorizon("hz3")
+  plot3(gx,horizon=hz1)
+  plot3(gx,horizon=hz2)
+  plot3(gx,horizon=hz3)
 
 def goSlopes():
   print "goSlopes ..."
@@ -510,7 +518,7 @@ def goHorizonExtraction2():
 
 def goHorizonExtraction3():
   k11 = [23, 28, 10, 29, 48, 75, 125, 133, 45, 15, 40, 42, 75,
-         67, 80, 53,122, 66,108,186,143,137,200, 160, 41, 49,110,106,118,115]
+         67, 80, 53,122, 66,108,184,143,137,200, 160, 41, 49,110,106,110,115]
   k12 = [61, 61, 61, 91,313,573,1041,1493,202,209,222,390,420,
         420,409,429,563,563,563,748,765,841,879,1024,357,475,498,466,498,502]
   k13 = [53,146,227,901,102,102,  97, 124,178,355,105,631,201,
@@ -530,10 +538,8 @@ def goHorizonExtraction3():
     writeImage("hz3",surf) 
   else:
     surf = readHorizon("hz3")
-  '''
   plot3(gx)
   plot3(gx,horizon=surf)
-  '''
 
 def goFlattenC():
   print "Flatten with control points..."
@@ -722,7 +728,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.setClips(cmin,cmax)
     else:
       #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-0.5,0.5) # use for subset plots
+      ipg.setClips(-0.5,0.5)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
@@ -770,8 +776,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg.setStates(ss)
     sf.world.addChild(qg)
   if horizon:
-    tg = TriangleGroup(True,s3,s2,horizon)
-    tg.setColor(Color.CYAN)
+    sd = SurfaceDisplay()
+    ts = sd.horizonWithAmplitude([-0.5,0.5],horizon,f)
+    tg = TriangleGroup(True,ts[0],ts[1])
+    #tg = TriangleGroup(True,s3,s2,horizon)
+    #tg.setColor(Color.CYAN)
     sf.world.addChild(tg)
   if skins:
     sg = Group()
