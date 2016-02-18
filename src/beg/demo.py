@@ -78,7 +78,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
   #goScan()
   #goSkin()
   #goThin()
@@ -89,10 +89,10 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfaultS()
-  goFlattenWeights()
-  goHorizonExtraction1()
-  goHorizonExtraction2()
-  goHorizonExtraction3()
+  #goFlattenWeights()
+  #goHorizonExtraction1()
+  #goHorizonExtraction2()
+  #goHorizonExtraction3()
   goFlattenC()
   #goDisplay()
 
