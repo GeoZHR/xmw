@@ -61,162 +61,6 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     return cells;
   }
 
-  public static void setCells(FaultSkin[] skins, float[][][] fl) {
-    for (FaultSkin skin:skins){
-    for (FaultCell cell:skin) {
-      int i1 = cell.i1;
-      int i2 = cell.i2;
-      int i3 = cell.i3;
-      cell.fl = fl[i3][i2][i1];
-      //float fli = fl[i3][i2][i1];
-      //cell.fl = exp(fli)/exp(1f);
-    }}
-  }
-  public static void getLikelihood(FaultSkin[] skins, float[][][] fl) {
-    for (FaultSkin skin:skins) {
-      for (FaultCell cell:skin) {
-        int i1 = cell.i1;
-        int i2 = cell.i2;
-        int i3 = cell.i3;
-        fl[i3][i2][i1] = cell.fl;
-      }
-    }
-  }
-
-  public static void setValueOnFaults(float v, 
-    FaultSkin[] skins, float[][][] fl) 
-  {
-    for (FaultSkin skin:skins) {
-      for (FaultCell cell:skin) {
-        int i1 = cell.i1;
-        int i2 = cell.i2;
-        int i3 = cell.i3;
-        fl[i3][i2][i1] = v;
-      }
-    }
-  }
-
-  public static void setValuesOnFaults(float v, 
-    FaultSkin[] skins, float[][][] fl) 
-  {
-    for (FaultSkin skin:skins) {
-      for (FaultCell cell:skin) {
-        int i1 = cell.i1;
-        int i2m = cell.i2m;
-        int i3m = cell.i3m;
-        int i2p = cell.i2p;
-        int i3p = cell.i3p;
-        fl[i3m][i2m][i1] = v;
-        fl[i3p][i2p][i1] = v;
-      }
-    }
-  }
-
-  public static void setValuesAwayFromFaults(
-    FaultSkin[] skins, float[][][] f, float[][][] g) 
-  {
-    int n3 = f.length;
-    int n2 = f[0].length;
-    for (FaultSkin skin:skins) {
-      for (FaultCell cell:skin) {
-        int i1 = cell.i1;
-        int i2m = cell.i2m;
-        int i3m = cell.i3m;
-        int i2p = cell.i2p;
-        int i3p = cell.i3p;
-        if(i2m<0){i2m=0;}if(i2m>=n2){i2m=n2-1;}
-        if(i2p<0){i2p=0;}if(i2p>=n2){i2p=n2-1;}
-        if(i3m<0){i3m=0;}if(i3m>=n3){i3m=n3-1;}
-        if(i3p<0){i3p=0;}if(i3p>=n3){i3p=n3-1;}
-        g[i3m][i2m][i1] = f[i3m][i2m][i1];
-        g[i3p][i2p][i1] = f[i3p][i2p][i1];
-      }
-    }
-  }
-
-
-  public static void getLikelihoods(FaultSkin[] skins, float[][][] fl) {
-    int n3 = fl.length;
-    int n2 = fl[0].length;
-    int n1 = fl[0][0].length;
-    float[][][] sc = new float[n3][n2][n1];
-    for (FaultSkin skin:skins) {
-      for (FaultCell cell:skin) {
-        int i1i = cell.i1;
-        int i2m = cell.i2m;
-        int i3m = cell.i3m;
-        int i2p = cell.i2p;
-        int i3p = cell.i3p;
-        if(i2m<0){i2m=0;}if(i2m>=n2){i2m=n2-1;}
-        if(i2p<0){i2p=0;}if(i2p>=n2){i2p=n2-1;}
-        if(i3m<0){i3m=0;}if(i3m>=n3){i3m=n3-1;}
-        if(i3p<0){i3p=0;}if(i3p>=n3){i3p=n3-1;}
-        sc[i3m][i2m][i1i] += 1f;
-        sc[i3p][i2p][i1i] += 1f;
-        fl[i3m][i2m][i1i] += cell.fl;
-        fl[i3p][i2p][i1i] += cell.fl;
-      }
-    }
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float sci = sc[i3][i2][i1];
-      if(sci>1f){fl[i3][i2][i1] /= sci;}
-    }}}
-  }
-
-  public static void getThrow(float mark, FaultSkin[] skins, float[][][] fs) {
-    for (FaultSkin skin:skins) {
-      for (FaultCell cell:skin) {
-        int i1 = cell.i1;
-        int i2 = cell.i2;
-        int i3 = cell.i3;
-        float s1 = cell.s1;
-        float si = fs[i3][i2][i1];
-        if(si==mark) {
-          fs[i3][i2][i1] = s1;
-        } else if(abs(s1)>abs(si)) {
-          fs[i3][i2][i1] = s1;
-        }
-      }
-    }
-  }
-
-  public static void getThrowThick(
-    float mark, FaultSkin[] skins, float[][][] fs) {
-    int n3 = fs.length;
-    int n2 = fs[0].length;
-    for (FaultSkin skin:skins) {
-      for (FaultCell cell:skin) {
-        int i1 = cell.i1;
-        int i2 = cell.i2;
-        int i3 = cell.i3;
-        int i2m = cell.i2m;
-        int i2p = cell.i2p;
-        int i3m = cell.i3m;
-        int i3p = cell.i3p;
-        if(i2m<0){i2m=0;}
-        if(i3m<0){i3m=0;}
-        if(i2p<0){i2p=0;}
-        if(i3p<0){i3p=0;}
-        if(i2p>=n2){i2p=n2-1;}
-        if(i3p>=n3){i3p=n3-1;}
-        if(i2m>=n2){i2m=n2-1;}
-        if(i3m>=n3){i3m=n3-1;}
-        float s1 = cell.s1;
-        float si = fs[i3][i2][i1];
-        if(si==mark) {
-          fs[i3m][i2m][i1] = s1;
-          fs[i3p][i2p][i1] = s1;
-        } else if(abs(s1)>abs(si)) {
-          fs[i3m][i2m][i1] = s1;
-          fs[i3p][i2p][i1] = s1;
-        }
-      }
-    }
-  }
-
-
   /**
    * Returns the total number of cells in the specified skins.
    * @param skins array of skins for which to count cells.
@@ -439,35 +283,6 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     return xyz;
   }
 
-  public float[][] getCellLinksRgb(float r, float g, float b, float[][] xyz) {
-    int ns = xyz.length;
-    float[][] rgb = new float[ns][];
-    for (int is=0; is<ns; ++is) {
-      int np = xyz[is].length/3;
-      rgb[is] = new float[np*3];
-      for (int ip=0; ip<np; ++ip) {
-        int ik = 3*ip;
-        rgb[is][ik+0] = r;
-        rgb[is][ik+1] = g;
-        rgb[is][ik+2] = b;
-      }
-    }
-    return rgb;
-  }
-
-  public float[] getCellRgb(float r, float g, float b, float[] xyz) {
-    int np = xyz.length/3;
-    float[] rgb = new float[np*3];
-    for (int ip=0; ip<np; ++ip) {
-      int ik = 3*ip;
-      rgb[ik+0] = r;
-      rgb[ik+1] = g;
-      rgb[ik+2] = b;
-    }
-    return rgb;
-  }
-
-
   /**
    * Returns a fault skin read from a file with specified name.
    * @param fileName the fault skin file name.
@@ -495,9 +310,6 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cell.s1 = ais.readFloat();
         cell.s2 = ais.readFloat();
         cell.s3 = ais.readFloat();
-        cell.r1 = ais.readFloat();
-        cell.r2 = ais.readFloat();
-        cell.r3 = ais.readFloat();
       }
       FaultCell[] cells = cellList.toArray(new FaultCell[0]);
       FaultCellGrid fcg = new FaultCellGrid(cells);
@@ -554,9 +366,6 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         aos.writeFloat(cell.s1); 
         aos.writeFloat(cell.s2); 
         aos.writeFloat(cell.s3);
-        aos.writeFloat(cell.r1); 
-        aos.writeFloat(cell.r2); 
-        aos.writeFloat(cell.r3);
       }
       for (FaultCell cell:skin) {
         FaultCell[] nabors = new FaultCell[]{cell.ca,cell.cb,cell.cl,cell.cr};
@@ -600,7 +409,6 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
       throw new RuntimeException(e);
     }
   }
-
 
   /////////////////////////////////////////////////////////////////////////
   // package

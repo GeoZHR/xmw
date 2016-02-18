@@ -42,26 +42,6 @@ import static mef.FaultGeometry.*;
 public class FaultCell implements Serializable {
   private static final long serialVersionUID = 1L;
 
-  public void setInterp(boolean needInterp) {
-    this.needInterp = needInterp;
-  }
-
-  public void setNormal(float w1, float w2, float w3) {
-    setNormalVector(w1,w2,w3);
-  }
-
-  public FaultCell getCa() {
-    return this.ca;
-  }
-
-  public FaultCell getCb() {
-    return this.cb;
-  }
-
-  public void setFl(float fl) {
-    this.fl = fl;
-  }
-
   /**
    * Gets the fault likelihood for this cell.
    * @return the fault likelihood.
@@ -76,231 +56,6 @@ public class FaultCell implements Serializable {
 
   public float getFt() {
     return ft;
-  }
-
-  public float getSmp() {
-    return smp;
-  }
-
-  public void shift(float d1, float d2, float d3) {
-    this.x1 += d1;
-    this.x2 += d2;
-    this.x3 += d3;
-    this.i1 = round(this.x1);
-    this.i2 = round(this.x2);
-    this.i3 = round(this.x3);
-  }
-
-
-  public int[] getI() {
-    return new int[]{i1,i2,i3};
-  }
-
-  public int[] getIm() {
-    return new int[]{i1,i2m,i3m};
-  }
-
-  public int[] getIp() {
-    return new int[]{i1,i2p,i3p};
-  }
-
-  public float[] getU() {
-    return new float[]{u1,u2,u3};
-  }
-  public float[] getV() {
-    return new float[]{v1,v2,v3};
-  }
-
-  public int getM1() {
-    return i1;
-  }
-  public int getM2() {
-    return i2m;
-  }
-  public int getM3() {
-    return i3m;
-  }
-
-  public int getP1() {
-    return i1;
-  }
-  public int getP2() {
-    return i2p;
-  }
-  public int getP3() {
-    return i3p;
-  }
-
-  public int getI1() {
-    return i1;
-  }
-  public int getI2() {
-    return i2;
-  }
-  public int getI3() {
-    return i3;
-  }
-  public float getT1() {
-    return t1;
-  }
-  public float getT2() {
-    return t2;
-  }
-  public float getT3() {
-    return t3;
-  }
-  public void setT1(float t1) {
-    this.t1 = t1;
-  }
-  public void setT2(float t2) {
-    this.t2 = t2;
-  }
-  public void setT3(float t3) {
-    this.t3 = t3;
-  }
-
-  public void setUnfaultShifts(float[] ts) {
-    this.t1=ts[0];
-    this.t2=ts[1];
-    this.t3=ts[2];
-  }
-
-  public static void getFlThick(
-    float mark, FaultCell[] cells, float[][][] fs) {
-    int n3 = fs.length;
-    int n2 = fs[0].length;
-    for (FaultCell cell:cells) {
-      int i1 = cell.i1;
-      int i2 = cell.i2;
-      int i3 = cell.i3;
-      int i2m = cell.i2m;
-      int i2p = cell.i2p;
-      int i3m = cell.i3m;
-      int i3p = cell.i3p;
-      if(i2m<0){i2m=0;}
-      if(i3m<0){i3m=0;}
-      if(i2p<0){i2p=0;}
-      if(i3p<0){i3p=0;}
-      if(i2p>=n2){i2p=n2-1;}
-      if(i3p>=n3){i3p=n3-1;}
-      if(i2m>=n2){i2m=n2-1;}
-      if(i3m>=n3){i3m=n3-1;}
-      float fl = cell.fl;
-      float fi = fs[i3][i2][i1];
-      if(fi==mark) {
-        fs[i3m][i2m][i1] = fl;
-        fs[i3p][i2p][i1] = fl;
-      } else if(abs(fl)>abs(fi)) {
-        fs[i3m][i2m][i1] = fl;
-        fs[i3p][i2p][i1] = fl;
-      }
-    }
-  }
-
-  public static void getFpThick(
-    float mark, FaultCell[] cells, float[][][] fs) {
-    int n3 = fs.length;
-    int n2 = fs[0].length;
-    for (FaultCell cell:cells) {
-      int i1 = cell.i1;
-      int i2 = cell.i2;
-      int i3 = cell.i3;
-      int i2m = cell.i2m;
-      int i2p = cell.i2p;
-      int i3m = cell.i3m;
-      int i3p = cell.i3p;
-      if(i2m<0){i2m=0;}
-      if(i3m<0){i3m=0;}
-      if(i2p<0){i2p=0;}
-      if(i3p<0){i3p=0;}
-      if(i2p>=n2){i2p=n2-1;}
-      if(i3p>=n3){i3p=n3-1;}
-      if(i2m>=n2){i2m=n2-1;}
-      if(i3m>=n3){i3m=n3-1;}
-      float fp = cell.fp;
-      float fi = fs[i3][i2][i1];
-      if(fi==mark) {
-        fs[i3m][i2m][i1] = fp;
-        fs[i3p][i2p][i1] = fp;
-      } else if(abs(fp)>abs(fi)) {
-        fs[i3m][i2m][i1] = fp;
-        fs[i3p][i2p][i1] = fp;
-      }
-    }
-  }
-
-  public static void getFtThick(
-    float mark, FaultCell[] cells, float[][][] fs) {
-    int n3 = fs.length;
-    int n2 = fs[0].length;
-    for (FaultCell cell:cells) {
-      int i1 = cell.i1;
-      int i2 = cell.i2;
-      int i3 = cell.i3;
-      int i2m = cell.i2m;
-      int i2p = cell.i2p;
-      int i3m = cell.i3m;
-      int i3p = cell.i3p;
-      if(i2m<0){i2m=0;}
-      if(i3m<0){i3m=0;}
-      if(i2p<0){i2p=0;}
-      if(i3p<0){i3p=0;}
-      if(i2p>=n2){i2p=n2-1;}
-      if(i3p>=n3){i3p=n3-1;}
-      if(i2m>=n2){i2m=n2-1;}
-      if(i3m>=n3){i3m=n3-1;}
-      float ft = cell.ft;
-      float fi = fs[i3][i2][i1];
-      if(fi==mark) {
-        fs[i3m][i2m][i1] = ft;
-        fs[i3p][i2p][i1] = ft;
-      } else if(abs(ft)>abs(fi)) {
-        fs[i3m][i2m][i1] = ft;
-        fs[i3p][i2p][i1] = ft;
-      }
-    }
-  }
-
-
-    /**
-   * Gets the slip vectors (s1,s2,s3) of this cell.
-   * @return array {s1,s2,s3} of coordinates.
-   */
-  public float[] getS() {
-    return new float[]{s1,s2,s3};
-  }
-  /**
-   * Gets the 1st component of the slip vector for this cell.
-   * @return the 1st coordinate.
-   */
-  public float getS1() {
-    return s1;
-  }
-
-  /**
-   * Gets the 2nd component of the slip vector for this cell.
-   * @return the 2nd component.
-   */
-  public float getS2() {
-    return s2;
-  }
-
-  /**
-   * Gets the 3rd component of the slip vector for this cell.
-   * @return the 3rd component.
-   */
-  public float getS3() {
-    return s3;
-  }
-
-  public float getR1() {
-    return r1;
-  }
-  public float getR2() {
-    return r2;
-  }
-  public float getR3() {
-    return r3;
   }
 
 
@@ -367,6 +122,37 @@ public class FaultCell implements Serializable {
   public float getW3() {
     return w3;
   }
+
+  public int getI1() {
+    return i1;
+  }
+  public int getI2() {
+    return i2;
+  }
+  public int getI3() {
+    return i3;
+  }
+
+  public int getM1() {
+    return i1;
+  }
+  public int getM2() {
+    return i2m;
+  }
+  public int getM3() {
+    return i3m;
+  }
+
+  public int getP1() {
+    return i1;
+  }
+  public int getP2() {
+    return i2p;
+  }
+  public int getP3() {
+    return i3p;
+  }
+
 
   /**
    * Returns an array of packed (x,y,z) coordinates for a fault curve.
@@ -505,9 +291,6 @@ public class FaultCell implements Serializable {
   float u1,u2,u3,us; // dip vector and scale factor = 1/sin(theta)
   float v1,v2,v3; // strike vector
   float w1,w2,w3; // normal vector
-  float w11,w12,w13,w22,w23,w33;
-  float u11,u12,u13,u22,u23,u33;
-  float v11,v12,v13,v22,v23,v33;
   FaultCell ca,cb,cl,cr; // nabors above, below, left and right
   FaultSkin skin; // if not null, the skin to which this cell belongs
   int i2m,i2p; // sample indices i2 for minus and plus sides of cell
@@ -515,19 +298,13 @@ public class FaultCell implements Serializable {
   float[] emp; // array of minus-plus alignment errors
   float smp; // shift from minus side to plus side of cell
   float s1,s2,s3; // fault dip-slip vector
-  float r1,r2,r3; // fault dip-slip vector
-  float t1,t2,t3; // fault dip-slip vector
-  boolean interp;
-  boolean notUsed;
-  boolean intersect;
-  boolean needInterp;
 
   interface Get1 { public float get(FaultCell cell); }
   interface GetN { public float[] get(FaultCell cell); }
   interface Set1 { public void set(FaultCell cell, float value); }
   interface SetN { public void set(FaultCell cell, float[] values); }
 
-  public FaultCell(float x1, float x2, float x3, float fl, float fp, float ft) {
+  FaultCell(float x1, float x2, float x3, float fl, float fp, float ft) {
     set(x1,x2,x3,fl,fp,ft);
   }
 
@@ -698,26 +475,12 @@ public class FaultCell implements Serializable {
     i1 = round(x1);
     i2 = round(x2);
     i3 = round(x3);
-    intersect = false;
-    notUsed = true;
-    needInterp = true;
-    interp = false;
     float[] u = faultDipVectorFromStrikeAndDip(fp,ft);
     float[] v = faultStrikeVectorFromStrikeAndDip(fp,ft);
     float[] w = faultNormalVectorFromStrikeAndDip(fp,ft);
     u1 = u[0]; u2 = u[1]; u3 = u[2]; us = 1.0f/u1;
     v1 = v[0]; v2 = v[1]; v3 = v[2];
     w1 = w[0]; w2 = w[1]; w3 = w[2];
-
-    w11 = w1*w1; w22 = w2*w2; w33 = w3*w3;
-    w12 = w1*w2; w13 = w1*w3; w23 = w2*w3;
-
-    u11 = u1*u1; u22 = u2*u2; u33 = u3*u3;
-    u12 = u1*u2; u13 = u1*u3; u23 = u2*u3;
-
-    v11 = v1*v1; v22 = v2*v2; v33 = v3*v3;
-    v12 = v1*v2; v13 = v1*v3; v23 = v2*v3;
-
 
     // Indices (i2m,i2p) and (i3m,i3p) for minus-plus pairs of samples.
     // Cell normal vector w points from the minus side to the plus side.
@@ -808,10 +571,9 @@ public class FaultCell implements Serializable {
     float[] qd = {0.0f,-size, size};
     if (lhc) {
       float[] qt = qb; qb = qc; qc = qt;
-              qt = qa; qa = qd; qd = qt;
+              qt = qd; qd = qa; qa = qt;
     }
     for (FaultCell cell:cells) {
-      if(cell==null){continue;}
       float x1 = cell.x1;
       float x2 = cell.x2;
       float x3 = cell.x3;

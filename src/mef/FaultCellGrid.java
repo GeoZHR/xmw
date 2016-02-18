@@ -52,11 +52,7 @@ public class FaultCellGrid {
       set(cell);
   }
 
-  public void setCell(FaultCell cell) {
-    set(cell);
-  }
-  /*
-  public FaultCellGrid(int n1, int n2, int n3, FaultCell[] cells) {
+  public FaultCellGrid(int n1, int n2, int n3) {
     _j1 = 0;
     _j2 = 0;
     _j3 = 0;
@@ -64,10 +60,7 @@ public class FaultCellGrid {
     _n2 = n2;
     _n3 = n3;
     _cells = new FaultCell[n3][n2][n1];
-    for (FaultCell cell:cells)
-      set(cell);
   }
-  */
 
   /**
    * Gets the number of cells in the 1st dimension.

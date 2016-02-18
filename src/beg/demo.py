@@ -15,6 +15,7 @@ gwfile  = "gw" # input image (maybe after bilateral filtering)
 hxfile  = "horizon"
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
+wpfile  = "wp" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
@@ -39,6 +40,9 @@ sw1file = "sw1" # 1st component of unfaulting shifts
 sw2file = "sw2" # 2nd component of unfaulting shifts
 sw3file = "sw3" # 3rd component of unfaulting shifts
 gufile = "gu" # flattened image
+gtfile = "gt" # flattened image
+ghfile = "gh" # flattened image
+grfile = "gr" # flattened image
 x1file = "x1" # horizon volume
 u1file = "u1" # first component of normal
 u2file = "u2" # second component of normal
@@ -62,7 +66,7 @@ minSkinSize = 10000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 60.0
+maxThrow = 85.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -74,7 +78,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
+  goSlopes()
   #goScan()
   #goSkin()
   #goThin()
@@ -83,16 +87,14 @@ def main(args):
   #goSkinTv()
   #goReSkin()
   #goSmooth()
-  goSlip()
-  goUnfaultS()
-  #goFlatten()
-  #goHorizonExtraction()
+  #goSlip()
+  #goUnfaultS()
+  goFlattenWeights()
+  goHorizonExtraction1()
+  goHorizonExtraction2()
+  goHorizonExtraction3()
+  goFlattenC()
   #goDisplay()
-  '''
-  gx = readImage(gxfile)
-  sk = readSkins(fslbase)
-  plot3(gx,skins=[sk[2]])
-  '''
 
 def goDisplay():
   gx = readImage(gxfile)
@@ -105,8 +107,8 @@ def goSlopes():
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
-  '''
   writeImage(epfile,ep)
+  '''
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
@@ -118,6 +120,18 @@ def goSlopes():
         clab="Planarity")
   '''
 
+def goFlattenWeights():
+  hp = Helper()
+  gx = readImage(gxfile)
+  ep = readImage(epfile)
+  sk = readSkins(fskgood)
+  wp = pow(ep,10)
+  hp.setWeights(sk,wp)
+  writeImage(wpfile,wp)
+  '''
+  plot3(gx,wp,cmin=0,cmax=1,cmap=jetRamp(1.0),
+        clab="Planarity")
+  '''
 def goScan():
   print "goScan ..."
   if not plotOnly:
@@ -358,7 +372,7 @@ def goSlip():
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMinSkinSize(minSkinSize)
     fsk.setMinMaxThrow(minThrow,maxThrow)
-    skins = fsk.reskin(skins)
+    #skins = fsk.reskin(skins)
     print ", after =",len(skins)
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
@@ -417,10 +431,10 @@ def goUnfaultS():
   else :
     fw = readImage(fwsfile)
     gw = readImage(gwfile)
-  '''
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
   plot3(gw,png="fwuf")
+  '''
   skins = readSkins(fslbase)
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)
@@ -435,56 +449,153 @@ def goUnfaultS():
         clab="Crossline shift (samples)",png="gxs3i")
   '''
 
-def goFlatten():
-  fw = readImage(fwsfile)
+def goHorizonExtraction1():
+  k11 = [ 142,126,128, 75,48, 48, 28, 26, 66, 36, 43,121,138, 133,
+          134, 143, 91, 60, 73, 67,120,117,131,157, 159,137, 77,
+          182,101, 176, 198, 196,102, 98, 84, 191, 66]
+  k12 = [1403,985,858,388,72,  8,  8,  8,161,161,161,794,895,1029,
+         1223,1475,332,332,428,428,428,428,723,969,1045,507,507,
+          644,661,1047,1194,1446,408,399,370,1299,383]
+  k13 = [  21, 34, 29, 29,29,139,228,651,195,254,882, 60, 60,  59,
+           60,  60,275,378,950,634,530,351,142,142, 142,585,698,
+          644,816, 215, 317, 308,480,471,143, 292,559]
+  gx = readImage(gxfile)
   if not plotOnly:
-    sig1,sig2,sig3,pmax=4.0,1.0,1.0,5.0
-    p2,p3,ep = FaultScanner.slopes(sig1,sig2,sig3,pmax,fw)
-    wp = pow(ep,6.0)
-    fl = Flattener3()
-    fl.setSmoothings(6.0,6.0)
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    wp = readImage(wpfile)
+    lmt = n1-1
+    se = SurfaceExtractorC()
+    se.setWeights(0.0)
+    se.setSmoothings(6.0,6.0)
+    se.setCG(0.01,100)
+    surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
+    se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
+    writeImage("hz1",surf) 
+  else:
+    surf = readHorizon("hz1")
+  '''
+  plot3(gx)
+  plot3(gx,horizon=surf)
+  '''
+
+def goHorizonExtraction2():
+  k11 = [ 99, 74, 70, 76,106, 81,133,152, 156, 159,130, 87,
+          83, 82,135, 98,160,120,121, 147, 176, 183,149]
+
+  k12 = [  8,  8, 71, 71, 68, 68,582,777,1003,1382,266,253,
+         236,260,303,322,483,393,285,1163,1177,1478,894]
+
+  k13 = [132,208,382,901,133,263, 24, 24,  39,  39,178,264,
+         567,929,212,342,312,415,  6,   6, 139, 188, 14]
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    wp = readImage(wpfile)
+    lmt = n1-1
+    se = SurfaceExtractorC()
+    se.setWeights(0.0)
+    se.setSmoothings(6.0,6.0)
+    se.setCG(0.01,100)
+    surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
+    se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
+    writeImage("hz2",surf) 
+  else:
+    surf = readHorizon("hz2")
+  '''
+  plot3(gx)
+  plot3(gx,horizon=surf)
+  '''
+
+def goHorizonExtraction3():
+  k11 = [23, 28, 10, 29, 48, 75, 125, 133, 45, 15, 40, 42, 75,
+         67, 80, 53,122, 66,108,186,143,137,200, 160, 41, 49,110,106,118,115]
+  k12 = [61, 61, 61, 91,313,573,1041,1493,202,209,222,390,420,
+        420,409,429,563,563,563,748,765,841,879,1024,357,475,498,466,498,502]
+  k13 = [53,146,227,901,102,102,  97, 124,178,355,105,631,201,
+        160,440,866,585,751,348,617,326,208,735, 260,470,676,535,393,488,504]
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    wp = readImage(wpfile)
+    lmt = n1-1
+    se = SurfaceExtractorC()
+    se.setWeights(0.0)
+    se.setSmoothings(6.0,6.0)
+    se.setCG(0.01,100)
+    surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
+    se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
+    writeImage("hz3",surf) 
+  else:
+    surf = readHorizon("hz3")
+  '''
+  plot3(gx)
+  plot3(gx,horizon=surf)
+  '''
+
+def goFlattenC():
+  print "Flatten with control points..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    hz1 = readHorizon("hz1")
+    hz2 = readHorizon("hz2")
+    hz3 = readHorizon("hz3")
+    sc = SetupConstraints()
+    kk1 = sc.constraintsFromSurface(n1-2,hz1)
+    kk2 = sc.constraintsFromSurface(n1-2,hz2)
+    kk3 = sc.constraintsFromSurface(n1-2,hz3)
+    k1 = [kk1[0],kk2[0],kk3[0]]
+    k2 = [kk1[1],kk2[1],kk3[1]]
+    k3 = [kk1[2],kk2[2],kk3[2]]
+    k4 = [kk1[3],kk2[3],kk3[3]]
+    fl = Flattener3C()
     fl.setIterations(0.01,200)
-    mp = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp)
-    gu = mp.flatten(fw)
-    x1 = mp.x1
-    u1 = mp.u1
+    fl.setSmoothings(6.0,6.0)
+    fl.setWeight1(0.05)  
+    fl.setScale(0.001)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep,k4,k1,k2,k3)
+    gu = fm.flatten(gx) # flattened image
+    gt = fm.u1 # rgt volume
+    gh = fm.x1 # horizon volume
+    gr = fl.resampleRgt(s1,gt)
     writeImage(gufile,gu)
-    writeImage(x1file,x1)
-    writeImage(u1file,u1)
+    writeImage(gtfile,gt)
+    writeImage(ghfile,gh)
+    writeImage(grfile,gr)
   else:
     gu = readImage(gufile)
-    x1 = readImage(x1file)
-    u1 = readImage(u1file)
-  plot3(fw)
-  plot3(gu,png="gu")
-  plot3(fw,u1,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
-        clab="Relative geologic time (samples)",png="u1")
+    gt = readImage(gtfile)
+    gh = readImage(ghfile)
+    gr = readImage(grfile)
+    '''
+  plot3(gx,png="seismic")
+  plot3(gu,png="flattened")
+  plot3(gx,gt,cmin=min(gt)+20,cmax=max(gt)-10,cmap=jetRamp(1.0),
+        clab="Relative geologic time",png="rgt")
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+      clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+      clab="Crossline slope (sample/sample)",png="p3")
+  #fl = Flattener3C()
+  #gr = fl.resampleRgt(s1,gt)
+  f1 = min(gr)+50
+  d1 = 5*s1.getDelta()
+  n1 = round((max(gr)-f1)/d1)-1
+  st = Sampling(n1,d1,f1)
+  hfr = HorizonExtraction(s1,s2,s3,None,gr)
+  k2 = 320
+  k3s = [11,61,91,151,181,251,291]
+  for k3 in k3s:
+    #hls  = hfr.horizonCurves(st,k2,k3)
+    plot3X(gx,k2=k2,k3=k3,png="seismic"+str(k3)+"new")
+    #plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
+    '''
 
-def goHorizonExtraction():
-  gx = readImage(gxfile)
-  u1 = readImage(u1file)
-  x1 = readImage(x1file)
-  w1 = readImage(sw1file)
-  w2 = readImage(sw2file)
-  w3 = readImage(sw3file)
-  uf = UnfaultS(4.0,2.0)
-  he = HorizonExtraction(s1,s2,s3,u1,x1)
-  # extract a single horizon 
-  u1i = 0.5*(s1.getFirst()+s1.getLast())
-  hi = he.singleHorizon(u1i) # horizon extracted in unfaulted space
-  uf.applyShiftsR([w1,w2,w3],hi,hi)# convert horizon back to original space
-  stgs = he.applyForTgs(u1i,hi)
-  plot3(gx,htgs=[stgs])
-  # extract a set of horizons
-  ft = s1.getFirst()+5
-  dt = 10.0
-  nt = (round((s1.getLast()-ft)/dt)-1)
-  st = Sampling(nt,dt,ft)
-  hs = he.multipleHorizons(st) # horizon extracted in unfaulted space
-  for hk in hs:
-    uf.applyShiftsR([w1,w2,w3],hk,hk)# convert horizon back to original space
-  mtgs = he.applyForTgs(st,hs)
-  plot3(gx,htgs=mtgs)
 
 def goSlices():
   fl = readImage(flfile)
@@ -592,9 +703,8 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          horizon=None,
-          xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,htgs=None,png=None):
+          horizon=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
+          links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -659,11 +769,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
-  if htgs:
-    for htg in htgs:
-      sf.world.addChild(htg)
   if horizon:
-    tg = TriangleGroup(True,s1,s2,horizon)
+    tg = TriangleGroup(True,s3,s2,horizon)
     tg.setColor(Color.CYAN)
     sf.world.addChild(tg)
   if skins:

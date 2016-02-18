@@ -9,9 +9,9 @@ package mef;
 import java.util.*;
 
 import edu.mines.jtk.awt.*;
+import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 
-import util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static mef.FaultGeometry.*;
 
@@ -172,23 +172,8 @@ public class FaultSkinner {
    * @param cells array of cells from which to grow skins.
    * @return array of skins.
    */
-  public FaultSkin[] findSkins(FaultCell[] cells) {
-    return skins(cells);
-  }
-
-  /**
-   * Returns an array of new skins with cells from specified skins. The
-   * returned skins may differ from those specified if either cell properties
-   * or parameters for this skinner have changed since the cells were last
-   * skinned.
-   * @param skins array of skins.
-   * @return array of new skins.
-   */
-  public FaultSkin[] reskin(FaultSkin[] skins) {
-    FaultCell[] cells = FaultSkin.getCells(skins);
-    for (FaultCell cell:cells)
-      cell.skin = null;
-    return findSkins(cells);
+  public FaultSkin[] findSkins(int n1, int n2, int n3, FaultCell[] cells) {
+    return skins(n1,n2,n3,cells);
   }
 
   /**
@@ -273,7 +258,7 @@ public class FaultSkinner {
     // finite-difference approximations (parabolic interpolation) used to
     // locate ridges.
     float[][][] fs = new float[n3][n2][n1];
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
     rgf.applyX0X(f,fs);
     rgf.applyXX0(fs,fs);
     f = fs;
@@ -338,7 +323,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w1 = w[0], w2 = w[1], w3 = w[2];
+              float w2 = w[1];
               if (imax<=i2 && i2<n2-imax || w2*w2<=wwmax) {
                 fl += fr;
                 d2 += dr;
@@ -357,7 +342,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w1 = w[0], w2 = w[1], w3 = w[2];
+              float w2 = w[1], w3 = w[2];
               if ((imax<=i2 && i2<n2-imax || w2*w2<=wwmax) &&
                   (imax<=i3 && i3<n3-imax || w3*w3<=wwmax)) {
                 fl += fr;
@@ -378,7 +363,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w1 = w[0], w2 = w[1], w3 = w[2];
+              float w3 = w[2];
               if (imax<=i3 && i3<n3-imax || w3*w3<=wwmax) {
                 fl += fr;
                 d3 += dr;
@@ -397,7 +382,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w1 = w[0], w2 = w[1], w3 = w[2];
+              float w2 = w[1], w3 = w[2];
               if ((imax<=i2 && i2<n2-imax || w2*w2<=wwmax) &&
                   (imax<=i3 && i3<n3-imax || w3*w3<=wwmax)) {
                 fl += fr;
@@ -423,11 +408,11 @@ public class FaultSkinner {
   }
 
   // Returns skins constructed from specified cells.
-  private FaultSkin[] skins(FaultCell[] cells) {
+  private FaultSkin[] skins(int n1, int n2, int n3, FaultCell[] cells) {
     int ncell = cells.length;
 
     // Grid of cells used to quickly find cell nabors.
-    FaultCellGrid cellGrid = new FaultCellGrid(cells);
+    FaultCellGrid cg = new FaultCellGrid(cells);
 
     // Empty list of skins.
     ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
@@ -470,6 +455,7 @@ public class FaultSkinner {
       // If we found a seed with which to construct a new skin, ...
       if (kseed<nseed) {
         FaultCell seed = seedList.get(kseed);
+         FaultCellGrid cgk = new FaultCellGrid(n1,n2,n3);
 
         // Make a new empty skin.
         FaultSkin skin = new FaultSkin();
@@ -479,41 +465,37 @@ public class FaultSkinner {
             new PriorityQueue<FaultCell>(1024,flComparator);
         growQueue.add(seed);
 
-        int ct = 0;
         // While the grow queue is not empty, ...
         while (!growQueue.isEmpty()) {
-          if(ct%1000==0) {
-            System.out.println("ct="+ct);
-          }
-          ct++;
 
           // Get and remove the cell with highest fault likelihood from the
           // grow queue. If not already in the skin, add them and link and
           // add any mutually best nabors to the grow queue.
           FaultCell cell = growQueue.poll();
           if (cell.skin==null) {
+            updateCgk(cg,cgk,cell);
             skin.add(cell);
             FaultCell ca,cb,cl,cr;
-            ca = findNaborAbove(cellGrid,cell);
-            cb = findNaborBelow(cellGrid,ca);
+            ca = findNaborAbove(cgk,cell);
+            cb = findNaborBelow(cgk,ca);
             if (ca!=null && ca.skin==null && cb==cell) {
               linkAboveBelow(ca,cb);
               growQueue.add(ca);
             }
-            cb = findNaborBelow(cellGrid,cell);
-            ca = findNaborAbove(cellGrid,cb);
+            cb = findNaborBelow(cgk,cell);
+            ca = findNaborAbove(cgk,cb);
             if (cb!=null && cb.skin==null && ca==cell) {
               linkAboveBelow(ca,cb);
               growQueue.add(cb);
             }
-            cl = findNaborLeft(cellGrid,cell);
-            cr = findNaborRight(cellGrid,cl);
+            cl = findNaborLeft(cgk,cell);
+            cr = findNaborRight(cgk,cl);
             if (cl!=null && cl.skin==null && cr==cell) {
               linkLeftRight(cl,cr);
               growQueue.add(cl);
             }
-            cr = findNaborRight(cellGrid,cell);
-            cl = findNaborLeft(cellGrid,cr);
+            cr = findNaborRight(cgk,cell);
+            cl = findNaborLeft(cgk,cr);
             if (cr!=null && cr.skin==null && cl==cell) {
               linkLeftRight(cl,cr);
               growQueue.add(cr);
@@ -550,11 +532,13 @@ public class FaultSkinner {
     return bigSkinList.toArray(new FaultSkin[0]);
   }
 
-  // Returns true if the specified cells are nabors. This method assumes that
-  // all links are mutual. For example, if c1 is the nabor above c2, then c2
-  // must be the nabor below c1.
-  private static boolean areNabors(FaultCell c1, FaultCell c2) {
-    return c1.ca==c2 || c1.cb==c2 || c1.cl==c2 || c1.cr==c2;
+  private void updateCgk(FaultCellGrid cg, FaultCellGrid cgk, FaultCell cell) {
+  }
+
+  private FaultCell[] findNabors(FaultCellGrid cg, FaultCell cell) {
+    FaultCell[] nbs = new FaultCell[4];
+    
+    return nbs;
   }
 
   // Methods to link mutually best nabors.

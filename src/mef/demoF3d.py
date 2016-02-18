@@ -71,7 +71,7 @@ maxThrow = 25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = getPngDir()
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -180,7 +180,7 @@ def goTv():
     for ic in range(0,len(fcs),4):
       cells.append(fcs[ic])
     tv3 = TensorVoting3()
-    tv3.setSigma(10)
+    tv3.setSigma(20)
     tv3.setVoteWindow(10,20,20)
     sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
     sm = pow(sm,0.4)
@@ -198,7 +198,6 @@ def goTv():
     cm = readImage(cmfile)
     fp = readImage(fpvfile)
     ft = readImage(ftvfile)
-  fd = FaultDisplay()
   plot3(gx,sm,cmin=0.15,cmax=0.8,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
   plot3(gx,cm,cmin=0.15,cmax=0.8,cmap=jetRamp(1.0),
         clab="Intersection",png="cm")
@@ -209,14 +208,12 @@ def goSkinTv():
   fc = readImage(cmfile)
   fp = readImage(fpvfile)
   ft = readImage(ftvfile)
-  fsx = FaultSkinnerX()
-  fsx.setParameters(10,10,0.2)
+  fsx = FaultSkinner()
   fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsx.setMinSkinSize(minSkinSize)
   fsx.setMaxPlanarDistance(0.2)
-  fsx.setSkinning(True)
   cells = fsx.findCells([fl,fp,ft])
-  skins1 = fsx.findSkins(cells,fl)
+  skins1 = fsx.findSkins(cells)
   '''
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)

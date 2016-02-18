@@ -51,6 +51,31 @@ public class SetupConstraints {
     return rearrange(k1,k2,k3);
   }
 
+  public float[][] constraintsFromSurface(float hmax, float[][] surf) {
+    int n3 = surf.length;
+    int n2 = surf[0].length;
+    int np = n2*n3;
+    float[] k1 = new float[np];
+    float[] k2 = new float[np];
+    float[] k3 = new float[np];
+    int ip = 0;
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float hi = surf[i3][i2];
+        if(hi>hmax) {continue;}
+        k3[ip] = i3;
+        k2[ip] = i2;
+        k1[ip] = hi;
+        ip ++;
+      }
+    }
+    k1 = copy(ip,k1);
+    k2 = copy(ip,k2);
+    k3 = copy(ip,k3);
+    return rearrange(k1,k2,k3);
+  }
+
+
   public float[][] rearrange(float[] k1, float[] k2, float[] k3) {
     int ai = 0;
     int np = k1.length;
