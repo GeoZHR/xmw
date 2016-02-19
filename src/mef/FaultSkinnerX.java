@@ -7,13 +7,14 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package mef;
 
 import java.util.*;
+
 import edu.mines.jtk.awt.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 
+import static mef.FaultGeometry.*;
 import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-import static mef.FaultGeometry.*;
 
 import util.*;
 
@@ -40,26 +41,91 @@ import util.*;
  * Several methods in this class set parameters that control this growing
  * process.
  *
- * @author Dave Hale, Colorado School of Mines
- * @version 2014.07.03
+ * @author Xinming Wu and Dave Hale, Colorado School of Mines
+ * @version 2015.01.22
  */
-public class FaultSkinner {
+public class FaultSkinnerX {
 
   /**
    * Constructs a fault skinner with default parameters.
    */
-  public FaultSkinner() {
+  public FaultSkinnerX() {
     _fs1min = -Float.MAX_VALUE;
     _fs1max =  Float.MAX_VALUE;
     _fllo = 0.2f;
     _flhi = 0.8f;
     _dflmax = 0.2f;
-    _dfpmax = 30.0f;
+    _dfpmax = 10.0f;
     _dftmax = 10.0f;
     _dnpmax = 0.5f;
     _ds1max = 1.0f;
     _ncsmin = 400;
   }
+
+  public FaultCell[] createCells(
+    float x1, float x2, float x3,
+    float fl, float fp, float ft,
+    FaultCell[] fcs) 
+  {
+    int ic = 0;
+    int nc = fcs.length+1;
+    FaultCell cell = new FaultCell(x1,x2,x3,fl,fp,ft);
+    FaultCell[] cells = new FaultCell[nc];
+    for (FaultCell fc:fcs){cells[ic]=fc;ic++;}
+    cells[nc-1] = cell;
+    return cells;
+  }
+
+  public void resetCells(FaultCell[] cells) {
+    int nc = cells.length;
+    for (int ic=0; ic<nc; ++ic) {
+      cells[ic].ca = null;
+      cells[ic].cb = null;
+      cells[ic].cl = null;
+      cells[ic].cr = null;
+      cells[ic].skin=null;
+    }
+  }
+
+  public void getFl(FaultSkin[] sks, float[][][] fl) {
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1i = fc.i1;
+        int i2i = fc.i2;
+        int i3i = fc.i3;
+        fl[i3i][i2i][i1i] = fc.fl;
+      }
+    }
+  }
+
+  public void getFls(FaultSkin[] sks, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1m = fc.i1;
+        int i2m = fc.i2m;
+        int i3m = fc.i3m;
+        int i1p = fc.i1;
+        int i2p = fc.i2p;
+        int i3p = fc.i3p;
+        if(i2m>=n2){continue;}
+        if(i3m>=n3){continue;}
+        fl[i3m][i2m][i1m] = fc.fl;
+        fl[i3p][i2p][i1p] = fc.fl;
+      }
+    }
+  }
+
+  /**
+   * Returns array of cells in ridge surfaces of fault likelihood.
+   * @param flpt array {fl,fp,ft} of fault likelihoods, strikes and dips.
+   * @return array of cells.
+   */
+  public FaultCell[] findCells(float[][][][] flpt) {
+    return cells(0,0,0,flpt);
+  }
+
 
   /**
    * Sets the minimum number of cells in a skin. Skins smaller than this will
@@ -157,26 +223,90 @@ public class FaultSkinner {
     _dnpmax = (float)maxPlanarDistance;
   }
 
-  /**
-   * Returns array of cells in ridge surfaces of fault likelihood.
-   * @param flpt array {fl,fp,ft} of fault likelihoods, strikes and dips.
-   * @return array of cells.
-   */
-  public FaultCell[] findCells(float[][][][] flpt) {
-    return cells(flpt);
-  }
-
-  /**
-   * Returns an array of skins comprised of specified cells. Some cells may be
-   * unused. For example, cells with fault likelihoods less than the lower
-   * threshold for growing skins will be unused. Likewise, cells that do not
-   * form a skin with sufficient size will be unused.
-   * @param cells array of cells from which to grow skins.
-   * @return array of skins.
-   */
   public FaultSkin[] findSkins(int n1, int n2, int n3, FaultCell[] cells) {
     return skins(n1,n2,n3,cells);
   }
+
+  public FaultCell[] nabors(
+    int i1, int i2, int i3, FaultCell[] cells) 
+  {
+    ArrayList<Float> dsL = new ArrayList<Float>();
+    ArrayList<Float> dsR = new ArrayList<Float>();
+    ArrayList<FaultCell> fcL = new ArrayList<FaultCell>();
+    ArrayList<FaultCell> fcR = new ArrayList<FaultCell>();
+    int nbc=0, nac=0;
+    for (FaultCell fci:cells) {
+      float x1 = fci.x1;
+      float x2 = fci.x2;
+      float x3 = fci.x3;
+      float d1 = x1-i1;
+      float d2 = x2-i2;
+      float d3 = x3-i3;
+      float v2 =  x3;
+      float v3 = -x2;
+      float dd = d2*v2+d3*v3;
+      float ds = d1*d1+d2*d2+d3*d3;
+      if(abs(d1)>1f) {ds *= abs(d1);}
+      if(dd<=0f) {dsL.add(ds);fcL.add(fci);} 
+      else if(dd>=0f) {dsR.add(ds);fcR.add(fci);}
+      if(d1>0f){nac++;}
+      if(d1<0f){nbc++;}
+    }
+    int nb = 20;
+    int nl = dsL.size();
+    int nr = dsR.size();
+    if(nl<10||nr<10) {return null;}
+    if(nac<5||nbc<5) {return null;}
+    //if(nl<nb||nr<nb) {nb = min(nl,nr);}
+    ArrayList<FaultCell> nbs = new ArrayList<FaultCell>();
+    if(nl<nb) {
+      for (FaultCell fc:fcL) {nbs.add(fc);}
+    } else {
+      int il = 0;
+      int[] idl = new int[nl];
+      float[] dsl = new float[nl];
+      FaultCell[] fcl = fcL.toArray(new FaultCell[0]);
+      for (float dsi:dsL) {dsl[il]=dsi; idl[il]=il; il++;}
+      quickIndexSort(dsl,idl);
+      for (int ik=0; ik<nb; ++ik) {
+        int ic = idl[ik];
+        nbs.add(fcl[ic]);
+      }
+    }
+    if(nr<nb) {
+      for (FaultCell fc:fcR) {nbs.add(fc);}
+    } else {
+      int ir = 0;
+      int[] idr = new int[nr];
+      float[] dsr = new float[nr];
+      FaultCell[] fcr = fcR.toArray(new FaultCell[0]);
+      for (float dsi:dsR) {dsr[ir]=dsi; idr[ir]=ir; ir++;}
+      quickIndexSort(dsr,idr);
+      for (int ik=0; ik<nb; ++ik) {
+        int ic = idr[ik];
+        nbs.add(fcr[ic]);
+      }
+    }
+    return nbs.toArray(new FaultCell[0]);
+  }
+
+
+  /**
+   * Returns an array of new skins with cells from specified skins. The
+   * returned skins may differ from those specified if either cell properties
+   * or parameters for this skinner have changed since the cells were last
+   * skinned.
+   * @param skins array of skins.
+   * @return array of new skins.
+   */
+  /*
+  public FaultSkin[] reskin(FaultSkin[] skins) {
+    FaultCell[] cells = FaultSkin.getCells(skins);
+    for (FaultCell cell:cells)
+      cell.skin = null;
+    return findSkins(cells);
+  }
+  */
 
   /**
    * Gets arrays {xyz,uvw,rgb} of cell coordinates, normals and colors.
@@ -245,12 +375,12 @@ public class FaultSkinner {
   private float _ds1max; // max difference between throws of nabors
   private float _dnpmax; // max distance to planes of nabors
   private int _ncsmin; // min number of cells that form a skin
-  private FaultCell[][][] _cells; // array of all fault cells
   private int _w1=10,_w2=10,_w3=10;
-  private float[][][] _gw = gaussWeights();
+  private float[][][][][] _gw;
+  private Sampling _sp, _st;
 
   // Uses fault images to find cells, oriented points located on ridges.
-  private FaultCell[] cells(float[][][][] flpt) {
+  private FaultCell[] cells(int s1, int s2, int s3, float[][][][] flpt) {
     float[][][] f = flpt[0];
     float[][][] p = flpt[1];
     float[][][] t = flpt[2];
@@ -262,11 +392,13 @@ public class FaultSkinner {
     // eliminate spurious ridges, and improves the accuracy of 2nd-order
     // finite-difference approximations (parabolic interpolation) used to
     // locate ridges.
+    /*
     float[][][] fs = new float[n3][n2][n1];
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.applyX0X(f,fs);
     rgf.applyXX0(fs,fs);
     f = fs;
+    */
 
     // Vertical image boundaries are discontinuities that may look like
     // faults. If a fault appears to be near and nearly parallel to image
@@ -403,7 +535,7 @@ public class FaultSkinner {
             fl /= nr;
             d2 /= nr;
             d3 /= nr;
-            cell = new FaultCell(i1,i2+d2,i3+d3,fl,piii,tiii);
+            cell = new FaultCell(i1+s1,i2+d2+s2,i3+d3+s3,fl,piii,tiii);
             cellList.add(cell);
           }
         }
@@ -412,17 +544,36 @@ public class FaultSkinner {
     return cellList.toArray(new FaultCell[0]);
   }
 
+  private void updateCells(int n1, int n2, int n3, FaultSkin fs) {
+    int d = 3;
+    FaultCell[] fcs = FaultSkin.getCells(new FaultSkin[]{fs});
+    int nc = fcs.length;
+    for (int ic=0; ic<nc; ++ic) {
+      FaultCell fc = fcs[ic];
+      int i1 = fc.i1;
+      int i2 = fc.i2;
+      int i3 = fc.i3;
+      int b1 = max(i1-d,0), e1 = min(i1+d,n1-1);
+      int b2 = max(i2-d,0), e2 = min(i2+d,n2-1);
+      int b3 = max(i3-d,0), e3 = min(i3+d,n3-1);
+      for (int k3=b3; k3<=e3; k3++) {
+      for (int k2=b2; k2<=e2; k2++) {
+      for (int k1=b1; k1<=e1; k1++) {
+        FaultCell fcx = _cells.get(k1,k2,k3);
+        if (fcx!=null) {
+          float dp = fc.fp-fcx.fp;
+          dp = min(abs(dp),abs(dp+360f),abs(dp-360f));
+          if(dp<10f){fcx.skin=fs;}
+        }
+      }}}
+    }
+  }
+
   // Returns skins constructed from specified cells.
   private FaultSkin[] skins(int n1, int n2, int n3, FaultCell[] cells) {
+    int sk = 0;
     int ncell = cells.length;
-    _cells = new FaultCell[n3][n3][n1];
-    for (FaultCell cell:cells) {
-      cell.skin=null;
-      int i1 = cell.i1; if(i1>n1-1) i1=n1-1;
-      int i2 = cell.i2; if(i2>n2-1) i2=n2-1;
-      int i3 = cell.i3; if(i3>n3-1) i3=n3-1;
-      _cells[i3][i2][i1] = cell;
-    }
+    _cells = new FaultCellGrid(n1,n2,n3,cells);
 
     // Empty list of skins.
     ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
@@ -446,6 +597,7 @@ public class FaultSkinner {
       if (cell.fl>=_flhi && cell.s1>=_fs1min && cell.s1<=_fs1max)
         seedList.add(cell);
     }
+    //int nseed = 1;
     int nseed = seedList.size();
 
     // Sort the list of seeds high-to-low by fault likelihood.
@@ -454,6 +606,7 @@ public class FaultSkinner {
     seedList.clear();
     for (FaultCell seed:seeds)
       seedList.add(seed);
+    //seedList.add(seeds[10000]);
 
     // While potential seeds remain, ...
     for (int kseed=0; kseed<nseed; ++kseed) {
@@ -464,8 +617,11 @@ public class FaultSkinner {
 
       // If we found a seed with which to construct a new skin, ...
       if (kseed<nseed) {
+        System.out.println("skinNo="+sk);
+        sk++;
         FaultCell seed = seedList.get(kseed);
 
+        _cellsX = new FaultCellGrid(n1,n2,n3);
         // Make a new empty skin.
         FaultSkin skin = new FaultSkin();
 
@@ -475,48 +631,58 @@ public class FaultSkinner {
         growQueue.add(seed);
 
         // While the grow queue is not empty, ...
+        int ct=0;
         while (!growQueue.isEmpty()) {
-
+          if(ct%1000==0) {
+            System.out.println("ct="+ct);
+          }
+          ct++;
           // Get and remove the cell with highest fault likelihood from the
           // grow queue. If not already in the skin, add them and link and
           // add any mutually best nabors to the grow queue.
           FaultCell cell = growQueue.poll();
           if (cell.skin==null) {
-            FaultCell[] nbs = findNabors(n1,n2,n3,cell);
-            if (nbs!=null) {
-              FaultCell cc = nbs[0];
-              FaultCell ca = nbs[1];
-              FaultCell cb = nbs[2];
-              FaultCell cl = nbs[3];
-              FaultCell cr = nbs[4];
-              skin.add(cc);
-              if (ca!=null) {
-                linkAboveBelow(ca,cc);
-                growQueue.add(ca);
-              }
-              if (cb!=null) {
-                linkAboveBelow(cc,cb);
-                growQueue.add(cb);
-              }
-              if (cl!=null) {
-                linkLeftRight(cl,cc);
-                growQueue.add(cl);
-              }
-              if (cr!=null) {
-                linkLeftRight(cc,cr);
-                growQueue.add(cr);
-              }
+            findInNewCells(n1,n2,n3,cell);
+            FaultCell ca,cb,cl,cr;
+            ca = findNaborAbove(cell);
+            cb = findNaborBelow(ca);
+            if (ca!=null && ca.skin==null && cb==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(ca);
             }
+
+            cb = findNaborBelow(cell);
+            ca = findNaborAbove(cb);
+            if (cb!=null && cb.skin==null && ca==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(cb);
+            }
+
+            cl = findNaborLeft(cell);
+            cr = findNaborRight(cl);
+            if (cl!=null && cl.skin==null && cr==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cl);
+            }
+
+            cr = findNaborRight(cell);
+            cl = findNaborLeft(cr);
+            if (cr!=null && cr.skin==null && cl==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cr);
+            }
+            skin.add(cell);
           }
         }
+
         // Done growing. Add this skin to the list of skins. Here we include
         // skins that are too small. If we did not include them here, we would
         // need to put them in a list of small skins, so that we could later
         // remove all of their cells. (By not removing those cells now, we
         // prevent them from becoming parts of other skins.) Instead, we
         // simply put all skins in the list, and filter that list later.
-        trace("skin="+skin.size());
         skinList.add(skin);
+        System.out.println("skinSize="+skin.size());
         updateCells(n1,n2,n3,skin);
       }
     }
@@ -540,33 +706,57 @@ public class FaultSkinner {
     return bigSkinList.toArray(new FaultSkin[0]);
   }
 
-  private void updateCells(int n1, int n2, int n3, FaultSkin fs) {
-    int d = 3;
-    FaultCell[] fcs = FaultSkin.getCells(new FaultSkin[]{fs});
-    int nc = fcs.length;
-    for (int ic=0; ic<nc; ++ic) {
-      FaultCell fc = fcs[ic];
-      int i1 = fc.i1;
-      int i2 = fc.i2;
-      int i3 = fc.i3;
-      int b1 = max(i1-d,0), e1 = min(i1+d,n1-1);
-      int b2 = max(i2-d,0), e2 = min(i2+d,n2-1);
-      int b3 = max(i3-d,0), e3 = min(i3+d,n3-1);
-      for (int k3=b3; k3<=e3; k3++) {
-      for (int k2=b2; k2<=e2; k2++) {
-      for (int k1=b1; k1<=e1; k1++) {
-        FaultCell fcx = _cells[k3][k2][k1];
-        if (fcx!=null) {
-          float dp = fc.fp-fcx.fp;
-          dp = min(abs(dp),abs(dp+360f),abs(dp-360f));
-          if(dp<10f){fcx.skin=fs;}
-        }
-      }}}
+
+  private void findInNewCells(int n1, int n2, int n3, FaultCell cell) {
+    FaultCell[] fcs = null;//findNabors(n1,n2,n3,cell);
+    if(fcs==null) { return;}
+    FaultCell ca = cell.ca;
+    FaultCell cb = cell.cb;
+    FaultCell cl = cell.cl;
+    FaultCell cr = cell.cr;
+    FaultCellGrid cg = new FaultCellGrid(fcs);
+    FaultCell cn = nearestCell(cell,fcs);
+    if(cn!=null) {
+      cell.x1 = cn.x1; cell.i1 = cn.i1;
+      cell.x2 = cn.x2; cell.i2 = cn.i2;
+      cell.x3 = cn.x3; cell.i3 = cn.i3;
+      cell.fl = cn.fl;
+      cell.fp = cn.fp;
+      cell.ft = cn.ft;
     }
+    _cellsX.set(cell);
+    if(cl==null){
+      cl=findNaborLeft(cg,cell);
+    }
+    if(cr==null){
+      cr=findNaborRight(cg,cell);
+    }
+    if(ca==null){
+      ca=findNaborAbove(cg,cell);
+    }
+    if(cb==null){
+      cb=findNaborBelow(cg,cell);
+    }
+    if(ca!=null) _cellsX.set(ca);
+    if(cb!=null) _cellsX.set(cb);
+    if(cl!=null) _cellsX.set(cl);
+    if(cr!=null) _cellsX.set(cr);
   }
 
+  public void setCellGrid(FaultCell[] cells) {
+    _cells = new FaultCellGrid(cells);
+  }
 
-  private FaultCell[] findNabors(int n1, int n2, int n3, FaultCell cell) {
+  public float[][][][][] setGaussWeights(Sampling sp, Sampling st) {
+    _sp = sp;
+    _st = st;
+    _gw = gaussWeights(20,1);
+    return _gw;
+  }
+
+  public FaultCell[] findNabors(
+    int n1, int n2, int n3, final float[][][] fls, FaultCell cell) 
+  {
     float fp = cell.fp;
     float ft = cell.ft;
     final int i1 = cell.i1;
@@ -578,159 +768,51 @@ public class FaultSkinner {
     final FaultCell[] fcs = findCellsInBox(b1,e1,b2,e2,b3,e3,fp,ft);
     final int nc = fcs.length;
     if (nc<5) {return null;}
-    final int m1=11, m2=11, m3=11;
+    final int m1=25;
+    final int m2=25;//min(max(round(m1*abs(cell.w2/cell.w1)),m1),_w2*3);
+    final int m3=25;//min(max(round(m1*abs(cell.w3/cell.w1)),m1),_w3*3);
+    final int s1=i1-(m1-1)/2;
+    final int s2=i2-(m2-1)/2;
+    final int s3=i3-(m3-1)/2;
     final float[][][][] flpt = new float[3][m3][m2][m1];
     loop(m3,new Parallel.LoopInt(){
     public void compute(int k3) {
-      int p3 = k3+i3-5;
+      int p3 = k3+s3;
       float[][] fl3 = flpt[0][k3];
       float[][] fp3 = flpt[1][k3];
       float[][] ft3 = flpt[2][k3];
       for (int k2=0; k2<m2; ++k2) {
-        int p2 = k2+i2-5;
+        int p2 = k2+s2;
       for (int k1=0; k1<m1; ++k1) {
-        int p1 = k1+i1-5;
-        float g11 = 0f;
-        float g12 = 0f;
-        float g13 = 0f;
-        float g22 = 0f;
-        float g23 = 0f;
-        float g33 = 0f;
+        int p1 = k1+s1;
+        float fps = 0f;
+        float fts = 0f;
+        float gws = 0f;
         for (FaultCell fc:fcs) {
-          float w1 = fc.w1;
-          float w2 = fc.w2;
-          float w3 = fc.w3;
-          int r1 = p1-fc.i1;
-          int r2 = p2-fc.i2;
-          int r3 = p3-fc.i3;
-          float rs = sqrt(r1*r1+r2*r2+r3*r3);
-          float gw = _gw[abs(r3)][abs(r2)][abs(r1)]*fc.fl;
-          if(rs>0f) {
-            r1 /= rs; r2 /= rs; r3 /= rs;
-            float wr = w1*r1+w2*r2+w3*r3;
-            wr = 1f-wr*wr;
-            wr *= wr;
-            wr *= wr;
-            gw *= wr;
-          }
-          g11 += w1*w1*gw;
-          g12 += w1*w2*gw;
-          g13 += w1*w3*gw;
-          g22 += w2*w2*gw;
-          g23 += w2*w3*gw;
-          g33 += w3*w3*gw;
+          float fp = fc.fp;
+          float ft = fc.ft;
+          int r1 = p1-fc.i1+_w1*3;
+          int r2 = p2-fc.i2+_w2*3;
+          int r3 = p3-fc.i3+_w3*3;
+          int ip = _sp.indexOfNearest(fp);
+          int it = _st.indexOfNearest(ft);
+          float gw = _gw[ip][it][r3][r2][r1]*fc.fl;
+          gws += gw;
+          fps += fp*gw;
+          fts += ft*gw;
         }
-        double[][] a = new double[3][3];
-        a[0][0] = g11; a[0][1] = g12; a[0][2] = g13;
-        a[1][0] = g12; a[1][1] = g22; a[1][2] = g23;
-        a[2][0] = g13; a[2][1] = g23; a[2][2] = g33;
-        float[][] ue = solveEigenproblems(a);
-        float eui = ue[1][0];
-        float evi = ue[1][1];
-        float u1i = ue[0][0];
-        float u2i = ue[0][1];
-        float u3i = ue[0][2];
-        if (u2i==0.0f&&u3i==0f){continue;}
-        if (u1i>0.0f) {
-          u1i = -u1i;
-          u2i = -u2i;
-          u3i = -u3i;
-        }
-        fl3[k2][k1] = (eui-evi);
-        ft3[k2][k1] = faultDipFromNormalVector(u1i,u2i,u3i);
-        fp3[k2][k1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+        fl3[k2][k1] = gws;
+        ft3[k2][k1] = fts/gws;
+        fp3[k2][k1] = fps/gws;
+        fls[p3][p2][p1] = gws;
       }}
     }});
     sub(flpt[0],min(flpt[0]),flpt[0]);
     div(flpt[0],max(flpt[0]),flpt[0]);
-    FaultCell[] cells = cells(flpt);
-    if (cells==null) {return null;}
-    FaultCell[] nbs = new FaultCell[5];
-    FaultCell cc = centerCell(cells);
-    if (cc==null) {return null;}
-    nbs[0] = new FaultCell(cc.x1+i1-5,cc.x2+i2-5,cc.x3+i3-5,cc.fl,cc.fp,cc.ft);
-    FaultCellGrid fcg = new FaultCellGrid(cells);
-    FaultCell ca,cb,cl,cr;
-    // look for the above nabor
-    if (cell.ca==null) {
-      ca = findNaborAbove(fcg,cc);
-      cb = findNaborBelow(fcg,ca);
-      if (ca!=null && ca.skin==null && cb==cc) {
-        nbs[1] = new FaultCell(ca.x1+i1-5,ca.x2+i2-5,ca.x3+i3-5,ca.fl,ca.fp,ca.ft);
-      }
-    }
-    // look for the below nabor
-    if (cell.cb==null) {
-      cb = findNaborBelow(fcg,cc);
-      ca = findNaborAbove(fcg,cb);
-      if (cb!=null && cb.skin==null && ca==cc) {
-        nbs[2] = new FaultCell(cb.x1+i1-5,cb.x2+i2-5,cb.x3+i3-5,cb.fl,cb.fp,cb.ft);
-      }
-    }
-    // look for the left nabor
-    if (cell.cl==null) {
-      cl = findNaborLeft(fcg,cc);
-      cr = findNaborRight(fcg,cl);
-      if (cl!=null && cl.skin==null && cr==cc) {
-        nbs[3] = new FaultCell(cl.x1+i1-5,cl.x2+i2-5,cl.x3+i3-5,cl.fl,cl.fp,cl.ft);
-      }
-    }
-    // look for the right nabor
-    if (cell.cr==null) {
-      cr = findNaborRight(fcg,cc);
-      cl = findNaborLeft(fcg,cr);
-      if (cr!=null && cr.skin==null && cl==cc) {
-       nbs[4] = new FaultCell(cr.x1+i1-5,cr.x2+i2-5,cr.x3+i3-5,cr.fl,cr.fp,cr.ft);
-      }
-    }
-    return nbs;
-  }
+    sub(fls,min(fls),fls);
+    div(fls,max(fls),fls);
 
-  private FaultCell centerCell(FaultCell[] fcs) {
-    FaultCell cell = null;
-    float ds = Float.MAX_VALUE;
-    for (FaultCell fci:fcs) {
-      if(fci.i1!=5){continue;}
-      float d1 = 5-fci.x1;
-      float d2 = 5-fci.x2;
-      float d3 = 5-fci.x3;
-      float di = d1*d1+d2*d2+d3*d3;
-      if(di<ds){ds=di;cell=fci;}
-    }
-    return cell;
-  }
-
-
-  private float[][] solveEigenproblems(double[][] a) {
-    double[] e = new double[3];
-    double[][] z = new double[3][3];
-    Eigen.solveSymmetric33(a,z,e);
-    float eui = (float)e[0];
-    float evi = (float)e[1];
-    float ewi = (float)e[2];
-    float u1i = (float)z[0][0];
-    float u2i = (float)z[0][1];
-    float u3i = (float)z[0][2];
-    if (ewi<0.0f) ewi = 0.0f;
-    if (evi<ewi) evi = ewi;
-    if (eui<evi) eui = evi;
-    float[] es = new float[]{eui,evi,ewi};
-    float[] us = new float[]{u1i,u2i,u3i};
-    return new float[][]{us,es};
-  }
-
-
-  private float[][][] gaussWeights() {
-    int n1 = (_w1+5)*2+1;
-    int n2 = (_w2+5)*2+1;
-    int n3 = (_w3+5)*2+1;
-    float[][][] fx = new float[n3][n2][n1];
-    fx[_w3+5][_w2+5][_w1+5] = 1f;
-    float[][][] fs = new float[n3][n2][n1];
-    float sigma = max(_w1,_w2,_w3)*2f;
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
-    rgf.apply000(fx,fs);
-    return copy(_w1+6,_w2+6,_w3+6,_w1+5,_w2+5,_w3+5,fs);
+    return cells(s1,s2,s3,flpt);
   }
 
 
@@ -741,8 +823,8 @@ public class FaultSkinner {
     for (int i3=b3; i3<=e3; ++i3) {
     for (int i2=b2; i2<=e2; ++i2) {
     for (int i1=b1; i1<=e1; ++i1) {
-      FaultCell cell = _cells[i3][i2][i1];
-      if (cell!=null&&cell.skin==null) {
+      FaultCell cell = _cells.get(i1,i2,i3);
+      if (cell!=null) {
         float dp = cell.fp-fp;
         float dt = abs(cell.ft-ft);
         dp = min(abs(dp),abs(dp+360.0f),abs(dp-360.0f));
@@ -751,6 +833,226 @@ public class FaultSkinner {
     }}}
     return fcl.toArray(new FaultCell[0]);
   }
+
+
+
+  public float[][][][][] gaussWeights(
+    float sigu, float sigw) 
+  {
+    int n1 = _w1*6+1;
+    int n2 = _w2*6+1;
+    int n3 = _w3*6+1;
+    int np = _sp.getCount();
+    int nt = _st.getCount();
+    float[][][] gw = new float[n1][n2][n3];
+    final float[][][][][] gws = new float[np][nt][n3][n2][n1];
+    gw[_w3*3][_w2*3][_w1*3] = 1f;
+    RecursiveGaussianFilterP rgfu = new RecursiveGaussianFilterP(sigu);
+    RecursiveGaussianFilterP rgfw = new RecursiveGaussianFilterP(sigw);
+    rgfu.apply0XX(gw,gw);
+    rgfw.applyX0X(gw,gw);
+    rgfu.applyXX0(gw,gw);
+    for (int ip=0; ip<np; ++ip) {
+      final float phi = (float)_sp.getValue(ip);
+      Rotator r = new Rotator(phi,n1,n2,n3);
+      float[][][] rgw = r.rotate(gw);
+      shearTheta(_st,rgw,gws[ip]);
+    }
+    return gws;
+  }
+
+  private void shearTheta(
+    Sampling thetaSampling, final float[][][] fx, final float[][][][] gwp) 
+  {
+    final int n3 = n3(fx);
+    final int n2 = n2(fx);
+    final int n1 = n1(fx);
+    final int m3 = gwp[0].length;
+    final int m2 = gwp[0][0].length;
+    final int m1 = gwp[0][0][0].length;
+    final float[][][] ft = new float[n3][n2][n1];
+    final Sampling st = thetaSampling;
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    int nt = st.getCount();
+    for (int it=0; it<nt; ++it) {
+      float ti = (float)st.getValue(it);
+      float theta = toRadians(ti);
+      final float shear = -1.0f/tan(theta);
+      loop(n2,new LoopInt() {
+      public void compute(int i2) {
+        float[][] fx2 = extractSlice2(i2,fx);
+        if (fx2==null)return;
+        int n3 = fx2.length;
+        float[][] sns = shear(si,shear,fx2);
+        for (int i3=0,j3=i3lo(i2,fx); i3<n3; ++i3,++j3) {
+          ft[j3][i2] = sns[i3];
+        }
+      }});
+      int[] id = new int[3];
+      max(ft,id);
+      float[][][] gw = gwp[it];
+      for (int i3=0,k3=id[2]-_w3*3; i3<m3; ++i3,++k3) {
+        if(k3>=n3||k3<0) {continue;}
+        float[][] ft3 = ft[k3];
+        float[][] gw3 = gw[i3];
+      for (int i2=0,k2=id[1]-_w2*3; i2<m2; ++i2,++k2) {
+        if(k2>=n2||k2<0) {continue;}
+        float[] ft32 = ft3[k2];
+        float[] gw32 = gw3[i2];
+      for (int i1=0,k1=id[0]-_w1*3; i1<m1; ++i1,++k1) {
+        if(k1>=n1||k1<0) {continue;}
+        gw32[i1] = ft32[k1];
+      }}}
+    }
+  }
+
+    // Makes an array like that specified, including any null arrays.
+  private float[][][] like(float[][][] p) {
+    int n1 = n1(p);
+    int n2 = n2(p);
+    int n3 = n3(p);
+    int np = p.length;
+    float[][][] q = new float[n3][n2][];
+    for (int ip=0; ip<np; ++ip) {
+      for (int i3=0; i3<n3; ++i3) {
+        for (int i2=0; i2<n2; ++i2) {
+          q[i3][i2] = (p[i3][i2]!=null)?new float[n1]:null;
+        }
+      }
+    }
+    return q;
+  }
+
+
+    // Numbers of samples in 3D arrays (arrays of arrays of arrays),
+  // which after rotation may contain some null arrays.
+  private static int n1(float[][][] f) {
+    int n1 = 0;
+    int n2 = f[0].length;
+    int n3 = f.length;
+    for (int i3=0; i3<n3 && n1==0; ++i3) {
+      for (int i2=0; i2<n2 && n1==0; ++i2) {
+        if (f[i3][i2]!=null)
+          n1 = f[i3][i2].length;
+      }
+    }
+    return n1;
+  }
+  private static int n2(float[][][] f) {
+    return f[0].length;
+  }
+  private static int n3(float[][][] f) {
+    return f.length;
+  }
+  private static int n1(float[][][][] f) {
+    return n1(f[0]);
+  }
+  private static int n2(float[][][][] f) {
+    return n2(f[0]);
+  }
+  private static int n3(float[][][][] f) {
+    return n3(f[0]);
+  }
+
+  // Get/set non-null slices of rotated 3D arrays
+  private static float[][] extractSlice2(int i2, float[][][] x) {
+    int n1 = n1(x);
+    int n2 = n2(x);
+    int n3 = n3(x);
+    int i3lo = i3lo(i2,x);
+    int i3hi = i3hi(i2,x);
+    int m3 = 1+i3hi-i3lo;
+    float[][] x2 = (m3>0)?new float[m3][n1]:null;
+    for (int i3=0; i3<m3; ++i3)
+      copy(x[i3+i3lo][i2],x2[i3]);
+    return x2;
+  }
+  private static void restoreSlice2(int i2, float[][][] x, float[][] x2) {
+    int n1 = n1(x);
+    int n2 = n2(x);
+    int n3 = n3(x);
+    int i3lo = i3lo(i2,x);
+    int i3hi = i3hi(i2,x);
+    int m3 = 1+i3hi-i3lo;
+    assert x2.length==m3:"x2 length is correct";
+    for (int i3=0; i3<m3; ++i3)
+      copy(x2[i3],x[i3+i3lo][i2]);
+  }
+
+
+  private static int i2lo(int i3, float[][][] x) {
+    int n2 = x[0].length;
+    int i2lo = 0;
+    while (i2lo<n2 && x[i3][i2lo]==null)
+      ++i2lo;
+    return i2lo;
+  }
+  private static int i2hi(int i3, float[][][] x) {
+    int n2 = x[0].length;
+    int i2hi = n2-1;
+    while (i2hi>=0 && x[i3][i2hi]==null)
+      --i2hi;
+    return i2hi;
+  }
+  private static int i3lo(int i2, float[][][] x) {
+    int n3 = x.length;
+    int i3lo = 0;
+    while (i3lo<n3 && x[i3lo][i2]==null)
+      ++i3lo;
+    return i3lo;
+  }
+  private static int i3hi(int i2, float[][][] x) {
+    int n3 = x.length;
+    int i3hi = n3-1;
+    while (i3hi>=0 && x[i3hi][i2]==null)
+      --i3hi;
+    return i3hi;
+  }
+
+  // Shear horizontally such that q(i1,i2) = p(i1,i2+s*i1).
+  private static float[][] shear(
+    SincInterpolator si, double s, float[][] p)
+  {
+    int n1 = p[0].length;
+    int n2p = p.length;
+    int n2q = n2p+(int)(abs(s)*n1);
+    double dqp = n2q-n2p;
+    float[][] q = new float[n2q][n1]; 
+    float[] pp = new float[n2p];
+    float[] qq = new float[n2q];
+    for (int i1=0; i1<n1; ++i1) {
+      for (int i2=0; i2<n2p; ++i2)
+        pp[i2] = p[i2][i1];
+      double f2q = (s<0.0f)?s*i1:s*i1-dqp;
+      si.interpolate(n2p,1.0,0.0,pp,n2q,1.0f,f2q,qq);
+      for (int i2=0; i2<n2q; ++i2)
+        q[i2][i1] = qq[i2];
+    }
+    return q;
+  }
+
+
+
+  private FaultCell nearestCell(FaultCell fc, FaultCell[] fcs) {
+    int i1 = fc.i1;
+    FaultCell cell = null;
+    float ds = Float.MAX_VALUE;
+    for (FaultCell fci:fcs) {
+      if(fci.i1!=i1){continue;}
+      float d1 = fc.x1-fci.x1;
+      float d2 = fc.x2-fci.x2;
+      float d3 = fc.x3-fci.x3;
+      float di = d1*d1+d2*d2+d3*d3;
+      if(di<ds){ds=di;cell=fci;}
+    }
+    return cell;
+  }
+
+
+  // Returns true if the specified cells are nabors. This method assumes that
+  // all links are mutual. For example, if c1 is the nabor above c2, then c2
+  // must be the nabor below c1.
 
   // Methods to link mutually best nabors.
   private void linkAboveBelow(FaultCell ca, FaultCell cb) {
@@ -764,27 +1066,46 @@ public class FaultSkinner {
 
   // Methods to find good nabors of a specified cell. These methods return
   // null if no nabor is good enough, based on various thresholds.
+  private FaultCellGrid _cells;
+  private FaultCellGrid _cellsX;
+
+
+  private FaultCell findNaborAbove(FaultCell cell) {
+    FaultCell ca = _cellsX.findCellAbove(cell);
+    return canBeNaborsNew(cell,ca)?ca:null;
+  }
+  private FaultCell findNaborBelow(FaultCell cell) {
+    FaultCell cb = _cellsX.findCellBelow(cell);
+    return canBeNaborsNew(cell,cb)?cb:null;
+  }
+  private FaultCell findNaborLeft(FaultCell cell) {
+    FaultCell cl = _cellsX.findCellLeft(cell);
+    return canBeNaborsNew(cell,cl)?cl:null;
+  }
+  private FaultCell findNaborRight(FaultCell cell) {
+    FaultCell cr = _cellsX.findCellRight(cell);
+    return canBeNaborsNew(cell,cr)?cr:null;
+  }
+
   private FaultCell findNaborAbove(FaultCellGrid cells, FaultCell cell) {
     FaultCell ca = cells.findCellAbove(cell);
-    return canBeNabors(cell,ca)?ca:null;
+    return canBeNaborsNew(cell,ca)?ca:null;
   }
   private FaultCell findNaborBelow(FaultCellGrid cells, FaultCell cell) {
     FaultCell cb = cells.findCellBelow(cell);
-    return canBeNabors(cell,cb)?cb:null;
+    return canBeNaborsNew(cell,cb)?cb:null;
   }
   private FaultCell findNaborLeft(FaultCellGrid cells, FaultCell cell) {
     FaultCell cl = cells.findCellLeft(cell);
-    return canBeNabors(cell,cl)?cl:null;
+    return canBeNaborsNew(cell,cl)?cl:null;
   }
   private FaultCell findNaborRight(FaultCellGrid cells, FaultCell cell) {
     FaultCell cr = cells.findCellRight(cell);
-    return canBeNabors(cell,cr)?cr:null;
+    return canBeNaborsNew(cell,cr)?cr:null;
   }
 
-  // Returns true if two specified cells can be nabors. The two cells are
-  // assumed to be within one sample of each other. This method uses other
-  // attributes of the cells to determine whether or not they can be nabors.
-  private boolean canBeNabors(FaultCell ca, FaultCell cb) {
+
+  private boolean canBeNaborsNew(FaultCell ca, FaultCell cb) {
     boolean can = true;
     if (ca==null || cb==null) {
       can = false;
@@ -807,6 +1128,7 @@ public class FaultSkinner {
     }
     return can;
   }
+
   private static float minFl(FaultCell ca, FaultCell cb) {
     return min(ca.fl,cb.fl);
   }
@@ -837,9 +1159,9 @@ public class FaultSkinner {
     float dx1 = ax1-bx1;
     float dx2 = ax2-bx2;
     float dx3 = ax3-bx3;
-    float dab = aw1*dx1+aw2*dx2+aw3*dx3;
-    float dba = bw1*dx1+bw2*dx2+bw3*dx3;
-    return max(abs(dab),abs(dba));
+    float dab = abs(aw1*dx1+aw2*dx2+aw3*dx3);
+    float dba = abs(bw1*dx1+bw2*dx2+bw3*dx3);
+    return max(dab,dba);
   }
 
   // Rotates a specified point by strike (phi) and dip (theta) angles,
@@ -885,4 +1207,166 @@ public class FaultSkinner {
       return t;
     }
   }
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////
+  // image rotator
+
+  private static class Rotator {
+
+    Rotator(double phi, int n1, int n2, int n3) {
+      _n1 = n1;
+
+      // angle phi in radians, cosine and sine
+      _phir = toRadians(phi);
+      _cosp = cos(_phir);
+      _sinp = sin(_phir);
+
+      // center of rotation
+      _x2c = 0.5*(n2-1.0);
+      _x3c = 0.5*(n3-1.0);
+
+      // input sampling
+      _s2p = new Sampling(n2,1.0,0.0);
+      _s3p = new Sampling(n3,1.0,0.0);
+
+      // corners of input sampling rectangle
+      double[] x2s = { 0.0, 0.0,n2-1,n2-1};
+      double[] x3s = { 0.0,n3-1,n3-1, 0.0};
+
+      // bounds after rotation
+      double x2min =  Double.MAX_VALUE;
+      double x3min =  Double.MAX_VALUE;
+      double x2max = -Double.MAX_VALUE;
+      double x3max = -Double.MAX_VALUE;
+      for (int i=0; i<4; ++i) {
+        double x2q = x2q(x2s[i],x3s[i]);
+        double x3q = x3q(x2s[i],x3s[i]);
+        if (x2q<x2min) x2min = x2q;
+        if (x2q>x2max) x2max = x2q;
+        if (x3q<x3min) x3min = x3q;
+        if (x3q>x3max) x3max = x3q;
+      }
+      x2min = floor(x2min);
+      x2max = ceil(x2max);
+      x3min = floor(x3min);
+      x3max = ceil(x3max);
+
+      // sampling after rotation
+      int n2q = max(2,1+(int)(x2max-x2min+0.5));
+      int n3q = max(2,1+(int)(x3max-x3min+0.5));
+      double d2q = 1.0;
+      double d3q = 1.0;
+      double f2q = x2min;
+      double f3q = x3min;
+      _s2q = new Sampling(n2q,d2q,f2q);
+      _s3q = new Sampling(n3q,d3q,f3q);
+      //trace("s2p: n2p="+n2);
+      //trace("s3p: n3p="+n3);
+      //trace("s2q: n2q="+n2q+" d2q="+d2q+" f2q="+f2q);
+      //trace("s3q: n3q="+n3q+" d3q="+d3q+" f3q="+f3q);
+    }
+
+    float[][][] rotate(float[][][] p) {
+      final float[][][] fp = p;
+      final float[][] siTable = _siTable;
+      final int nsinc = siTable.length;
+      final int lsinc = siTable[0].length;
+      final Sampling s2q = _s2q;
+      final Sampling s3q = _s3q;
+      final int n1 = _n1;
+      final int n2p = _s2p.getCount();
+      final int n3p = _s3p.getCount();
+      final int n2q = _s2q.getCount();
+      final int n3q = _s3q.getCount();
+      final float[][][] q = new float[n3q][n2q][];
+      loop(n3q,new LoopInt() {
+        public void compute(int i3) {
+          double x3q = s3q.getValue(i3);
+          for (int i2=0; i2<n2q; ++i2) {
+            double x2q = s2q.getValue(i2);
+            double x2p = x2p(x2q,x3q);
+            double x3p = x3p(x2q,x3q);
+            if (inBounds(x2p,x3p)) {
+              float[] q32 = q[i3][i2] = new float[n1];
+              int i2p = (int)floor(x2p);
+              int i3p = (int)floor(x3p);
+              double f2p = x2p-i2p;
+              double f3p = x3p-i3p;
+              int k2p = (int)(f2p*(nsinc-1)+0.5);
+              int k3p = (int)(f3p*(nsinc-1)+0.5);
+              for (int k3s=0; k3s<lsinc; ++k3s) {
+                float s3 = siTable[k3p][k3s];
+                int j3p = i3p+k3s-lsinc/2+1;
+                if (j3p<   0) j3p = 0;
+                if (j3p>=n3p) j3p = n3p-1;
+                for (int k2s=0; k2s<lsinc; ++k2s) {
+                  float s2 = siTable[k2p][k2s];
+                  int j2p = i2p+k2s-lsinc/2+1;
+                  if (j2p<   0) j2p = 0;
+                  if (j2p>=n2p) j2p = n2p-1;
+                  float[] p32 = fp[j3p][j2p];
+                  float s32 = s3*s2;
+                  for (int i1=0; i1<n1; ++i1)
+                    q32[i1] += p32[i1]*s32;
+                }
+              }
+            }
+          }
+        }
+      });
+      return q;
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // private
+
+    private int _n1; // number of samples in 1st dimension
+    private double _phir,_cosp,_sinp; // angle phi in radians, cosine, sine
+    private double _x2c,_x3c; // coordinates of center of rotation
+    private Sampling _s2p,_s3p; // samplings in original coordinates
+    private Sampling _s2q,_s3q; // samplings in rotated coordinates
+    private static float[][] _siTable; // sinc interpolation coefficients
+    private static int HALF_LSINC; // half length of sinc interpolator
+    static {
+      SincInterpolator si = new SincInterpolator();
+      _siTable = si.getTable();
+      HALF_LSINC = _siTable[0].length/2;
+    }
+    private double x2p(double x2q, double x3q) {
+      return _x2c+(x2q-_x2c)*_sinp-(x3q-_x3c)*_cosp;
+    }
+    private double x3p(double x2q, double x3q) {
+      return _x3c+(x2q-_x2c)*_cosp+(x3q-_x3c)*_sinp;
+    }
+    private double x2q(double x2p, double x3p) {
+      return _x2c+(x2p-_x2c)*_sinp+(x3p-_x3c)*_cosp;
+    }
+    private double x3q(double x2p, double x3p) {
+      return _x3c-(x2p-_x2c)*_cosp+(x3p-_x3c)*_sinp;
+    }
+    /*
+    private double x2p(double x2q, double x3q) {
+      return _x2c+(x2q-_x2c)*_cosp-(x3q-_x3c)*_sinp;
+    }
+    private double x3p(double x2q, double x3q) {
+      return _x3c+(x2q-_x2c)*_sinp+(x3q-_x3c)*_cosp;
+    }
+    private double x2q(double x2p, double x3p) {
+      return _x2c+(x2p-_x2c)*_cosp+(x3p-_x3c)*_sinp;
+    }
+    private double x3q(double x2p, double x3p) {
+      return _x3c-(x2p-_x2c)*_sinp+(x3p-_x3c)*_cosp;
+    }
+    */
+    private boolean inBounds(double x2p, double x3p) {
+      return _s2p.getFirst()-HALF_LSINC<=x2p && 
+             _s3p.getFirst()-HALF_LSINC<=x3p && 
+              x2p<=_s2p.getLast()+HALF_LSINC &&
+              x3p<=_s3p.getLast()+HALF_LSINC;
+    }
+  }
+
 }

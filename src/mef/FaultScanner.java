@@ -5,7 +5,7 @@ the Common Public License - v1.0, which accompanies this distribution, and is
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 
-package ipfx;
+package mef;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Stopwatch;
@@ -13,7 +13,7 @@ import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
 import util.*;
-import static ipfx.FaultGeometry.*;
+import static mef.FaultGeometry.*;
 
 /**
  * Computes fault likelihoods, strikes, and dips, by scanning over fault

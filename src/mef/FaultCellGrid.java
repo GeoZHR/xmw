@@ -19,6 +19,9 @@ package mef;
  * @author Dave Hale, Colorado School of Mines
  * @version 2014.07.06
  */
+
+import static edu.mines.jtk.util.ArrayMath.*;
+
 public class FaultCellGrid {
 
   /**
@@ -61,6 +64,19 @@ public class FaultCellGrid {
     _n3 = n3;
     _cells = new FaultCell[n3][n2][n1];
   }
+
+  public FaultCellGrid(int n1, int n2, int n3, FaultCell[] cells) {
+    _j1 = 0;
+    _j2 = 0;
+    _j3 = 0;
+    _n1 = n1;
+    _n2 = n2;
+    _n3 = n3;
+    _cells = new FaultCell[n3][n2][n1];
+    for (FaultCell cell:cells)
+      set(cell);
+  }
+
 
   /**
    * Gets the number of cells in the 1st dimension.
@@ -163,7 +179,13 @@ public class FaultCellGrid {
     int i1 = cell.i1-_j1;
     int i2 = cell.i2-_j2;
     int i3 = cell.i3-_j3;
-    _cells[i3][i2][i1] = cell;
+    i1 = max(i1,0); i1 = min(i1,_n1-1);
+    i2 = max(i2,0); i2 = min(i2,_n2-1);
+    i3 = max(i3,0); i3 = min(i3,_n3-1);
+    if(_cells[i3][i2][i1]==null){
+      _cells[i3][i2][i1] = cell;
+    }
+
   }
 
   /**

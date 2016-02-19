@@ -58,7 +58,7 @@ maxThrow =  15.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/ipfx/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -77,6 +77,20 @@ def main(args):
   goHorizonExtraction()
   '''
   #goSubset()
+  #goTest()
+def goTest():
+  fs = FaultScanner(sigmaPhi,sigmaTheta)
+  sp = fs.makePhiSampling(minPhi,maxPhi)
+  st = fs.makeThetaSampling(minTheta,maxTheta)
+  fsk = FaultSkinnerX()
+  gws = fsk.setGaussWeights(sp,st)
+  print sp.getValue(80)
+  fx = gws[80][10]
+  print len(fx)
+  print len(fx[0])
+  print len(fx[0][0])
+  plot3(fx,cmin=min(fx),cmax=max(fx))
+  
 
 def goSubset():
   gx  = readImage(gxfile)
@@ -222,12 +236,35 @@ def goSkin():
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
-  fs = FaultSkinner()
+  fs = FaultScanner(sigmaPhi,sigmaTheta)
+  sp = fs.makePhiSampling(minPhi,maxPhi)
+  st = fs.makeThetaSampling(minTheta,maxTheta)
+
+  fs = FaultSkinnerX()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
   fs.setMaxPlanarDistance(0.1)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
+  fsk = readSkins(fskbase)
+  cells = FaultSkin.getCells(fsk)
+  fs.resetCells(cells)
+  fs.setCellGrid(cells)
+  fs.setGaussWeights(sp,st)
+  fls = zerofloat(n1,n2,n3)
+  fcs = fs.findNabors(n1,n2,n3,fls,cells[1000])
+  plot3(gx,cells=[cells[1000]])
+  plot3(gx,cells=fcs)
+  plot3(gx,fls,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+
+  '''
+  skins = fs.findSkins(n1,n2,n3,cells)
+  plot3(gx,skins=skins)
+  plot3(gx,skins=fsk)
+  '''
+
+  '''
   skins = fs.findSkins(cells)
   for skin in skins:
     skin.smoothCellNormals(4)
@@ -240,6 +277,7 @@ def goSkin():
   plot3(gx,skins=skins)
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
+  '''
 
 def goReSkin():
   print "goReSkin ..."
@@ -657,7 +695,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         #ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(85,5,56)
-  ipg.setSlices(85,5,43)
+  ipg.setSlices(30,30,56)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
