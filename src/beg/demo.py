@@ -94,10 +94,10 @@ def main(args):
   #goHorizonExtraction3()
   #goFlattenC()
   #goDisplay()
-  #gu = readImage(gufile)
+  gx = readImage(gxfile)
   #plot3(gu)
-  #sk = readSkins(fskgood)
-  #plot3(gx,skins=sk)
+  sk = readSkins(fskgood)
+  plot3(gx,skins=sk)
 
 def goDisplay():
   gx  = readImage(gxfile)

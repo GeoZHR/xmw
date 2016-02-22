@@ -9,13 +9,7 @@ package mef;
 import java.util.*;
 
 import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.util.*;
-import edu.mines.jtk.util.Stopwatch;
-import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-import util.*;
-import ipfx.FaultCell;
-import static ipfx.FaultGeometry.*;
 
 /**
  * 3D tensor voting. 
@@ -67,6 +61,7 @@ public class FaultDisplay {
       if(fli>0f&&flp<=0f) {ft[i3p][i2][k1]=fli;}
     }}
     float[][][] fp = copy(ft);
+    /*
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=1; i2<n2-1; ++i2) {
       int i2m = i2-1;
@@ -74,6 +69,7 @@ public class FaultDisplay {
       float flm = ft[i3][i2m][k1];
       if(fli>0f&&flm<=0f) {fp[i3][i2m][k1]=fli;}
     }}
+    */
     for (int i1=0; i1<n1; ++i1) {
     for (int i2=1; i2<n2-1; ++i2) {
       int i2m = i2-1;
@@ -154,6 +150,8 @@ public class FaultDisplay {
       i1 = min(i1,n1-1); i1 = max(i1,0);
       i2 = min(i2,n2-1); i2 = max(i2,0);
       i3 = min(i3,n3-1); i3 = max(i3,0);
+      fl[i3][i2][i1] = fc.getFl();
+      /*
       int m1 = fc.getM1();
       int m2 = fc.getM2();
       int m3 = fc.getM3();
@@ -168,7 +166,7 @@ public class FaultDisplay {
       p3 = min(p3,n3-1); p3 = max(p3,0);
       fl[m3][m2][m1] = fc.getFl();
       fl[p3][p2][p1] = fc.getFl();
-      fl[i3][i2][i1] = fc.getFl();
+      */
     }
   }
 
