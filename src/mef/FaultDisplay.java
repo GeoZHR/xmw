@@ -139,13 +139,15 @@ public class FaultDisplay {
     return cellList.toArray(new FaultCell[0]);
   }
 
-  public void getFlImage(FaultSkin[] sks, float[][][] gx, float[][][] fl) {
+  public FaultSkin[] getFlImage(FaultSkin[] sks, float[][][] gx, float[][][] fl) {
     int n3 = fl.length;
     int n2 = fl[0].length;
     int n1 = fl[0][0].length;
     float[][][] mk = mask(0.1,2.0,2.0,2.0,gx);
+    ArrayList<FaultSkin> fsl = new ArrayList<FaultSkin>();
     for (FaultSkin ski:sks) {
-      if(ski.size()>2000) {
+      if(ski.size()>1000) {
+        fsl.add(ski);
       for (FaultCell fci:ski) {
         int i1 = fci.getI1();
         int i2 = fci.getI2();
@@ -157,6 +159,7 @@ public class FaultDisplay {
           fl[i3][i2][i1] = fci.getFl();
       }}
     }
+    return fsl.toArray(new FaultSkin[0]);
   }
 
   public float[][][] mask(
