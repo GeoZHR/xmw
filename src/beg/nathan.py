@@ -6,11 +6,13 @@ Version: 2014.07.17
 
 from utils import *
 #setupForSubset("bpSub1")
-setupForSubset("nathanSub1")
+setupForSubset("nathan")
+#setupForSubset("nathanSub1")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
+fxfile  = "fx" # input image (maybe after bilateral filtering)
 gwfile  = "gw" # input image (maybe after bilateral filtering)
 hxfile  = "horizon"
 gsxfile = "gsx" # image after lsf with fault likelihoods
@@ -81,13 +83,18 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
-  #goDisplay()
+  goDisplay()
+def goDisplay():
+  gx = readImage(gxfile)
+  fx = gain(gx)
+  writeImage(fxfile,fx)
+  plot3(fx)
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
