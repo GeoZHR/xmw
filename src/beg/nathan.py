@@ -93,7 +93,7 @@ def main(args):
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 8.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -172,11 +172,9 @@ def goSkinTv():
     fsx.setMinSkinSize(minSkinSize)
     fsx.setMaxPlanarDistance(0.2)
     fsk = readSkins(fskbase)
-    skins = [fsk[2001],fsk[2001],fsk[2002],fsk[2003],fsk[2004],fsk[2005]]
-    plot3(gx,skins=skins,png="skinsTv")
-    fcs = FaultSkin.getCells(skins)
+    fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),5):
+    for ic in range(0,len(fcs),6):
       cells.append(fcs[ic])
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
