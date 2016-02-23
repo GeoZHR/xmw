@@ -51,7 +51,6 @@ u3file = "u3" # third component of normal
 smfile = "sm"
 cmfile = "cm"
 
-
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
