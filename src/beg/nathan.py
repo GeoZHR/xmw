@@ -97,7 +97,7 @@ def goDisplay():
   writeImage(fxfile,fx)
   '''
   fx = readImage(fxfile)
-  plot3(fx,cmin=-1.0,cmax=1.0)
+  plot3(fx,cmin=-2.0,cmax=2.0)
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
