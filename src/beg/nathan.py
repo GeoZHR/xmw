@@ -174,7 +174,7 @@ def goSkinTv():
     fsk = readSkins(fskbase)
     fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),6):
+    for ic in range(0,len(fcs),8):
       cells.append(fcs[ic])
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
