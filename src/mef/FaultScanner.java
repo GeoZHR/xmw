@@ -12,6 +12,7 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
+import util.*;
 import static mef.FaultGeometry.*;
 
 /**
@@ -121,7 +122,7 @@ public class FaultScanner {
     final float[][][] u2 = new float[n3][n2][n1];
     final float[][][] u3 = new float[n3][n2][n1];
     final float[][][] ep = new float[n3][n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(sigma1,sigma2,sigma3);
+    LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2,sigma3);
     lof.applyForNormalPlanar(f,u1,u2,u3,ep);
 
     // Slopes from normal vectors.
@@ -257,7 +258,7 @@ public class FaultScanner {
     float[][][] p = flpt[1];
     float[][][] t = flpt[2];
     f = copy(f);
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.applyX0X(f,f);
     rgf.applyXX0(f,f);
     float[][][] ff = new float[n3][n2][n1];
@@ -493,10 +494,10 @@ public class FaultScanner {
   }
 
   // Sampling of angles depends on extent of smoothing.
-  private Sampling makePhiSampling(double phiMin, double phiMax) {
+  public Sampling makePhiSampling(double phiMin, double phiMax) {
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
-  private Sampling makeThetaSampling(double thetaMin, double thetaMax) {
+  public Sampling makeThetaSampling(double thetaMin, double thetaMax) {
     return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
   private static Sampling angleSampling(

@@ -12,6 +12,7 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
+import util.*;
 import static ipfx.FaultGeometry.*;
 
 /**
@@ -121,7 +122,7 @@ public class FaultScanner {
     final float[][][] u2 = new float[n3][n2][n1];
     final float[][][] u3 = new float[n3][n2][n1];
     final float[][][] ep = new float[n3][n2][n1];
-    LocalOrientFilter lof = new LocalOrientFilter(sigma1,sigma2,sigma3);
+    LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2,sigma3);
     lof.applyForNormalPlanar(f,u1,u2,u3,ep);
 
     // Slopes from normal vectors.

@@ -7,15 +7,13 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package mef;
 
 import java.util.*;
+
 import edu.mines.jtk.awt.*;
-import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 
-import static edu.mines.jtk.util.Parallel.*;
+import util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static mef.FaultGeometry.*;
-
-import util.*;
 
 /**
  * Computes fault skins from images of fault likelihoods, strikes and dips. A
@@ -174,8 +172,23 @@ public class FaultSkinner {
    * @param cells array of cells from which to grow skins.
    * @return array of skins.
    */
-  public FaultSkin[] findSkins(int n1, int n2, int n3, FaultCell[] cells) {
-    return skins(n1,n2,n3,cells);
+  public FaultSkin[] findSkins(FaultCell[] cells) {
+    return skins(cells);
+  }
+
+  /**
+   * Returns an array of new skins with cells from specified skins. The
+   * returned skins may differ from those specified if either cell properties
+   * or parameters for this skinner have changed since the cells were last
+   * skinned.
+   * @param skins array of skins.
+   * @return array of new skins.
+   */
+  public FaultSkin[] reskin(FaultSkin[] skins) {
+    FaultCell[] cells = FaultSkin.getCells(skins);
+    for (FaultCell cell:cells)
+      cell.skin = null;
+    return findSkins(cells);
   }
 
   /**
@@ -245,9 +258,6 @@ public class FaultSkinner {
   private float _ds1max; // max difference between throws of nabors
   private float _dnpmax; // max distance to planes of nabors
   private int _ncsmin; // min number of cells that form a skin
-  private FaultCell[][][] _cells; // array of all fault cells
-  private int _w1=10,_w2=10,_w3=10;
-  private float[][][] _gw = gaussWeights();
 
   // Uses fault images to find cells, oriented points located on ridges.
   private FaultCell[] cells(float[][][][] flpt) {
@@ -328,7 +338,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w2 = w[1];
+              float w1 = w[0], w2 = w[1], w3 = w[2];
               if (imax<=i2 && i2<n2-imax || w2*w2<=wwmax) {
                 fl += fr;
                 d2 += dr;
@@ -347,7 +357,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w2 = w[1], w3 = w[2];
+              float w1 = w[0], w2 = w[1], w3 = w[2];
               if ((imax<=i2 && i2<n2-imax || w2*w2<=wwmax) &&
                   (imax<=i3 && i3<n3-imax || w3*w3<=wwmax)) {
                 fl += fr;
@@ -368,7 +378,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w3 = w[2];
+              float w1 = w[0], w2 = w[1], w3 = w[2];
               if (imax<=i3 && i3<n3-imax || w3*w3<=wwmax) {
                 fl += fr;
                 d3 += dr;
@@ -387,7 +397,7 @@ public class FaultSkinner {
             float fr = fiii+f1*dr+0.5f*f2*dr*dr; // fault likelihood
             if (fr>=_fllo) {
               float[] w = faultNormalVectorFromStrikeAndDip(piii,tiii);
-              float w2 = w[1], w3 = w[2];
+              float w1 = w[0], w2 = w[1], w3 = w[2];
               if ((imax<=i2 && i2<n2-imax || w2*w2<=wwmax) &&
                   (imax<=i3 && i3<n3-imax || w3*w3<=wwmax)) {
                 fl += fr;
@@ -413,16 +423,11 @@ public class FaultSkinner {
   }
 
   // Returns skins constructed from specified cells.
-  private FaultSkin[] skins(int n1, int n2, int n3, FaultCell[] cells) {
+  private FaultSkin[] skins(FaultCell[] cells) {
     int ncell = cells.length;
-    _cells = new FaultCell[n3][n3][n1];
-    for (FaultCell cell:cells) {
-      cell.skin=null;
-      int i1 = cell.i1; if(i1>n1-1) i1=n1-1;
-      int i2 = cell.i2; if(i2>n2-1) i2=n2-1;
-      int i3 = cell.i3; if(i3>n3-1) i3=n3-1;
-      _cells[i3][i2][i1] = cell;
-    }
+
+    // Grid of cells used to quickly find cell nabors.
+    FaultCellGrid cellGrid = new FaultCellGrid(cells);
 
     // Empty list of skins.
     ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
@@ -482,42 +487,42 @@ public class FaultSkinner {
           // add any mutually best nabors to the grow queue.
           FaultCell cell = growQueue.poll();
           if (cell.skin==null) {
-            FaultCell[] nbs = findNabors(n1,n2,n3,cell);
-            if (nbs!=null) {
-              FaultCell cc = nbs[0];
-              FaultCell ca = nbs[1];
-              FaultCell cb = nbs[2];
-              FaultCell cl = nbs[3];
-              FaultCell cr = nbs[4];
-              skin.add(cc);
-              if (ca!=null) {
-                linkAboveBelow(ca,cc);
-                growQueue.add(ca);
-              }
-              if (cb!=null) {
-                linkAboveBelow(cc,cb);
-                growQueue.add(cb);
-              }
-              if (cl!=null) {
-                linkLeftRight(cl,cc);
-                growQueue.add(cl);
-              }
-              if (cr!=null) {
-                linkLeftRight(cc,cr);
-                growQueue.add(cr);
-              }
+            skin.add(cell);
+            FaultCell ca,cb,cl,cr;
+            ca = findNaborAbove(cellGrid,cell);
+            cb = findNaborBelow(cellGrid,ca);
+            if (ca!=null && ca.skin==null && cb==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(ca);
+            }
+            cb = findNaborBelow(cellGrid,cell);
+            ca = findNaborAbove(cellGrid,cb);
+            if (cb!=null && cb.skin==null && ca==cell) {
+              linkAboveBelow(ca,cb);
+              growQueue.add(cb);
+            }
+            cl = findNaborLeft(cellGrid,cell);
+            cr = findNaborRight(cellGrid,cl);
+            if (cl!=null && cl.skin==null && cr==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cl);
+            }
+            cr = findNaborRight(cellGrid,cell);
+            cl = findNaborLeft(cellGrid,cr);
+            if (cr!=null && cr.skin==null && cl==cell) {
+              linkLeftRight(cl,cr);
+              growQueue.add(cr);
             }
           }
         }
+
         // Done growing. Add this skin to the list of skins. Here we include
         // skins that are too small. If we did not include them here, we would
         // need to put them in a list of small skins, so that we could later
         // remove all of their cells. (By not removing those cells now, we
         // prevent them from becoming parts of other skins.) Instead, we
         // simply put all skins in the list, and filter that list later.
-        trace("skin="+skin.size());
         skinList.add(skin);
-        updateCells(n1,n2,n3,skin);
       }
     }
 
@@ -540,216 +545,11 @@ public class FaultSkinner {
     return bigSkinList.toArray(new FaultSkin[0]);
   }
 
-  private void updateCells(int n1, int n2, int n3, FaultSkin fs) {
-    int d = 3;
-    FaultCell[] fcs = FaultSkin.getCells(new FaultSkin[]{fs});
-    int nc = fcs.length;
-    for (int ic=0; ic<nc; ++ic) {
-      FaultCell fc = fcs[ic];
-      int i1 = fc.i1;
-      int i2 = fc.i2;
-      int i3 = fc.i3;
-      int b1 = max(i1-d,0), e1 = min(i1+d,n1-1);
-      int b2 = max(i2-d,0), e2 = min(i2+d,n2-1);
-      int b3 = max(i3-d,0), e3 = min(i3+d,n3-1);
-      for (int k3=b3; k3<=e3; k3++) {
-      for (int k2=b2; k2<=e2; k2++) {
-      for (int k1=b1; k1<=e1; k1++) {
-        FaultCell fcx = _cells[k3][k2][k1];
-        if (fcx!=null) {
-          float dp = fc.fp-fcx.fp;
-          dp = min(abs(dp),abs(dp+360f),abs(dp-360f));
-          if(dp<10f){fcx.skin=fs;}
-        }
-      }}}
-    }
-  }
-
-
-  private FaultCell[] findNabors(int n1, int n2, int n3, FaultCell cell) {
-    float fp = cell.fp;
-    float ft = cell.ft;
-    final int i1 = cell.i1;
-    final int i2 = cell.i2;
-    final int i3 = cell.i3;
-    int b1 = max(i1-_w1,0), e1 = min(i1+_w1,n1-1);
-    int b2 = max(i2-_w2,0), e2 = min(i2+_w2,n2-1);
-    int b3 = max(i3-_w3,0), e3 = min(i3+_w3,n3-1);
-    final FaultCell[] fcs = findCellsInBox(b1,e1,b2,e2,b3,e3,fp,ft);
-    final int nc = fcs.length;
-    if (nc<5) {return null;}
-    final int m1=11, m2=11, m3=11;
-    final float[][][][] flpt = new float[3][m3][m2][m1];
-    loop(m3,new Parallel.LoopInt(){
-    public void compute(int k3) {
-      int p3 = k3+i3-5;
-      float[][] fl3 = flpt[0][k3];
-      float[][] fp3 = flpt[1][k3];
-      float[][] ft3 = flpt[2][k3];
-      for (int k2=0; k2<m2; ++k2) {
-        int p2 = k2+i2-5;
-      for (int k1=0; k1<m1; ++k1) {
-        int p1 = k1+i1-5;
-        float g11 = 0f;
-        float g12 = 0f;
-        float g13 = 0f;
-        float g22 = 0f;
-        float g23 = 0f;
-        float g33 = 0f;
-        for (FaultCell fc:fcs) {
-          float w1 = fc.w1;
-          float w2 = fc.w2;
-          float w3 = fc.w3;
-          int r1 = p1-fc.i1;
-          int r2 = p2-fc.i2;
-          int r3 = p3-fc.i3;
-          float rs = sqrt(r1*r1+r2*r2+r3*r3);
-          float gw = _gw[abs(r3)][abs(r2)][abs(r1)]*fc.fl;
-          if(rs>0f) {
-            r1 /= rs; r2 /= rs; r3 /= rs;
-            float wr = w1*r1+w2*r2+w3*r3;
-            wr = 1f-wr*wr;
-            wr *= wr;
-            wr *= wr;
-            gw *= wr;
-          }
-          g11 += w1*w1*gw;
-          g12 += w1*w2*gw;
-          g13 += w1*w3*gw;
-          g22 += w2*w2*gw;
-          g23 += w2*w3*gw;
-          g33 += w3*w3*gw;
-        }
-        double[][] a = new double[3][3];
-        a[0][0] = g11; a[0][1] = g12; a[0][2] = g13;
-        a[1][0] = g12; a[1][1] = g22; a[1][2] = g23;
-        a[2][0] = g13; a[2][1] = g23; a[2][2] = g33;
-        float[][] ue = solveEigenproblems(a);
-        float eui = ue[1][0];
-        float evi = ue[1][1];
-        float u1i = ue[0][0];
-        float u2i = ue[0][1];
-        float u3i = ue[0][2];
-        if (u2i==0.0f&&u3i==0f){continue;}
-        if (u1i>0.0f) {
-          u1i = -u1i;
-          u2i = -u2i;
-          u3i = -u3i;
-        }
-        fl3[k2][k1] = (eui-evi);
-        ft3[k2][k1] = faultDipFromNormalVector(u1i,u2i,u3i);
-        fp3[k2][k1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
-      }}
-    }});
-    sub(flpt[0],min(flpt[0]),flpt[0]);
-    div(flpt[0],max(flpt[0]),flpt[0]);
-    FaultCell[] cells = cells(flpt);
-    if (cells==null) {return null;}
-    FaultCell[] nbs = new FaultCell[5];
-    FaultCell cc = centerCell(cells);
-    if (cc==null) {return null;}
-    nbs[0] = new FaultCell(cc.x1+i1-5,cc.x2+i2-5,cc.x3+i3-5,cc.fl,cc.fp,cc.ft);
-    FaultCellGrid fcg = new FaultCellGrid(cells);
-    FaultCell ca,cb,cl,cr;
-    // look for the above nabor
-    if (cell.ca==null) {
-      ca = findNaborAbove(fcg,cc);
-      cb = findNaborBelow(fcg,ca);
-      if (ca!=null && ca.skin==null && cb==cc) {
-        nbs[1] = new FaultCell(ca.x1+i1-5,ca.x2+i2-5,ca.x3+i3-5,ca.fl,ca.fp,ca.ft);
-      }
-    }
-    // look for the below nabor
-    if (cell.cb==null) {
-      cb = findNaborBelow(fcg,cc);
-      ca = findNaborAbove(fcg,cb);
-      if (cb!=null && cb.skin==null && ca==cc) {
-        nbs[2] = new FaultCell(cb.x1+i1-5,cb.x2+i2-5,cb.x3+i3-5,cb.fl,cb.fp,cb.ft);
-      }
-    }
-    // look for the left nabor
-    if (cell.cl==null) {
-      cl = findNaborLeft(fcg,cc);
-      cr = findNaborRight(fcg,cl);
-      if (cl!=null && cl.skin==null && cr==cc) {
-        nbs[3] = new FaultCell(cl.x1+i1-5,cl.x2+i2-5,cl.x3+i3-5,cl.fl,cl.fp,cl.ft);
-      }
-    }
-    // look for the right nabor
-    if (cell.cr==null) {
-      cr = findNaborRight(fcg,cc);
-      cl = findNaborLeft(fcg,cr);
-      if (cr!=null && cr.skin==null && cl==cc) {
-       nbs[4] = new FaultCell(cr.x1+i1-5,cr.x2+i2-5,cr.x3+i3-5,cr.fl,cr.fp,cr.ft);
-      }
-    }
-    return nbs;
-  }
-
-  private FaultCell centerCell(FaultCell[] fcs) {
-    FaultCell cell = null;
-    float ds = Float.MAX_VALUE;
-    for (FaultCell fci:fcs) {
-      if(fci.i1!=5){continue;}
-      float d1 = 5-fci.x1;
-      float d2 = 5-fci.x2;
-      float d3 = 5-fci.x3;
-      float di = d1*d1+d2*d2+d3*d3;
-      if(di<ds){ds=di;cell=fci;}
-    }
-    return cell;
-  }
-
-
-  private float[][] solveEigenproblems(double[][] a) {
-    double[] e = new double[3];
-    double[][] z = new double[3][3];
-    Eigen.solveSymmetric33(a,z,e);
-    float eui = (float)e[0];
-    float evi = (float)e[1];
-    float ewi = (float)e[2];
-    float u1i = (float)z[0][0];
-    float u2i = (float)z[0][1];
-    float u3i = (float)z[0][2];
-    if (ewi<0.0f) ewi = 0.0f;
-    if (evi<ewi) evi = ewi;
-    if (eui<evi) eui = evi;
-    float[] es = new float[]{eui,evi,ewi};
-    float[] us = new float[]{u1i,u2i,u3i};
-    return new float[][]{us,es};
-  }
-
-
-  private float[][][] gaussWeights() {
-    int n1 = (_w1+5)*2+1;
-    int n2 = (_w2+5)*2+1;
-    int n3 = (_w3+5)*2+1;
-    float[][][] fx = new float[n3][n2][n1];
-    fx[_w3+5][_w2+5][_w1+5] = 1f;
-    float[][][] fs = new float[n3][n2][n1];
-    float sigma = max(_w1,_w2,_w3)*2f;
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
-    rgf.apply000(fx,fs);
-    return copy(_w1+6,_w2+6,_w3+6,_w1+5,_w2+5,_w3+5,fs);
-  }
-
-
-  private FaultCell[] findCellsInBox(
-    int b1, int e1, int b2, int e2, int b3, int e3, float fp, float ft)
-  {
-    ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
-    for (int i3=b3; i3<=e3; ++i3) {
-    for (int i2=b2; i2<=e2; ++i2) {
-    for (int i1=b1; i1<=e1; ++i1) {
-      FaultCell cell = _cells[i3][i2][i1];
-      if (cell!=null&&cell.skin==null) {
-        float dp = cell.fp-fp;
-        float dt = abs(cell.ft-ft);
-        dp = min(abs(dp),abs(dp+360.0f),abs(dp-360.0f));
-        if (dp<20f && dt<15f) {fcl.add(cell);}
-      }
-    }}}
-    return fcl.toArray(new FaultCell[0]);
+  // Returns true if the specified cells are nabors. This method assumes that
+  // all links are mutual. For example, if c1 is the nabor above c2, then c2
+  // must be the nabor below c1.
+  private static boolean areNabors(FaultCell c1, FaultCell c2) {
+    return c1.ca==c2 || c1.cb==c2 || c1.cl==c2 || c1.cr==c2;
   }
 
   // Methods to link mutually best nabors.
