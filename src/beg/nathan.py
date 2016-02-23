@@ -6,7 +6,7 @@ Version: 2014.07.17
 
 from utils import *
 #setupForSubset("bpSub1")
-setupForSubset("nathanSub1")
+setupForSubset("nathanSub2")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -79,11 +79,11 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
-  goScan()
+  #goSlopes()
+  #goScan()
   #goThin()
-  #goSkin()
-  #goSkinTv()
+  goSkin()
+  goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -183,6 +183,7 @@ def goSkinTv():
     writeSkins(fsktv,skins)
   else:
     skins = readSkins(fsktv)
+  '''
   print len(skins)
   fd = FaultDisplay()
   cells = FaultSkin.getCells(skins)
@@ -190,6 +191,7 @@ def goSkinTv():
   fd.getFlImage(cells,flt)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Fault likelihood",png="smt")
   plot3(gx,skins=skins,png="skinsTv")
+  '''
 
 
 def goStat():
@@ -233,6 +235,7 @@ def goSkin():
     writeSkins(fskbase,skins)
   else:
     skins = readSkins(fskbase)
+  '''
   print len(skins)
   fd = FaultDisplay()
   cells = FaultSkin.getCells(skins)
@@ -241,6 +244,7 @@ def goSkin():
   plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
+  '''
 
 def goSmooth():
   print "goSmooth ..."
