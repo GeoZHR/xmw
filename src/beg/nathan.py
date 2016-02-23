@@ -246,8 +246,8 @@ def goSkin():
   print len(skins)
   fd = FaultDisplay()
   flt = fillfloat(-0.001,n1,n2,n3)
-  fd.getFlImage(skins,gx,flt)
-  plot3(gx,skins=skins)
+  sks = fd.getFlImage(skins,gx,flt)
+  plot3(gx,skins=sks)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
 
