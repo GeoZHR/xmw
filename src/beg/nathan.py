@@ -6,7 +6,7 @@ Version: 2014.07.17
 
 from utils import *
 #setupForSubset("bpSub1")
-setupForSubset("nathanSub2")
+setupForSubset("nathanSub1")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
