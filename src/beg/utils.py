@@ -33,6 +33,16 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,400,1500
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="nathanSub1":
+    print "setupForSubset: nathanSub1"
+    seismicDir = _datdir+"nathan/sub1/"
+    n1,n2,n3 = 400,800,550
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 0.000,5400,10744
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+
   elif name=="jake":
     print "setupForSubset: jake"
     seismicDir = _datdir+"jake/"
