@@ -91,10 +91,13 @@ def main(args):
   #goUnfaultS()
   goDisplay()
 def goDisplay():
+  '''
   gx = readImage(gxfile)
   fx = gain(gx)
   writeImage(fxfile,fx)
-  plot3(fx)
+  '''
+  fx = readImage(fxfile)
+  plot3(fx,cmin=-1.0,cmax=1.0)
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
