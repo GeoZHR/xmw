@@ -139,6 +139,57 @@ public class FaultDisplay {
     return cellList.toArray(new FaultCell[0]);
   }
 
+  public void getFlImage(FaultSkin[] sks, float[][][] gx, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] mk = mask(0.1,2.0,2.0,2.0,gx);
+    for (FaultSkin ski:sks) {
+      if(ski.size()>2000) {
+      for (FaultCell fci:ski) {
+        int i1 = fci.getI1();
+        int i2 = fci.getI2();
+        int i3 = fci.getI3();
+        i1 = min(i1,n1-1); i1 = max(i1,0);
+        i2 = min(i2,n2-1); i2 = max(i2,0);
+        i3 = min(i3,n3-1); i3 = max(i3,0);
+        if(mk[i3][i2][i1]==1f)
+          fl[i3][i2][i1] = fci.getFl();
+      }}
+    }
+  }
+
+  public float[][][] mask(
+    double small, double sigma1, double sigma2, double sigma3,
+    float[][][] x) 
+  {
+    int n1 = x[0][0].length;
+    int n2 = x[0].length;
+    int n3 = x.length;
+    float[][][] t = abs(x);
+    float a = ((sum(t)/n1)/n2)/n3; // global mean absolute amplitude
+    RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(sigma1);
+    RecursiveGaussianFilter rgf2 = new RecursiveGaussianFilter(sigma2);
+    RecursiveGaussianFilter rgf3 = new RecursiveGaussianFilter(sigma3);
+    float[][][] b = zerofloat(n1,n2,n3);
+    rgf1.apply0XX(t,b);
+    rgf2.applyX0X(b,t);
+    rgf3.applyXX0(t,b); // local mean absolute amplitude
+    float[][][] mask = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          if (b[i3][i2][i1]>small*a) {
+            mask[i3][i2][i1] = 1;
+          }
+        }
+      }
+    }
+    return mask;
+  }
+
+
+
   public void getFlImage(FaultCell[] fcs, float[][][] fl) {
     int n3 = fl.length;
     int n2 = fl[0].length;

@@ -73,7 +73,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -82,13 +82,12 @@ def main(args):
   #goScan()
   #goThin()
   goSkin()
-  goSkinTv()
+  #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
@@ -233,17 +232,14 @@ def goSkin():
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
   else:
-    skins = readSkins(fskbase)
-  '''
+    skins = readSkins(fsktv)
   print len(skins)
   fd = FaultDisplay()
-  cells = FaultSkin.getCells(skins)
   flt = fillfloat(-0.001,n1,n2,n3)
-  fd.getFlImage(cells,flt)
+  fd.getFlImage(skins,gx,flt)
   plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  '''
 
 def goSmooth():
   print "goSmooth ..."
@@ -748,7 +744,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(85,5,56)
+  ipg.setSlices(150,5,56)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
