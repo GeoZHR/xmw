@@ -76,11 +76,22 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  goSemblanceS()
   #goSemblance()
-  goOrientScan()
+  #goOrientScan()
   #goThinX()
   #goSkin()
 
+def goSemblanceS():
+  gx = readImage(gxfile)
+  fx = zerofloat(n1,n2,n3)
+  gs = zerofloat(n1,n2,n3)
+  rgf = RecursiveGaussianFilterP(2)
+  rgf.apply000(gx,fx)
+  fx = mul(fx,fx)
+  gs = mul(gx,gx)
+  rgf.apply000(gs,gs)
+  plot3(gx,sub(1,div(fx,gs)),cmin=0.1,cmax=1.0)
 def goSemblance():
   print "go semblance ..."
   gx = readImage(gxfile)
