@@ -257,7 +257,7 @@ def goSkin():
   flt = fillfloat(-0.001,n1,n2,n3)
   fpt = fillfloat(-0.001,n1,n2,n3)
   ftt = fillfloat(-0.001,n1,n2,n3)
-  sks = fd.getFlImagesX(skins,gx,flt,fpt,ftt)
+  sks = fd.getFaultImages(skins,gx,flt,fpt,ftt)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
