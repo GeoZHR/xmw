@@ -84,8 +84,8 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  #goSkin()
-  goSkinTv()
+  goSkin()
+  #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -172,14 +172,17 @@ def goThin():
     flt = readImage(fltfile)
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
+ '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
+ '''
 
 def goSkinTv():
+  print "go skin..."
   gx = readImage(gxfile)
   if not plotOnly:
     fs = FaultScanner(sigmaPhi,sigmaTheta)
@@ -192,7 +195,7 @@ def goSkinTv():
     fsk = readSkins(fskbase)
     fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),5):
+    for ic in range(0,len(fcs),8):
       cells.append(fcs[ic])
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
@@ -253,6 +256,7 @@ def goSkin():
     writeSkins(fskbase,skins)
   else:
     skins = readSkins(fsktv)
+  '''
   print len(skins)
   fd = FaultDisplay()
   flt = fillfloat(-0.001,n1,n2,n3)
@@ -265,6 +269,7 @@ def goSkin():
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
+  '''
 
 
 def goSmooth():
