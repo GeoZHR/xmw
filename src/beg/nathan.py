@@ -82,10 +82,10 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
   #goSkin()
-  #goSkinTv()
+  goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -192,7 +192,7 @@ def goSkinTv():
     fsk = readSkins(fskbase)
     fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),8):
+    for ic in range(0,len(fcs),5):
       cells.append(fcs[ic])
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
