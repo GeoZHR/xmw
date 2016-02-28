@@ -6,9 +6,9 @@ Version: 2016.01.22
 
 from utils import *
 #setupForSubset("bpSub1")
-#setupForSubset("nathan")
+setupForSubset("nathan")
 #setupForSubset("nathanSub1")
-setupForSubset("nathanSub3")
+#setupForSubset("nathanSub3")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -82,7 +82,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
@@ -90,7 +90,7 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfaultS()
-  #goDisplay()
+  goDisplay()
 def goDisplay():
   '''
   gx = readImage(gxfile)
@@ -99,14 +99,15 @@ def goDisplay():
   '''
   fx = readImage(gxfile)
   fx = copy(n1,3675,550,0,1100,60,fx)
-  fx = slog(fx)
-  writeImage("fx4",fx)
+  #fx = slog(fx)
+  fx = gain(fx)
+  writeImage("fx",fx)
   #fx = div(fx,600000)
   fxmin = min(fx)
   fxmax = max(fx)
   print fxmin
   print fxmax
-  plot3(fx,cmin=-5,cmax=5)
+  #plot3(fx,cmin=-5,cmax=5)
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
