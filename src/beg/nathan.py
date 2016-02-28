@@ -6,9 +6,9 @@ Version: 2016.01.22
 
 from utils import *
 #setupForSubset("bpSub1")
-setupForSubset("nathan")
+#setupForSubset("nathan")
 #setupForSubset("nathanSub1")
-#setupForSubset("nathanSub3")
+setupForSubset("nathanSub3")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -81,7 +81,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
+  goSlopes()
   #goScan()
   #goThin()
   #goSkin()
@@ -90,7 +90,7 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfaultS()
-  goDisplay()
+  #goDisplay()
 def goDisplay():
   '''
   gx = readImage(gxfile)
@@ -116,10 +116,10 @@ def goSlopes():
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
-  '''
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
+  '''
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
