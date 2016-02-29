@@ -78,7 +78,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
   #goScan()
   #goThin()
   goSkin()
