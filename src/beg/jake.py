@@ -55,12 +55,12 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,30
+sigmaPhi,sigmaTheta = 10,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.1
-upperLikelihood = 0.3
+lowerLikelihood = 0.3
+upperLikelihood = 0.6
 minSkinSize = 10000
 
 # These parameters control the computation of fault dip slips.
@@ -73,13 +73,13 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   #goSkin()
   #goThin()
   #goTv()
@@ -93,7 +93,7 @@ def main(args):
   #goHorizonExtraction2()
   #goHorizonExtraction3()
   #goFlattenC()
-  goDisplaySeis()
+  #goDisplaySeis()
   #goDisplayHors()
 def goDisplaySeis():
   gx = readImage(gxfile)
@@ -112,7 +112,7 @@ def goDisplayHors():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 8.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
