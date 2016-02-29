@@ -13,8 +13,65 @@ global n1,n2,n3
 def main(args):
   #goHongliu()
   #goF3dUnc()
-  goJake()
+  #goJake()
   #goNathan()
+  goLulia()
+
+def goLulia():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/beg/lulia/WFX_PSTM_90trim.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 5466696624
+  number of traces = 1460121
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: ft (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =  9700, i2max = 10830 (inline indices)
+    i3min = 12200, i3max = 13490 (crossline indices)
+    xmin =  745.952966, xmax =  803.062275 (x coordinates, in km)
+    ymin =   96.613770, ymax =  152.346782 (y coordinates, in km)
+  grid sampling:
+    n1 =   876 (number of samples per trace)
+    n2 =  1131 (number of traces in inline direction)
+    n3 =  1291 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.033528 (inline sampling interval, in km)
+    d3 = 0.033528 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =  9700, i3min = 12200, x =  767.438546, y =   96.613770
+    i2max = 10830, i3min = 12200, x =  745.952966, y =  127.819050
+    i2min =  9700, i3max = 13490, x =  803.062275, y =  121.141501
+    i2max = 10830, i3max = 13490, x =  781.576694, y =  152.346782
+  grid azimuth: -34.55 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/beg/lulia/"
+  sgyfile = basedir+"WFX_PSTM_90trim.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,875,9700,10830,12200,13490
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=max(x))
 
 def goNathan():
   '''
