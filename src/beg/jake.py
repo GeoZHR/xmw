@@ -97,6 +97,8 @@ def main(args):
   #goDisplayHors()
 def goDisplaySeis():
   gx = readImage(gxfile)
+  fx = copy(n1,1856,1076,0,145,325,gx)
+  writeImage("fx",fx)
   plot3(gx)
 def goDisplayHors():
   gx  = readImage(gxfile)

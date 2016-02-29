@@ -63,20 +63,19 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 #pngDir = "../../../png/swt/print/"
 pngDir = "../../../png/swt/slides/"
-plotOnly = False
+pngDir = None
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  #goSynSeis()
   #goSynsFlatten()
   #goSeisFlatten()
   #goSynsSeisTie()
-  #goTimeUpdateS()
+  goTimeUpdateS()
   #goTimeUpdateM()
   #goSlopes()
   #goScan()
@@ -85,7 +84,7 @@ def main(args):
   #goImageFlatten()
   #goRefine3dV()
   #goReflectivity()
-  goImpedance()
+  #goImpedance()
   '''
   px = readImage(pxfile)
   print min(px)
@@ -123,12 +122,10 @@ def goTimeUpdateS():
     sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
     swx.append(sxi)
     swu.append(sui)
-  '''
   plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15, 
          vlabel="Time (s)",png="synsSeisBS")
   plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisAS")
-  '''
   wxs[0]=wus[0]
   swx[0]=swu[0]
   wxs[1]=wus[1]
@@ -311,10 +308,10 @@ def goSynSeis():
   simple = True
   logs = getLogs()
   nl = len(logs)
-  ndft = zerofloat(3,nl)
-  ndfz = zerofloat(3,nl)
+  ndft = zerodouble(3,nl)
+  ndfz = zerodouble(3,nl)
   sw = SeismicWellTie()
-  sa = sw.computeSyns(simple,logs,ndft,ndfz)
+  sa = sw.computeSyns(simple,logs,[ndft,ndfz])
   ss = []
   for il in range(nl):
     sa[il] = normalize(sa[il])
