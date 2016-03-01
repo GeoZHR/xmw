@@ -58,7 +58,7 @@ def main(args):
   #goThin()
   #goSkin()
   goPSS()
-  goSPS()
+  #goSPS()
 def goSPS():
   print "screened Poisson surface method ..."
   gx = readImage(gxfile)
@@ -81,7 +81,6 @@ def goPSS():
   plot3(gx,cells=fc,png="cells")
   plot3(gx,sf,cmin=min(sf),cmax=max(sf),cells=fc,fbs=sf,cmap=jetRamp(1.0),
     clab="PointSetSurface",png="pss")
-
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only

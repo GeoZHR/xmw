@@ -34,7 +34,7 @@ fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
-fskgood = "fsg" # fault skin (basename only)
+fsktv = "fst" # fault skin (basename only)
 fwsfile = "fws" # unfaulted image
 sw1file = "sw1" # 1st component of unfaulting shifts
 sw2file = "sw2" # 2nd component of unfaulting shifts
@@ -73,7 +73,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -81,7 +81,7 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   goSkinTv()
   #goReSkin()
   #goSmooth()
@@ -236,10 +236,14 @@ def goSkin():
     writeSkins(fskbase,skins)
     #plot3(gx,cells=cells,png="cells")
   else:
-    skins = readSkins(fskgood)
-  '''
+    skins = readSkins(fskbase)
+  gx = div(gx,100000)
+  print min(gx)
+  print max(gx)
+  writeImage(gxfile,gx)
   plot3(gx)
   plot3(gx,skins=skins)
+  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''
