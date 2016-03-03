@@ -82,7 +82,8 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goSkinTv()
+  #goSkinTv()
+  goPSS()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -99,6 +100,21 @@ def goDisplaySeis():
   fx = copy(n1,1856,1076,0,145,325,gx)
   writeImage("fx",fx)
   plot3(gx)
+
+def goPSS():
+  print "point set surface method ..."
+  sk = readSkins(fskbase)
+  fr = FaultReskin()
+  gs = fr.faultIndicator(sk[2])
+  plot3(gs,cmin=min(gs),cmax=max(gs))
+  '''
+  fc = FaultSkin.getCells([sk[2]])
+  ps = PointSetSurface()
+  sf = ps.findScalarField(n1,n2,n3,fc)
+  plot3(gx,cells=fc,png="cells")
+  plot3(gx,sf,cmin=min(sf),cmax=max(sf),cells=fc,fbs=sf,cmap=jetRamp(1.0),
+    clab="PointSetSurface",png="pss")
+  '''
 def goDisplayHors():
   gx  = readImage(gxfile)
   hz1 = readHorizon("hz1")
@@ -237,15 +253,11 @@ def goSkin():
     #plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
-  gx = div(gx,100000)
-  print min(gx)
-  print max(gx)
-  writeImage(gxfile,gx)
-  plot3(gx)
+  #plot3(gx)
   plot3(gx,skins=skins)
   '''
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,)
+  for ik in range(80,89,1):
+    plot3(gx,skins=[skins[ik]],clab="skin"+str(ik))
   '''
 def goSkinTv():
   print "go skin..."
@@ -649,7 +661,7 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          horizon=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
+          horizon=None,xyz=None,cells=None,skins=None,fbs=None,smax=0.0,slices=None,
           links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -721,6 +733,24 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     tg = TriangleGroup(True,ts[0],ts[1])
     #tg = TriangleGroup(True,s3,s2,horizon)
     #tg.setColor(Color.CYAN)
+    sf.world.addChild(tg)
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
     sf.world.addChild(tg)
   if skins:
     sg = Group()

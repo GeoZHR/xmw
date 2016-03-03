@@ -162,6 +162,33 @@ public class FaultDisplay {
     return fsl.toArray(new FaultSkin[0]);
   }
 
+  public void getFaultImagesX(
+    FaultSkin[] sks, float[][][] gx, 
+    float[][][] fl, float[][][] fp, float[][][] ft) 
+  {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] mk = mask(0.1,2.0,2.0,2.0,gx);
+    for (FaultSkin ski:sks) {
+      if(ski.size()>1000) {
+      for (FaultCell fci:ski) {
+        int i1 = fci.getI1();
+        int i2 = fci.getI2();
+        int i3 = fci.getI3();
+        i1 = min(i1,n1-1); i1 = max(i1,0);
+        i2 = min(i2,n2-1); i2 = max(i2,0);
+        i3 = min(i3,n3-1); i3 = max(i3,0);
+        if(mk[i3][i2][i1]==1f) {
+          fl[i3][i2][i1] = fci.getFl();
+          fp[i3][i2][i1] = fci.getFp();
+          ft[i3][i2][i1] = fci.getFt();
+        }
+      }}
+    }
+  }
+
+
   public FaultSkin[] getFaultImages(
     FaultSkin[] sks, float[][][] gx, 
     float[][][] fl, float[][][] fp, float[][][] ft) 

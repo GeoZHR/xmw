@@ -76,7 +76,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -84,8 +84,8 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  #goSkin()
-  goSkinTv()
+  goSkin()
+  #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -254,20 +254,21 @@ def goSkin():
     writeSkins(fskbase,skins)
   else:
     skins = readSkins(fsktv)
-  '''
   print len(skins)
   fd = FaultDisplay()
   flt = fillfloat(-0.001,n1,n2,n3)
   fpt = fillfloat(-0.001,n1,n2,n3)
   ftt = fillfloat(-0.001,n1,n2,n3)
-  sks = fd.getFaultImages(skins,gx,flt,fpt,ftt)
+  fd.getFaultImages(skins,gx,flt,fpt,ftt)
+  writeImage(fltfile,flt)
+  writeImage(fptfile,fpt)
+  writeImage(fttfile,ftt)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-  '''
 
 
 def goSmooth():

@@ -19,6 +19,7 @@ package mef;
  * @author Dave Hale, Colorado School of Mines
  * @version 2014.07.06
  */
+import java.util.*;
 
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -170,6 +171,7 @@ public class FaultCellGrid {
     }
   }
 
+
   /**
    * Sets the specified fault cell. Uses the cell's {x1,x2,x3} coordinates to
    * determine the indices of the cell in this grid.
@@ -243,6 +245,8 @@ public class FaultCellGrid {
     if (cell.cr!=null) return cell.cr;
     return findCellLeftRight(false,cell);
   }
+
+
 
 
   ///////////////////////////////////////////////////////////////////////////
