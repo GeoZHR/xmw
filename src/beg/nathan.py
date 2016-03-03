@@ -76,7 +76,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -84,13 +84,14 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goDisplay()
+  goFaultImages()
 def goDisplay():
   '''
   gx = readImage(gxfile)
@@ -254,23 +255,38 @@ def goSkin():
     writeSkins(fskbase,skins)
   else:
     skins = readSkins(fsktv)
-  print len(skins)
   fd = FaultDisplay()
-  flt = fillfloat(-0.001,n1,n2,n3)
-  fpt = fillfloat(-0.001,n1,n2,n3)
-  ftt = fillfloat(-0.001,n1,n2,n3)
-  fd.getFaultImages(skins,gx,flt,fpt,ftt)
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
+  sk = fd.getLargeFaults(20000,skins)
+  print len(sk)
+  plot3(gx,skins=sk)
+
+def goFaultImages():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fd = FaultDisplay()
+    skins = readSkins(fsktv)
+    flt = fillfloat(-0.001,n1,n2,n3)
+    fpt = fillfloat(-0.001,n1,n2,n3)
+    ftt = fillfloat(-0.001,n1,n2,n3)
+    fd = FaultDisplay()
+    fd.getFlt(skins,gx,flt)
+    fd.getFpt(skins,gx,fpt)
+    fd.getFtt(skins,gx,ftt)
+    writeImage(fltfile,flt)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
+  else:
+    flt = readImage(fltfile)
+    fpt = readImage(fptfile)
+    ftt = readImage(fttfile)
+  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-
-
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=jetFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=20,png="fpt")
+  '''
 def goSmooth():
   print "goSmooth ..."
   flstop = 0.1
@@ -660,14 +676,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-0.1,0.1)
+      ipg.setClips(-2.0,2.0)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-0.1,0.1)
+    ipg.setClips1(-2,2)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
