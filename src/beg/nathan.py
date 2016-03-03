@@ -76,7 +76,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -279,14 +279,12 @@ def goFaultImages():
     flt = readImage(fltfile)
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
-  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fpt,cmin=0,cmax=180,cmap=jetFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
-  '''
 def goSmooth():
   print "goSmooth ..."
   flstop = 0.1
