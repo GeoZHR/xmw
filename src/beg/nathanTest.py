@@ -8,7 +8,7 @@ from utils import *
 #setupForSubset("bpSub1")
 #setupForSubset("nathan")
 #setupForSubset("nathanSub1")
-setupForSubset("nathanSub3")
+setupForSubset("nathanSub5")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -76,13 +76,13 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
@@ -91,7 +91,7 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  goFaultImages()
+  #goFaultImages()
 def goDisplay():
   '''
   gx = readImage(gxfile)
@@ -112,7 +112,7 @@ def goDisplay():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 4.0,4.0,4.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
