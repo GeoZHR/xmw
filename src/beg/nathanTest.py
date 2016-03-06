@@ -57,8 +57,8 @@ cmfile = "cm"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 60,85
-sigmaPhi,sigmaTheta = 10,30
+minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 20,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -81,8 +81,9 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
   goScan()
+  goOrientScan()
   #goThin()
   #goSkin()
   #goSkinTv()
@@ -93,26 +94,21 @@ def main(args):
   #goDisplay()
   #goFaultImages()
 def goDisplay():
-  '''
   gx = readImage(gxfile)
-  fx = gain(gx)
-  writeImage(fxfile,fx)
-  '''
-  fx = readImage(gxfile)
-  fx = copy(n1,3675,550,0,1100,60,fx)
-  #fx = slog(fx)
-  fx = gain(fx)
-  writeImage("fx",fx)
-  #fx = div(fx,600000)
-  fxmin = min(fx)
-  fxmax = max(fx)
-  print fxmin
-  print fxmax
-  #plot3(fx,cmin=-5,cmax=5)
+  fx = zerofloat(n1,n2/2,n3/2)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        p2i = abs(p2[i3][i2][i1])
+        p3i = abs(p3[i3][i2][i1])
+        if(p2i>2. or p3i>2.):
+          fx[i3][i2][i1] = 0
+  plot3(gx)
+  plot3(fx)
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 4.0,4.0,4.0,5.0
+  sigma1,sigma2,sigma3,pmax = 8.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -120,14 +116,12 @@ def goSlopes():
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
-  '''
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
-  '''
 
 def goScan():
   print "goScan ..."
@@ -156,6 +150,33 @@ def goScan():
       clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
+  '''
+
+def goOrientScan():
+  gx = readImage(gxfile)
+  sem = readImage(flfile)
+  if not plotOnly:
+    fs = LocalOrientScanner(3,sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
+    sub(fl,min(fl),fl)
+    div(fl,max(fl),fl)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(fpfile,fp)
+    writeImage(ftfile,ft)
+  else:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+  '''
+  plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault attribute",cint=0.2,png="sem")
+  plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        clab="Enhanced fault attribute",cint=0.2,png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fp")
   '''
 
 def goThin():

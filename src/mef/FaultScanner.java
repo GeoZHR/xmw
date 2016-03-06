@@ -543,8 +543,6 @@ public class FaultScanner {
   // Get/set non-null slices of rotated 3D arrays
   private static float[][] extractSlice2(int i2, float[][][] x) {
     int n1 = n1(x);
-    int n2 = n2(x);
-    int n3 = n3(x);
     int i3lo = i3lo(i2,x);
     int i3hi = i3hi(i2,x);
     int m3 = 1+i3hi-i3lo;
@@ -553,10 +551,8 @@ public class FaultScanner {
       copy(x[i3+i3lo][i2],x2[i3]);
     return x2;
   }
+
   private static void restoreSlice2(int i2, float[][][] x, float[][] x2) {
-    int n1 = n1(x);
-    int n2 = n2(x);
-    int n3 = n3(x);
     int i3lo = i3lo(i2,x);
     int i3hi = i3hi(i2,x);
     int m3 = 1+i3hi-i3lo;
@@ -564,10 +560,9 @@ public class FaultScanner {
     for (int i3=0; i3<m3; ++i3)
       copy(x2[i3],x[i3+i3lo][i2]);
   }
+
   private static float[][] extractSlice3(int i3, float[][][] x) {
     int n1 = n1(x);
-    int n2 = n2(x);
-    int n3 = n3(x);
     int i2lo = i2lo(i3,x);
     int i2hi = i2hi(i3,x);
     int m2 = 1+i2hi-i2lo;
@@ -576,6 +571,7 @@ public class FaultScanner {
       copy(x[i3][i2+i2lo],x3[i2]);
     return x3;
   }
+
   private static void restoreSlice3(int i3, float[][][] x, float[][] x3) {
     int n1 = n1(x);
     int n2 = n2(x);
@@ -662,7 +658,7 @@ public class FaultScanner {
 
   // Horizontal smoothing of rotated snum,sden along axis 2.
   private void smooth2(final float[][][][] snd) {
-    final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
+    final int n3 = n3(snd);
     final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
