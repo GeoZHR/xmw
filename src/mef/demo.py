@@ -66,8 +66,9 @@ def main(args):
   #goFakeData()
   #goSlopes()
   #goScan()
-  goOrientScan()
-  goThin()
+  #goRescan()
+  #goOrientScan()
+  #goThin()
   #goSkin()
   #goReSkin()
   '''
@@ -79,6 +80,17 @@ def main(args):
   '''
   #goSubset()
   #goTest()
+  goReflectionRemove()
+def goReflectionRemove():
+  gx = readImage(gxfile)
+  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  rr = ReflectionRemove()
+  gr = rr.applyX(p2,p3,gx)
+  plot3(gx,clab="gx")
+  plot3(gr,clab="gr")
+  plot3(sub(gx,gr),clab="gs")
+
 def goTest():
   fs = FaultScanner(sigmaPhi,sigmaTheta)
   sp = fs.makePhiSampling(minPhi,maxPhi)
@@ -173,6 +185,10 @@ def goScan():
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
+    #rr = ReflectionRemove()
+    #gr = rr.apply(p2,p3,gx)
+    #gx = sub(gx,gr)
+    gx = slog(gx)
     gx = FaultScanner.taper(10,0,0,gx)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
@@ -182,6 +198,33 @@ def goScan():
     writeImage(flfile,fl)
     writeImage(fpfile,fp)
     writeImage(ftfile,ft)
+  else:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+
+def goRescan():
+  print "goRescan ..."
+  gx = readImage(gxfile)
+  fp = readImage(fpfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    gx = FaultScanner.taper(10,0,0,gx)
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.rescan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx,fp)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    #writeImage(flfile,fl)
+    #writeImage(fpfile,fp)
+    #writeImage(ftfile,ft)
   else:
     fl = readImage(flfile)
     fp = readImage(fpfile)
@@ -542,6 +585,9 @@ def gain(x):
   y = like(x)
   div(x,sqrt(g),y)
   return y
+def slog(f):
+  return mul(sgn(f),log(add(1.0,abs(f))))
+
 def array(x1,x2,x3=None,x4=None):
   if x3 and x4:
     return jarray.array([x1,x2,x3,x4],Class.forName('[[[F'))

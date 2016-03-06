@@ -83,7 +83,7 @@ plotOnly = False
 def main(args):
   #goSlopes()
   goScan()
-  goOrientScan()
+  #goOrientScan()
   #goThin()
   #goSkin()
   #goSkinTv()
@@ -93,6 +93,17 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
+  #goReflectionRemove()
+def goReflectionRemove():
+  gx = readImage(gxfile)
+  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+
+  rr = ReflectionRemove()
+  gr = rr.applyX(p2,p3,gx)
+  plot3(gx,clab="gx")
+  plot3(gr,clab="gr")
+  plot3(sub(gx,gr),clab="gs")
 def goDisplay():
   gx = readImage(gxfile)
   fx = zerofloat(n1,n2/2,n3/2)
@@ -129,6 +140,9 @@ def goScan():
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     gx = readImage(gxfile)
+    rr = ReflectionRemove()
+    gr = rr.applyX(p2,p3,gx)
+    gx = sub(gx,gr)
     gx = FaultScanner.taper(10,0,0,gx)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
