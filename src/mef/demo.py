@@ -41,7 +41,7 @@ u1file = "u1" # relateive geologic time volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,20
+sigmaPhi,sigmaTheta = 20,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -65,10 +65,10 @@ plotOnly = False
 def main(args):
   #goFakeData()
   #goSlopes()
-  #goScan()
+  goScan()
   #goRescan()
   #goOrientScan()
-  #goThin()
+  goThin()
   #goSkin()
   #goReSkin()
   '''
@@ -80,7 +80,7 @@ def main(args):
   '''
   #goSubset()
   #goTest()
-  goReflectionRemove()
+  #goReflectionRemove()
 def goReflectionRemove():
   gx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
@@ -185,13 +185,15 @@ def goScan():
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    #rr = ReflectionRemove()
-    #gr = rr.apply(p2,p3,gx)
-    #gx = sub(gx,gr)
-    gx = slog(gx)
-    gx = FaultScanner.taper(10,0,0,gx)
+    '''
+    rr = ReflectionRemove()
+    gr = rr.applyX(p2,p3,gx)
+    gx = sub(gx,gr)
+    '''
+    ga = abs(gx)
+    ga = FaultScanner.taper(10,0,0,ga)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,ga)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
     print "ft min =",min(ft)," max =",max(ft)

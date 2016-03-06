@@ -26,6 +26,9 @@ p3kfile = "p3k" # crossline slopes (known)
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
+flrfile  = "flr" # fault likelihood
+fprfile  = "fpr" # fault strike (phi)
+ftrfile  = "ftr" # fault dip (theta)
 flvfile  = "flv" # fault likelihood
 fpvfile  = "fpv" # fault strike (phi)
 ftvfile  = "ftv" # fault dip (theta)
@@ -94,6 +97,12 @@ def main(args):
   #goDisplay()
   #goFaultImages()
   #goReflectionRemove()
+  '''
+  gx = readImage(gxfile)
+  fp = readImage("fpSub")
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+  '''
 def goReflectionRemove():
   gx = readImage(gxfile)
   sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
@@ -140,12 +149,10 @@ def goScan():
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     gx = readImage(gxfile)
-    rr = ReflectionRemove()
-    gr = rr.applyX(p2,p3,gx)
-    gx = sub(gx,gr)
-    gx = FaultScanner.taper(10,0,0,gx)
+    ga = abs(gx)
+    ga = FaultScanner.taper(10,0,0,ga)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,ga)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
     print "ft min =",min(ft)," max =",max(ft)
@@ -197,9 +204,15 @@ def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
   if not plotOnly:
+    '''
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+    '''
+    fl = readImage(flrfile)
+    fp = readImage(fprfile)
+    ft = readImage(ftrfile)
+
     flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
     writeImage(fltfile,flt)
     writeImage(fptfile,fpt)
