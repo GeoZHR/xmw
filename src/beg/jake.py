@@ -56,7 +56,7 @@ fsfile = "fs"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 10,30
+sigmaPhi,sigmaTheta = 20,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -74,17 +74,17 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goSkinTv()
-  goPSS()
+  #goPSS()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -97,17 +97,37 @@ def main(args):
   #goDisplaySeis()
   #goDisplayHors()
 def goDisplaySeis():
+
   gx = readImage(gxfile)
-  fx = copy(n1,1856,1076,0,145,325,gx)
-  writeImage("fx",fx)
-  plot3(gx)
+  #fx = copy(n1,1856,1076,0,145,325,gx)
+  fx = copy(n1,n2,830,0,0,0,gx)
+  writeImage("gx",fx)
+  #plot3(gx)
 
 def goPSS():
   print "point set surface method ..."
+  gx = readImage(gxfile)
   sk = readSkins(fskbase)
+  '''
   fr = FaultReskin()
-  fs = fr.faultIndicator(sk[2])
+  fs = fr.faultIndicator(n1,n2,n3,sk[2])
   writeImage(fsfile,fs)
+  '''
+  plot3(gx,skins=[sk[2]])
+  '''
+  sf = zerofloat(n1,n2,n3)
+  j1,j2,j3=0,38,1
+  m1,m2,m3=426,1363,905
+  st = readImage3D(m1,m2,m3,fsfile)
+  for i3 in range(m3):
+    for i2 in range(m2):
+      for i1 in range(m1):
+        sf[i3+j3][i2+j2][i1+j1] = st[i3][i2][i1]
+  plot3(gx,sf,cmin=-max(sf),cmax=max(sf),cmap=bwrRamp(1.0),fbs=sf,
+      clab="Indicator function",png="saltSf")
+  '''
+
+
   #plot3(gs,cmin=min(gs),cmax=max(gs))
   '''
   fc = FaultSkin.getCells([sk[2]])
@@ -256,8 +276,8 @@ def goSkin():
   else:
     skins = readSkins(fskbase)
   #plot3(gx)
-  plot3(gx,skins=skins)
   '''
+  plot3(gx,skins=skins)
   for ik in range(80,89,1):
     plot3(gx,skins=[skins[ik]],clab="skin"+str(ik))
   '''
@@ -619,6 +639,17 @@ def array(x1,x2,x3=None,x4=None):
     return jarray.array([x1,x2],Class.forName('[[[F'))
 
 
+def readImage3D(n1,n2,n3,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = "../../../data/seis/beg/jake/sub2/"+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 
 #############################################################################
@@ -630,6 +661,8 @@ def jetFillExceptMin(alpha):
   a = fillfloat(alpha,256)
   a[0] = 0.0
   return ColorMap.setAlpha(ColorMap.JET,a)
+def bwrRamp(alpha):
+  return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,rampfloat(0.0,alpha/256,256))
 def jetRamp(alpha):
   return ColorMap.setAlpha(ColorMap.JET,rampfloat(0.0,alpha/256,256))
 def bwrFill(alpha):

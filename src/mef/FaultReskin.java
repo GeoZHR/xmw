@@ -18,13 +18,11 @@ import slt.*;
 
 public class FaultReskin {
   
-  public float[][][] faultIndicator(FaultSkin skin) {
+  public float[][][] faultIndicator(int n1, int n2, int n3, FaultSkin skin) {
     FaultCell[] fcs = skin.getCells();
     setCells(fcs);
-    System.out.println("n1="+_n1);
-    System.out.println("n2="+_n2);
-    System.out.println("n3="+_n3);
     System.out.println("fault setting done...");
+    float[][][] sfs = new float[n3][n2][n1];
     float[][][] fl  = new float[_n3][_n2][_n1];
     float[][][] ws  = new float[_n3][_n2][_n1];
     float[][][] u1  = new float[_n3][_n2][_n1];
@@ -45,9 +43,14 @@ public class FaultReskin {
     mul(ws,u1,u1);
     mul(ws,u2,u2);
     mul(ws,u3,u3);
-    float[][][] sf = sps.saltIndicator(fl,u1,u2,u3);
+    float[][][] sft = sps.saltIndicator(fl,u1,u2,u3);
+    for (int i3=0; i3<_n3; ++i3) {
+    for (int i2=0; i2<_n2; ++i2) {
+    for (int i1=0; i1<_n1; ++i1) {
+      sfs[i3+_j3][i2+_j2][i1+_j1] = sft[i3][i2][i1];
+    }}}
     System.out.println("fault indicator done...");
-    return sf;
+    return sfs;
   }
 
   private void setCells(FaultCell[] cells) {
@@ -142,7 +145,7 @@ public class FaultReskin {
       }
     }}}
     RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(8.0);
-    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(16.0);
+    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(64.0);
     float[][][] h = new float[_n3][_n2][_n1];
     float[][][][] gs = {wss,g11,g22,g33,g12,g13,g23};
     for (float[][][] g:gs) {
