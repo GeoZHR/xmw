@@ -21,11 +21,15 @@ public class FaultReskin {
   public float[][][] faultIndicator(FaultSkin skin) {
     FaultCell[] fcs = skin.getCells();
     setCells(fcs);
-    float[][][] fl = new float[_n3][_n2][_n1];
-    float[][][] ws = new float[_n3][_n2][_n1];
-    float[][][] u1 = new float[_n3][_n2][_n1];
-    float[][][] u2 = new float[_n3][_n2][_n1];
-    float[][][] u3 = new float[_n3][_n2][_n1];
+    System.out.println("n1="+_n1);
+    System.out.println("n2="+_n2);
+    System.out.println("n3="+_n3);
+    System.out.println("fault setting done...");
+    float[][][] fl  = new float[_n3][_n2][_n1];
+    float[][][] ws  = new float[_n3][_n2][_n1];
+    float[][][] u1  = new float[_n3][_n2][_n1];
+    float[][][] u2  = new float[_n3][_n2][_n1];
+    float[][][] u3  = new float[_n3][_n2][_n1];
     float[][][] g11 = new float[_n3][_n2][_n1];
     float[][][] g12 = new float[_n3][_n2][_n1];
     float[][][] g13 = new float[_n3][_n2][_n1];
@@ -33,13 +37,16 @@ public class FaultReskin {
     float[][][] g23 = new float[_n3][_n2][_n1];
     float[][][] g33 = new float[_n3][_n2][_n1];
     initialTensors(fl,ws,g11,g12,g13,g22,g23,g33);
+    System.out.println("tensors done...");
     solveEigenproblems(g11,g12,g13,g22,g23,g33,u1,u2,u3);
+    System.out.println("normals done...");
     ScreenPoissonSurfer sps = new ScreenPoissonSurfer();
     sps.setSmoothings(20,20,20);
     mul(ws,u1,u1);
     mul(ws,u2,u2);
     mul(ws,u3,u3);
     float[][][] sf = sps.saltIndicator(fl,u1,u2,u3);
+    System.out.println("fault indicator done...");
     return sf;
   }
 
