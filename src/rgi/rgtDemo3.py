@@ -10,18 +10,30 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.getCount(),s2.getCount(),s3.getCount()
 d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
+print n1
+print n2
+print n3
 #s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
 #d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 fmin,fmax=-5,5 # seismic values
 method = "b" # blended
 logSet = "d" # deep logs only
-logType="v"; logLabel="Velocity (km/s)"; vmin,vmax = 2.4,5.6;k1,k2,k3 = 366,15,107#(95)
+logType="v"; logLabel="Velocity (km/s)"; vmin,vmax = 2.4,5.6;
+k1,k2,k3 = round((1.848-f1)/d1),15,107#(95)
 #logType="d"; logLabel="Density (g/cc)";  vmin,vmax = 2.0,2.8;k1,k2,k3 = 366,15,77
 #logType = "p"; logLabel = "Porosity"; vmin,vmax = 0.0,0.4
 #logType = "g"; logLabel = "Gamma ray (API units)"; vmin,vmax = 0.0,200.0
 smin,smax = -5.5,5.5
 smooth = 50 # half-width of smoothing filter for logs
 smooth = 0 # no smoothing
+
+minPhi,maxPhi = 0,180
+minTheta,maxTheta = 65,88
+sigmaPhi,sigmaTheta = 15,35
+lowerLikelihood = 0.5
+upperLikelihood = 0.8
+minSkinSize = 2000
+
 
 sfile = "tpsz" # seismic image
 efile = "tpet" # eigen-tensors (structure tensors)
@@ -34,9 +46,22 @@ pfile = "tpp"+logType+method # values of nearest known samples
 qfile = "tpq"+logType+method # output of blended gridder
 tfile = "tpt"+logType+method # times to nearest known samples
 
+gffile = "gf"
+ghfile = "gh"
+grfile = "gr"
+dwfile = "dw"
+u1file = "u1"
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
+gpfile  = "gp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
+fltfile  = "flt" # fault likelihood
+fptfile  = "fpt" # fault strike (phi)
+fttfile  = "ftt" # fault dip (theta)
+fskbase = "fsk"
+gtcfile = "gtc"
+gucfile = "guc"
+
 gtfile  = "gt" # RGT volume
 ghfile  = "gh" # horizon volume
 gufile  = "gu" # flattened image 
@@ -72,12 +97,32 @@ def main(args):
   #goSlopes()
   #goFaultLikelihoods()
   #goControlSurfs()
+  #goScan()
+  #goThin()
+  #goSkin()
+  #goFlatten3d()
+  #goRefine3dV()
   #goRgt()
-  #goRgtInterp()
-  goRgtInterpX()
+  #goRgtInterpX()
   #goInterpO()
   #goOneWell()
   #goRgtInterpOne()
+  #goCompositeRgt()
+  goRgtInterp()
+def goCompositeRgt():
+  gx = readImage(sfile)
+  u1 = readImage(u1file)
+  dw = readImage(dwfile)
+  fl = Flattener3()
+  s1 = Sampling(n1)
+  ut = fl.compositeRGT(s1,s1,u1,dw)
+  gu = fl.flatten(s1,s1,ut,gx)
+  writeImage(gtcfile,ut)
+  writeImage(gucfile,gu)
+  plot3(gx,clab="Amplitude")
+  plot3(gu,clab="Amplitude")
+  plot3(gx,ut,cmin=min(ut),cmax=max(ut),
+          clab="rgt (samples)",cmap=jetFill(1.0))
 
 def goSlopes():
   print "goSlopes ..."
@@ -149,6 +194,173 @@ def goFaultLikelihoods():
       clab="Fault strike (degrees)",cint=5,png="fp")
   plot3(gx,ft,cmin=80,cmax=85,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
+
+def goScan():
+  print "goScan ..."
+  gx = readImage(sfile)
+  if not plotOnly:
+    sig1,sig2,sig3,pmax = 16.0,1.0,1.0,5.0
+    p2,p3,ep = FaultScanner.slopes(sig1,sig2,sig3,pmax,gx)
+    gx = FaultScanner.taper(10,0,0,gx)
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    zm = ZeroMask(0.1,1,1,1,gx)
+    zero=0.0
+    zm.setValue(zero,fl)
+    zm.setValue(zero,fp)
+    zm.setValue(zero,ft)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(fpfile,fp)
+    writeImage(ftfile,ft)
+  else:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+  plot3(gx,clab="Amplitude")
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=145,cmap=jetFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,ft,cmin=65,cmax=85,cmap=jetFill(1.0),
+        clab="Fault dip (degrees)",png="ft")
+
+def goThin():
+  print "goThin ..."
+  gx = readImage(sfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+  writeImage(fltfile,flt)
+  writeImage(fptfile,fpt)
+  writeImage(fttfile,ftt)
+  plot3(gx,clab="Amplitude")
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,fpt,cmin=0,cmax=145,cmap=jetFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+
+def goSkin():
+  print "goSkin ..."
+  gx = readImage(sfile)
+  if not plotOnly:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMinSkinSize(minSkinSize)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.2)
+    cells = fs.findCells([fl,fp,ft])
+    skins = fs.findSkins(cells)
+    for skin in skins:
+      skin.smoothCellNormals(4)
+    print "total number of cells =",len(cells)
+    print "total number of skins =",len(skins)
+    print "number of cells in skins =",FaultSkin.countCells(skins)
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skins)
+    plot3p(gx,cells=cells,png="cells")
+  else:
+    skins = readSkins(fskbase) 
+  plot3p(gx,skins=skins,png="skins")
+  for iskin,skin in enumerate(skins):
+    plot3p(gx,skins=[skin],clab="skin"+str(iskin))
+
+def goRefine3dV():
+  gf = readImage(gffile)
+  if not plotOnly:
+    s1 = Sampling(n1)
+    s2 = Sampling(n2)
+    s3 = Sampling(n3)
+    sk = readSkins(fskbase)
+    flr = FlattenerR()
+    #gr = flr.getReferImage(gf)
+    k2,k3=66,99
+    gr = flr.getReferImageX(k2,k3,gf)
+    #gr = readImage(grifile)
+    smin,smax = -10.0,10.0
+    r1mins = fillfloat(-0.2,n1,n2,n3)
+    r1maxs = fillfloat( 0.2,n1,n2,n3)
+    r2mins = fillfloat(-0.2,n1,n2,n3)
+    r2maxs = fillfloat( 0.2,n1,n2,n3)
+    r3mins = fillfloat(-0.2,n1,n2,n3)
+    r3maxs = fillfloat( 0.2,n1,n2,n3)
+    FaultSkin.setValuesOnFaults(-10.0,sk,r1mins)
+    FaultSkin.setValuesOnFaults( 10.0,sk,r1maxs)
+    FaultSkin.setValuesOnFaults(-10.0,sk,r2mins)
+    FaultSkin.setValuesOnFaults( 10.0,sk,r2maxs)
+    FaultSkin.setValuesOnFaults(-10.0,sk,r3mins)
+    FaultSkin.setValuesOnFaults( 10.0,sk,r3maxs)
+    dwc = DynamicWarpingC(8,smin,smax,s1,s2,s3)
+    dwc.setStrains(r1mins,r2mins,r3mins,r1maxs,r2maxs,r3maxs)
+    dwc.setSmoothness(4,2,2)
+    dw = dwc.findShifts(s1,gr,s1,gf)
+    gh = dwc.applyShifts(s1,gf,dw)
+    #dwk = DynamicWarpingK(8,smin,smax,s1,s2,s3)
+    #dwk.setStrainLimits(-0.2,0.2,-0.2,0.2,-0.2,0.2)
+    #dwk.setSmoothness(4,2,2)
+    #dw = dwk.findShifts(s1,gr,s1,gf)
+    #gh = dwk.applyShifts(s1,gf,dw)
+    writeImage(dwfile,dw)
+    writeImage(ghfile,gh)
+    writeImage(grfile,gr)
+  else:
+    gh = readImage(ghfile)
+    gr = readImage(grfile)
+    dw = readImage(dwfile)
+  plot3(gf,clab="Amplitude",png="gf1")
+  plot3(gh,clab="Amplitude",png="gh1")
+  plot3(gr,clab="Amplitude",png="gr1")
+  plot3(gf,dw,cmin=-8,cmax=6,clab="Shifts (samples)",cmap=jetFill(1.0),png="dw1")
+
+def goFlatten3d():
+  gx = readImage(sfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    ep = pow(ep,3)
+    fl = Flattener3()
+    fl.setWeight1(0.06)
+    fl.setIterations(0.001,200)
+    fl.setSmoothings(6.0,6.0)
+    s1 = Sampling(n1)
+    s2 = Sampling(n2)
+    s3 = Sampling(n3)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+    u1 = fm.u1
+    gf = fm.flatten(gx)
+    '''
+    u1 = sub(u1,min(u1))
+    u1 = fl.resampleRgt(s1,None,u1)
+    du,fu,lu = 1.0,21,210
+    nu = round((lu-fu)/du)+1
+    print nu
+    su = Sampling(nu,du,fu)
+    gu = fl.flatten(s1,su,u1,gx)
+    gx = gain(gx)
+    gf = gain(gf)
+    gu = gain(gu)
+    '''
+    writeImage(u1file,u1)
+    writeImage(gffile,gf)
+    #writeImage(gufile,gu)
+  else:
+    gf = readImage(gffile)
+    u1 = readImage(u1file)
+    #gu = readImage(gufile)
+  plot3(gx)
+  plot3(gf)
+  plot3(u1)
+  #plot3(gu)
+
 def goControlSurfs():
   k01 = [306,309,338,317,313]
   k02 = [ 86,157,331, 17, 56]
@@ -314,20 +526,24 @@ def goRgt():
 def goRgtInterp():
   print "goRgtInterp ..."
   s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
+  gx = readImage(sfile)
+  gu = readImage(gucfile)
   if not plotOnly:
     p  = readImage(gfile)
-    gx = readImage(sfile)
-    gt = readImage(gtfile)
+    gt = readImage(gtcfile)
     ri = RgtInterp3(0.0,p)
     ri.setScales(0.001,1.0)
     ri.setRgt(gt)
     samples=ri.getPoints(0.0,p)
-    ft,fp,fq = ri.grid(s1,s2,s3)
+    gp,ft,fp,fq = ri.grid(s1,s2,s3)
+    fu,u1,u2,u3 = ri.getPoints(s1)
+    samplesU = fu,u1,u2,u3
+    writeImage(gpfile,gp)
     writeImage(fpfile,fp)
     writeImage(fqfile,fq)
     writeImage(ftfile,ft)
   else:
-    gx = readImage(sfile)
+    gp = readImage(gpfile)
     fp = readImage(fpfile)
     fq = readImage(fqfile)
     ft = readImage(ftfile)
@@ -336,10 +552,13 @@ def goRgtInterp():
   display(gx,fp,vmin,vmax,logType+"Wells")
   display(gx,fq,vmin,vmax,logType+"Wells")
   '''
-  samples=readLogSamples(logSet,logType,smooth)
-  plot3(gx,samples=samples,horizon=horizon,clab="Amplitude")
-  plot3(gx,fq,samples=samples,horizon=horizon,
-        cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel)
+  #samples=readLogSamples(logSet,logType,smooth)
+  plot3(gx,samples=samples,clab=logLabel,png="gxWell")
+  plot3(gu,samples=samplesU,clab=logLabel,png="guWell")
+  plot3(gu,gp,samples=samplesU,
+        cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel,png="guiWell")
+  plot3(gx,fq,samples=samples,
+        cmin=vmin,cmax=vmax,cmap=jetFill(0.3),clab=logLabel,png="gxiWell")
 
   '''
   plot3(gx,fq,horizon=horizon,
@@ -676,6 +895,12 @@ def convertDips(ft):
 
 def plot3(f,g=None,samples=None,horizon=None, 
           cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1 = Sampling(n1)
+  s2 = Sampling(n2)
+  s3 = Sampling(n3)
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
@@ -727,6 +952,7 @@ def plot3(f,g=None,samples=None,horizon=None,
 
   if samples:
     fl,x1l,x2l,x3l = samples
+    '''
     for i,f in enumerate(fl):
       f = fl[i]
       x1 = x1l[i]
@@ -734,6 +960,10 @@ def plot3(f,g=None,samples=None,horizon=None,
       x3 = x3l[i]
       pg = makePointGroup(f,x1,x2,x3,vmin,vmax,cbar)
       sf.world.addChild(pg)
+    '''
+    pg = makePointGroup(fl,x1l,x2l,x3l,vmin,vmax,cbar)
+    sf.world.addChild(pg)
+
   if cbar:
     sf.setSize(837,700)
     sf.setSize(1250,900)
@@ -744,6 +974,155 @@ def plot3(f,g=None,samples=None,horizon=None,
   view = sf.getOrbitView()
   zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
   view.setAxesScale(1.0,1.0,zscale)
+  view.setScale(1.85)
+  #view.setAzimuth(75.0)
+  #view.setAzimuth(-75.0)
+  view.setAzimuth(-65.0)
+  view.setTranslate(Vector3(0.0,-0.02,0.00))
+  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  sf.viewCanvas.setBackground(sf.getBackground())
+  sf.setSize(1250,900)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+
+def plot3p(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          xyz=None,cells=None,skins=None,fbs=None,smax=0.0,
+          links=False,curve=False,trace=False,png=None):
+
+  n1 = len(f[0][0])
+  n2 = len(f[0])
+  n3 = len(f)
+  s1 = Sampling(n1)
+  s2 = Sampling(n2)
+  s3 = Sampling(n3)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      ipg.setClips(-3.0,3.0)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-3.0,3.0)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120)
+  if xyz:
+    pg = PointGroup(0.2,xyz)
+    ss = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.YELLOW)
+    ss.add(cs)
+    pg.setStates(ss)
+    #ss = StateSet()
+    #ps = PointState()
+    #ps.setSize(5.0)
+    #ss.add(ps)
+    #pg.setStates(ss)
+    sf.world.addChild(pg)
+  if cells:
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    cmap = ColorMap(0.0,1.0,ColorMap.JET)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.5,cmap,cells,False)
+    qg = QuadGroup(xyz,uvw,rgb)
+    qg.setStates(ss)
+    sf.world.addChild(qg)
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if skins:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    if not smax:
+      ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    sg.setStates(ss)
+    size = 2.0
+    if links:
+      size = 0.5 
+    for skin in skins:
+      if smax>0.0: # show fault throws
+        cmap = ColorMap(0.0,smax,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
+      else: # show fault likelihood
+        cmap = ColorMap(0.0,1.0,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
+      qg = QuadGroup(xyz,uvw,rgb)
+      qg.setStates(None)
+      sg.addChild(qg)
+      if curve or trace:
+        cell = skin.getCellNearestCentroid()
+        if curve:
+          xyz = cell.getFaultCurveXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+        if trace:
+          xyz = cell.getFaultTraceXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+      if links:
+        xyz = skin.getCellLinksXyz()
+        lg = LineGroup(xyz)
+        sg.addChild(lg)
+    sf.world.addChild(sg)
+  #ipg.setSlices(198,0,89)
+  ipg.setSlices(k1,k2,k3)
+  if cbar:
+    sf.setSize(937,600)
+  else:
+    sf.setSize(800,600)
+  view = sf.getOrbitView()
+  zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
+  view.setAxesScale(1.0,1.0,zscale)
   view.setScale(1.3)
   #view.setAzimuth(75.0)
   #view.setAzimuth(-75.0)
@@ -751,12 +1130,11 @@ def plot3(f,g=None,samples=None,horizon=None,
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   sf.viewCanvas.setBackground(sf.getBackground())
   sf.setSize(1250,900)
-
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
-      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+      cbar.paintToPng(137,1,pngDir+png+"cbar.png")
 
 #############################################################################
 run(main)

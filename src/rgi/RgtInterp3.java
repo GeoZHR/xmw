@@ -46,6 +46,20 @@ public class RgtInterp3 {
     _x3 = copy(x3);
   }
 
+  public float[][] getPoints(Sampling s1) {
+    double fu1 = min(_u1);
+    double lu1 = max(_u1);
+    int nu1 = s1.getCount();
+    double du1 = (lu1-fu1)/nu1;
+    Sampling su1 = new Sampling(nu1,du1,fu1);
+    int np = _x1.length;
+    float[] x1 = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+      x1[ip] = su1.indexOfNearest(_x1[ip]);
+    }
+    return new float[][]{_fx,x1,_x2,_x3};
+  }
+
   public void setRgt(float[][][] u1) {
     _u1 = u1;
   }
@@ -286,6 +300,7 @@ public class RgtInterp3 {
     SimpleGridder3 sg = new SimpleGridder3(_fx,_x1,_x2,_x3);
     sg.setNullValue(pnull);
     float[][][] p1 = sg.grid(su1,s2,s3);
+
     float[][][] p2 = copy(p1);
     float[][][] t = new float[n3][n2][nu1];
     for (int i3=0; i3<n3; ++i3) {
@@ -340,6 +355,54 @@ public class RgtInterp3 {
     return new float[][][][]{p2,q};
   }
 
+  // for plot only
+  public EigenTensors2 gridTest(
+    Sampling s1, Sampling s2, Sampling s3, float[][][] f, float[][] fa) 
+  {
+    Check.argument(s1.isUniform(),"s1 is uniform");
+    Check.argument(s2.isUniform(),"s2 is uniform");
+    Check.argument(s3.isUniform(),"s2 is uniform");
+    //convertX1(s1,s2,s3);
+    int n3 = s3.getCount();
+    int n2 = s2.getCount();
+    double fu1 = 0.0;
+    double lu1 = max(_u1);
+    double du1 = s1.getDelta();
+    int nu1 = (int)((lu1-fu1)/du1)+1;
+    Sampling su1 = new Sampling(nu1,du1,fu1);
+    float[][] fxs = getSamples(_ps);
+    _fx = fxs[0];
+    _x1 = fxs[1];
+    _x2 = fxs[2];
+    _x3 = fxs[3];
+    float pnull = -FLT_MAX;
+    float tnull = -FLT_MAX;
+    SimpleGridder3 sg = new SimpleGridder3(_fx,_x1,_x2,_x3);
+    sg.setNullValue(pnull);
+    float[][][] p1 = sg.grid(su1,s2,s3);
+    float[][][] t = new float[n3][n2][nu1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<nu1; ++i1) {
+        t[i3][i2][i1] = (p1[i3][i2][i1]!=pnull)?0.0f:tnull;
+      }
+    }}
+    t = gridNearest(pnull,p1);
+    t = mul(sqrt(t),2f);
+    float[][][] g = flatten(s1,su1,f);
+    float[][] ga = new float[n3][n2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float g1 = g[i3][i2][110];
+      float g2 = g[i3][i2][111];
+      float g3 = g[i3][i2][109];
+      ga[i3][i2] = (g1+g2+g3)/3.f;
+      fa[i3][i2] = (g1+g2+g3)/3.f;
+    }}
+    return makeImageTensors(ga);
+  }
+
+
   public void smoothOnFaults(FaultSkin[] skins, float[][][] g) {
     int n3 = g.length;
     int n2 = g[0].length;
@@ -362,10 +425,12 @@ public class RgtInterp3 {
     int n3 = s3.getCount();
     int n2 = s2.getCount();
     double fu1 = min(_u1);
-    double du1 = s1.getDelta()*1.0;
+    //double du1 = s1.getDelta()*1.0;
     double lu1 = max(_u1);
-    int nu1 = (int)((lu1-fu1)/du1)+1;
-    Sampling su1 = new Sampling(nu1,du1,fu1);
+    //int nu1 = (int)((lu1-fu1)/du1)+1;
+    int nu1 = s1.getCount();
+    double du1 = (lu1-fu1)/nu1;
+    Sampling su1 = s1;//new Sampling(nu1,du1,fu1);
     float pnull = -FLT_MAX;
     float tnull = -FLT_MAX;
     SimpleGridder3 sg = new SimpleGridder3(_fx,_x1,_x2,_x3);
@@ -389,7 +454,7 @@ public class RgtInterp3 {
     float[][][] ti = unflatten(su1,t);
     float[][][] pi = unflatten(su1,p);
     float[][][] qi = unflatten(su1,q);
-    return new float[][][][]{ti,pi,qi};
+    return new float[][][][]{q,ti,pi,qi};
   }
 
 
@@ -666,13 +731,53 @@ public class RgtInterp3 {
   private float[][] gridSlice(
     float pnull, float[][] p, float[][] f) 
   {
-    EigenTensors2 et = makeImageTensors(f);
+    EigenTensors2 et = makeImageTensorsX(f);
     BlendedGridder2 bg = new BlendedGridder2(et);
     float[][] t = bg.gridNearest(pnull,p);
     float[][] q = copy(p);
     bg.gridBlended(t,p,q);
     return q;
   }
+
+  public EigenTensors2 makeImageTensorsX(float[][]f) {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    float sigmad  = 4.0f;
+    float sigmas = 6.0f;
+    float[][] u1 = new float[n2][n1];
+    float[][] u2 = new float[n2][n1];
+    float[][] el = new float[n2][n1];
+    LocalOrientFilter lofs= new LocalOrientFilter(sigmas);
+    lofs.applyForNormalLinear(f,u1,u2,el);
+    EigenTensors2 ets = lofs.applyForTensors(f);
+    LocalOrientFilter lofd = new LocalOrientFilter(sigmad);
+    EigenTensors2 et  = lofd.applyForTensors(f);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    ets.setEigenvalues(0.001f,1.0f);
+    lsf.apply(ets,16,el,el);
+    float[][] eu = new float[n2][n1];
+    float[][] ev = new float[n2][n1];
+    et.getEigenvalues(eu,ev);
+    float sc = 40f;
+    float amin = min(ev);
+    float amax = max(eu);
+    float aeps = max(FLT_MIN*100.0f,FLT_EPSILON*amax);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float eli = el[i2][i1];
+      float evi = ev[i2][i1];
+      float eui = eu[i2][i1];
+      if(eli>0.4f) {
+        eui *=sc;
+      }
+      ev[i2][i1] = (amin+aeps)/(evi+aeps);
+      eu[i2][i1] = (amin+aeps)/(eui+aeps);
+    }}
+    et.setEigenvalues(eu,ev);
+    //et.invertStructure(1.0,1.0);
+    return et;
+  }
+
 
   public EigenTensors2 makeImageTensors(float[][]f) {
     int n2 = f.length;
@@ -697,11 +802,11 @@ public class RgtInterp3 {
     for (int i1=0; i1<n1; ++i1) {
       float sci = sc[i2][i1];
       if(sci<0.15f) {
-        eu[i2][i1] *=0.0001f;
-        ev[i2][i1] *=0.0001f;
+        eu[i2][i1] *=0.1f;
+        ev[i2][i1] *=0.1f;
       } else {
-        eu[i2][i1] *=0.002f;
-        ev[i2][i1] *=0.0001f;
+        eu[i2][i1] *=2.0f;
+        ev[i2][i1] *=0.1f;
       }
     }}
     et.setEigenvalues(eu,ev);

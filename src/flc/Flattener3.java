@@ -255,6 +255,27 @@ public class Flattener3 {
     return new Mappings(s1,s2,s3,u1,x1);
   }
 
+  public float[][][] compositeRGT(
+    Sampling sx1, Sampling su1, final float[][][] u1, final float[][][] dw) {
+    final int n3 = u1.length;
+    final int n2 = u1[0].length;
+    final int nu1 = su1.getCount();
+    final float[] fu = new float[nu1];
+    for (int k1=0; k1<nu1; ++k1) {
+      fu[k1] = (float)su1.getValue(k1);
+    }
+    final float[][][] dx = new float[n3][n2][nu1];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2){
+        CubicInterpolator.Method method = CubicInterpolator.Method.LINEAR;
+        CubicInterpolator ci = new CubicInterpolator(method,fu,dw[i3][i2]);
+        dx[i3][i2] = ci.interpolate(u1[i3][i2]);
+      }
+    }});
+    return sub(u1,dx);
+  }
+
   public float[][][] flatten(
     Sampling sx1, Sampling su1, final float[][][] u1, final float[][][] f) 
   {

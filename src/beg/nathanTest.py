@@ -85,9 +85,9 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
+  #goScan()
   #goOrientScan()
-  #goThin()
+  goThin()
   #goSkin()
   #goSkinTv()
   #goReSkin()

@@ -173,6 +173,7 @@ public class ConvertPoints {
     int nu1 = (int)((lu1-fu1)/du1)+1;
     Sampling su1 = new Sampling(nu1,du1,fu1);
 
+    //return ps;
     return checkPoints(su1,ps);
   }
 

@@ -270,10 +270,10 @@ public class Flattener2 {
     public void apply(float[][] x) {
       smooth2(_sigma2,_el,x);
       smooth1(_sigma1,x);
-      zero1(x);
+      //zero1(x);
     }
     public void applyTranspose(float[][] x) {
-      zero1(x);
+      //zero1(x);
       smooth1(_sigma1,x);
       smooth2(_sigma2,_el,x);
     }
@@ -294,7 +294,7 @@ public class Flattener2 {
     if (sigma<=0.0f)
       return;
     RecursiveExponentialFilter.Edges edges =
-      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_VALUE;
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
     ref.setEdges(edges);
     ref.apply1(x,x);

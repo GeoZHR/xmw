@@ -223,6 +223,7 @@ public class UnfaultS {
       _et = et;
       _sp = sp;
       _wp = wp;
+      _sc = 0.001f;
       _smoother = smoother;
     }
     public void apply(Vec vx, Vec vy) {
@@ -230,20 +231,37 @@ public class UnfaultS {
       VecArrayFloat4 v4y = (VecArrayFloat4)vy;
       VecArrayFloat4 v4z = v4x.clone();
       v4y.zero();
-      float[][][][] x = v4z.getArray();
+      //float[][][][] x = v4x.getArray();
       float[][][][] y = v4y.getArray();
-      _smoother.applyOriginal(x);
-      applyLhs(_et,_wp,x,y);
+      float[][][][] z = v4z.getArray();
+      _smoother.applyOriginal(z);
+      applyLhs(_et,_wp,z,y);
       if(_sp!=null) {
-        screenLhs(_sp[0],_sp[1],_sp[3][0],x,y);
+        screenLhs(_sp[0],_sp[1],_sp[3][0],z,y);
       }
+      //add(-_sc,z,y);
       _smoother.applyTranspose(y);
+      //add(_sc,x,y);
     }
 
+    private float _sc;
     private Tensors3 _et = null;
     private float[][][] _wp=null;
     private float[][][] _sp=null;
     private Smoother3 _smoother;
+  }
+
+  private static void add(float sc, float[][][][] x, float[][][][] y) {
+    int n4 = x.length;
+    int n3 = x[0].length;
+    int n2 = x[0][0].length;
+    int n1 = x[0][0][0].length;
+    for (int i4=0; i4<n4; ++i4) {
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      y[i4][i3][i2][i1] += sc*x[i4][i3][i2][i1];
+    }}}}
   }
 
 
@@ -293,7 +311,8 @@ public class UnfaultS {
   }
 
   private static void screenLhs(
-    float[][] cp, float[][] cm, float[] fl, float[][][][] x, float[][][][] y) 
+    float[][] cp, float[][] cm, float[] fl, 
+    float[][][][] x, float[][][][] y) 
   {
     int nc = cp[0].length;
     for (int ic=0; ic<nc; ++ic) {

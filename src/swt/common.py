@@ -24,6 +24,7 @@ from uff import *
 from hv import *
 from unct import *
 from aii import *
+from rgi import *
 
 #############################################################################
 # Run the function main on the Swing thread

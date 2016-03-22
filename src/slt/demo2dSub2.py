@@ -14,8 +14,8 @@ sffile = "sf"
 
 
 def main(args):
-  #goSaltLike()
-  goSaltSurfer()
+  goSaltLike()
+  #goSaltSurfer()
   #goSaltSurferC()
 
 def goSaltLike():
@@ -42,7 +42,7 @@ def goSaltLike():
   plot2(gx,s1,s2,sl,cmin=0.2,cmax=1,cmap=jetRamp(1.0),
         label="Salt likelihood",png="sl")
   plot2(gx,s1,s2,st2,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        label="Thinned salt likelihood", png="st")
+        label="Salt likelihood", png="st")
 
 def goSaltSurfer():
   gx = readImage2d(gxfile)

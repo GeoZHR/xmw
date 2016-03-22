@@ -29,8 +29,45 @@ d1,d2 = s1.delta,s2.delta
 f1,f2 = sp1.first,sp2.first
 
 def main(args):
-  flatten()
+  #flatten()
   #horizonExtract()
+  goTest()
+def goTest():
+  f = readImage(ffile)
+  f = gain(f)
+  sigma1,sigma2=4.0,1.0 # good for Teapot Dome image tp73
+  pmax = 10.0
+  lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
+  p2 = zerofloat(n1,n2)
+  wp = zerofloat(n1,n2)
+  lsf.findSlopes(f,p2,wp)
+  p2 = mul(d1/d2,p2)
+  fl = faults(f)
+  wp = pow(wp,8)
+  #plot(sp1,sp2,wp,cmap=jet,title="Weights",png="w")
+  #plot(sp1,sp2,p2,cmap=jet,title="Slopes",cmin=-0.5*d1/d2,cmax=0.5*d1/d2,png="p")
+  fl = Flattener2()
+  fl.setWeight1(0.000)
+  fl.setIterations(0.01,1000)
+  fl.setSmoothings(4.0,8.0)
+  fm = fl.getMappingsFromSlopes(s1,s2,p2,wp)
+  g = fm.flatten(f)
+  k1s = [[ 44, 40],[190,181],[160,157]]
+  k2s = [[210,260],[ 90,190],[120,180]]
+  cs = (k1s,k2s)
+  fs = Flattener2S()
+  fs.setWeight1(0.02)
+  fs.setIterations(0.01,1000)
+  fs.setSmoothings(4.0,8.0)
+  sm = fs.getMappingsFromSlopes(s1,s2,p2,wp,None)
+  s = sm.flatten(f)
+  plot(sp1,sp2,f,clab="seismic",vlabel="Relative geologic time",
+         hlabel="Inline (km)",cmin=-2.5,cmax=2.5,png="seis")
+  plot(sp1,sp2,g,clab="precondition",vlabel="Relative geologic time",
+         hlabel="Inline (km)",cmin=-2.5,cmax=2.5,png="preconditioner")
+  plot(sp1,sp2,s,clab="shaping",vlabel="Relative geologic time",
+         hlabel="Inline (km)",cmin=-2.5,cmax=2.5,png="shaping")
+
 def flatten():
   k1s = [[ 44, 40],[190,181],[160,157]]
   k2s = [[210,260],[ 90,190],[120,180]]
@@ -42,7 +79,7 @@ def flatten():
   plot(sp1,sp2,f,c=(k1s,k2s),clab="Amplitude",vlabel="Time (s)",hlabel="Inline (km)",
        cmin=-2.5,cmax=2.5,png="c")
   #sigma = 1.0 # good for fake data
-  sigma1,sigma2=4.0,1.0 # good for Teapot Dome image tp73
+  sigma1,sigma2=6.0,1.0 # good for Teapot Dome image tp73
   pmax = 10.0
   lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
   p2 = zerofloat(n1,n2)
@@ -51,6 +88,7 @@ def flatten():
   p2 = mul(d1/d2,p2)
   fl = faults(f)
   wp = pow(sub(1.0,fl),8)
+  #wp = pow(wp,12)
   #plot(sp1,sp2,wp,cmap=jet,title="Weights",png="w")
   #plot(sp1,sp2,p2,cmap=jet,title="Slopes",cmin=-0.5*d1/d2,cmax=0.5*d1/d2,png="p")
   fl = Flattener2C()

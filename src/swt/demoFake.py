@@ -71,9 +71,9 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 pngDir = "../../../png/swt/fake/"
-plotOnly = True
+plotOnly = False
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -86,11 +86,11 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goUnfaultS()
+  #goUnfaultS()
   #goUnfaultX()
   #goUncScan()
   #goFlatten()
-  #goInterp()
+  goInterp()
   #goHorizons()
   #goTest()
   #test()

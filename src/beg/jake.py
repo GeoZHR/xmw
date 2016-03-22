@@ -49,6 +49,7 @@ u2file = "u2" # second component of normal
 u3file = "u3" # third component of normal
 smfile = "sm"
 cmfile = "cm"
+fsfile = "fs"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -105,8 +106,9 @@ def goPSS():
   print "point set surface method ..."
   sk = readSkins(fskbase)
   fr = FaultReskin()
-  gs = fr.faultIndicator(sk[2])
-  plot3(gs,cmin=min(gs),cmax=max(gs))
+  fs = fr.faultIndicator(sk[2])
+  writeImage(fsfile,fs)
+  #plot3(gs,cmin=min(gs),cmax=max(gs))
   '''
   fc = FaultSkin.getCells([sk[2]])
   ps = PointSetSurface()

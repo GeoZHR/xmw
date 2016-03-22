@@ -19,7 +19,7 @@ from util import *
 
 #pngDir = None
 pngDir = "../../../png/"
-seismicDir = "../../../data/f3d/"
+seismicDir = "../../../data/seis/he/"
 s1 = Sampling(155,1.0,0)
 s2 = Sampling(951,1.0,0)
 s3 = Sampling(550,1.0,0)
@@ -34,7 +34,7 @@ k1f,k2f,k3f = 48,406,0
 gmin,gmax,gint,glab = -2.0,2.0,0.5,"Amplitude"
 background = Color.WHITE
 def main(args):
-  slopes()
+  #slopes()
   #oneControlPoint()
   multipleControlPoints()
 def slopes():
@@ -68,9 +68,12 @@ def oneControlPoint():
   displayHorizon(pg,"surf1")
   
 def multipleControlPoints():
-  k11 = [100, 43, 35, 91, 39, 38, 82, 76, 47, 76, 86, 57, 39, 37, 35,106, 58,101, 39,  6]
-  k12 = [335,706,832,624,945,920,620,620,650,640,635,519,875,821,950,370,556,365,768,940]
-  k13 = [433,200,495,  0,353,  9, 95,165,286,120, 22,547, 26,150,168,280,500,380,200,530]
+  k11 = [100, 43, 35, 91, 39, 38, 82, 76, 47, 76, 
+          86, 57, 39, 37, 35,106, 58,101, 39,  6]
+  k12 = [335,706,832,624,945,920,620,620,650,640,
+          635,519,875,821,950,370,556,365,768,940]
+  k13 = [433,200,495,  0,353,  9, 95,165,286,120, 
+          22,547, 26,150,168,280,500,380,200,530]
   f = readImage("f3dm")
   p2 = readImage("f3dmp2")
   p3 = readImage("f3dmp3")
@@ -169,7 +172,6 @@ def displayHorizon(pg,filename):
   f = readImage("f3dm")
   f = gain(f)
   h = readImage2(filename) 
-  h1 = readImage2("hc") 
   r = zerofloat(n2,n3)
   g = zerofloat(n2,n3)
   b = zerofloat(n2,n3)

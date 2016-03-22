@@ -5,8 +5,8 @@ Version: 2015.02.09
 """
 
 from fakeutils import *
-setupForSubset("fake")
-#setupForSubset("tp")
+#setupForSubset("fake")
+setupForSubset("tp")
 #setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -59,15 +59,15 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = False
+plotOnly = True
+#pngDir = "../../../png/flc/fake/"
 pngDir = "../../../png/flc/tp/"
-pngDir = "../../../png/flc/fake/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  goFlatten2d()
+  #goFlatten2d()
   #goFlatten3d()
   #goSlopes()
   #goScan()
@@ -75,7 +75,7 @@ def main(args):
   #goSkin()
   #goReferImage()
   #goRefine3d()
-  #goRefine3dV()
+  goRefine3dV()
   #goTest()
   #gx = readImage(gufile)
   #gx = gain(gx)
@@ -100,8 +100,6 @@ def goSeisFlatten():
   dw = dwk.findShifts(s1,g3s,s1,gf)
   gh = dwk.applyShifts(s1,gf,dw)
   plot3p(gh,clab="corrected")
-
-
 
 def goFlatten2d():
   gx = readImage(gxfile)
