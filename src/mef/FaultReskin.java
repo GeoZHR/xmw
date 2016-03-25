@@ -17,6 +17,79 @@ import slt.*;
  */
 
 public class FaultReskin {
+
+ 
+ public float[][] faultSurfer(int n1, int n2, int n3, FaultSkin skin) {
+   float[][] sf = new float[n3][n2];
+   return sf;
+ }
+
+ public float[][][][] faultSlopes(int n1, int n2, int n3, FaultSkin skin) {
+    float[][][] g11 = new float[n3][n2][n1];
+    float[][][] g12 = new float[n3][n2][n1];
+    float[][][] g13 = new float[n3][n2][n1];
+    float[][][] g22 = new float[n3][n2][n1];
+    float[][][] g23 = new float[n3][n2][n1];
+    float[][][] g33 = new float[n3][n2][n1];
+    float pmin = FLT_MAX;
+    float pmax = FLT_MIN;
+    for (FaultCell cell:skin) {
+      int i1 = cell.i1;
+      int i2 = cell.i2;
+      int i3 = cell.i3;
+      float w1 = cell.w1;
+      float w2 = cell.w2;
+      float w3 = cell.w3;
+      float fl = cell.fl;
+      g11[i3][i2][i1] = w1*w1*fl;
+      g12[i3][i2][i1] = w1*w2*fl;
+      g13[i3][i2][i1] = w1*w3*fl;
+      g22[i3][i2][i1] = w2*w2*fl;
+      g23[i3][i2][i1] = w2*w3*fl;
+      g33[i3][i2][i1] = w3*w3*fl;
+      float p2 = -w2/w1;
+      float p3 = -w3/w1;
+      if(p2<pmin) {pmin=p2;}
+      if(p3<pmin) {pmin=p3;}
+      if(p2>pmax) {pmax=p2;}
+      if(p3>pmax) {pmax=p3;}
+    }
+    pmin -=5; pmax +=5;
+    RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(8.0);
+    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(64.0);
+    float[][][] h = new float[_n3][_n2][_n1];
+    float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+    for (float[][][] g:gs) {
+      rgf1.apply0XX(g,h); copy(g,h);
+      rgf2.applyX0X(h,g); copy(h,g);
+      rgf2.applyXX0(g,h); copy(h,g);
+    }
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    float[][][] p2 = new float[n3][n2][n1];
+    float[][][] p3 = new float[n3][n2][n1];
+    solveEigenproblems(g11,g12,g13,g22,g23,g33,u1,u2,u3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float u1i = u1[i3][i2][i1];
+      float u2i = u2[i3][i2][i1];
+      float u3i = u3[i3][i2][i1];
+      float p2i = pmin;
+      float p3i = pmin;
+      if (u1i!=0f) {
+        p2i = -u2i/u1i;
+        p3i = -u3i/u1i;
+      } 
+      if(p2i<=pmin||p3i<=pmin) {continue;}
+      if(p2i>=pmax||p3i>=pmax) {continue;}
+      p2[i3][i2][i1] = p2i;
+      p3[i3][i2][i1] = p3i;
+    }}}
+    return new float[][][][]{p2,p3};
+  }
+
   
   public float[][][] faultIndicator(int n1, int n2, int n3, FaultSkin skin) {
     FaultCell[] fcs = skin.getCells();
@@ -53,6 +126,19 @@ public class FaultReskin {
     return sfs;
   }
 
+  private void setCells(int n1, int n2, int n3, FaultCell[] cells) {
+    _j1 = 0;
+    _j2 = 0;
+    _j3 = 0;
+    _n1 = n1;
+    _n2 = n2;
+    _n3 = n3;
+    _cells = new FaultCell[_n3][_n2][_n1];
+    for (FaultCell cell:cells)
+      set(cell);
+  }
+
+
   private void setCells(FaultCell[] cells) {
     int i1min = Integer.MAX_VALUE;
     int i2min = Integer.MAX_VALUE;
@@ -78,6 +164,7 @@ public class FaultReskin {
     for (FaultCell cell:cells)
       set(cell);
   }
+
 
   private void set(FaultCell cell) {
     int i1 = cell.i1-_j1;

@@ -15,7 +15,122 @@ def main(args):
   #goF3dUnc()
   #goJake()
   #goNathan()
-  goLulia()
+  #goLulia()
+  goCranfield2007()
+  #goCranfield2010()
+def goCranfield2010():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/cfd/2010_Match_dvd.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 633336744
+  number of traces = 51726
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: ft (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   114, i2max =   346 (inline indices)
+    i3min =     3, i3max =   224 (crossline indices)
+    xmin =   70.873839, xmax =   76.432491 (x coordinates, in km)
+    ymin =  116.073488, ymax =  121.908684 (y coordinates, in km)
+  grid sampling:
+    n1 =  3001 (number of samples per trace)
+    n2 =   233 (number of traces in inline direction)
+    n3 =   222 (number of traces in crossline direction)
+    d1 = 0.002000 (time sampling interval, in s)
+    d2 = 0.025146 (inline sampling interval, in km)
+    d3 = 0.025146 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   114, i3min =     3, x =   76.431105, y =  116.073488
+    i2max =   346, i3min =     3, x =   76.432491, y =  121.907360
+    i2min =   114, i3max =   224, x =   70.873839, y =  116.074812
+    i2max =   346, i3max =   224, x =   70.875225, y =  121.908684
+  grid azimuth:  0.01 degrees
+  
+  grid azimuth:  0.01 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/cfd/"
+  sgyfile = basedir+"2010_Match_dvd.sgy"
+  datfile = basedir+"gx2010.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,3000,114,346,3,224
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=max(x))
+
+def goCranfield2007():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/cfd/2007_baseline_dvd.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 660518424
+  number of traces = 53946
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: ft (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   109, i2max =   351 (inline indices)
+    i3min =     3, i3max =   224 (crossline indices)
+    xmin =   70.873811, xmax =   76.432519 (x coordinates, in km)
+    ymin =  115.947758, ymax =  122.034414 (y coordinates, in km)
+  grid sampling:
+    n1 =  3001 (number of samples per trace)
+    n2 =   243 (number of traces in inline direction)
+    n3 =   222 (number of traces in crossline direction)
+    d1 = 0.002000 (time sampling interval, in s)
+    d2 = 0.025146 (inline sampling interval, in km)
+    d3 = 0.025146 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   109, i3min =     3, x =   76.431077, y =  115.947758
+    i2max =   351, i3min =     3, x =   76.432519, y =  122.033090
+    i2min =   109, i3max =   224, x =   70.873811, y =  115.949082
+    i2max =   351, i3max =   224, x =   70.875253, y =  122.034414
+  grid azimuth:  0.01 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/cfd/"
+  sgyfile = basedir+"2007_baseline_dvd.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,3000,109,351,3,224
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=max(x))
 
 def goLulia():
   '''

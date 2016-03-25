@@ -50,6 +50,8 @@ u3file = "u3" # third component of normal
 smfile = "sm"
 cmfile = "cm"
 fsfile = "fs"
+fp2file = "fp2"
+fp3file = "fp3"
 
 
 # These parameters control the scan over fault strikes and dips.
@@ -79,12 +81,11 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
-  goScan()
+  #goSlopes()
+  #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goSkinTv()
-  #goPSS()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -96,6 +97,8 @@ def main(args):
   #goFlattenC()
   #goDisplaySeis()
   #goDisplayHors()
+  #goPSS()
+  goTest()
 def goDisplaySeis():
 
   gx = readImage(gxfile)
@@ -104,6 +107,15 @@ def goDisplaySeis():
   writeImage("gx",fx)
   #plot3(gx)
 
+def goTest():
+  #gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  fr = FaultReskin()
+  p2,p3 = fr.faultSlopes(n1,n2,n3,sk[1])
+  writeImage(fp2file,p2)
+  writeImage(fp3file,p3)
+  #plot3(fl)
+  #plot3(gx,skins=[sk[0]])
 def goPSS():
   print "point set surface method ..."
   gx = readImage(gxfile)
@@ -113,7 +125,7 @@ def goPSS():
   fs = fr.faultIndicator(n1,n2,n3,sk[2])
   writeImage(fsfile,fs)
   '''
-  plot3(gx,skins=[sk[2]])
+  plot3(gx,skins=[sk[0]])
   '''
   sf = zerofloat(n1,n2,n3)
   j1,j2,j3=0,38,1

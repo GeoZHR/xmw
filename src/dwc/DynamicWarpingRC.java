@@ -46,8 +46,9 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * times more finely. After initially computing shifts on the coarse grid,
  * shifts are interpolated onto the finer grid.
  *
- * @author Xinming Wu and Dave Hale, Colorado School of Mines
- * @version 2016.03.20
+ * @author Dave Hale, Colorado School of Mines
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2015.08.18
  */
 public class DynamicWarpingRC {
 
@@ -154,11 +155,10 @@ public class DynamicWarpingRC {
     setStrainLimits(r1min,r1max,-1.0,1.0,-1.0,1.0);
   }
 
-  public void setStrainLimits(float[] r1min, float[] r1max) {
-    _r1min1 = r1min;
-    _r1max1 = r1max;
+  public void setStrains(float[] r1min, float[] r1max) {
+    _r1min1=r1min;
+    _r1max1=r1max;
   }
-
 
   /**
    * Sets bounds on strains for this dynamic warping.
@@ -287,7 +287,6 @@ public class DynamicWarpingRC {
    * @param g array of values for sequence g.
    * @return array of shifts.
    */
-  /*
   public float[] findShifts(
     Sampling sf, float[] f,
     Sampling sg, float[] g)
@@ -295,33 +294,13 @@ public class DynamicWarpingRC {
     float[][] e = computeErrors(sf,f,sg,g);
     return findShifts(e);
   }
-  */
 
-  public float[] findShifts(
-    final Sampling sf, final float[] f,
-    final Sampling sg, final float[] g)
+  public float[] findShiftsC(
+    Sampling sf, float[] f,
+    Sampling sg, float[] g)
   {
-    // Samplings.
-    final Sampling ss = _ss;
-    final Sampling s1 = _s1;
-    final int n1 = s1.getCount();
-
-    // Quasi-uniform subsamplings.
-    final int[] k1s = subsample(n1,_k1min);
-
-    trace("findShifts: smoothing in 1st dimension ...");
-    float[][] e1 = computeErrors(sf,f,sg,g);
-    float[][] ek = subsampleErrors(_r1min1,_r1max1,k1s,ss,s1,e1);
-    normalizeErrors(ek);
-
-    trace("findShifts: finding shifts ...");
-    float[] uk = findShiftsFromSubsampledErrors(
-        _r1min1,_r1max1,k1s,ss,s1,ek);
-
-    trace("findShifts: interpolating shifts ...");
-    float[] u = interpolateShifts(s1,k1s,uk);
-    trace("findShifts: ... done");
-    return u;
+    float[][] e = computeErrors(sf,f,sg,g);
+    return findShiftsC(e);
   }
 
 
@@ -347,7 +326,6 @@ public class DynamicWarpingRC {
     // Quasi-uniform subsamplings.
     final int[] k1s = subsample(n1,_k1min);
     final int[] k2s = subsample(n2,_k2min);
-    final int nk1 = k1s.length;
     final int nk2 = k2s.length;
 
     trace("findShifts: smoothing in 1st dimension ...");
@@ -382,7 +360,7 @@ public class DynamicWarpingRC {
   }
 
   /**
-   * Returns shifts computed for specified 3D images.
+   * Returns shifts computed for specified 2D images.
    * @param sf sampling of 1st dimension for the image f.
    * @param f array of values for image f.
    * @param sg sampling of 1st dimension for the image g.
@@ -471,7 +449,6 @@ public class DynamicWarpingRC {
     Sampling se = _s1;
     int ns = ss.getCount();
     int ne = se.getCount();
-    int nf = sf.getCount();
     int ng = sg.getCount();
     float[][] e = new float[ne][ns];
     float[] fi = new float[ne];
@@ -513,15 +490,19 @@ public class DynamicWarpingRC {
    * @return array[n1] of shifts.
    */
   public float[] findShifts(float[][] e) {
-    int ns = _ss.getCount();
     int n1 = _s1.getCount();
-    double ds = _ss.getDelta();
-    double d1 = _s1.getDelta();
     int k1min = min(_k1min,n1-1);
     int[] i1k = subsample(n1,k1min);
-    int n1k = i1k.length;
     return findShiftsFromErrors(_r1min,_r1max,i1k,_ss,_s1,e);
   }
+
+  public float[] findShiftsC(float[][] e) {
+    int n1 = _s1.getCount();
+    int k1min = min(_k1min,n1-1);
+    int[] i1k = subsample(n1,k1min);
+    return findShiftsFromErrors(_r1min1,_r1max1,i1k,_ss,_s1,e);
+  }
+
 
   /**
    * Returns uniformly sampled warped sequence h(x1) = g(x1+u(x1)).
@@ -532,7 +513,6 @@ public class DynamicWarpingRC {
    */
   public float[] applyShifts(Sampling sg, float[] g, float[] u) {
     Sampling s1 = _s1;
-    int ng = sg.getCount();
     int n1 = s1.getCount();
     float[] h = new float[n1];
     for (int i1=0; i1<n1; ++i1) {
@@ -576,11 +556,10 @@ public class DynamicWarpingRC {
   private int _esmooth = 1;
   private SincInterpolator _si;
   private float _epow = 1.00f;
+  private float[] _r1min1,_r1max1;
   private float[][][] _r1mins, _r2mins, _r3mins;
   private float[][][] _r1maxs, _r2maxs, _r3maxs;
   private int[][][] _k1mins, _k2mins, _k3mins;
-
-  private float[] _r1min1, _r1max1;
 
   private static CubicInterpolator makeInterpolator1(
     float[] x, float[] y) 
@@ -1052,6 +1031,20 @@ public class DynamicWarpingRC {
     return interpolateShifts(se,kes,uke);
   }
 
+  private static float[] findShiftsFromErrors(
+    float[] rmin, float[] rmax, int[] kes,
+    Sampling ss, Sampling se, float[][] e) 
+  {
+    int nke = kes.length;
+    int ns = ss.getCount();
+    float[][] d = new float[nke][ns];
+    int[][] m = new int[nke][ns];
+    accumulate(1,rmin,rmax,kes,ss,se,e,d,m);
+    float[] uke = backtrackForShifts(kes,ss,se,d[nke-1],m);
+    return interpolateShifts(se,kes,uke);
+  }
+
+
   /**
    * Finds shifts from subsampled alignment errors.
    * @param rmin lower bound on strain.
@@ -1151,8 +1144,8 @@ public class DynamicWarpingRC {
     double ds = ss.getDelta();
     double de = se.getDelta();
     int nke = kes.length;
-    int iked = dir>0?1:-1; 
-    int ikeb = dir>0?0:nke-1; 
+    int iked = dir>0?1:-1;
+    int ikeb = dir>0?0:nke-1;
     int ikee = dir>0?nke:-1;
     for (int is=0; is<ns; ++is)
       d[ikeb][is] = e[kes[ikeb]][is];

@@ -1259,7 +1259,6 @@ public class DynamicWarpingC {
         }
       }
     }
-    setErrors(e);
   }
 
   /**

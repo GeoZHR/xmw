@@ -30,11 +30,11 @@ from edu.mines.jtk.mosaic import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from dwc import *
+from lsa import *
 #############################################################################
 
-pngDir = "../../../png/shifts/"
-seismicDir = "../../../data/seis/shifts/"
+pngDir = "../../../png/lsa/"
+seismicDir = "../../../data/seis/lsa/"
 #pngDir = None
 
 seed = 99 
@@ -48,8 +48,27 @@ nrms = 0.5
 strainMax = 1.0
 
 def main(args):
-  goFigures()
+  goSimilarity()
 
+def goSimilarity():
+  ms = 33
+  sd = 0.2
+  f,g,s = makeSequences()
+  ls = LocalSimilarity(-ms,ms,sd)
+  ls.setStrain(0.2/sd)
+  sa = ls.apply(g,f)
+  se = dtran(sa)
+  df = ls.accumulateForward(se)
+  dr = ls.accumulateReverse(se)
+  df = dtran(df)
+  dr = dtran(dr)
+  se = dtran(se)
+  ds = sub(add(df,dr),0)
+  print min(sa)
+  print max(sa)
+  plotfg(f,g,png="fg")
+  plotc(sa,None,None,d=sd,perc=90,png="sa")
+  plotc(ds,None,None,d=sd,perc=90,png="sa")
 def goFigures():
   global nrms,strainMax
   ml = 33
@@ -219,10 +238,10 @@ def plotfg(f,g,png=None):
     png += "n"+str(int(10*nrms))
     frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
 
-def plotc(c,s=None,u=None,cmin=0.0,cmax=0.0,perc=None,png=None):
+def plotc(c,s=None,u=None,d=1,cmin=0.0,cmax=0.0,perc=None,png=None):
   n,nlag = len(c[0]),len(c)
   s1 = Sampling(n,1.0,0.0)
-  slag = Sampling(nlag,1.0,-(nlag-1)/2)
+  slag = Sampling(nlag,d,-d*(nlag-1)/2)
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1RIGHT_X2UP)
   panel.setHLimits(0,0,n-1)
   panel.setVLimits(0,slag.first,slag.last)

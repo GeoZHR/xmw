@@ -44,7 +44,7 @@ seed = abs(Random().nextInt()/1000000)
 seed = 877 
 print "seed =",seed
 
-nrms = 0.5
+nrms = 0.0
 strainMax = 1.0
 
 def main(args):

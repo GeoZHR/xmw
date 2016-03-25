@@ -155,6 +155,11 @@ public class DynamicWarpingC {
     setStrainLimits(r1min,r1max,-1.0,1.0,-1.0,1.0);
   }
 
+  public void setStrains(float[] r1min, float[] r1max) {
+    _r1min1=r1min;
+    _r1max1=r1max;
+  }
+
   /**
    * Sets bounds on strains for this dynamic warping.
    * Default lower and upper bounds are -1.0 and 1.0, respectively.
@@ -290,6 +295,15 @@ public class DynamicWarpingC {
     return findShifts(e);
   }
 
+  public float[] findShiftsC(
+    Sampling sf, float[] f,
+    Sampling sg, float[] g)
+  {
+    float[][] e = computeErrors(sf,f,sg,g);
+    return findShiftsC(e);
+  }
+
+
   /**
    * Returns shifts computed for specified 2D images.
    * @param sf sampling of 1st dimension for the image f.
@@ -312,7 +326,6 @@ public class DynamicWarpingC {
     // Quasi-uniform subsamplings.
     final int[] k1s = subsample(n1,_k1min);
     final int[] k2s = subsample(n2,_k2min);
-    final int nk1 = k1s.length;
     final int nk2 = k2s.length;
 
     trace("findShifts: smoothing in 1st dimension ...");
@@ -478,15 +491,19 @@ public class DynamicWarpingC {
    * @return array[n1] of shifts.
    */
   public float[] findShifts(float[][] e) {
-    int ns = _ss.getCount();
     int n1 = _s1.getCount();
-    double ds = _ss.getDelta();
-    double d1 = _s1.getDelta();
     int k1min = min(_k1min,n1-1);
     int[] i1k = subsample(n1,k1min);
-    int n1k = i1k.length;
     return findShiftsFromErrors(_r1min,_r1max,i1k,_ss,_s1,e);
   }
+
+  public float[] findShiftsC(float[][] e) {
+    int n1 = _s1.getCount();
+    int k1min = min(_k1min,n1-1);
+    int[] i1k = subsample(n1,k1min);
+    return findShiftsFromErrors(_r1min1,_r1max1,i1k,_ss,_s1,e);
+  }
+
 
   /**
    * Returns uniformly sampled warped sequence h(x1) = g(x1+u(x1)).
@@ -541,6 +558,7 @@ public class DynamicWarpingC {
   private int _esmooth = 1;
   private SincInterpolator _si;
   private float _epow = 1.00f;
+  private float[] _r1min1,_r1max1;
   private float[][][] _r1mins, _r2mins, _r3mins;
   private float[][][] _r1maxs, _r2maxs, _r3maxs;
   private int[][][] _k1mins, _k2mins, _k3mins;
@@ -1014,6 +1032,20 @@ public class DynamicWarpingC {
     float[] uke = backtrackForShifts(kes,ss,se,d[nke-1],m);
     return interpolateShifts(se,kes,uke);
   }
+
+  private static float[] findShiftsFromErrors(
+    float[] rmin, float[] rmax, int[] kes,
+    Sampling ss, Sampling se, float[][] e) 
+  {
+    int nke = kes.length;
+    int ns = ss.getCount();
+    float[][] d = new float[nke][ns];
+    int[][] m = new int[nke][ns];
+    accumulate(1,rmin,rmax,kes,ss,se,e,d,m);
+    float[] uke = backtrackForShifts(kes,ss,se,d[nke-1],m);
+    return interpolateShifts(se,kes,uke);
+  }
+
 
   /**
    * Finds shifts from subsampled alignment errors.
