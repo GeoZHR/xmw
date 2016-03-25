@@ -57,7 +57,7 @@ public class FaultReskin {
     pmin -=5; pmax +=5;
     RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(8.0);
     RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(64.0);
-    float[][][] h = new float[_n3][_n2][_n1];
+    float[][][] h = new float[n3][n2][n1];
     float[][][][] gs = {g11,g22,g33,g12,g13,g23};
     for (float[][][] g:gs) {
       rgf1.apply0XX(g,h); copy(g,h);
