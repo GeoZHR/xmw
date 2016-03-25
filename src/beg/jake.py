@@ -125,7 +125,7 @@ def goFaultSurfer():
   p2 = readImage(fp2file)
   p3 = readImage(fp3file)
   wp = readImage(fwpfile)
-  wp = pow(ep,6.0) 
+  wp = pow(wp,6.0) 
   lmt = n1-1
   se = SurfaceExtractorC()
   se.setWeights(0.0)
