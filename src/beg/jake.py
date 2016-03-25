@@ -53,6 +53,7 @@ fsfile = "fs"
 fp2file = "fp2"
 fp3file = "fp3"
 fwpfile = "fwp"
+fsffile = "fsf"
 
 
 # These parameters control the scan over fault strikes and dips.
