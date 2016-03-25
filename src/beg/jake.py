@@ -99,7 +99,13 @@ def main(args):
   #goDisplaySeis()
   #goDisplayHors()
   #goPSS()
-  goFaultSlopes()
+  #goFaultSlopes()
+  goFaultSurfer()
+  '''
+  gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  plot3(gx,skins=sk)
+  '''
 
 def goFaultSlopes():
   #gx = readImage(gxfile)
@@ -113,12 +119,9 @@ def goFaultSlopes():
   #plot3(gx,skins=[sk[0]])
 
 def goFaultSurfer():
-  k11 = [100, 43, 35, 91, 39, 38, 82, 76, 47, 76, 
-          86, 57, 39, 37, 35,106, 58,101, 39,  6]
-  k12 = [335,706,832,624,945,920,620,620,650,640,
-          635,519,875,821,950,370,556,365,768,940]
-  k13 = [433,200,495,  0,353,  9, 95,165,286,120, 
-          22,547, 26,150,168,280,500,380,200,530]
+  k11 = [357,209,386, 205, 394,174,141,362, 84,213] 
+  k12 = [719,664,885,1102,1174,744,585,329,418,228]
+  k13 = [372,372,549, 780, 772,527,223, 47,150, 86] 
   p2 = readImage(fp2file)
   p3 = readImage(fp3file)
   wp = readImage(fwpfile)
@@ -130,6 +133,7 @@ def goFaultSurfer():
   se.setCG(0.01,100)
   surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
   se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
+  writeImage(fsffile,surf)
 
 def goDisplaySeis():
 
