@@ -96,7 +96,7 @@ public class FaultReskin {
   
   public float[][][] faultIndicator(int n1, int n2, int n3, FaultSkin skin) {
     FaultCell[] fcs = skin.getCells();
-    setCells(fcs);
+    setCells(n1,n2,n3,fcs);
     System.out.println("fault setting done...");
     float[][][] sfs = new float[n3][n2][n1];
     float[][][] fl  = new float[_n3][_n2][_n1];
@@ -211,9 +211,9 @@ public class FaultReskin {
         for (int ic=0; ic<nc; ++ic) {
           FaultCell fci = cells[ic];
           if(notNearbyCells(cell,fci)) {
-          int nbi = nabors(fci);
-          if(nbi>nbm) {cm = fci;nbm = nbi;} 
-          else {setNull(fci);}
+            int nbi = nabors(fci);
+            if(nbi>nbm) {cm = fci;nbm = nbi;} 
+            else {setNull(fci);}
           }
         }}
         float w1 = cm.w1;
@@ -245,79 +245,6 @@ public class FaultReskin {
     }
   }
 
-  private void nearestInterp(final float[][][] f) {
-    final int n3 = f.length;
-    final int n2 = f[0].length;
-    final int n1 = f[0][0].length;
-    final Sampling s2 = new Sampling(n2);
-    final Sampling s3 = new Sampling(n3);
-    loop(n1,new LoopInt() {
-    public void compute(int i1) {
-      System.out.println("i1="+i1);
-      ArrayList<Float> fxl = new ArrayList<Float>();
-      ArrayList<Float> x2l = new ArrayList<Float>();
-      ArrayList<Float> x3l = new ArrayList<Float>();
-      for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        float fi = f[i3][i2][i1];
-        if(fi!=0.0f) {
-          fxl.add(fi);
-          x2l.add((float)i2);
-          x3l.add((float)i3);
-        }
-      }}
-      int np = fxl.size();
-      float[] fx = new float[np];
-      float[] x2 = new float[np];
-      float[] x3 = new float[np];
-      for (int ip=0; ip<np; ++ip) {
-        fx[ip] = fxl.get(ip);
-        x2[ip] = x2l.get(ip);
-        x3[ip] = x3l.get(ip);
-      }
-      NearestGridder2 ng = new NearestGridder2(fx,x2,x3);
-      float[][] f1i = ng.grid(s2,s3);
-      for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        f[i3][i2][i1]=f1i[i3][i2];
-      }}
-    }});
-  }
-
-  private void nearestInterp(int nc, final float[][][] g11) {
-    /*
-    ArrayList<Float> w12 = new ArrayList<Float>();
-    ArrayList<Float> w13 = new ArrayList<Float>();
-    ArrayList<Float> w22 = new ArrayList<Float>();
-    ArrayList<Float> w23 = new ArrayList<Float>();
-    ArrayList<Float> w33 = new ArrayList<Float>();
-    */
-    int ic = 0;
-    float[][] xc = new float[3][nc];
-    final float[] w11 = new float[nc];
-    for (int i3=0; i3<_n3; ++i3) {
-    for (int i2=0; i2<_n2; ++i2) {
-    for (int i1=0; i1<_n1; ++i1) {
-      if(g11[i3][i2][i1]!=0.0f) {
-        xc[0][ic] = i1;
-        xc[1][ic] = i2;
-        xc[2][ic] = i3;
-        w11[ic]=g11[i3][i2][i1];
-        ic ++;
-      }
-    }}}
-    final KdTree kt = new KdTree(xc);
-    loop(_n3,new LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<_n2; ++i2) {
-      for (int i1=0; i1<_n1; ++i1) {
-      float[] x = new float[]{i1,i2,i3};
-      int kc = kt.findNearest(x);
-      g11[i3][i2][i1] = w11[kc];
-    }}
-    }});
-  }
-
   private boolean notNearbyCells(FaultCell c1, FaultCell c2) {
     int d2 = c1.i2-c2.i2;
     int d3 = c1.i3-c2.i3;
@@ -328,16 +255,13 @@ public class FaultReskin {
 
   public FaultCell[] findOverlapCells(int c1, int c2, int c3, FaultCell cell) {
     ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
-    if (abs(cell.w2)>abs(cell.w3)) {
-      for (int i2=0; i2<_n2;  ++i2) {
-        FaultCell fc = _cells[c3][i2][c1];
-        if(fc!=null) fcl.add(fc);
-      }
-    } else {
-      for (int i3=0; i3<_n3;  ++i3) {
-        FaultCell fc = _cells[i3][c2][c1];
-        if(fc!=null) fcl.add(fc);
-      }
+    for (int i2=0; i2<_n2;  ++i2) {
+      FaultCell fc = _cells[c3][i2][c1];
+      if(fc!=null) fcl.add(fc);
+    }
+    for (int i3=0; i3<_n3;  ++i3) {
+      FaultCell fc = _cells[i3][c2][c1];
+      if(fc!=null) fcl.add(fc);
     }
     return fcl.toArray(new FaultCell[0]);
   }
@@ -347,10 +271,10 @@ public class FaultReskin {
     final int c2 = cell.i2-_j2;
     final int c3 = cell.i3-_j3;
     final int[] nc = new int[1];
-    final int b2 = max(c2-100,0);
-    final int b3 = max(c3-100,0);
-    final int e2 = min(c2+100,_n2-1);
-    final int e3 = min(c3+100,_n3-1);
+    final int b2 = max(c2-200,0);
+    final int b3 = max(c3-200,0);
+    final int e2 = min(c2+200,_n2-1);
+    final int e3 = min(c3+200,_n3-1);
     final float fp = cell.fp;
     Parallel.loop(b3,e3+1,1,new Parallel.LoopInt() {
     public void compute(int k3) {
@@ -359,7 +283,7 @@ public class FaultReskin {
       if (fc!=null) {
         float del = fc.fp-fp;
         float fp = min(abs(del),abs(del+360.0f),abs(del-360.0f));
-        if(fp<=15f) {nc[0] +=1;}
+        if(fp<=10f) {nc[0] +=1;}
       }
     }
     }});

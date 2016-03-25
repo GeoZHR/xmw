@@ -78,7 +78,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -99,9 +99,9 @@ def main(args):
   #goFlattenC()
   #goDisplaySeis()
   #goDisplayHors()
-  #goPSS()
+  goPSS()
   #goFaultSlopes()
-  goFaultSurfer()
+  #goFaultSurfer()
   '''
   gx = readImage(gxfile)
   sk = readSkins(fskbase)
@@ -123,18 +123,23 @@ def goFaultSurfer():
   k11 = [357,209,386, 205, 394,174,141,362, 84,213] 
   k12 = [719,664,885,1102,1174,744,585,329,418,228]
   k13 = [372,372,549, 780, 772,527,223, 47,150, 86] 
-  p2 = readImage(fp2file)
-  p3 = readImage(fp3file)
-  wp = readImage(fwpfile)
-  wp = pow(wp,6.0) 
-  lmt = n1-1
-  se = SurfaceExtractorC()
-  se.setWeights(0.0)
-  se.setSmoothings(4.0,4.0)
-  se.setCG(0.01,100)
-  surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
-  se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
-  writeImage(fsffile,surf)
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(fp2file)
+    p3 = readImage(fp3file)
+    wp = readImage(fwpfile)
+    wp = pow(wp,6.0) 
+    lmt = n1-1
+    se = SurfaceExtractorC()
+    se.setWeights(0.0)
+    se.setSmoothings(4.0,4.0)
+    se.setCG(0.01,100)
+    surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
+    se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
+    writeImage(fsffile,surf)
+  else:
+    surf = readHorizon(fsffile)
+  plot3(gx,horizon=surf)
 
 def goDisplaySeis():
 
@@ -146,25 +151,14 @@ def goDisplaySeis():
 
 def goPSS():
   print "point set surface method ..."
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
   sk = readSkins(fskbase)
-  '''
   fr = FaultReskin()
-  fs = fr.faultIndicator(n1,n2,n3,sk[2])
+  fs = fr.faultIndicator(n1,n2,n3,sk[1])
   writeImage(fsfile,fs)
   '''
-  plot3(gx,skins=[sk[0]])
-  '''
-  sf = zerofloat(n1,n2,n3)
-  j1,j2,j3=0,38,1
-  m1,m2,m3=426,1363,905
-  st = readImage3D(m1,m2,m3,fsfile)
-  for i3 in range(m3):
-    for i2 in range(m2):
-      for i1 in range(m1):
-        sf[i3+j3][i2+j2][i1+j1] = st[i3][i2][i1]
-  plot3(gx,sf,cmin=-max(sf),cmax=max(sf),cmap=bwrRamp(1.0),fbs=sf,
-      clab="Indicator function",png="saltSf")
+  fs = readImage(fsfile)
+  plot3(gx,fbs=fs,clab="Indicator function",png="saltSf")
   '''
 
 
