@@ -25,6 +25,7 @@ public class FaultReskin {
  }
 
  public float[][][][] faultSlopes(int n1, int n2, int n3, FaultSkin skin) {
+    float[][][] fls = new float[n3][n2][n1];
     float[][][] g11 = new float[n3][n2][n1];
     float[][][] g12 = new float[n3][n2][n1];
     float[][][] g13 = new float[n3][n2][n1];
@@ -41,6 +42,7 @@ public class FaultReskin {
       float w2 = cell.w2;
       float w3 = cell.w3;
       float fl = cell.fl;
+      fls[i3][i2][i1] = fl;
       g11[i3][i2][i1] = w1*w1*fl;
       g12[i3][i2][i1] = w1*w2*fl;
       g13[i3][i2][i1] = w1*w3*fl;
@@ -58,7 +60,7 @@ public class FaultReskin {
     RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(8.0);
     RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(64.0);
     float[][][] h = new float[n3][n2][n1];
-    float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+    float[][][][] gs = {fls,g11,g22,g33,g12,g13,g23};
     for (float[][][] g:gs) {
       rgf1.apply0XX(g,h); copy(g,h);
       rgf2.applyX0X(h,g); copy(h,g);
@@ -87,7 +89,8 @@ public class FaultReskin {
       p2[i3][i2][i1] = p2i;
       p3[i3][i2][i1] = p3i;
     }}}
-    return new float[][][][]{p2,p3};
+    div(fls,max(fls),fls);
+    return new float[][][][]{p2,p3,fls};
   }
 
   
