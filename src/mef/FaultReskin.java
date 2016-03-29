@@ -192,6 +192,41 @@ public class FaultReskin {
     _cells[i3][i2][i1]=null;
   }
 
+  public float[][][] initialTensorsTest(
+    int n1, int n2, int n3, FaultSkin skin) {
+    setCells(n1,n2,n3,skin.getCells());
+    int[][][] mk = new int[_n3][_n2][_n1];
+    float[][][] fls = new float[n3][n2][n1];
+    for (int i3=0; i3<_n3; ++i3) {
+    for (int i2=0; i2<_n2; ++i2) {
+    for (int i1=0; i1<_n1; ++i1) {
+      FaultCell cell = _cells[i3][i2][i1];
+      if (cell!=null&&mk[i3][i2][i1]!=1) {
+        FaultCell cm = cell;
+        FaultCell[] cells = findOverlapCells(i1,i2,i3,cell);
+        int nc = cells.length;
+        if (nc>1) {
+        int nbm = nabors(cell);
+        for (int ic=0; ic<nc; ++ic) {
+          FaultCell fci = cells[ic];
+          if(notNearbyCells(cell,fci)) {
+            int nbi = nabors(fci);
+            if(nbi>nbm) {cm = fci;nbm = nbi;} 
+            else {setNull(fci);}
+          }
+        }}
+        float fl = cm.fl;
+        int k1 = cm.i1-_j1;
+        int k2 = cm.i2-_j2;
+        int k3 = cm.i3-_j3;
+        mk[k3][k2][k1] = 1;
+        fls[k3][k2][k1] = fl; 
+      }
+    }}}
+    return fls;
+  }
+
+
   private void initialTensors(
     float[][][] fls, float[][][] wss,
     float[][][] g11, float[][][] g12, float[][][] g13,
@@ -271,10 +306,10 @@ public class FaultReskin {
     final int c2 = cell.i2-_j2;
     final int c3 = cell.i3-_j3;
     final int[] nc = new int[1];
-    final int b2 = max(c2-200,0);
-    final int b3 = max(c3-200,0);
-    final int e2 = min(c2+200,_n2-1);
-    final int e3 = min(c3+200,_n3-1);
+    final int b2 = max(c2-100,0);
+    final int b3 = max(c3-100,0);
+    final int e2 = min(c2+100,_n2-1);
+    final int e3 = min(c3+100,_n3-1);
     final float fp = cell.fp;
     Parallel.loop(b3,e3+1,1,new Parallel.LoopInt() {
     public void compute(int k3) {
@@ -288,6 +323,19 @@ public class FaultReskin {
     }
     }});
     return nc[0];
+  }
+
+  private FaultCell[] findOverlapCells(FaultCell cell) {
+    //search in direction of fault normal
+    float d  = 3f;
+    float dm = sqrt(_n1*_n1+_n2*_n2+_n3*_n3);
+    float x1 = cell.x1;
+    float x2 = cell.x2;
+    float x3 = cell.x3;
+    while (d<dm) {
+    }
+    //search in opposite direction of fault normal
+    return null;
   }
 
 

@@ -151,15 +151,20 @@ def goDisplaySeis():
 
 def goPSS():
   print "point set surface method ..."
-  #gx = readImage(gxfile)
+  '''
+  gx = readImage(gxfile)
   sk = readSkins(fskbase)
   fr = FaultReskin()
   fs = fr.faultIndicator(n1,n2,n3,sk[1])
   writeImage(fsfile,fs)
-  '''
   fs = readImage(fsfile)
   plot3(gx,fbs=fs,clab="Indicator function",png="saltSf")
   '''
+  sk = readSkins(fskbase)
+  fr = FaultReskin()
+  fs = fr.initialTensorsTest(n1,n2,n3,sk[0])
+  plot3(fs)
+
 
 
   #plot3(gs,cmin=min(gs),cmax=max(gs))
