@@ -41,7 +41,7 @@ u1file = "u1" # relateive geologic time volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 20,40
+sigmaPhi,sigmaTheta = 4,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -56,7 +56,7 @@ maxThrow =  15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = "../../../png/ipfx/"
+pngDir = "../../../png/mef/fake/"
 pngDir = None
 plotOnly = False
 
@@ -65,11 +65,11 @@ plotOnly = False
 def main(args):
   #goFakeData()
   #goSlopes()
-  goScan()
+  #goScan()
   #goRescan()
   #goOrientScan()
-  goThin()
-  #goSkin()
+  #goThin()
+  goSkin()
   #goReSkin()
   '''
   goSmooth()
@@ -313,31 +313,33 @@ def goSkin():
   sp = fs.makePhiSampling(minPhi,maxPhi)
   st = fs.makeThetaSampling(minTheta,maxTheta)
 
-  fs = FaultSkinnerX()
+  fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
   fs.setMaxPlanarDistance(0.1)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
-  fsk = readSkins(fskbase)
-  cells = FaultSkin.getCells(fsk)
-  fs.resetCells(cells)
-  fs.setCellGrid(cells)
-  fs.setGaussWeights(sp,st)
-  fls = zerofloat(n1,n2,n3)
-  fcs = fs.findNabors(n1,n2,n3,fls,cells[1000])
-  plot3(gx,cells=[cells[1000]])
-  plot3(gx,cells=fcs)
-  plot3(gx,fls,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-
-  '''
-  skins = fs.findSkins(n1,n2,n3,cells)
+  skins = fs.findSkins(cells)
   plot3(gx,skins=skins)
-  plot3(gx,skins=fsk)
-  '''
+  fr = FaultReskin()
+  #cells = FaultSkin.getCells(skins)
+  fl,fp,ft = fr.rescan(n1,n2,n3,sp,st,cells)
+  div(fl,max(fl),fl)
+  cells = fs.findCells([fl,fp,ft])
+  skins = fs.findSkins(cells)
+  plot3(gx,skins=skins)
+
+  #fl,fp,ft = fr.rescan(n1,n2,n3,cells)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+
 
   '''
+  plot3(gx,skins=fsk)
   skins = fs.findSkins(cells)
   for skin in skins:
     skin.smoothCellNormals(4)

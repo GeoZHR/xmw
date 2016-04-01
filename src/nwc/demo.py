@@ -58,12 +58,14 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,89
-sigmaPhi,sigmaTheta = 15,25
+sigmaPhi,sigmaTheta = 25,40
+#minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 20,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.5
-upperLikelihood = 0.8
+lowerLikelihood = 0.3
+upperLikelihood = 0.6
 minSkinSize = 4000
 
 # These parameters control the computation of fault dip slips.
@@ -76,18 +78,18 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
-  #goReSkin()
+  goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -190,7 +192,7 @@ def goSkinTv():
     fsk = readSkins(fskbase)
     fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),8):
+    for ic in range(0,len(fcs),2):
       cells.append(fcs[ic])
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
@@ -199,40 +201,11 @@ def goSkinTv():
     writeSkins(fsktv,skins)
   else:
     skins = readSkins(fsktv)
-  '''
-  print len(skins)
-  fd = FaultDisplay()
-  cells = FaultSkin.getCells(skins)
-  flt = fillfloat(-0.001,n1,n2,n3)
-  fd.getFlImage(cells,flt)
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Fault likelihood",png="smt")
-  plot3(gx,skins=skins,png="skinsTv")
-  '''
-
-
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
+  plot3(gx,skins=skins)
 
 def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
-  print min(gx)
-  print max(gx)
   if not plotOnly:
     fl = readImage(flfile)
     fp = readImage(fpfile)
@@ -251,6 +224,12 @@ def goSkin():
     skins = fs.findSkins(cells)
     for skin in skins:
       skin.smoothCellNormals(4)
+    fd = FaultDisplay()
+    skins = fd.getLowerFaults(350,skins)
+    '''
+    sk = fd.reskin(160,skins[1])
+    skins[1] = sk
+    '''
     print "total number of cells =",len(cells)
     print "total number of skins =",len(skins)
     print "number of cells in skins =",FaultSkin.countCells(skins)
@@ -258,7 +237,53 @@ def goSkin():
     writeSkins(fskbase,skins)
   else:
     skins = readSkins(fskbase)
+  flt = zerofloat(n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFl(skins,flt)
   plot3(gx,skins=skins)
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  k = 0
+  for skin in skins:
+    plot3(gx,skins=[skins[k]],clab=str(k))
+    k = k+1
+
+def goReskin(): 
+  gx = readImage(gxfile)
+  skins = readSkins(fskbase)
+  fr = FaultReskin()
+  sks = fr.reskin(160,350,skins[0])
+  skins[0] = sks[0]
+  #plot3(gx,skins=skins)
+  fs = FaultScanner(sigmaPhi,sigmaTheta)
+  sp = fs.makePhiSampling(minPhi,maxPhi)
+  st = fs.makeThetaSampling(minTheta,maxTheta)
+
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(minSkinSize)
+  cells = FaultSkin.getCells(skins)
+  #plot3(gx,cells=cells)
+  fr = FaultReskin()
+  fl,fp,ft = fr.rescan(n1,n2,n3,sp,st,cells)
+  div(fl,max(fl),fl)
+  cells = fs.findCells([fl,fp,ft])
+  skins = fs.findSkins(cells)
+  removeAllSkinFiles(fsktv)
+  writeSkins(fsktv,skins)
+
+  '''
+  plot3(gx,skins=skins)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+  '''
+
 
 def goFaultImages():
   gx = readImage(gxfile)
@@ -293,7 +318,8 @@ def goSmooth():
   fsigma = 8.0
   fl = readImage(flfile)
   gx = readImage(gxfile)
-  skins = readSkins(fskgood)
+  #skins = readSkins(fsktv)
+  skins = readSkins(fskbase)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
@@ -303,11 +329,7 @@ def goSmooth():
   writeImage(p3file,p3)
   writeImage(epfile,ep)
   writeImage(gsxfile,gsx)
-  '''
-  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fli")
   plot3(gsx,png="gsx")
-  '''
 
 def goSlip():
   print "goSlip ..."
@@ -316,9 +338,10 @@ def goSlip():
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fskgood)
+    #skins = readSkins(fsktv)
+    skins = readSkins(fskbase)
     fsl = FaultSlipper(gsx,p2,p3)
-    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error
     fsl.computeDipSlips(skins,minThrow,maxThrow)
     print "  dip slips computed, now reskinning ..."
@@ -369,6 +392,7 @@ def goUnfaultS():
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
+    skins = [skins[12]]
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
     mul(sp[3][0],10,sp[3][0])

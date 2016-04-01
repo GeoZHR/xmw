@@ -162,6 +162,31 @@ public class FaultDisplay {
     return fsl.toArray(new FaultSkin[0]);
   }
 
+  public FaultSkin[] getLowerFaults(int m1, FaultSkin[] sks) {
+    ArrayList<FaultSkin> fsl = new ArrayList<FaultSkin>();
+    for (FaultSkin ski:sks) { 
+      int k1 = 0;
+      for (FaultCell fci:ski) {
+        int i1 = fci.i1;
+        if(i1>k1) k1=i1;
+      }
+      if(k1>m1) fsl.add(ski);
+    }
+    return fsl.toArray(new FaultSkin[0]);
+  }
+
+  public FaultSkin reskin(int m1, FaultSkin skin) {
+    ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+    for (FaultCell fci:skin) {
+      if(fci.i1>m1) {
+        fci.skin=null;
+        fcl.add(fci);
+      }
+    }
+    FaultSkinner fs = new FaultSkinner();
+    return fs.findSkins(fcl.toArray(new FaultCell[0]))[0];
+  }
+
   public FaultSkin[] getLargeFaults(int nc, FaultSkin[] sks) {
     ArrayList<FaultSkin> fsl = new ArrayList<FaultSkin>();
     for (FaultSkin ski:sks) { 

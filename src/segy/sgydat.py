@@ -74,7 +74,8 @@ def goSeam():
   si.close()
   if showImage:
     x = readImage(datfile,n1,n2,n3)
-    show3d(x,clip=max(x))
+    gain(100,x)
+    show3d(x,clip=max(x)/2)
 
 def goCranfield2010():
   '''

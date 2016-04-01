@@ -8,6 +8,8 @@ import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 import slt.*;
+import static mef.FaultGeometry.*;
+
 
 /**
  * Construct smooth and single-valued fault surface using 
@@ -23,6 +25,389 @@ public class FaultReskin {
    float[][] sf = new float[n3][n2];
    return sf;
  }
+
+ public FaultSkin[] reskin(int m1, int m2, FaultSkin skin) {
+   ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+   for (FaultCell cell:skin) {
+     if(cell.i1<m1) {continue;}
+     if(cell.x2<m2) {continue;}
+     cell.skin=null;
+     fcl.add(cell);
+   }
+   FaultSkinner fs = new FaultSkinner();
+   fs.setGrowLikelihoods(0.1f,0.6f);
+   fs.setMinSkinSize(5000);
+   FaultCell[] cells = fcl.toArray(new FaultCell[0]);
+   return fs.findSkins(cells);
+ }
+
+
+ public float[][][][] rescan(
+    int n1, int n2, int n3, 
+    Sampling sp, Sampling st, FaultCell[] cells) 
+ {
+   _fcs = cells;
+   float[][][][][] gws = gaussWeights(20.f,2.f,40,40,40,sp,st);
+   KdTree kt = setStrikeKdTree();
+   float[][][] fl = new float[n3][n2][n1];
+   float[][][] fp = new float[n3][n2][n1];
+   float[][][] ft = new float[n3][n2][n1];
+   float dp1 = 20f;
+   float dp2 = 10f;
+   for (float fpi=0; fpi<=360; fpi+=dp1) {
+     float fpm = fpi-dp2;
+     float fpp = fpi+dp2;
+     FaultCell[] fcs = cellsInStrikeWd(fpm,fpp,kt);
+     float[][][][] flpt = new float[3][n3][n2][n1];
+     faultImagesFromCells(sp,st,fcs,gws,flpt);
+     float[][][] flt = flpt[0];
+     float[][][] fpt = flpt[1];
+     float[][][] ftt = flpt[2];
+     for (int i3=0; i3<n3; ++i3) {
+     for (int i2=0; i2<n2; ++i2) {
+     for (int i1=0; i1<n1; ++i1) {
+       float fli = flt[i3][i2][i1];
+       if(fli>fl[i3][i2][i1]) {
+         fl[i3][i2][i1] = fli;
+         fp[i3][i2][i1] = fpt[i3][i2][i1];
+         ft[i3][i2][i1] = ftt[i3][i2][i1];
+       }
+     }}}
+   }
+   return new float[][][][]{fl,fp,ft};
+ }
+
+ /*
+ public float[][][][] faultImagesFromCells(
+   int n1, int n2, int n3, FaultCell[] cells) {
+   _fcs = cells;
+   ArrayList<Float> fpl = new ArrayList<Float>();
+   ArrayList<Float> ftl = new ArrayList<Float>();
+   getFpt(fpl,ftl);
+   float[][][][] flpt = new float[3][n3][n2][n1];
+   float[][][][][] gws = gaussWeights(20.f,2.f,40,40,40,fpl,ftl);
+   faultImagesFromCells(fpl,ftl,cells,gws,flpt);
+   return flpt;
+ }
+ */
+
+ private void faultImagesFromCells(
+   final Sampling sp, final Sampling st,
+   final FaultCell[] cells, final float[][][][][] gws, 
+   final float[][][][] flpt) 
+ {
+   final int nc = cells.length;
+   final float[][][] fl = flpt[0];
+   final float[][][] fp = flpt[1];
+   final float[][][] ft = flpt[2];
+   final int n3 = fl.length;
+   final int n2 = fl[0].length;
+   final int n1 = fl[0][0].length;
+   final int m3 = gws[0][0].length;
+   final int m2 = gws[0][0][0].length;
+   final int m1 = gws[0][0][0][0].length;
+   final int d3 = (m3-1)/2;
+   final int d2 = (m2-1)/2;
+   final int d1 = (m1-1)/2;
+   for (int ic=0; ic<nc; ++ic) {
+     FaultCell fc = cells[ic];
+     float fpi = fc.fp;
+     float fti = fc.ft;
+     int it = st.indexOfNearest(fti);
+     int ip = sp.indexOfNearest(fpi);
+     final int c1 = fc.i1-d1;
+     final int c2 = fc.i2-d2;
+     final int c3 = fc.i3-d3;
+     final float[][][] gw = gws[ip][it];
+     loop(m3,new Parallel.LoopInt(){
+     public void compute(int i3) {
+       int k3 = i3+c3; 
+       if(k3>=0 && k3<n3) {
+       for (int i2=0; i2<m2; ++i2) {
+         int k2 = i2+c2;
+         if(k2>=0 && k2<n2) {
+         for (int i1=0; i1<m1; ++i1) {
+           int k1 = i1+c1;
+           if(k1>=0 && k1<n1) {
+           fl[k3][k2][k1] += gw[i3][i2][i1];
+         }}
+       }}}
+     }});
+   }
+   computeStrikeDip(fl,fp,ft);
+ }
+
+ public float[][][][][] gaussWeights(
+    float sigu, float sigw, int d1, int d2, int d3, 
+    Sampling sp, Sampling st) 
+  {
+    final int c1 = d1;
+    final int c2 = d2;
+    final int c3 = d3;
+    final int n1 = d1*2+1;
+    final int n2 = d2*2+1;
+    final int n3 = d3*2+1;
+    final float sw = 0.25f/(sigw*sigw);
+    final float su = 0.25f/(sigu*sigu);
+    final float sv = su;
+    int np = sp.getCount();
+    int nt = st.getCount();
+    final float[][][][][] gws = new float[np][nt][n3][n2][n1];
+    for (int ip=0; ip<np; ++ip) {
+    for (int it=0; it<nt; ++it) {
+      float fpi = (float)sp.getValue(ip);
+      float fti = (float)st.getValue(it);
+      final float[][][] gwi = gws[ip][it];
+      float[] u = faultDipVectorFromStrikeAndDip(fpi,fti);
+      float[] v = faultStrikeVectorFromStrikeAndDip(fpi,fti);
+      float[] w = faultNormalVectorFromStrikeAndDip(fpi,fti);
+      float u1 = u[0];
+      float u2 = u[1];
+      float u3 = u[2];
+      float v1 = v[0];
+      float v2 = v[1];
+      float v3 = v[2];
+      float w1 = w[0];
+      float w2 = w[1];
+      float w3 = w[2];
+      final float w11 = w1*w1;
+      final float w12 = w1*w2;
+      final float w13 = w1*w3;
+      final float w22 = w2*w2;
+      final float w23 = w2*w3;
+      final float w33 = w3*w3;
+      final float v11 = v1*v1;
+      final float v12 = v1*v2;
+      final float v13 = v1*v3;
+      final float v22 = v2*v2;
+      final float v23 = v2*v3;
+      final float v33 = v3*v3;
+      final float u11 = u1*u1;
+      final float u12 = u1*u2;
+      final float u13 = u1*u3;
+      final float u22 = u2*u2;
+      final float u23 = u2*u3;
+      final float u33 = u3*u3;
+      loop(n3,new LoopInt() {
+      public void compute(int i3) {
+        for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float dx1 = i1-c1;
+          float dx2 = i2-c2;
+          float dx3 = i3-c3;
+          float d11 = dx1*dx1;
+          float d22 = dx2*dx2;
+          float d33 = dx3*dx3;
+          float d12 = dx1*dx2;
+          float d13 = dx1*dx3;
+          float d23 = dx2*dx3;
+
+          float wd1 = w12*d12*2.0f;
+          float wd2 = w13*d13*2.0f;
+          float wd3 = w23*d23*2.0f;
+
+          float ud1 = u12*d12*2.0f;
+          float ud2 = u13*d13*2.0f;
+          float ud3 = u23*d23*2.0f;
+
+          float vd1 = v12*d12*2.0f;
+          float vd2 = v13*d13*2.0f;
+          float vd3 = v23*d23*2.0f;
+
+          float wds = w11*d11+w22*d22+w33*d33;
+          float uds = u11*d11+u22*d22+u33*d33;
+          float vds = v11*d11+v22*d22+v33*d33;
+          float gss = 0.0f;
+          gss += (wd1+wd2+wd3+wds)*sw;
+          gss += (ud1+ud2+ud3+uds)*su;
+          gss += (vd1+vd2+vd3+vds)*sv;
+          gwi[i3][i2][i1] = exp(-gss);
+        }}
+      }});
+    }}
+    return gws;
+  }
+
+
+ private void faultImagesFromCells(
+    final int dt, final FaultCell[] fc, final float[][][][] flpt)
+  {
+    final float[][][] fl = flpt[0];
+    final float[][][] fp = flpt[1];
+    final float[][][] ft = flpt[2];
+    int nc = fc.length;
+    final int n3 = fl.length;
+    final int n2 = fl[0].length;
+    final int n1 = fl[0][0].length;
+    float sigmaNor = 4.0f;
+    final float mark = -360f;
+    final float[][][] fpt = fillfloat(mark,n1,n2,n3);
+    final float[][] xc = new float[3][nc];
+    setKdTreeNodes(fc,xc,fpt);
+    final KdTree kt = new KdTree(xc);
+    final float sv = 0.25f/(dt*dt); 
+    final float su = 0.25f/(dt*dt); 
+    final float sw = 1.0f/(sigmaNor*sigmaNor); 
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      float[] xmin = new float[3];
+      float[] xmax = new float[3];
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          xmin[1] = i2-dt; xmax[1] = i2+dt;
+          xmin[2] = i3-dt; xmax[2] = i3+dt;
+          xmin[0] = i1-dt/4; xmax[0] = i1+dt/4;
+          int[] id = kt.findInRange(xmin,xmax);
+          int nd = id.length;
+          if(nd<10){continue;}
+          ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+          for (int ik=0; ik<nd; ++ik) {
+            int ip = id[ik];
+            FaultCell fci = fc[ip];
+            fcl.add(fci);
+          }
+          FaultCell[] cells = fcl.toArray(new FaultCell[0]);
+          for (FaultCell fci:cells) {
+            float x1i = fci.i1;
+            float x2i = fci.i2;
+            float x3i = fci.i3;
+
+            float dx1 = x1i-i1;
+            float dx2 = x2i-i2;
+            float dx3 = x3i-i3;
+            float d11 = dx1*dx1;
+            float d22 = dx2*dx2;
+            float d33 = dx3*dx3;
+            float d12 = dx1*dx2;
+            float d13 = dx1*dx3;
+            float d23 = dx2*dx3;
+
+            float w11 = fci.w11;
+            float w22 = fci.w22;
+            float w33 = fci.w33;
+            float w12 = fci.w12;
+            float w13 = fci.w13;
+            float w23 = fci.w23;
+
+            float u11 = fci.u11;
+            float u22 = fci.u22;
+            float u33 = fci.u33;
+            float u12 = fci.u12;
+            float u13 = fci.u13;
+            float u23 = fci.u23;
+
+            float v11 = fci.v11;
+            float v22 = fci.v22;
+            float v33 = fci.v33;
+            float v12 = fci.v12;
+            float v13 = fci.v13;
+            float v23 = fci.v23;
+
+            float wd1 = w12*d12*2.0f;
+            float wd2 = w13*d13*2.0f;
+            float wd3 = w23*d23*2.0f;
+
+            float ud1 = u12*d12*2.0f;
+            float ud2 = u13*d13*2.0f;
+            float ud3 = u23*d23*2.0f;
+
+            float vd1 = v12*d12*2.0f;
+            float vd2 = v13*d13*2.0f;
+            float vd3 = v23*d23*2.0f;
+
+            float wds = w11*d11+w22*d22+w33*d33;
+            float uds = u11*d11+u22*d22+u33*d33;
+            float vds = v11*d11+v22*d22+v33*d33;
+
+            float gss = 0.0f;
+            float flc = fci.fl;
+            float wpi = pow(flc,2.f);
+            gss += (wd1+wd2+wd3+wds)*sw;
+            gss += (ud1+ud2+ud3+uds)*su;
+            gss += (vd1+vd2+vd3+vds)*sv;
+            float fli = exp(-gss)*wpi;
+            fl[i3][i2][i1] += fli;
+          }
+        }
+      }
+    }});
+    computeStrikeDip(fl,fp,ft);
+  }
+
+  private int[] setBounds(int n, float[] x) {
+    int[] bs = new int[2];
+    int n1m = (int)min(x)-5; 
+    int n1p = (int)max(x)+5; 
+    if(n1m<0){n1m=0;}
+    if(n1p>n){n1p=n;}
+    bs[0] = n1m;
+    bs[1] = n1p;
+    return bs;
+  }
+
+
+  private void setKdTreeNodes(
+    FaultCell[] fc, float[][] xc, float[][][] fp) {
+    float mark = -360f;
+    int nc = fc.length;
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    float[][][] w1 = new float[n3][n2][n1];
+    float[][][] w2 = new float[n3][n2][n1];
+    float[][][] w3 = new float[n3][n2][n1];
+    float[][][] pt = fillfloat(mark,n1,n2,n3);
+    for (int ic=0; ic<nc; ic++) {
+      int i1 = fc[ic].i1;
+      int i2 = fc[ic].i2;
+      int i3 = fc[ic].i3;
+      xc[0][ic] = i1;
+      xc[1][ic] = i2;
+      xc[2][ic] = i3;
+      pt[i3][i2][i1] = fc[ic].fp;
+      w1[i3][i2][i1] = fc[ic].w1;
+      w2[i3][i2][i1] = fc[ic].w2;
+      w3[i3][i2][i1] = fc[ic].w3;
+    }
+  }
+
+  private void computeStrikeDip(
+    float[][][] fl, float[][][] fp, float[][][] ft) 
+  {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    LocalOrientFilter lof = new LocalOrientFilter(8,4);
+    lof.applyForNormal(fl,u1,u2,u3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fli = fl[i3][i2][i1];
+      if(fli>0f) {
+        int k1 = i1;
+        int k2 = i2;
+        int k3 = i3;
+        if(k1==0) {k1=1;}
+        if(k2==0) {k2=1;}
+        if(k3==0) {k3=1;}
+        if(k1==n1-1) {k1=n1-2;}
+        if(k2==n2-1) {k2=n2-2;}
+        if(k3==n3-1) {k3=n3-2;}
+        float u1i = -u1[k3][k2][k1];
+        float u2i = -u2[k3][k2][k1];
+        float u3i = -u3[k3][k2][k1];
+        if(u2i!=0.0f && u3i!=0.0f) {
+          ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+          fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+        }
+      }
+    }}}
+  }
+ 
+
 
  public float[][][][] faultSlopes(int n1, int n2, int n3, FaultSkin skin) {
     float[][][] fls = new float[n3][n2][n1];
@@ -393,10 +778,74 @@ public class FaultReskin {
     });
   }
 
+  private KdTree setStrikeKdTree() {
+    int nc = _fcs.length;
+    float[][] pc = new float[1][nc];
+    for (int ic=0; ic<nc; ++ic) {
+      pc[0][ic] = _fcs[ic].fp; 
+    }
+    return new KdTree(pc);
+  }
+
+  // find cells in a strike window
+  private FaultCell[] cellsInStrikeWd(float pmi, float ppi, KdTree kt) {
+    float[] pm1 = new float[1];
+    float[] pp1 = new float[1];
+    float[] pm2 = new float[1];
+    float[] pp2 = new float[1];
+    float[] pm3 = new float[1];
+    float[] pp3 = new float[1];
+    pm3[0] = pmi; pp3[0] = ppi;
+    int[] id1=null, id2=null, id3=null;
+    if (pmi<0.0f) {
+      pm3[0] = 0.0f;
+      pp1[0] = 360f;
+      pm1[0] = 360f+pmi;
+      id1 = kt.findInRange(pm1,pp1);
+    } 
+    if(ppi>360f) {
+      pp3[0] = 360f;
+      pm2[0] = 0.0f;
+      pp2[0] = ppi-360f;
+      id2 = kt.findInRange(pm2,pp2);
+    }
+    id3 = kt.findInRange(pm3,pp3);
+    int nd1=0, nd2=0, nd3=0;
+    if(id1!=null){nd1=id1.length;}
+    if(id2!=null){nd2=id2.length;}
+    if(id3!=null){nd3=id3.length;}
+    int nd = nd1+nd2+nd3;
+    int ic = 0;
+    FaultCell[] fcs = new FaultCell[nd];
+    if(nd>0) {
+      if(id1!=null) {
+        for (int ik=0; ik<nd1; ++ik){
+          fcs[ic] = _fcs[id1[ik]];
+          ic++;
+        }
+      }
+      if(id2!=null) {
+        for (int ik=0; ik<nd2; ++ik){
+          fcs[ic] = _fcs[id2[ik]];
+          ic++;
+        }
+      }
+      if(id3!=null) {
+        for (int ik=0; ik<nd3; ++ik){
+          fcs[ic] = _fcs[id3[ik]];
+          ic++;
+        }
+      }
+    }
+    return fcs;
+  }
+
+
 
   private int _j1,_j2,_j3; // min cell indices
   private int _n1,_n2,_n3; // numbers of cells
   private FaultCell[][][] _cells; // array of cells
+  private FaultCell[] _fcs; // list of cells
 
 }
 

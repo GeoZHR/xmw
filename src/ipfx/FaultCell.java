@@ -11,7 +11,7 @@ import java.io.Serializable;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import static mef.FaultGeometry.*;
+import static ipfx.FaultGeometry.*;
 
 /**
  * A fault cell is an oriented point located on a fault. Fault cells can
