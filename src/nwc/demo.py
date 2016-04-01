@@ -58,9 +58,7 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,89
-sigmaPhi,sigmaTheta = 25,40
-#minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 20,40
+sigmaPhi,sigmaTheta = 8,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -78,18 +76,18 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
-  goReskin()
+  #goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -190,9 +188,12 @@ def goSkinTv():
     fsx.setMinSkinSize(minSkinSize)
     fsx.setMaxPlanarDistance(0.2)
     fsk = readSkins(fskbase)
+    fr = FaultReskin()
+    sks = fr.reskin(160,350,fsk[0])
+    fsk[0] = sks[0]
     fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),2):
+    for ic in range(0,len(fcs),4):
       cells.append(fcs[ic])
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
