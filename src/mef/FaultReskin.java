@@ -111,7 +111,6 @@ public class FaultReskin {
    final float[][][] g23 = new float[n3][n2][n1];
    final float[][][] g33 = new float[n3][n2][n1];
    for (int ic=0; ic<nc; ++ic) {
-     System.out.println("ic="+ic);
      FaultCell fc = cells[ic];
      float fpi = fc.fp;
      float fti = fc.ft;
@@ -150,7 +149,9 @@ public class FaultReskin {
        }}
      }});
    }
+   System.out.println("accumulation done...");
    solveEigenproblems(g11,g12,g13,g22,g23,g33,fp,ft);
+   System.out.println("eigen-decomposition done...");
    //computeStrikeDip(fl,fp,ft);
  }
 
@@ -762,38 +763,38 @@ public class FaultReskin {
     final int n2 = g11[0].length;
     final int n1 = g11[0][0].length;
     Parallel.loop(n3,new Parallel.LoopInt() {
-      public void compute(int i3) {
-        double[][] a = new double[3][3];
-        double[][] z = new double[3][3];
-        double[] e = new double[3];
-        for (int i2=0; i2<n2; ++i2) {
-          for (int i1=0; i1<n1; ++i1) {
-            a[0][0] = g11[i3][i2][i1];
-            a[0][1] = g12[i3][i2][i1];
-            a[0][2] = g13[i3][i2][i1];
-            a[1][0] = g12[i3][i2][i1];
-            a[1][1] = g22[i3][i2][i1];
-            a[1][2] = g23[i3][i2][i1];
-            a[2][0] = g13[i3][i2][i1];
-            a[2][1] = g23[i3][i2][i1];
-            a[2][2] = g33[i3][i2][i1];
-            Eigen.solveSymmetric33(a,z,e);
-            float u1i = (float)z[0][0];
-            float u2i = (float)z[0][1];
-            float u3i = (float)z[0][2];
-            if (u1i>0.0f) {
-              u1i = -u1i;
-              u2i = -u2i;
-              u3i = -u3i;
-            }
-            if(u2i!=0.0f && u3i!=0.0f) {
-              ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
-              fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
-            }
+    public void compute(int i3) {
+      double[][] a = new double[3][3];
+      double[][] z = new double[3][3];
+      double[] e = new double[3];
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          a[0][0] = g11[i3][i2][i1];
+          if(a[0][0]==0f) {continue;}
+          a[0][1] = g12[i3][i2][i1];
+          a[0][2] = g13[i3][i2][i1];
+          a[1][0] = g12[i3][i2][i1];
+          a[1][1] = g22[i3][i2][i1];
+          a[1][2] = g23[i3][i2][i1];
+          a[2][0] = g13[i3][i2][i1];
+          a[2][1] = g23[i3][i2][i1];
+          a[2][2] = g33[i3][i2][i1];
+          Eigen.solveSymmetric33(a,z,e);
+          float u1i = (float)z[0][0];
+          float u2i = (float)z[0][1];
+          float u3i = (float)z[0][2];
+          if (u1i>0.0f) {
+            u1i = -u1i;
+            u2i = -u2i;
+            u3i = -u3i;
+          }
+          if(u2i!=0.0f && u3i!=0.0f) {
+            ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+            fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
           }
         }
       }
-    });
+    }});
   }
 
 
