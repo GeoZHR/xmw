@@ -131,10 +131,12 @@ public class FaultReskin {
          float u1i = u2[i3][i2][i1];
          float u2i = u2[i3][i2][i1];
          float u3i = u3[i3][i2][i1];
+         /*
          if(u2i!=0.0f && u3i!=0.0f) {
            fts[i3][i2][i1] = faultDipFromNormalVector(-u1i,-u2i,-u3i);
            fps[i3][i2][i1] = faultStrikeFromNormalVector(-u1i,-u2i,-u3i);
          }
+         */
          float u1s = 1.0f-u2i*u2i-u3i*u3i;
          u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
          if (u3i<0.0f) {
@@ -146,7 +148,6 @@ public class FaultReskin {
        }
      }
    }
-
    System.out.println("eigentensors done...");
    float[][][] eu = fillfloat(0.01f,n1,n2,n3);
    float[][][] ev = fillfloat(1.00f,n1,n2,n3);
@@ -154,6 +155,7 @@ public class FaultReskin {
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
    lsf.apply(et,80,fls,fls);
+   computeStrikeDip(fls,fps,fts);
    System.out.println("structure-oriented smoothing done...");
    return new float[][][][]{fls,fps,fts};
  }
