@@ -76,7 +76,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -227,6 +227,8 @@ def goSkin():
       skin.smoothCellNormals(4)
     fd = FaultDisplay()
     skins = fd.getLowerFaults(350,skins)
+    plot3(gx,skins=skins)
+  '''
     #sk = fd.reskin(160,350,skins[1])
     #plot3(gx,skins=sk)
     #skins[1] = sk[1]
@@ -247,34 +249,59 @@ def goSkin():
   for skin in skins:
     plot3(gx,skins=[skins[k]],clab=str(k))
     k = k+1
+  '''
 
 def goReskin(): 
   gx = readImage(gxfile)
-  skins = readSkins(fskbase)
-  fr = FaultReskin()
-  sks = fr.reskin(176,0,skins[0])
-  skins[0] = sks[0]
+  if not plotOnly:
+    skins = readSkins(fskbase)
+    fr = FaultReskin()
+    sks = fr.reskin(176,0,skins[0])
+    skins[0] = sks[0]
+    #plot3(gx,skins=skins)
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    sp = fs.makePhiSampling(minPhi,maxPhi)
+    st = fs.makeThetaSampling(minTheta,maxTheta)
+
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.2)
+    fs.setMinSkinSize(minSkinSize)
+    cells = FaultSkin.getCells(skins)
+    #plot3(gx,cells=cells)
+    fr = FaultReskin()
+    fl,fp,ft = fr.rescan(n1,n2,n3,sp,st,cells)
+    div(fl,max(fl),fl)
+    cells = fs.findCells([fl,fp,ft])
+    skins = fs.findSkins(cells)
+    removeAllSkinFiles(fsktv)
+    writeSkins(fsktv,skins)
+  else:
+    skins = readSkins(fsktv)
   #plot3(gx,skins=skins)
+  fr = FaultReskin()
+  sks = [skins[1],skins[3]] #[skins[11],skins[6]] #skins[5]
+  cells = FaultSkin.getCells(sks)
   fs = FaultScanner(sigmaPhi,sigmaTheta)
   sp = fs.makePhiSampling(minPhi,maxPhi)
   st = fs.makeThetaSampling(minTheta,maxTheta)
 
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.2)
-  fs.setMinSkinSize(minSkinSize)
-  cells = FaultSkin.getCells(skins)
-  #plot3(gx,cells=cells)
-  fr = FaultReskin()
-  fl,fp,ft = fr.rescan(n1,n2,n3,sp,st,cells)
+  fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,sp,st,cells)
   div(fl,max(fl),fl)
   cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  removeAllSkinFiles(fsktv)
-  writeSkins(fsktv,skins)
+  sks = fs.findSkins(cells)
+  removeAllSkinFiles(fskr)
+  writeSkins(fskr,sks)
   '''
-  plot3(gx,skins=skins)
+  plot3(gx,skins=sks)
+  k = 0
+  for skin in skins:
+    plot3(gx,skins=[skins[k]],clab=str(k))
+    k = k+1
+  '''
+
+  '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),

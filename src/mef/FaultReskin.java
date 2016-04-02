@@ -77,19 +77,14 @@ public class FaultReskin {
    return new float[][][][]{fl,fp,ft};
  }
 
- /*
  public float[][][][] faultImagesFromCells(
-   int n1, int n2, int n3, FaultCell[] cells) {
+   int n1, int n2, int n3, Sampling sp, Sampling st, FaultCell[] cells) {
    _fcs = cells;
-   ArrayList<Float> fpl = new ArrayList<Float>();
-   ArrayList<Float> ftl = new ArrayList<Float>();
-   getFpt(fpl,ftl);
    float[][][][] flpt = new float[3][n3][n2][n1];
-   float[][][][][] gws = gaussWeights(20.f,2.f,40,40,40,fpl,ftl);
-   faultImagesFromCells(fpl,ftl,cells,gws,flpt);
+   float[][][][][] gws = gaussWeights(10.f,2.f,40,40,40,sp,st);
+   faultImagesFromCells(sp,st,cells,gws,flpt);
    return flpt;
  }
- */
 
  private void faultImagesFromCells(
    final Sampling sp, final Sampling st,
