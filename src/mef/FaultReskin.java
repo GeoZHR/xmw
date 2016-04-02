@@ -104,14 +104,18 @@ public class FaultReskin {
    RecursiveGaussianFilterP rgfl = new RecursiveGaussianFilterP(1);
    rgfl.apply000(fls,fls);
    System.out.println("fl smoothing done...");
-   RecursiveGaussianFilterP rgfv = new RecursiveGaussianFilterP(80);
-   RecursiveGaussianFilterP rgfh = new RecursiveGaussianFilterP(20);
+   //RecursiveGaussianFilterP rgfv = new RecursiveGaussianFilterP(80);
+   //RecursiveGaussianFilterP rgfh = new RecursiveGaussianFilterP(20);
+   RecursiveExponentialFilter refv = new RecursiveExponentialFilter(80);
+   RecursiveExponentialFilter refh = new RecursiveExponentialFilter(80);
+   refv.setEdges(RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE);
+   refh.setEdges(RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE);
    float[][][] h = new float[n3][n2][n1];
    float[][][][] gs = {g11,g22,g33,g12,g13,g23};
    for (float[][][] g:gs) {
-     rgfv.apply0XX(g,h);
-     rgfh.applyX0X(h,g);
-     rgfh.applyXX0(g,h);
+     refv.apply1(g,h);
+     refh.apply2(h,g);
+     refh.apply3(g,h);
    }
    System.out.println("gaussian smoothing done...");
    float[][][] w1 = new float[n3][n2][n1];
