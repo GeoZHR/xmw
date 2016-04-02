@@ -47,13 +47,13 @@ public class FaultReskin {
     Sampling sp, Sampling st, FaultCell[] cells) 
  {
    _fcs = cells;
-   float[][][][][] gws = gaussWeights(20.f,2.f,40,40,40,sp,st);
+   float[][][][][] gws = gaussWeights(20.f,2.f,80,80,80,sp,st);
    KdTree kt = setStrikeKdTree();
    float[][][] fl = new float[n3][n2][n1];
    float[][][] fp = new float[n3][n2][n1];
    float[][][] ft = new float[n3][n2][n1];
    float dp1 = 20f;
-   float dp2 = 10f;
+   float dp2 = 20f;
    for (float fpi=0; fpi<=360; fpi+=dp1) {
      float fpm = fpi-dp2;
      float fpp = fpi+dp2;
@@ -483,7 +483,7 @@ public class FaultReskin {
     FaultCell[] fcs = skin.getCells();
     setCells(n1,n2,n3,fcs);
     System.out.println("fault setting done...");
-    float[][][] sfs = new float[n3][n2][n1];
+    float[][][] sfs = fillfloat(-30f,n1,n2,n3);
     float[][][] fl  = new float[_n3][_n2][_n1];
     float[][][] ws  = new float[_n3][_n2][_n1];
     float[][][] u1  = new float[_n3][_n2][_n1];

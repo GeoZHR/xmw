@@ -83,11 +83,11 @@ plotOnly = False
 def main(args):
   #goDisplay()
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
-  #goReskin()
+  goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -227,10 +227,9 @@ def goSkin():
       skin.smoothCellNormals(4)
     fd = FaultDisplay()
     skins = fd.getLowerFaults(350,skins)
-    '''
-    sk = fd.reskin(160,skins[1])
-    skins[1] = sk
-    '''
+    #sk = fd.reskin(160,350,skins[1])
+    #plot3(gx,skins=sk)
+    #skins[1] = sk[1]
     print "total number of cells =",len(cells)
     print "total number of skins =",len(skins)
     print "number of cells in skins =",FaultSkin.countCells(skins)
@@ -253,7 +252,7 @@ def goReskin():
   gx = readImage(gxfile)
   skins = readSkins(fskbase)
   fr = FaultReskin()
-  sks = fr.reskin(160,350,skins[0])
+  sks = fr.reskin(176,0,skins[0])
   skins[0] = sks[0]
   #plot3(gx,skins=skins)
   fs = FaultScanner(sigmaPhi,sigmaTheta)
@@ -274,7 +273,6 @@ def goReskin():
   skins = fs.findSkins(cells)
   removeAllSkinFiles(fsktv)
   writeSkins(fsktv,skins)
-
   '''
   plot3(gx,skins=skins)
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),

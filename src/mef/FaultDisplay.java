@@ -175,6 +175,22 @@ public class FaultDisplay {
     return fsl.toArray(new FaultSkin[0]);
   }
 
+  public FaultSkin[] reskin(int m1, int m2, FaultSkin skin) {
+   ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+   for (FaultCell cell:skin) {
+     if(cell.i1<m1) {continue;}
+     if(cell.x2<m2) {continue;}
+     cell.skin=null;
+     fcl.add(cell);
+   }
+   FaultSkinner fs = new FaultSkinner();
+   fs.setGrowLikelihoods(0.1f,0.6f);
+   fs.setMinSkinSize(5000);
+   FaultCell[] cells = fcl.toArray(new FaultCell[0]);
+   return fs.findSkins(cells);
+ }
+
+
   public FaultSkin reskin(int m1, FaultSkin skin) {
     ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
     for (FaultCell fci:skin) {
