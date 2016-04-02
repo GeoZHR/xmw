@@ -78,6 +78,83 @@ public class FaultReskin {
  }
 
  public float[][][][] faultImagesFromCells(
+   int n1, int n2, int n3, FaultCell[] cells) {
+   _fcs = cells;
+   float[][][] fls = new float[n3][n2][n1];
+   float[][][] fps = new float[n3][n2][n1];
+   float[][][] fts = new float[n3][n2][n1];
+   float[][][] g11 = new float[n3][n2][n1];
+   float[][][] g12 = new float[n3][n2][n1];
+   float[][][] g13 = new float[n3][n2][n1];
+   float[][][] g22 = new float[n3][n2][n1];
+   float[][][] g23 = new float[n3][n2][n1];
+   float[][][] g33 = new float[n3][n2][n1];
+   for (FaultCell cell:cells) {
+     int i1 = cell.i1;
+     int i2 = cell.i2;
+     int i3 = cell.i3;
+     fls[i3][i2][i1] = cell.fl;
+     g11[i3][i2][i1] = cell.w11;
+     g12[i3][i2][i1] = cell.w12;
+     g13[i3][i2][i1] = cell.w13;
+     g22[i3][i2][i1] = cell.w22;
+     g23[i3][i2][i1] = cell.w23;
+     g33[i3][i2][i1] = cell.w33;
+   }
+   RecursiveGaussianFilterP rgfl = new RecursiveGaussianFilterP(1);
+   rgfl.apply000(fls,fls);
+   RecursiveGaussianFilterP rgfv = new RecursiveGaussianFilterP(80);
+   RecursiveGaussianFilterP rgfh = new RecursiveGaussianFilterP(20);
+   float[][][] h = new float[n3][n2][n1];
+   float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+   for (float[][][] g:gs) {
+     rgfv.apply0XX(g,h);
+     rgfh.applyX0X(h,g);
+     rgfh.applyXX0(g,h);
+   }
+   System.out.println("gaussian smoothing done...");
+   float[][][] w1 = new float[n3][n2][n1];
+   float[][][] w2 = new float[n3][n2][n1];
+   float[][][] u1 = new float[n3][n2][n1];
+   float[][][] u2 = new float[n3][n2][n1];
+   float[][][] u3 = new float[n3][n2][n1];
+   solveEigenproblems(g11,g12,g13,g22,g23,g33,w1,w2,u1,u2,u3);
+   // Compute u1 such that u3 > 0.
+   for (int i3=0; i3<n3; ++i3) {
+     for (int i2=0; i2<n2; ++i2) {
+       for (int i1=0; i1<n1; ++i1) {
+         float u1i = u2[i3][i2][i1];
+         float u2i = u2[i3][i2][i1];
+         float u3i = u3[i3][i2][i1];
+         if(u2i!=0.0f && u3i!=0.0f) {
+           fts[i3][i2][i1] = faultDipFromNormalVector(-u1i,-u2i,-u3i);
+           fps[i3][i2][i1] = faultStrikeFromNormalVector(-u1i,-u2i,-u3i);
+         }
+         float u1s = 1.0f-u2i*u2i-u3i*u3i;
+         u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
+         if (u3i<0.0f) {
+           u1i = -u1i;
+           u2i = -u2i;
+         }
+         u1[i3][i2][i1] = u1i;
+         u2[i3][i2][i1] = u2i;
+       }
+     }
+   }
+
+   System.out.println("eigentensors done...");
+   float[][][] eu = fillfloat(0.01f,n1,n2,n3);
+   float[][][] ev = fillfloat(1.00f,n1,n2,n3);
+   float[][][] ew = fillfloat(1.00f,n1,n2,n3);
+   EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+   LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+   lsf.apply(et,80,fls,fls);
+   System.out.println("structure-oriented smoothing done...");
+   return new float[][][][]{fls,fps,fts};
+ }
+
+
+ public float[][][][] faultImagesFromCells(
    int n1, int n2, int n3, Sampling sp, Sampling st, FaultCell[] cells) {
    _fcs = cells;
    float[][][][] flpt = new float[3][n3][n2][n1];
@@ -799,6 +876,60 @@ public class FaultReskin {
       }
     }});
   }
+
+  private void solveEigenproblems(
+    final float[][][] g11, final float[][][] g12, final float[][][] g13,
+    final float[][][] g22, final float[][][] g23, final float[][][] g33,
+    final float[][][] w1, final float[][][] w2, final float[][][] u1, 
+    final float[][][] u2, final float[][][] u3) 
+  {
+    final int n3 = g11.length;
+    final int n2 = g11[0].length;
+    final int n1 = g11[0][0].length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        double[][] a = new double[3][3];
+        double[][] z = new double[3][3];
+        double[] e = new double[3];
+        for (int i2=0; i2<n2; ++i2) {
+          for (int i1=0; i1<n1; ++i1) {
+            a[0][0] = g11[i3][i2][i1];
+            a[0][1] = g12[i3][i2][i1];
+            a[0][2] = g13[i3][i2][i1];
+            a[1][0] = g12[i3][i2][i1];
+            a[1][1] = g22[i3][i2][i1];
+            a[1][2] = g23[i3][i2][i1];
+            a[2][0] = g13[i3][i2][i1];
+            a[2][1] = g23[i3][i2][i1];
+            a[2][2] = g33[i3][i2][i1];
+            Eigen.solveSymmetric33(a,z,e);
+            float u1i = (float)z[0][0];
+            float u2i = (float)z[0][1];
+            float u3i = (float)z[0][2];
+            float w1i = (float)z[2][0];
+            float w2i = (float)z[2][1];
+            float w3i = (float)z[2][2];
+            if (u1i<0.0f) {
+              u1i = -u1i;
+              u2i = -u2i;
+              u3i = -u3i;
+            }
+
+            if (w3i<0.0f) {
+              w1i = -w1i;
+              w2i = -w2i;
+            }
+            u1[i3][i2][i1] = u1i;
+            u2[i3][i2][i1] = u2i;
+            u3[i3][i2][i1] = u3i;
+            w1[i3][i2][i1] = w1i;
+            w2[i3][i2][i1] = w2i;
+          }
+        }
+      }
+    });
+  }
+
 
 
   private void solveEigenproblems(

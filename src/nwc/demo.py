@@ -291,7 +291,7 @@ def goReskin():
   sp = fs.makePhiSampling(minPhi,maxPhi)
   st = fs.makeThetaSampling(minTheta,maxTheta)
 
-  fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,sp,st,cells)
+  fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
   div(fl,max(fl),fl)
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
