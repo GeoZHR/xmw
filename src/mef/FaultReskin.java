@@ -47,7 +47,7 @@ public class FaultReskin {
     Sampling sp, Sampling st, FaultCell[] cells) 
  {
    _fcs = cells;
-   float[][][][][] gws = gaussWeights(20.f,2.f,80,80,80,sp,st);
+   float[][][][][] gws = gaussWeights(10.f,2.f,40,40,40,sp,st);
    KdTree kt = setStrikeKdTree();
    float[][][] fl = new float[n3][n2][n1];
    float[][][] fp = new float[n3][n2][n1];
