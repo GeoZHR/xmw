@@ -94,6 +94,9 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
+  #gx = readImage(gxfile)
+  #sk = readSkins(fskr)
+  #plot3(gx,skins=sk)
 def goDisplay():
   gx = readImage(gxfile)
   zm = ZeroMask(0.01,0,0,0,gx)

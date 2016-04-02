@@ -104,10 +104,25 @@ public class FaultReskin {
    final int d3 = (m3-1)/2;
    final int d2 = (m2-1)/2;
    final int d1 = (m1-1)/2;
+   final float[][][] g11 = new float[n3][n2][n1];
+   final float[][][] g12 = new float[n3][n2][n1];
+   final float[][][] g13 = new float[n3][n2][n1];
+   final float[][][] g22 = new float[n3][n2][n1];
+   final float[][][] g23 = new float[n3][n2][n1];
+   final float[][][] g33 = new float[n3][n2][n1];
    for (int ic=0; ic<nc; ++ic) {
      FaultCell fc = cells[ic];
      float fpi = fc.fp;
      float fti = fc.ft;
+     float w1i = fc.w1;
+     float w2i = fc.w2;
+     float w3i = fc.w3;
+     final float w11 = w1i*w1i;
+     final float w12 = w1i*w2i;
+     final float w13 = w1i*w3i;
+     final float w22 = w2i*w2i;
+     final float w23 = w2i*w3i;
+     final float w33 = w3i*w3i;
      int it = st.indexOfNearest(fti);
      int ip = sp.indexOfNearest(fpi);
      final int c1 = fc.i1-d1;
@@ -124,12 +139,20 @@ public class FaultReskin {
          for (int i1=0; i1<m1; ++i1) {
            int k1 = i1+c1;
            if(k1>=0 && k1<n1) {
-           fl[k3][k2][k1] += gw[i3][i2][i1];
+           float gwi = gw[i3][i2][i1];
+           fl[k3][k2][k1] += gwi;
+           g11[k3][k2][k1] += w11*gwi;
+           g12[k3][k2][k1] += w12*gwi;
+           g13[k3][k2][k1] += w13*gwi;
+           g22[k3][k2][k1] += w22*gwi;
+           g23[k3][k2][k1] += w23*gwi;
+           g33[k3][k2][k1] += w33*gwi;
          }}
        }}}
      }});
    }
-   computeStrikeDip(fl,fp,ft);
+   solveEigenproblems(g11,g12,g13,g22,g23,g33,fp,ft);
+   //computeStrikeDip(fl,fp,ft);
  }
 
  public float[][][][][] gaussWeights(
@@ -728,6 +751,50 @@ public class FaultReskin {
     for (c=c.cr; c!=null && c!=cLeft; c=c.cr) 
       nc ++;
     return nc;
+  }
+
+
+  private void solveEigenproblems(
+    final float[][][] g11, final float[][][] g12, final float[][][] g13,
+    final float[][][] g22, final float[][][] g23, final float[][][] g33,
+    final float[][][] fp, final float[][][] ft)
+  {
+    final int n3 = g11.length;
+    final int n2 = g11[0].length;
+    final int n1 = g11[0][0].length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        double[][] a = new double[3][3];
+        double[][] z = new double[3][3];
+        double[] e = new double[3];
+        for (int i2=0; i2<n2; ++i2) {
+          for (int i1=0; i1<n1; ++i1) {
+            a[0][0] = g11[i3][i2][i1];
+            a[0][1] = g12[i3][i2][i1];
+            a[0][2] = g13[i3][i2][i1];
+            a[1][0] = g12[i3][i2][i1];
+            a[1][1] = g22[i3][i2][i1];
+            a[1][2] = g23[i3][i2][i1];
+            a[2][0] = g13[i3][i2][i1];
+            a[2][1] = g23[i3][i2][i1];
+            a[2][2] = g33[i3][i2][i1];
+            Eigen.solveSymmetric33(a,z,e);
+            float u1i = (float)z[0][0];
+            float u2i = (float)z[0][1];
+            float u3i = (float)z[0][2];
+            if (u1i>0.0f) {
+              u1i = -u1i;
+              u2i = -u2i;
+              u3i = -u3i;
+            }
+            if(u2i!=0.0f && u3i!=0.0f) {
+              ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
+              fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+            }
+          }
+        }
+      }
+    });
   }
 
 
