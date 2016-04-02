@@ -107,7 +107,7 @@ public class FaultReskin {
    //RecursiveGaussianFilterP rgfv = new RecursiveGaussianFilterP(80);
    //RecursiveGaussianFilterP rgfh = new RecursiveGaussianFilterP(20);
    RecursiveExponentialFilter refv = new RecursiveExponentialFilter(80);
-   RecursiveExponentialFilter refh = new RecursiveExponentialFilter(80);
+   RecursiveExponentialFilter refh = new RecursiveExponentialFilter(20);
    refv.setEdges(RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE);
    refh.setEdges(RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE);
    float[][][] h = new float[n3][n2][n1];
