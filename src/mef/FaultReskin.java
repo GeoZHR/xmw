@@ -111,7 +111,7 @@ public class FaultReskin {
    final float[][][] g23 = new float[n3][n2][n1];
    final float[][][] g33 = new float[n3][n2][n1];
    for (int ic=0; ic<nc; ++ic) {
-     System.out.println("ic="+ic/nc);
+     System.out.println("ic="+(float)ic/(float)nc);
      FaultCell fc = cells[ic];
      float fpi = fc.fp;
      float fti = fc.ft;
