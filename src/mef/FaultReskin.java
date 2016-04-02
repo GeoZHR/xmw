@@ -79,7 +79,6 @@ public class FaultReskin {
 
  public float[][][][] faultImagesFromCells(
    int n1, int n2, int n3, FaultCell[] cells) {
-   _fcs = cells;
    float[][][] fls = new float[n3][n2][n1];
    float[][][] fps = new float[n3][n2][n1];
    float[][][] fts = new float[n3][n2][n1];
@@ -101,8 +100,10 @@ public class FaultReskin {
      g23[i3][i2][i1] = cell.w23;
      g33[i3][i2][i1] = cell.w33;
    }
+   System.out.println("assignments done...");
    RecursiveGaussianFilterP rgfl = new RecursiveGaussianFilterP(1);
    rgfl.apply000(fls,fls);
+   System.out.println("fl smoothing done...");
    RecursiveGaussianFilterP rgfv = new RecursiveGaussianFilterP(80);
    RecursiveGaussianFilterP rgfh = new RecursiveGaussianFilterP(20);
    float[][][] h = new float[n3][n2][n1];
