@@ -111,6 +111,7 @@ public class FaultReskin {
    final float[][][] g23 = new float[n3][n2][n1];
    final float[][][] g33 = new float[n3][n2][n1];
    for (int ic=0; ic<nc; ++ic) {
+     System.out.println("ic="+ic);
      FaultCell fc = cells[ic];
      float fpi = fc.fp;
      float fti = fc.ft;
@@ -136,16 +137,17 @@ public class FaultReskin {
          for (int i1=0; i1<m1; ++i1) {
            int k1 = i1+c1;
            if(k1>=0 && k1<n1) {
-           float gwi = gw[i3][i2][i1];
-           fl[k3][k2][k1]  += gwi;
-           g11[k3][k2][k1] += w11*gwi;
-           g12[k3][k2][k1] += w12*gwi;
-           g13[k3][k2][k1] += w13*gwi;
-           g22[k3][k2][k1] += w22*gwi;
-           g23[k3][k2][k1] += w23*gwi;
-           g33[k3][k2][k1] += w33*gwi;
+             float gwi = gw[i3][i2][i1];
+             fl[k3][k2][k1]  += gwi;
+             g11[k3][k2][k1] += w11*gwi;
+             g12[k3][k2][k1] += w12*gwi;
+             g13[k3][k2][k1] += w13*gwi;
+             g22[k3][k2][k1] += w22*gwi;
+             g23[k3][k2][k1] += w23*gwi;
+             g33[k3][k2][k1] += w33*gwi;
+           }
          }}
-       }}}
+       }}
      }});
    }
    solveEigenproblems(g11,g12,g13,g22,g23,g33,fp,ft);
