@@ -290,6 +290,11 @@ def goReskin():
 
   fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,sp,st,cells)
   div(fl,max(fl),fl)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   sks = fs.findSkins(cells)
   removeAllSkinFiles(fskr)
