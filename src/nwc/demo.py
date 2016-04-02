@@ -62,7 +62,7 @@ sigmaPhi,sigmaTheta = 8,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.3
+lowerLikelihood = 0.1
 upperLikelihood = 0.6
 minSkinSize = 4000
 
