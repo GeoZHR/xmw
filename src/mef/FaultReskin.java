@@ -101,9 +101,9 @@ public class FaultReskin {
    final int m3 = gws[0][0].length;
    final int m2 = gws[0][0][0].length;
    final int m1 = gws[0][0][0][0].length;
-   final int d3 = (m3-1)/2;
-   final int d2 = (m2-1)/2;
    final int d1 = (m1-1)/2;
+   final int d2 = (m2-1)/2;
+   final int d3 = (m3-1)/2;
    final float[][][] g11 = new float[n3][n2][n1];
    final float[][][] g12 = new float[n3][n2][n1];
    final float[][][] g13 = new float[n3][n2][n1];
@@ -114,20 +114,17 @@ public class FaultReskin {
      FaultCell fc = cells[ic];
      float fpi = fc.fp;
      float fti = fc.ft;
-     float w1i = fc.w1;
-     float w2i = fc.w2;
-     float w3i = fc.w3;
-     final float w11 = w1i*w1i;
-     final float w12 = w1i*w2i;
-     final float w13 = w1i*w3i;
-     final float w22 = w2i*w2i;
-     final float w23 = w2i*w3i;
-     final float w33 = w3i*w3i;
-     int it = st.indexOfNearest(fti);
-     int ip = sp.indexOfNearest(fpi);
      final int c1 = fc.i1-d1;
      final int c2 = fc.i2-d2;
      final int c3 = fc.i3-d3;
+     final float w11 = fc.w11;
+     final float w12 = fc.w12;
+     final float w13 = fc.w13;
+     final float w22 = fc.w22;
+     final float w23 = fc.w23;
+     final float w33 = fc.w33;
+     int it = st.indexOfNearest(fti);
+     int ip = sp.indexOfNearest(fpi);
      final float[][][] gw = gws[ip][it];
      loop(m3,new Parallel.LoopInt(){
      public void compute(int i3) {
@@ -140,7 +137,7 @@ public class FaultReskin {
            int k1 = i1+c1;
            if(k1>=0 && k1<n1) {
            float gwi = gw[i3][i2][i1];
-           fl[k3][k2][k1] += gwi;
+           fl[k3][k2][k1]  += gwi;
            g11[k3][k2][k1] += w11*gwi;
            g12[k3][k2][k1] += w12*gwi;
            g13[k3][k2][k1] += w13*gwi;
