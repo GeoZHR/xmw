@@ -89,10 +89,10 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReskin()
-  goSkinMerge()
-  #goSmooth()
-  #goSlip()
-  #goUnfaultS()
+  #goSkinMerge()
+  goSmooth()
+  goSlip()
+  goUnfaultS()
   #goDisplay()
   #goFaultImages()
   #gx = readImage(gxfile)
@@ -309,7 +309,7 @@ def goSkinMerge():
     writeSkins(fskr,skins)
   else:
     skins = readSkins(fskr)
-  #plot3(gx,skins=skins)
+  plot3(gx,skins=skins)
 
 
 def goReskin(): 
@@ -410,18 +410,14 @@ def goSmooth():
   fsigma = 8.0
   fl = readImage(flfile)
   gx = readImage(gxfile)
-  #skins = readSkins(fsktv)
-  skins = readSkins(fskbase)
+  skins = readSkins(fskr)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
   p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
   writeImage(gsxfile,gsx)
-  plot3(gsx,png="gsx")
+  #plot3(gsx,png="gsx")
 
 def goSlip():
   print "goSlip ..."
@@ -446,12 +442,12 @@ def goSlip():
     print ", after =",len(skins)
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
-    '''
     smark = -999.999
     s1,s2,s3 = fsl.getDipSlips(skins,smark)
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
     gw = fsl.unfault([s1,s2,s3],gx)
     writeImage(gwfile,gw)
+    '''
     writeImage(fs1file,s1)
     writeImage(fs2file,s2)
     writeImage(fs3file,s3)
@@ -475,6 +471,7 @@ def goSlip():
   '''
 
 def goUnfaultS():
+  print "goUnfault ..."
   gx = readImage(gxfile)
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
@@ -484,7 +481,6 @@ def goUnfaultS():
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
-    skins = [skins[12]]
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
     mul(sp[3][0],10,sp[3][0])
@@ -500,12 +496,12 @@ def goUnfaultS():
     writeImage(sw2file,t2)
     writeImage(sw3file,t3)
   else :
-    fw = readImage(fwsfile)
     gw = readImage(gwfile)
+    fw = readImage(fwsfile)
+  '''
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
   plot3(gw,png="fwuf")
-  '''
   skins = readSkins(fslbase)
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)
