@@ -270,7 +270,6 @@ def goSkinMerge():
     fs.setMinSkinSize(minSkinSize)
 
     fr = FaultReskin()
-    '''
     sks1 = [skins[5 ]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks1)
     fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
@@ -278,7 +277,6 @@ def goSkinMerge():
     cells = fs.findCells([fl,fp,ft])
     skt = fs.findSkins(cells)
     skins[5] = skt[0]
-    '''
 
     sks2 = [skins[1 ],skins[3]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks2)
@@ -289,7 +287,6 @@ def goSkinMerge():
     skins[1] = skt[0]
     skins[3] = skt[0]
 
-    '''
     sks3 = [skins[7 ],skins[9]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks3)
     fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
@@ -307,10 +304,9 @@ def goSkinMerge():
     skt = fs.findSkins(cells)
     skins[6] = skt[0]
     skins[11] = skt[0]
-    '''
 
     removeAllSkinFiles(fskr)
-    writeSkins(fskr,skt)
+    writeSkins(fskr,skins)
   else:
     skins = readSkins(fskr)
   #plot3(gx,skins=skins)
