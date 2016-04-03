@@ -426,8 +426,7 @@ def goSlip():
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    #skins = readSkins(fsktv)
-    skins = readSkins(fskbase)
+    skins = readSkins(fskr)
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error
