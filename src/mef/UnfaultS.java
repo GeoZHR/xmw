@@ -232,7 +232,7 @@ public class UnfaultS {
       VecArrayFloat4 v4y = (VecArrayFloat4)vy;
       VecArrayFloat4 v4z = v4x.clone();
       v4y.zero();
-      //float[][][][] x = v4x.getArray();
+      float[][][][] x = v4x.getArray();
       float[][][][] y = v4y.getArray();
       float[][][][] z = v4z.getArray();
       _smoother.applyOriginal(z);
@@ -240,9 +240,9 @@ public class UnfaultS {
       if(_sp!=null) {
         screenLhs(_sp[0],_sp[1],_sp[3][0],z,y);
       }
-      //add(-_sc,z,y);
+      add(-_sc,z,y);
       _smoother.applyTranspose(y);
-      //add(_sc,x,y);
+      add(_sc,x,y);
     }
 
     private float _sc;

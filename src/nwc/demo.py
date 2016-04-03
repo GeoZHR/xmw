@@ -70,7 +70,7 @@ minSkinSize = 4000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 85.0
+maxThrow = 30.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -90,7 +90,7 @@ def main(args):
   #goSkinTv()
   #goReskin()
   #goSkinMerge()
-  goSmooth()
+  #goSmooth()
   goSlip()
   goUnfaultS()
   #goDisplay()
@@ -98,6 +98,16 @@ def main(args):
   #gx = readImage(gxfile)
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
+  '''
+  gx = readImage(gxfile)
+  gw = readImage(gwfile)
+  fw = readImage(fwsfile)
+  gw = gain(gw)
+  fw = gain(fw)
+  plot3(gx)
+  plot3(gw)
+  plot3(fw)
+  '''
 def goDisplay():
   gx = readImage(gxfile)
   zm = ZeroMask(0.01,0,0,0,gx)
@@ -717,11 +727,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(150,5,56)
-  #ipg.setSlices(85,5,43)
-  #ipg.setSlices(85,5,102)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
-  ipg.setSlices(n1,376,308)
+  ipg.setSlices(508,166,96)
   if cbar:
     sf.setSize(1037,700)
   else:
@@ -733,7 +739,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
+  ov.setScale(2.0)
   #ov.setScale(2.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,-0.00,-0.05))
