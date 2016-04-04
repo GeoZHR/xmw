@@ -36,6 +36,8 @@ fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
 fskr = "fsr" # fault skin (basename only)
+fskc = "fsc" # fault skin (basename only)
+fskf = "fsf" # fault skin (basename only)
 fwsfile = "fws" # unfaulted image
 sw1file = "sw1" # 1st component of unfaulting shifts
 sw2file = "sw2" # 2nd component of unfaulting shifts
@@ -103,7 +105,8 @@ def main(args):
   #goPSS()
   #goFaultSlopes()
   #goFaultSurfer()
-  goSkinMerge()
+  #goSkinMerge()
+  goFillHoles()
   #goTest()
   #gw = readImage(gwfile)
   #gw = gain(gw)
@@ -118,18 +121,19 @@ def main(args):
 
 def goTest1():
   gx = readImage(gxfile)
-  sk = readSkins(fskbase)
+  sk = readSkins(fskr)
   fr = FaultReskin()
-  fcs = fr.getCells(n1,n2,n3,sk[1])
+  fcs = fr.getCells(sk[0])
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fs.setMaxDeltaStrike(10)
   fs.setMaxPlanarDistance(0.2)
-  fs.setMinSkinSize(500)
+  fs.setMinSkinSize(2000)
   skins = fs.findSkins(fcs)
-  print len(skins)
-  plot3(gx,skins=skins)
-  plot3(gx,skins=[sk[1]])
+  removeAllSkinFiles(fskc)
+  writeSkins(fskc,[skins[0]])
+  sks = readSkins(fskc)
+  plot3(gx,skins=sks)
 
 
 def goTest():
@@ -149,6 +153,35 @@ def goTest():
   plot3(gx,cells=cells)
   plot3(gx,skins=skins)
 
+
+def goFillHoles():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    skins = readSkins(fskc)
+    fsc = FaultScanner(sigmaPhi,sigmaTheta)
+    sp = fsc.makePhiSampling(minPhi,maxPhi)
+    st = fsc.makeThetaSampling(minTheta,maxTheta)
+
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.2)
+    fs.setMinSkinSize(minSkinSize)
+
+    k = 0
+    fr = FaultReskin()
+    for sk in skins:
+      cells = FaultSkin.getCells(sk)
+      fl,fp,ft = fr.faultImagesFromCellsJake(n1,n2,n3,cells)
+      div(fl,max(fl),fl)
+      cells = fs.findCells([fl,fp,ft])
+      skt = fs.findSkins(cells)
+      skins[k] = skt[0]
+      k = k+1
+    removeAllSkinFiles(fskf)
+    writeSkins(fskf,skt)
+  else:
+    skins = readSkins(fskf)
 
 def goSkinMerge():
   gx = readImage(gxfile)
