@@ -61,6 +61,19 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     return cells;
   }
 
+  public static FaultCell[] getCellsX(FaultSkin[] skins) {
+    int ncell = countCells(skins);
+    FaultCell[] cells = new FaultCell[ncell];
+    int icell = 0;
+    for (FaultSkin skin:skins)
+      for (FaultCell cell:skin){
+        cell.skin = null;
+        cells[icell++] = cell;
+      }
+    return cells;
+  }
+
+
   public static void setCells(FaultSkin[] skins, float[][][] fl) {
     for (FaultSkin skin:skins){
     for (FaultCell cell:skin) {

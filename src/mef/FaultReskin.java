@@ -26,6 +26,170 @@ public class FaultReskin {
    return sf;
  }
 
+ public FaultCell[] getCells2(int n1, int n2, int n3, FaultCell[] cells) {
+   FaultCell[][][] ca = new FaultCell[n3][n2][n1];
+   for (FaultCell cell:cells) {
+     int i1 = cell.i1;
+     int i2 = cell.i2;
+     int i3 = cell.i3;
+     ca[i3][i2][i1] = cell;
+   }
+
+   ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+   for (int i3=0; i3<n3; ++i3) {
+   for (int i2=488; i2<n2; ++i2) {
+   for (int i1=0; i1<n1; ++i1) {
+     FaultCell cell = ca[i3][i2][i1];
+     if (cell!=null) {
+       float x1 = cell.x1;
+       float x2 = cell.x2;
+       float x3 = cell.x3;
+       float w1 = cell.w1;
+       float w2 = cell.w2;
+       float w3 = cell.w3;
+       boolean fd = false;
+       boolean bd = false;
+       for (float d=0.1f; d<40; d +=0.1f) {
+         int k1 = round(x1-w1*d); if(k1<0){k1=0;} if(k1>=n1){k1=n1-1;}
+         int k2 = round(x2-w2*d); if(k2<0){k2=0;} if(k2>=n2){k2=n2-1;}
+         int k3 = round(x3-w3*d); if(k3<0){k3=0;} if(k3>=n3){k3=n3-1;}
+         if(k1!=i1&&k2!=i2&&k3!=i3&&ca[k3][k2][k1]!=null) {
+           fd=true;
+           continue;
+         }
+       }
+       if(!fd) {
+         for (float d=0.1f; d<40; d +=0.1f) {
+           int k1 = round(x1+w1*d); if(k1<0){k1=0;} if(k1>=n1){k1=n1-1;}
+           int k2 = round(x2+w2*d); if(k2<0){k2=0;} if(k2>=n2){k2=n2-1;}
+           int k3 = round(x3+w3*d); if(k3<0){k3=0;} if(k3>=n3){k3=n3-1;}
+           if(k1!=i1&&k2!=i2&&k3!=i3&&ca[k3][k2][k1]!=null) {
+             bd=true;
+             continue;
+           }
+         }
+       }
+       if(!fd && bd){continue;}
+       fcl.add(cell);
+     }
+   }}}
+   for (int i3=0; i3<n3; ++i3) {
+   for (int i2=0; i2<488; ++i2) {
+   for (int i1=0; i1<n1; ++i1) {
+     FaultCell cell = ca[i3][i2][i1];
+     if (cell!=null) {
+       fcl.add(cell);
+     }
+   }}}
+   return fcl.toArray(new FaultCell[0]);
+ }
+
+
+ public FaultCell[] getCells(int n1, int n2, int n3, FaultSkin skin) {
+   FaultCell[][][] ca = new FaultCell[n3][n2][n1];
+   ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+   for (FaultCell cell:skin) {
+     int i1 = cell.i1;
+     int i2 = cell.i2;
+     int i3 = cell.i3;
+     cell.skin = null;
+     cell.ca = null;
+     cell.cb = null;
+     cell.cl = null;
+     cell.cr = null;
+     if(i3<=320&&cell.fl>0.5f) {
+       ca[i3][i2][i1] = cell;
+     }
+   }
+   for (int i3=0; i3<n3; ++i3) {
+   for (int i2=644; i2<n2; ++i2) {
+   for (int i1=0; i1<n1; ++i1) {
+     FaultCell cell = ca[i3][i2][i1];
+     if (cell!=null) {
+       float x1 = cell.x1;
+       float x2 = cell.x2;
+       float x3 = cell.x3;
+       float w1 = cell.w1;
+       float w2 = cell.w2;
+       float w3 = cell.w3;
+       boolean fd = false;
+       boolean bd = false;
+       for (float d=0.1f; d<40; d +=0.1f) {
+         int k1 = round(x1+w1*d); if(k1<0){k1=0;} if(k1>=n1){k1=n1-1;}
+         int k2 = round(x2+w2*d); if(k2<0){k2=0;} if(k2>=n2){k2=n2-1;}
+         int k3 = round(x3+w3*d); if(k3<0){k3=0;} if(k3>=n3){k3=n3-1;}
+         if(k1!=i1&&k2!=i2&&k3!=i3&&ca[k3][k2][k1]!=null) {
+           fd=true;
+           continue;
+         }
+       }
+       if(!fd) {
+         for (float d=0.1f; d<40; d +=0.1f) {
+           int k1 = round(x1-w1*d); if(k1<0){k1=0;} if(k1>=n1){k1=n1-1;}
+           int k2 = round(x2-w2*d); if(k2<0){k2=0;} if(k2>=n2){k2=n2-1;}
+           int k3 = round(x3-w3*d); if(k3<0){k3=0;} if(k3>=n3){k3=n3-1;}
+           if(k1!=i1&&k2!=i2&&k3!=i3&&ca[k3][k2][k1]!=null) {
+             bd=true;
+             continue;
+           }
+         }
+       }
+       if(!fd && bd){continue;}
+       fcl.add(cell);
+     }
+   }}}
+   for (int i3=0; i3<n3; ++i3) {
+   for (int i2=0; i2<644; ++i2) {
+   for (int i1=0; i1<n1; ++i1) {
+     FaultCell cell = ca[i3][i2][i1];
+     if (cell!=null) {
+       fcl.add(cell);
+     }
+   }}}
+   return getCells2(n1,n2,n3,fcl.toArray(new FaultCell[0]));
+ }
+
+ public FaultCell[] cutBranches(int n1, int n2, int n3, FaultSkin skin) {
+   FaultCell[][][] ca = new FaultCell[n3][n2][n1];
+   ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+   for (FaultCell cell:skin) {
+     int i1 = cell.i1;
+     int i2 = cell.i2;
+     int i3 = cell.i3;
+     cell.skin = null;
+     cell.ca = null;
+     cell.cb = null;
+     cell.cl = null;
+     cell.cr = null;
+     ca[i3][i2][i1] = cell;
+   }
+   for (int i3=320; i3<n3; ++i3) {
+   for (int i2=0; i2<n2; ++i2) {
+   for (int i1=0; i1<n1; ++i1) {
+     FaultCell cell = ca[i3][i2][i1];
+     if (cell!=null) {
+       float x1 = cell.x1;
+       float x2 = cell.x2;
+       float x3 = cell.x3;
+       float w1 = cell.w1;
+       float w2 = cell.w2;
+       float w3 = cell.w3;
+       boolean overlap = false;
+       for (float d=0.1f; d<40; d +=0.1f) {
+         int k1 = round(x1+w1*d); if(k1<0){k1=0;} if(k1>=n1){k1=n1-1;}
+         int k2 = round(x2+w2*d); if(k2<0){k2=0;} if(k2>=n2){k2=n2-1;}
+         int k3 = round(x3+w3*d); if(k3<0){k3=0;} if(k3>=n3){k3=n3-1;}
+         if(k1!=i1&&k2!=i2&&k3!=i3&&ca[k3][k2][k1]!=null) {
+           overlap=true;
+           continue;
+         }
+       }
+       if(!overlap) {fcl.add(cell);}
+     }
+   }}}
+   return fcl.toArray(new FaultCell[0]);
+ }
+
  public FaultSkin[] reskin(int m1, int m2, FaultSkin skin) {
    ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
    for (FaultCell cell:skin) {
@@ -102,7 +266,7 @@ public class FaultReskin {
      g33[i3][i2][i1] = cell.w33*fli;
    }
    System.out.println("assignments done...");
-   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(1);
+   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(10);
    rgf1.apply000(fls,fls);
    System.out.println("fl smoothing done...");
    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(10);

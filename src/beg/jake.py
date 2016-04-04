@@ -90,8 +90,8 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
-  goSlip()
+  #goSmooth()
+  #goSlip()
   #goUnfaultS()
   #goFlattenWeights()
   #goHorizonExtraction1()
@@ -103,10 +103,46 @@ def main(args):
   #goPSS()
   #goFaultSlopes()
   #goFaultSurfer()
-  #gx = readImage(gxfile)
-  #sk = readSkins(fskr)
-  #plot3(gx,skins=sk)
-  #goSkinMerge()
+  goSkinMerge()
+  #goTest()
+  #gw = readImage(gwfile)
+  #gw = gain(gw)
+  #plot3(gw)
+  #goTest1()
+
+def goTest1():
+  gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  fr = FaultReskin()
+  fcs = fr.getCells(n1,n2,n3,sk[1])
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(500)
+  skins = fs.findSkins(fcs)
+  print len(skins)
+  plot3(gx,skins=skins)
+  plot3(gx,skins=[sk[1]])
+
+
+def goTest():
+  gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  fr = FaultReskin()
+  fcs = FaultSkin.getCells([sk[1]])
+  cells = fr.cutBranches(n1,n2,n3,sk[1])
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(500)
+  skins = fs.findSkins(cells)
+  print len(skins)
+  plot3(gx,cells=fcs)
+  plot3(gx,cells=cells)
+  plot3(gx,skins=skins)
+
 
 def goSkinMerge():
   gx = readImage(gxfile)
@@ -760,8 +796,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-0.5,0.5)
+      ipg.setClips(-2.0,2.0)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)

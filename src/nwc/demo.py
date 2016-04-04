@@ -121,9 +121,16 @@ def goResults():
   gw = gain(gw)
   gu = gain(gu)
   plot3(gx)
-  plot3(gx,skins=sk)
+  flt = zerofloat(n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFls(sk,flt)
+  plot3(gx,flt,skins=sk,clab="Fault likelihood")
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood")
   plot3(gw)
   plot3(gu)
+
+
 def goTest():
   gx = readImage(gxfile)
   gw = readImage(fwsfile)
