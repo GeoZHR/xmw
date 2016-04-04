@@ -100,6 +100,7 @@ def main(args):
   #plot3(gx,skins=sk)
   #goTest()
   #goFlatten()
+  '''
   gu1 = readImage(gtfile)
   gu2 = readImage(gufile)
   zm = ZeroMask(0.10,1,1,1,gu2)
@@ -109,7 +110,8 @@ def main(args):
   zm.setValue(zero,gu2)
   plot3(gu1)
   plot3(gu2)
-  #goResults()
+  '''
+  goResults()
 def goResults():
   gx = readImage(gxfile)
   gw = readImage("fws1")
@@ -778,23 +780,23 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(450,90,40)
+  ipg.setSlices(450,530,393)
   if cbar:
-    sf.setSize(1037,700)
+    sf.setSize(1037,900)
   else:
-    sf.setSize(900,700)
+    sf.setSize(900,900)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(2.0)
+  ov.setScale(1.5)
   #ov.setScale(2.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.00,-0.05))
-  ov.setAzimuthAndElevation(45.0,35.0)
+  ov.setTranslate(Vector3(0.0,-0.00,-0.01))
+  ov.setAzimuthAndElevation(225.0,35.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:

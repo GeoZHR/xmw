@@ -90,8 +90,8 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  #goSmooth()
-  #goSlip()
+  goSmooth()
+  goSlip()
   #goUnfaultS()
   #goFlattenWeights()
   #goHorizonExtraction1()
@@ -104,9 +104,9 @@ def main(args):
   #goFaultSlopes()
   #goFaultSurfer()
   #gx = readImage(gxfile)
-  #sk = readSkins(fskbase)
+  #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
-  goSkinMerge()
+  #goSkinMerge()
 
 def goSkinMerge():
   gx = readImage(gxfile)
@@ -369,11 +369,11 @@ def goSmooth():
   fsigma = 8.0
   fl = readImage(flfile)
   gx = readImage(gxfile)
-  skins = readSkins(fskgood)
+  skins = readSkins(fskr)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
-  p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
+  p2,p3,ep = FaultScanner.slopes(16.0,2.0,2.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -392,10 +392,9 @@ def goSlip():
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fskgood)
+    skins = readSkins(fskr)
     fsl = FaultSlipper(gsx,p2,p3)
-    fsl.setOffset(3.0) # the default is 2.0 samples
-    fsl.setZeroSlope(False) # True only if we want to show the error
+    fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.computeDipSlips(skins,minThrow,maxThrow)
     print "  dip slips computed, now reskinning ..."
     print "  number of skins before =",len(skins),
@@ -407,7 +406,6 @@ def goSlip():
     print ", after =",len(skins)
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
-    '''
     smark = -999.999
     s1,s2,s3 = fsl.getDipSlips(skins,smark)
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
@@ -416,7 +414,6 @@ def goSlip():
     writeImage(fs1file,s1)
     writeImage(fs2file,s2)
     writeImage(fs3file,s3)
-    '''
   else:
     gw = readImage(gwfile)
     #s1 = readImage(fs1file)
