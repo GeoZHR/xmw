@@ -72,7 +72,7 @@ minSkinSize = 10000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 85.0
+maxThrow = 185.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -109,10 +109,12 @@ def main(args):
   #gw = gain(gw)
   #plot3(gw)
   #goTest1()
-  #gx = readImage(gxfile)
-  #sk = readSkins(fskr)
-  #plot3(gx)
-  #plot3(gx,skins=sk)
+  '''
+  gx = readImage(gxfile)
+  sk = readSkins(fskr)
+  plot3(gx)
+  plot3(gx,skins=sk)
+  '''
 
 def goTest1():
   gx = readImage(gxfile)
@@ -151,7 +153,7 @@ def goTest():
 def goSkinMerge():
   gx = readImage(gxfile)
   if not plotOnly:
-    skins = readSkins(fskr)
+    skins = readSkins(fskbase)
     fsc = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fsc.makePhiSampling(minPhi,maxPhi)
     st = fsc.makeThetaSampling(minTheta,maxTheta)
@@ -163,7 +165,7 @@ def goSkinMerge():
     fs.setMinSkinSize(minSkinSize)
 
     fr = FaultReskin()
-    sks1 = skins#[skins[1 ]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
+    sks1 = [skins[1 ]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks1)
     fl,fp,ft = fr.faultImagesFromCellsJake(n1,n2,n3,cells)
     div(fl,max(fl),fl)
