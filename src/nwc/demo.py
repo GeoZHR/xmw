@@ -91,23 +91,51 @@ def main(args):
   #goReskin()
   #goSkinMerge()
   #goSmooth()
-  goSlip()
-  goUnfaultS()
+  #goSlip()
+  #goUnfaultS()
   #goDisplay()
   #goFaultImages()
   #gx = readImage(gxfile)
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
+  #goTest()
+  goFlatten()
   '''
+  gu1 = readImage(gtfile)
+  gu2 = readImage(gufile)
+  zm = ZeroMask(0.10,1,1,1,gu2)
+  gu1 = gain(gu1)
+  gu2 = gain(gu2)
+  zero,tiny=0.0,0.01
+  zm.setValue(zero,gu2)
+  plot3(gu1)
+  plot3(gu2)
+  '''
+  goResults()
+def goResults():
   gx = readImage(gxfile)
-  gw = readImage(gwfile)
-  fw = readImage(fwsfile)
+  gw = readImage("fws1")
+  gu = readImage(gufile)
+  sk = readSkins(fskr)
+  gx = gain(gx)
   gw = gain(gw)
-  fw = gain(fw)
+  gu = gain(gu)
+  plot3(gx)
+  plot3(gx,skins=sk)
+  plot3(gw)
+  plot3(gu)
+def goTest():
+  gx = readImage(gxfile)
+  gw = readImage(fwsfile)
+  gw1 = readImage("fws1")
+  gw = gain(gw)
+  gw1 = gain(gw1)
+  zm = ZeroMask(0.10,1,1,1,gx)
+  zero,tiny=0.0,0.01
+  zm.setValue(zero,gw1)
   plot3(gx)
   plot3(gw)
-  plot3(fw)
-  '''
+  plot3(gw1)
 def goDisplay():
   gx = readImage(gxfile)
   zm = ZeroMask(0.01,0,0,0,gx)
@@ -524,6 +552,31 @@ def goUnfaultS():
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3i")
   '''
+def goFlatten():
+  fx = readImage("fws1")
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(4.0,2.0)
+  lsf.findSlopes(fx,p2,p3,ep);
+  zm = ZeroMask(0.10,1,1,1,fx)
+  zero,tiny=0.0,0.001
+  zm.setValue(zero,p2)
+  zm.setValue(zero,p3)
+  zm.setValue(tiny,ep)
+  ep = pow(ep,4)
+  fl = Flattener3()
+  fl.setIterations(0.01,300)
+  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+  gt = fm.flatten(fx)
+  writeImage(gtfile,gt)
+  #writeImage(gufile,gt)
+  gt = readImage(gtfile)
+  fx = gain(fx)
+  gt = gain(gt)
+  plot3(fx)
+  plot3(gt)
+
 
 def like(x):
   n3 = len(x)
@@ -727,7 +780,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(508,166,96)
+  ipg.setSlices(450,90,40)
   if cbar:
     sf.setSize(1037,700)
   else:

@@ -310,6 +310,7 @@ public class Flattener3 {
       _wp = wp;
       _p2 = p2;
       _p3 = p3;
+      _sc = 0.0002f;
       //testSpd();
     }
     public void apply(Vec vx, Vec vy) {
@@ -318,11 +319,14 @@ public class Flattener3 {
       float[][][] x = v3x.getArray();
       float[][][] y = v3y.getArray();
       float[][][] z = copy(x);
+      v3y.zero();
       _s3.apply(z);
-      zero(y);
+      //addAndScale(-_sc,z,y);
       applyLhs(_w1,_wp,_p2,_p3,z,y);
       _s3.applyTranspose(y);
+      //addAndScale( _sc,x,y);
     }
+    private float _sc;
     private Smoother3 _s3;
     private float _w1;
     private float[][][] _wp;
@@ -352,6 +356,17 @@ public class Flattener3 {
       System.out.println("A3: xax="+xax+" yay="+yay);
     }
   }
+  private static void addAndScale(float sc, float[][][] x, float[][][] y) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      y[i3][i2][i1] += sc*x[i3][i2][i1];
+    }}}
+  }
+
 
   // Smoother used as a preconditioner. After smoothing, enforces zero-shift
   // boundary conditions at top and bottom.
@@ -449,7 +464,7 @@ public class Flattener3 {
     if (sigma<=0.0f)
       return;
     RecursiveExponentialFilter.Edges edges =
-      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_VALUE;
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
     ref.setEdges(edges);
     ref.apply1(x,x);
