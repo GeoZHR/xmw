@@ -78,7 +78,7 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -86,7 +86,7 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goSkinTv()
   #goReSkin()
   #goSmooth()
@@ -99,14 +99,12 @@ def main(args):
   #goFlattenC()
   #goDisplaySeis()
   #goDisplayHors()
-  goPSS()
+  #goPSS()
   #goFaultSlopes()
   #goFaultSurfer()
-  '''
-  gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  plot3(gx,skins=sk)
-  '''
+  #gx = readImage(gxfile)
+  #sk = readSkins(fskbase)
+  #plot3(gx,skins=sk)
 
 def goFaultSlopes():
   #gx = readImage(gxfile)
@@ -271,24 +269,6 @@ def goThin():
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   '''
-
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
 
 def goSkin():
   print "goSkin ..."
