@@ -35,6 +35,7 @@ fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
+fskr = "fsr" # fault skin (basename only)
 fwsfile = "fws" # unfaulted image
 sw1file = "sw1" # 1st component of unfaulting shifts
 sw2file = "sw2" # 2nd component of unfaulting shifts

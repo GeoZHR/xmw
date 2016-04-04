@@ -99,8 +99,7 @@ def main(args):
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
   #goTest()
-  goFlatten()
-  '''
+  #goFlatten()
   gu1 = readImage(gtfile)
   gu2 = readImage(gufile)
   zm = ZeroMask(0.10,1,1,1,gu2)
@@ -110,8 +109,7 @@ def main(args):
   zm.setValue(zero,gu2)
   plot3(gu1)
   plot3(gu2)
-  '''
-  goResults()
+  #goResults()
 def goResults():
   gx = readImage(gxfile)
   gw = readImage("fws1")
