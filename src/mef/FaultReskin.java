@@ -76,6 +76,90 @@ public class FaultReskin {
    return new float[][][][]{fl,fp,ft};
  }
 
+ public float[][][][] faultImagesFromCellsJake(
+   int n1, int n2, int n3, FaultCell[] cells) {
+   setCells(cells);
+   float[][][] fls = new float[_n3][_n2][_n1];
+   float[][][] fps = new float[_n3][_n2][_n1];
+   float[][][] fts = new float[_n3][_n2][_n1];
+   float[][][] g11 = new float[_n3][_n2][_n1];
+   float[][][] g12 = new float[_n3][_n2][_n1];
+   float[][][] g13 = new float[_n3][_n2][_n1];
+   float[][][] g22 = new float[_n3][_n2][_n1];
+   float[][][] g23 = new float[_n3][_n2][_n1];
+   float[][][] g33 = new float[_n3][_n2][_n1];
+   for (FaultCell cell:cells) {
+     float fli = cell.fl;
+     int i1 = cell.i1-_j1;
+     int i2 = cell.i2-_j2;
+     int i3 = cell.i3-_j3;
+     fls[i3][i2][i1] = fli;
+     g11[i3][i2][i1] = cell.w11*fli;
+     g12[i3][i2][i1] = cell.w12*fli;
+     g13[i3][i2][i1] = cell.w13*fli;
+     g22[i3][i2][i1] = cell.w22*fli;
+     g23[i3][i2][i1] = cell.w23*fli;
+     g33[i3][i2][i1] = cell.w33*fli;
+   }
+   System.out.println("assignments done...");
+   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(1);
+   rgf1.apply000(fls,fls);
+   System.out.println("fl smoothing done...");
+   RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(10);
+   float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+   for (float[][][] g:gs) {
+     rgf2.apply000(g,g);
+   }
+   System.out.println("gaussian smoothing done...");
+   float[][][] w1 = new float[_n3][_n2][_n1];
+   float[][][] w2 = new float[_n3][_n2][_n1];
+   float[][][] u1 = new float[_n3][_n2][_n1];
+   float[][][] u2 = new float[_n3][_n2][_n1];
+   float[][][] u3 = new float[_n3][_n2][_n1];
+   solveEigenproblems(g11,g12,g13,g22,g23,g33,w1,w2,u1,u2,u3);
+   // Compute u1 such that u3 > 0.
+   for (int i3=0; i3<_n3; ++i3) {
+     for (int i2=0; i2<_n2; ++i2) {
+       for (int i1=0; i1<_n1; ++i1) {
+         float u1i = u2[i3][i2][i1];
+         float u2i = u2[i3][i2][i1];
+         float u3i = u3[i3][i2][i1];
+         float u1s = 1.0f-u2i*u2i-u3i*u3i;
+         u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
+         if (u3i<0.0f) {
+           u1i = -u1i;
+           u2i = -u2i;
+         }
+         u1[i3][i2][i1] = u1i;
+         u2[i3][i2][i1] = u2i;
+       }
+     }
+   }
+   System.out.println("eigentensors done...");
+   float[][][] eu = fillfloat(0.01f,_n1,_n2,_n3);
+   float[][][] ev = fillfloat(1.00f,_n1,_n2,_n3);
+   float[][][] ew = fillfloat(1.00f,_n1,_n2,_n3);
+   EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+   LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+   lsf.apply(et,200,fls,fls);
+   computeStrikeDip(fls,fps,fts);
+   System.out.println("structure-oriented smoothing done...");
+   float[][][] fl = new float[n3][n2][n1];
+   float[][][] fp = new float[n3][n2][n1];
+   float[][][] ft = new float[n3][n2][n1];
+   for (int i3=0; i3<_n3; ++i3) {
+   for (int i2=0; i2<_n2; ++i2) {
+   for (int i1=0; i1<_n1; ++i1) {
+     int k1 = i1+_j1;
+     int k2 = i2+_j2;
+     int k3 = i3+_j3;
+     fl[k3][k2][k1] = fls[i3][i2][i1];
+     fp[k3][k2][k1] = fps[i3][i2][i1];
+     ft[k3][k2][k1] = fts[i3][i2][i1];
+   }}}
+   return new float[][][][]{fl,fp,ft};
+ }
+
 
  public float[][][][] faultImagesFromCells(
    int n1, int n2, int n3, FaultCell[] cells) {
