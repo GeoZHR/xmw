@@ -257,7 +257,7 @@ public class FaultReskin {
      int i1 = cell.i1-_j1;
      int i2 = cell.i2-_j2;
      int i3 = cell.i3-_j3;
-     fls[i3][i2][i1] = fli;
+     fls[i3][i2][i1] = 1f;
      g11[i3][i2][i1] = cell.w11*fli;
      g12[i3][i2][i1] = cell.w12*fli;
      g13[i3][i2][i1] = cell.w13*fli;
@@ -266,7 +266,7 @@ public class FaultReskin {
      g33[i3][i2][i1] = cell.w33*fli;
    }
    System.out.println("assignments done...");
-   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(10);
+   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(1);
    rgf1.apply000(fls,fls);
    System.out.println("fl smoothing done...");
    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(10);

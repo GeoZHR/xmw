@@ -109,6 +109,10 @@ def main(args):
   #gw = gain(gw)
   #plot3(gw)
   #goTest1()
+  #gx = readImage(gxfile)
+  #sk = readSkins(fskr)
+  #plot3(gx)
+  #plot3(gx,skins=sk)
 
 def goTest1():
   gx = readImage(gxfile)
@@ -147,7 +151,7 @@ def goTest():
 def goSkinMerge():
   gx = readImage(gxfile)
   if not plotOnly:
-    skins = readSkins(fskbase)
+    skins = readSkins(fskr)
     fsc = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fsc.makePhiSampling(minPhi,maxPhi)
     st = fsc.makeThetaSampling(minTheta,maxTheta)
@@ -159,7 +163,7 @@ def goSkinMerge():
     fs.setMinSkinSize(minSkinSize)
 
     fr = FaultReskin()
-    sks1 = [skins[1 ]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
+    sks1 = skins#[skins[1 ]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks1)
     fl,fp,ft = fr.faultImagesFromCellsJake(n1,n2,n3,cells)
     div(fl,max(fl),fl)
@@ -796,7 +800,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-2.0,2.0)
+      ipg.setClips(-0.5,0.5)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
