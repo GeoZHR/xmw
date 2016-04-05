@@ -449,9 +449,11 @@ def goSlip():
     skins = readSkins(fsfbase)
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
-    fsl.computeDipSlips(skins,minThrow,maxThrow)
+    fsl.computeDipSlips(skins,0,50)
     fsl.setOffset(3.0) # the default is 2.0 samples
-    fsl.computeDipSlips([skins[49]],0,150)
+    sks = readSkins(fsfbase)
+    fsl.computeDipSlips(sks,0,150)
+    skins[49] = sks[49]
     print "  dip slips computed, now reskinning ..."
     print "  number of skins before =",len(skins),
     '''
@@ -462,9 +464,9 @@ def goSlip():
     skins = fsk.reskin(skins)
     print ", after =",len(skins)
     '''
-    '''
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
+    '''
     smark = -999.999
     s1,s2,s3 = fsl.getDipSlips(skins,smark)
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)

@@ -112,10 +112,12 @@ def main(args):
   #goTest1()
   gx = readImage(gxfile)
   sk = readSkins(fslbase)
-  gw = readImage("gw130")
+  '''
+  gw = readImage("gw150")
   plot3(gw,cmin=-1.5,cmax=1.5)
+  '''
   plot3(gx)
-  plot3(gx,skins=sk,smax=130.0,clab="Fault throw")
+  plot3(gx,skins=sk,smax=150.0,clab="Fault throw")
 
 
 def goTest1():
