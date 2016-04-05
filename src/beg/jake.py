@@ -128,7 +128,7 @@ def goSkinBig():
   cells = FaultSkin.getCells([sk[49]])
   skt = fr.faultSkinsFromCellsJake(n1,n2,n3,cells)
   removeAllSkinFiles(fskb)
-  writeSkins(fskb,skins)
+  writeSkins(fskb,skt)
 
 def goSkinFinal():
   sk = readSkins(fskh)
