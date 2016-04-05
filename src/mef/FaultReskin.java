@@ -206,7 +206,8 @@ public class FaultReskin {
    float[][][] ew = fillfloat(1.00f,_n1,_n2,_n3);
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-   lsf.apply(et,400,fls,fls);
+   //lsf.apply(et,400,fls,fls);
+   lsf.apply(et,40,fls,fls); //
    computeStrikeDip(fls,fps,fts);
    System.out.println("structure-oriented smoothing done...");
    FaultSkinner  fs = new FaultSkinner();
