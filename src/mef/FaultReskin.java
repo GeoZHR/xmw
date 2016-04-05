@@ -70,7 +70,14 @@ public class FaultReskin {
      int i1 = cell.i1;
      int i2 = cell.i2;
      int i3 = cell.i3;
-     fca[i3][i2][i1] = cell;
+     int b2 = max(0,i2-2);
+     int b3 = max(0,i3-2);
+     int e2 = min(n2-1,i2+2);
+     int e3 = min(n3-1,i3+2);
+     for (int k3=b3; k3<=e3; ++k3) {
+     for (int k2=b2; k2<=e2; ++k2) {
+       fca[k3][k2][i1] = cell;
+     }}
      fcl.add(cell);
    }
    int nk = skins.length;
