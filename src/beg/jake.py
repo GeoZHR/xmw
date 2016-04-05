@@ -157,23 +157,14 @@ def goTest():
 def goFillHoles():
   gx = readImage(gxfile)
   if not plotOnly:
-    skins = readSkins(fskbase)
-    fsc = FaultScanner(sigmaPhi,sigmaTheta)
-    sp = fsc.makePhiSampling(minPhi,maxPhi)
-    st = fsc.makeThetaSampling(minTheta,maxTheta)
-
-    fs = FaultSkinner()
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-
     k = 0
     fr = FaultReskin()
+    skins = readSkins(fskbase)
     for sk in skins:
       print k
       cells = FaultSkin.getCells(sk)
       skt = fr.faultSkinsFromCellsJake(n1,n2,n3,cells)
+      print len(skt)
       skins[k] = skt[0]
       k = k+1
     removeAllSkinFiles(fskh)
