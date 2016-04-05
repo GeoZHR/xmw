@@ -67,7 +67,7 @@ sigmaPhi,sigmaTheta = 20,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.02
+lowerLikelihood = 0.005
 upperLikelihood = 0.6
 minSkinSize = 10000
 
@@ -157,7 +157,7 @@ def goTest():
 def goFillHoles():
   gx = readImage(gxfile)
   if not plotOnly:
-    skins = readSkins(fskc)
+    skins = readSkins(fskbase)
     fsc = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fsc.makePhiSampling(minPhi,maxPhi)
     st = fsc.makeThetaSampling(minTheta,maxTheta)
