@@ -92,8 +92,8 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
-  goSlip()
+  #goSmooth()
+  #goSlip()
   #goUnfaultS()
   #goFlattenWeights()
   #goHorizonExtraction1()
@@ -106,7 +106,7 @@ def main(args):
   #goFaultSlopes()
   #goFaultSurfer()
   #goSkinMerge()
-  #goFillHoles()
+  goFillHoles()
   #goTest()
   #gw = readImage(gwfile)
   #gw = gain(gw)
@@ -171,11 +171,9 @@ def goFillHoles():
     k = 0
     fr = FaultReskin()
     for sk in skins:
+      print k
       cells = FaultSkin.getCells(sk)
-      fl,fp,ft = fr.faultImagesFromCellsJake(n1,n2,n3,cells)
-      div(fl,max(fl),fl)
-      cells = fs.findCells([fl,fp,ft])
-      skt = fs.findSkins(cells)
+      skt = fr.faultSkinsFromCellsJake(n1,n2,n3,cells)
       skins[k] = skt[0]
       k = k+1
     removeAllSkinFiles(fskh)
