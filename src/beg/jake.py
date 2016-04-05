@@ -34,6 +34,7 @@ fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
+fsfbase = "fsa" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
 fskr = "fsr" # fault skin (basename only)
 fskc = "fsc" # fault skin (basename only)
@@ -106,12 +107,9 @@ def main(args):
   #goFaultSlopes()
   #goFaultSurfer()
   #goSkinMerge()
-  goFillHoles()
+  #goFillHoles()
   #goTest()
-  #gw = readImage(gwfile)
-  #gw = gain(gw)
-  #plot3(gw)
-  #goTest1()
+  goTest1()
   '''
   gx = readImage(gxfile)
   sk = readSkins(fskr)
@@ -120,20 +118,11 @@ def main(args):
   '''
 
 def goTest1():
-  gx = readImage(gxfile)
-  sk = readSkins(fskr)
+  sk = readSkins(fskh)
   fr = FaultReskin()
-  fcs = fr.getCells(sk[0])
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.2)
-  fs.setMinSkinSize(2000)
-  skins = fs.findSkins(fcs)
-  removeAllSkinFiles(fskc)
-  writeSkins(fskc,[skins[0]])
-  sks = readSkins(fskc)
-  plot3(gx,skins=sks)
+  skins = fr.reskinJake(n1,n2,n3,sk)
+  removeAllSkinFiles(fsfbase)
+  writeSkins(fsfbase,skins)
 
 
 def goTest():

@@ -58,6 +58,46 @@ public class FaultReskin {
    return fs.findSkins(cells);
  }
 
+ public FaultSkin[] reskinJake(int n1, int n2, int n3, FaultSkin[] skins) {
+   FaultCell[][][] fca = new FaultCell[n3][n2][n1];
+   ArrayList<FaultCell> fcl = new ArrayList<FaultCell>();
+   for (FaultCell cell:skins[1]) {
+     cell.ca = null;
+     cell.cb = null;
+     cell.cl = null;
+     cell.cr = null;
+     cell.skin = null;
+     int i1 = cell.i1;
+     int i2 = cell.i2;
+     int i3 = cell.i3;
+     fca[i3][i2][i1] = cell;
+     fcl.add(cell);
+   }
+   int nk = skins.length;
+   for (int k=0; k<nk; ++k) {
+     if(k==1) {continue;}
+     for (FaultCell cell:skins[k]) {
+       cell.ca = null;
+       cell.cb = null;
+       cell.cl = null;
+       cell.cr = null;
+       cell.skin = null;
+       int i1 = cell.i1;
+       int i2 = cell.i2;
+       int i3 = cell.i3;
+       if (fca[i3][i2][i1]==null) {
+         fcl.add(cell);
+       }
+     }
+   }
+   FaultSkinner  fs = new FaultSkinner();
+   fs.setGrowLikelihoods(0.005f,0.6f);
+   fs.setMaxDeltaStrike(10);
+   fs.setMaxPlanarDistance(0.2f);
+   fs.setMinSkinSize(10000);
+   return fs.findSkins(fcl.toArray(new FaultCell[0]));
+ }
+
  public float[][][][] rescan(
     int n1, int n2, int n3, 
     Sampling sp, Sampling st, FaultCell[] cells) 
