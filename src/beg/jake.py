@@ -110,17 +110,26 @@ def main(args):
   #goFillHoles()
   #goTest()
   #goTest1()
-  gx = readImage(gxfile)
-  sk = readSkins(fslbase)
   '''
+  gx = readImage(gxfile)
+  sk = readSkins(fsfbase)
   gw = readImage("gw150")
   plot3(gw,cmin=-1.5,cmax=1.5)
-  '''
   plot3(gx)
-  plot3(gx,skins=sk,smax=150.0,clab="Fault throw")
+  plot3(gx,skins=sk)#,smax=150.0,clab="Fault throw")
+  '''
+  goSkinBig()
 
 
-def goTest1():
+def goSkinBig():
+  fr = FaultReskin()
+  sk = readSkins(fsfbase)
+  cells = FaultSkin.getCells([sk[49]])
+  skt = fr.faultSkinsFromCellsJake(n1,n2,n3,cells)
+  removeAllSkinFiles(fskb)
+  writeSkins(fskb,skins)
+
+def goSkinFinal():
   sk = readSkins(fskh)
   fr = FaultReskin()
   skins = fr.reskinJake(n1,n2,n3,sk)
