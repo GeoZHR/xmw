@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  #goSmooth()
+  goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -419,7 +419,7 @@ def goSkinTv():
 
 def goSmooth():
   print "goSmooth ..."
-  flstop = 0.1
+  flstop = 0.005
   fsigma = 8.0
   fl = readImage(flfile)
   gx = readImage(gxfile)
