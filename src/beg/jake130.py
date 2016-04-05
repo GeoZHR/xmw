@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -458,10 +458,8 @@ def goSlip():
     fsk.setMinMaxThrow(minThrow,maxThrow)
     #skins = fsk.reskin(skins)
     print ", after =",len(skins)
-    '''
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
-    '''
     smark = -999.999
     s1,s2,s3 = fsl.getDipSlips(skins,smark)
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
