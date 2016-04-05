@@ -113,7 +113,7 @@ def main(args):
   #goTest1()
   '''
   gx = readImage(gxfile)
-  sk = readSkins(fsfbase)
+  sk = readSkins(fskb)
   gw = readImage("gw150")
   plot3(gw,cmin=-1.5,cmax=1.5)
   plot3(gx)

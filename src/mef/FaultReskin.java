@@ -166,9 +166,9 @@ public class FaultReskin {
      g33[i3][i2][i1] = cell.w33*fli;
    }
    System.out.println("assignments done...");
-   //RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(2);
-   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(4);
+   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(10);
    rgf1.apply000(fls,fls);
+   /*
    System.out.println("fl smoothing done...");
    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(10);
    float[][][][] gs = {g11,g22,g33,g12,g13,g23};
@@ -206,8 +206,8 @@ public class FaultReskin {
    float[][][] ew = fillfloat(1.00f,_n1,_n2,_n3);
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-   //lsf.apply(et,400,fls,fls);
-   lsf.apply(et,40,fls,fls); //
+   lsf.apply(et,400,fls,fls);
+   */
    computeStrikeDip(fls,fps,fts);
    System.out.println("structure-oriented smoothing done...");
    FaultSkinner  fs = new FaultSkinner();
