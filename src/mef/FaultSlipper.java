@@ -544,7 +544,7 @@ public class FaultSlipper {
       normalizeErrors(elr); // TODO: helpful?
     }
     */
-    for (int ismooth=0; ismooth<1; ++ismooth) { // TODO: how many?
+    for (int ismooth=0; ismooth<3; ++ismooth) { // TODO: how many?
       dw.smoothErrors1X(eab,eab);
       dw.smoothErrors1X(elr,elr);
     }
