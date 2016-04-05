@@ -75,7 +75,7 @@ minSkinSize = 10000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 150.0
+maxThrow = 50.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -450,14 +450,19 @@ def goSlip():
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.computeDipSlips(skins,minThrow,maxThrow)
+    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.computeDipSlips([skins[49]],0,150)
     print "  dip slips computed, now reskinning ..."
     print "  number of skins before =",len(skins),
+    '''
     fsk = FaultSkinner() # as in goSkin
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMinSkinSize(minSkinSize)
     fsk.setMinMaxThrow(minThrow,maxThrow)
-    #skins = fsk.reskin(skins)
+    skins = fsk.reskin(skins)
     print ", after =",len(skins)
+    '''
+    '''
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
     smark = -999.999
@@ -465,6 +470,7 @@ def goSlip():
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
     gw = fsl.unfault([s1,s2,s3],gx)
     writeImage(gwfile,gw)
+    '''
     #writeImage(fs1file,s1)
     #writeImage(fs2file,s2)
     #writeImage(fs3file,s3)

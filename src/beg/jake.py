@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -110,12 +110,13 @@ def main(args):
   #goFillHoles()
   #goTest()
   #goTest1()
-  '''
   gx = readImage(gxfile)
-  sk = readSkins(fsfbase)
+  sk = readSkins(fslbase)
+  gw = readImage("gw130")
+  plot3(gw,cmin=-1.5,cmax=1.5)
   plot3(gx)
-  plot3(gx,skins=sk)
-  '''
+  plot3(gx,skins=sk,smax=130.0,clab="Fault throw")
+
 
 def goTest1():
   sk = readSkins(fskh)
@@ -421,7 +422,6 @@ def goSmooth():
   print "goSmooth ..."
   flstop = 0.1
   fsigma = 8.0
-  fl = readImage(flfile)
   gx = readImage(gxfile)
   skins = readSkins(fsfbase)
   flt = zerofloat(n1,n2,n3)
@@ -450,14 +450,18 @@ def goSlip():
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.computeDipSlips(skins,minThrow,maxThrow)
+    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.computeDipSlips([skins[49]],minThrow,maxThrow)
     print "  dip slips computed, now reskinning ..."
     print "  number of skins before =",len(skins),
+    '''
     fsk = FaultSkinner() # as in goSkin
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMinSkinSize(minSkinSize)
     fsk.setMinMaxThrow(minThrow,maxThrow)
-    #skins = fsk.reskin(skins)
+    skins = fsk.reskin(skins)
     print ", after =",len(skins)
+    '''
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
     smark = -999.999
@@ -911,7 +915,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ct = 0
     for skin in skins:
       if smax>0.0: # show fault throws
-        cmap = ColorMap(-smax,smax,ColorMap.JET)
+        cmap = ColorMap(0,smax,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
       else: # show fault likelihood
         cmap = ColorMap(0.0,1.0,ColorMap.JET)
