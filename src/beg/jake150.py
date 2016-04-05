@@ -11,7 +11,7 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-gwfile  = "gw" # input image (maybe after bilateral filtering)
+gwfile  = "gw150" # input image (maybe after bilateral filtering)
 hxfile  = "horizon"
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
@@ -75,7 +75,7 @@ minSkinSize = 10000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 185.0
+maxThrow = 150.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -110,12 +110,10 @@ def main(args):
   #goFillHoles()
   #goTest()
   #goTest1()
-  '''
   gx = readImage(gxfile)
   sk = readSkins(fsfbase)
   plot3(gx)
   plot3(gx,skins=sk)
-  '''
 
 def goTest1():
   sk = readSkins(fskh)
@@ -423,7 +421,7 @@ def goSmooth():
   fsigma = 8.0
   fl = readImage(flfile)
   gx = readImage(gxfile)
-  skins = readSkins(fsfbase)
+  skins = readSkins(fskh)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
