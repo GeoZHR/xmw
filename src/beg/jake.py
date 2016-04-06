@@ -111,27 +111,19 @@ def main(args):
   #goFillHoles()
   #goTest()
   #goTest1()
-  '''
-  gx = readImage(gxfile)
-  sk = readSkins(fskb)
-  gw = readImage("gw150")
-  plot3(gw,cmin=-1.5,cmax=1.5)
-  plot3(gx)
-  plot3(gx,skins=sk)#,smax=150.0,clab="Fault throw")
-  '''
   goSkinBig()
 
 
 def goSkinBig():
   fr = FaultReskin()
   sk = readSkins(fsfbase)
-  fcs = FaultSkin.getCells([sk[49]])
-  cells = []
-  for ic in range(0,len(fcs),8):
-    cells.append(fcs[ic])
-  skt = fr.faultSkinsFromCellsJake(n1,n2,n3,cells)
+  sks = fr.regrid(n1,n2,n3,sk[49])
   removeAllSkinFiles(fskb)
-  writeSkins(fskb,skt)
+  writeSkins(fskb,sks)
+  '''
+  gx = readImage(gxfile)
+  plot3(gx,skins=sks)
+  '''
 
 def goSkinFinal():
   sk = readSkins(fskh)
@@ -815,8 +807,8 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          horizon=None,xyz=None,cells=None,skins=None,fbs=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,png=None):
+          tg=None,horizon=None,xyz=None,cells=None,skins=None,fbs=None,
+          smax=0.0,slices=None,links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -880,6 +872,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
+  if tg:
+    tg.setColor(Color.CYAN)
+    sf.world.addChild(tg)
   if horizon:
     sd = SurfaceDisplay()
     ts = sd.horizonWithAmplitude([-0.5,0.5],horizon,f)
