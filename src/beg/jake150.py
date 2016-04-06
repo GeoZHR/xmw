@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -453,7 +453,7 @@ def goSlip():
 
     fsl.setOffset(3.0) # the default is 2.0 samples
     sks = readSkins(fsfbase)
-    fsl.computeDipSlips(sks,0,150)
+    fsl.computeDipSlips(sks,0,140)
     skins[49] = sks[49]
     print "  dip slips computed, now reskinning ..."
     print "  number of skins before =",len(skins),

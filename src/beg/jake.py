@@ -94,8 +94,8 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
-  goSlip()
+  #goSmooth()
+  #goSlip()
   #goUnfaultS()
   #goFlattenWeights()
   #goHorizonExtraction1()
@@ -113,6 +113,9 @@ def main(args):
   #goTest1()
   #goSkinBig()
 
+  gx = readImage(gxfile)
+  skins = readSkins(fslbase)
+  plot3(gx,skins=skins,smax=120,png="skinss1")
 def goSkinBig():
   fr = FaultReskin()
   sk = readSkins(fsfbase)

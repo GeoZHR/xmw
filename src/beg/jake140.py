@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlattenWeights()
