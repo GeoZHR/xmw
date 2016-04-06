@@ -28,7 +28,7 @@ public class FaultReskin {
  }
 
  //public TriangleGroup regrid(int n1, int n2, int n3, FaultSkin sk) {
- public FaultSkin[] regrid(int n1, int n2, int n3, FaultSkin sk) {
+ public float[][][] regrid(int n1, int n2, int n3, FaultSkin sk) {
    int nc = sk.size();
    FaultCell[] cells = sk.getCells();
    setCells(cells);
@@ -110,16 +110,12 @@ public class FaultReskin {
    x2a.add(1205.55f);
    fxa.add( 425.00f);
 
-
-
-
    for (float i3=_j3; i3<613; ++i3) {
    for (float i2=1010; i2<_n2+_j2-1; ++i2) {
      x2a.add(i2);
      x3a.add(i3);
      fxa.add(425f);
    }}
-
 
    int np = fxa.size();
    float[] fx = new float[np];
@@ -155,21 +151,21 @@ public class FaultReskin {
      float f1i = -1f;
      float f2i = f2[k3][k2];
      float f3i = f3[k3][k2];
-     int i1 = round(surf[k3][k2]);
-     if(i1<_j1||i1>=_n1) {continue;}
+     int k1 = round(surf[k3][k2]);
+     if(k1<_j1||k1>=_n1) {continue;}
      float fsi = sqrt(1+f2i*f2i+f3i*f3i);
      f1i /= fsi;
      f2i /= fsi;
      f3i /= fsi;
      float fmi = max(abs(f1i),abs(f2i));
      if(abs(fmi)>1f) {
-       fls[k3][k2][i1] = 1f;
-       g11[k3][k2][i1] = f1i*f1i;
-       g12[k3][k2][i1] = f1i*f2i;
-       g13[k3][k2][i1] = f1i*f3i;
-       g22[k3][k2][i1] = f2i*f2i;
-       g23[k3][k2][i1] = f2i*f3i;
-       g33[k3][k2][i1] = f3i*f3i;
+       fls[k3][k2][k1] = 1f;
+       g11[k3][k2][k1] = f1i*f1i;
+       g12[k3][k2][k1] = f1i*f2i;
+       g13[k3][k2][k1] = f1i*f3i;
+       g22[k3][k2][k1] = f2i*f2i;
+       g23[k3][k2][k1] = f2i*f3i;
+       g33[k3][k2][k1] = f3i*f3i;
      }
    }}
    System.out.println("assignments done...");
@@ -213,6 +209,8 @@ public class FaultReskin {
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
    lsf.apply(et,40,fls,fls);
+   return fls;
+   /*
    computeStrikeDip(fls,fps,fts);
    System.out.println("structure-oriented smoothing done...");
    FaultSkinner  fs = new FaultSkinner();
@@ -234,6 +232,7 @@ public class FaultReskin {
      fcs[ic] = new FaultCell(p1,p2,p3,fl,fp,ft);
    }
    return fs.findSkins(fcs);
+   */
  }
 
  public FaultCell[] getCells(FaultSkin sk) {

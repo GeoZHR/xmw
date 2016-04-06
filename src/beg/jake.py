@@ -118,9 +118,10 @@ def goSkinBig():
   fr = FaultReskin()
   sk = readSkins(fsfbase)
   sks = fr.regrid(n1,n2,n3,sk[49])
+  writeImage("fff",sks)
+  '''
   removeAllSkinFiles(fskb)
   writeSkins(fskb,sks)
-  '''
   gx = readImage(gxfile)
   plot3(gx,skins=sks)
   '''
