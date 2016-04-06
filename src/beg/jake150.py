@@ -423,7 +423,7 @@ def goSmooth():
   flstop = lowerLikelihood
   fl = readImage(flfile)
   gx = readImage(gxfile)
-  skins = readSkins(fskh)
+  skins = readSkins(fsfbase)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
