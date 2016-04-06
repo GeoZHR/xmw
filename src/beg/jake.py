@@ -112,6 +112,15 @@ def main(args):
   #goTest()
   #goTest1()
   goSkinBig()
+  '''
+  gx = readImage(gxfile)
+  fx = readImage("fff")
+  sub(fx,min(fx),fx)
+  div(fx,max(fx),fx)
+  plot3(gx,fx,cmin=0.25,cmax=1,cmap=jetRamp(1.0))
+  '''
+
+
 
 
 def goSkinBig():

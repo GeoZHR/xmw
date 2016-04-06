@@ -209,6 +209,12 @@ public class FaultReskin {
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
    lsf.apply(et,40,fls,fls);
+   float[][][] fl = new float[n3][n3][n1];
+   for (int k3=0; k3<_n3; ++k3) {
+   for (int k2=0; k2<_n2; ++k2) {
+   for (int k1=0; k1<_n1; ++k1) {
+     fl[k3+_j3][k2+_j2][k1+_j1] = fls[k3][k2][k1];
+   }}}
    return fls;
    /*
    computeStrikeDip(fls,fps,fts);
