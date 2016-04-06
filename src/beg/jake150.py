@@ -93,7 +93,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  #goSmooth()
+  goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -419,8 +419,8 @@ def goSkinTv():
 
 def goSmooth():
   print "goSmooth ..."
-  flstop = 0.005
   fsigma = 8.0
+  flstop = lowerLikelihood
   fl = readImage(flfile)
   gx = readImage(gxfile)
   skins = readSkins(fskh)
@@ -450,6 +450,7 @@ def goSlip():
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.computeDipSlips(skins,0,50)
+
     fsl.setOffset(3.0) # the default is 2.0 samples
     sks = readSkins(fsfbase)
     fsl.computeDipSlips(sks,0,150)

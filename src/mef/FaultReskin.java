@@ -28,7 +28,7 @@ public class FaultReskin {
  }
 
  //public TriangleGroup regrid(int n1, int n2, int n3, FaultSkin sk) {
- public float[][][] regrid(int n1, int n2, int n3, FaultSkin sk) {
+ public FaultSkin[] regrid(int n1, int n2, int n3, FaultSkin sk) {
    int nc = sk.size();
    FaultCell[] cells = sk.getCells();
    setCells(cells);
@@ -41,6 +41,7 @@ public class FaultReskin {
      float x2 = cell.x2;
      float x3 = cell.x3;
      if (x1>305f && x3>630f) {continue;}
+     if (x2>410f && x2<500f && x1>360) {continue;}
      if (x3>287f && x3<330f && x1>314 && x1<405) {continue;}
      x2a.add(x2);
      x3a.add(x3);
@@ -117,6 +118,7 @@ public class FaultReskin {
      fxa.add(425f);
    }}
 
+  
    int np = fxa.size();
    float[] fx = new float[np];
    float[] x2 = new float[np];
@@ -128,8 +130,6 @@ public class FaultReskin {
    }
    Sampling s2 = new Sampling(_n2,1,_j2);
    Sampling s3 = new Sampling(_n3,1,_j3);
-   //RadialInterpolator2.Biharmonic bs = new RadialInterpolator2.Biharmonic();
-   //RadialGridder2 rg = new RadialGridder2(bs,fx,x2,x3);    
    SibsonGridder2 sg2 = new SibsonGridder2(fx,x2,x3);
    float[][] surf = sg2.grid(s2,s3);
    float[][] f2 = new float[n3][n2];
@@ -153,12 +153,13 @@ public class FaultReskin {
      float f3i = f3[k3][k2];
      int k1 = round(surf[k3][k2]);
      if(k1<_j1||k1>=_n1) {continue;}
+     float f2t = f2i;
+     float f3t = f3i;
      float fsi = sqrt(1+f2i*f2i+f3i*f3i);
      f1i /= fsi;
      f2i /= fsi;
      f3i /= fsi;
-     float fmi = max(abs(f1i),abs(f2i));
-     if(abs(fmi)>1f) {
+     if(f2t>0.5f) {
        fls[k3][k2][k1] = 1f;
        g11[k3][k2][k1] = f1i*f1i;
        g12[k3][k2][k1] = f1i*f2i;
@@ -208,15 +209,7 @@ public class FaultReskin {
    float[][][] ew = fillfloat(1.00f,_n1,_n2,_n3);
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-   lsf.apply(et,40,fls,fls);
-   float[][][] fl = new float[n3][n3][n1];
-   for (int k3=0; k3<_n3; ++k3) {
-   for (int k2=0; k2<_n2; ++k2) {
-   for (int k1=0; k1<_n1; ++k1) {
-     fl[k3+_j3][k2+_j2][k1+_j1] = fls[k3][k2][k1];
-   }}}
-   return fls;
-   /*
+   lsf.apply(et,400,fls,fls);
    computeStrikeDip(fls,fps,fts);
    System.out.println("structure-oriented smoothing done...");
    FaultSkinner  fs = new FaultSkinner();
@@ -238,6 +231,14 @@ public class FaultReskin {
      fcs[ic] = new FaultCell(p1,p2,p3,fl,fp,ft);
    }
    return fs.findSkins(fcs);
+   /*
+   float[][][] fl = new float[n3][n2][n1];
+   for (int k3=0; k3<_n3; ++k3) {
+   for (int k2=0; k2<_n2; ++k2) {
+   for (int k1=0; k1<_n1; ++k1) {
+     fl[k3+_j3][k2+_j2][k1+_j1] = fls[k3][k2][k1];
+   }}}
+   return fl;
    */
  }
 

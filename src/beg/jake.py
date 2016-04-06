@@ -94,8 +94,8 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  #goSmooth()
-  #goSlip()
+  goSmooth()
+  goSlip()
   #goUnfaultS()
   #goFlattenWeights()
   #goHorizonExtraction1()
@@ -111,24 +111,16 @@ def main(args):
   #goFillHoles()
   #goTest()
   #goTest1()
-  goSkinBig()
-  '''
-  gx = readImage(gxfile)
-  fx = readImage("fff")
-  sub(fx,min(fx),fx)
-  div(fx,max(fx),fx)
-  plot3(gx,fx,cmin=0.25,cmax=1,cmap=jetRamp(1.0))
-  '''
-
-
-
+  #goSkinBig()
 
 def goSkinBig():
   fr = FaultReskin()
   sk = readSkins(fsfbase)
   sks = fr.regrid(n1,n2,n3,sk[49])
-  writeImage("fff",sks)
+  gx = readImage(gxfile)
+  plot3(gx,tg=sks)
   '''
+  writeImage("fff",sks)
   removeAllSkinFiles(fskb)
   writeSkins(fskb,sks)
   gx = readImage(gxfile)
@@ -437,8 +429,8 @@ def goSkinTv():
 
 def goSmooth():
   print "goSmooth ..."
-  flstop = 0.1
   fsigma = 8.0
+  flstop = lowerLikelihood
   gx = readImage(gxfile)
   skins = readSkins(fsfbase)
   flt = zerofloat(n1,n2,n3)
@@ -481,6 +473,7 @@ def goSlip():
     '''
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
+    '''
     smark = -999.999
     s1,s2,s3 = fsl.getDipSlips(skins,smark)
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
@@ -489,6 +482,7 @@ def goSlip():
     writeImage(fs1file,s1)
     writeImage(fs2file,s2)
     writeImage(fs3file,s3)
+    '''
   else:
     gw = readImage(gwfile)
     #s1 = readImage(fs1file)
