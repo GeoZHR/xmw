@@ -113,6 +113,14 @@ def main(args):
   #goTest1()
   #goSkinBig()
   goFlatten()
+  '''
+  gx = readImage("gx")
+  gt = readImage("gt")
+  sk = readSkins(fsfbase)
+  plot3(gt,k1=170)
+  plot3(gx,k1=170)
+  plot3(gt,skins=[sk[49]],k1=170)
+  '''
 
 def goResults():
   '''
@@ -654,10 +662,12 @@ def goFlatten():
   lsf.findSlopes(fx,p2,p3,ep);
   ep = pow(ep,2)
   fl = Flattener3()
-  fl.setIterations(0.01,1000)
+  fl.setIterations(0.01,400)
   fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+  x1 = fm.x1
   gt = fm.flatten(fx)
-  writeImage(gtfile,gt)
+  writeImage("fu",gt)
+  writeImage("fx1",x1)
   #writeImage(gufile,gt)
   '''
   gt = readImage(gtfile)
