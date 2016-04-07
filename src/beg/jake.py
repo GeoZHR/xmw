@@ -118,7 +118,8 @@ def main(args):
   '''
   gx = readImage("fu")
   sk = readSkins(fsulbase)
-  plot3(gx,skins=[sk[0]],smax=120)
+  plot3(gx)
+  plot3(gx,skins=[sk[0]],smax=90)
   '''
 def shiftFaults():
   fr = FaultReskin()
@@ -489,14 +490,15 @@ def goSmooth():
 
 def goSlip():
   print "goSlip ..."
+  gx = readImage("fu")
   if not plotOnly:
     #gsx = readImage(gsxfile)
     gsx = readImage("gsu")
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fsubase)
     fsl = FaultSlipper(gsx,p2,p3)
 
+    skins = readSkins(fsubase)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.computeDipSlips(skins,0,30)
 
@@ -504,19 +506,17 @@ def goSlip():
     fsl.setOffset(3.0) # the default is 2.0 samples
     fsl.computeDipSlips(sks,0,100)
     skins[0] = sks[0]
-
     removeAllSkinFiles(fsulbase)
     writeSkins(fsulbase,skins)
-    '''
     smark = -999.999
     s1,s2,s3 = fsl.getDipSlips(skins,smark)
     s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
     gw = fsl.unfault([s1,s2,s3],gx)
-    writeImage(gwfile,gw)
-    writeImage(fs1file,s1)
-    writeImage(fs2file,s2)
-    writeImage(fs3file,s3)
-    '''
+    writeImage("fuw",gw)
+
+    #writeImage(fs1file,s1)
+    #writeImage(fs2file,s2)
+    #writeImage(fs3file,s3)
   else:
     gw = readImage(gwfile)
     #s1 = readImage(fs1file)
