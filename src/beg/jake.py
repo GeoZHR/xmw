@@ -545,7 +545,7 @@ def goUnfaultS():
     et.setEigenvalues(0.001,1.0,1.0)
 
     wp = fillfloat(1.0,n1,n2,n3)
-    skins = readSkins(fslubase)
+    skins = readSkins(fsulbase)
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
     mul(sp[3][0],10,sp[3][0])
