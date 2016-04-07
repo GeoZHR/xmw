@@ -96,7 +96,7 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goReSkin()
-  goSmooth()
+  #goSmooth()
   goSlip()
   #goUnfaultS()
   #goFlattenWeights()
@@ -117,12 +117,8 @@ def main(args):
   #goFlatten()
   '''
   gx = readImage("fu")
-  gt = readImage("gt")
-  #sk = readSkins(fsfbase)
-  plot3(gt,k1=170,clab="gt")
-  plot3(gx,k1=170,clab="fu")
-  #plot3(gt,skins=[sk[49]],k1=170)
-  shiftFaults()
+  sk = readSkins(fsulbase)
+  plot3(gx,skins=sk,smax=120)
   '''
 def shiftFaults():
   fr = FaultReskin()
@@ -502,9 +498,10 @@ def goSlip():
     fsl = FaultSlipper(gsx,p2,p3)
 
     fsl.setOffset(2.0) # the default is 2.0 samples
-    fsl.computeDipSlips(skins,0,50)
+    fsl.computeDipSlips(skins,0,30)
 
     sks = readSkins(fsubase)
+    fsl.setOffset(3.0) # the default is 2.0 samples
     fsl.computeDipSlips(sks,0,140)
     skins[0] = sks[0]
 
