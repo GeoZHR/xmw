@@ -231,18 +231,18 @@ public class UnfaultS {
       VecArrayFloat4 v4x = (VecArrayFloat4)vx;
       VecArrayFloat4 v4y = (VecArrayFloat4)vy;
       VecArrayFloat4 v4z = v4x.clone();
-      v4y.zero();
       float[][][][] x = v4x.getArray();
       float[][][][] y = v4y.getArray();
       float[][][][] z = v4z.getArray();
+      v4y.zero();
       _smoother.applyOriginal(z);
+      addAndScale(-_sc,z,y);
       applyLhs(_et,_wp,z,y);
       if(_sp!=null) {
         screenLhs(_sp[0],_sp[1],_sp[3][0],z,y);
       }
-      add(-_sc,z,y);
       _smoother.applyTranspose(y);
-      add(_sc,x,y);
+      addAndScale(_sc,x,y);
     }
 
     private float _sc;
@@ -252,7 +252,7 @@ public class UnfaultS {
     private Smoother3 _smoother;
   }
 
-  private static void add(float sc, float[][][][] x, float[][][][] y) {
+  private static void addAndScale(float sc, float[][][][] x, float[][][][] y) {
     int n4 = x.length;
     int n3 = x[0].length;
     int n2 = x[0][0].length;
