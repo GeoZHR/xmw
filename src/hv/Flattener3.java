@@ -321,10 +321,10 @@ public class Flattener3 {
       float[][][] z = copy(x);
       v3y.zero();
       _s3.apply(z);
-      //addAndScale(-_sc,z,y);
+      addAndScale(-_sc,z,y);
       applyLhs(_w1,_wp,_p2,_p3,z,y);
       _s3.applyTranspose(y);
-      //addAndScale( _sc,x,y);
+      addAndScale( _sc,x,y);
     }
     private float _sc;
     private Smoother3 _s3;

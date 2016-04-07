@@ -82,7 +82,7 @@ maxThrow = 185.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-#pngDir = "../../../png/beg/bp/sub1/"
+pngDir = "../../../png/beg/jake/sub2/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -112,10 +112,21 @@ def main(args):
   #goTest()
   #goTest1()
   #goSkinBig()
+  goFlatten()
 
-  gx = readImage(gxfile)
-  skins = readSkins(fslbase)
-  plot3(gx,skins=skins,smax=120,png="skinss1")
+def goResults():
+  '''
+  gx = readImage("gx")
+  gw = readImage("gw150")
+  sk = readSkins(fsfbase)
+  plot3(gx,png="seismic")
+  plot3(gx,skins=sk,png="faults")
+  plot3(gw,png="unfault")
+  fw = readImage("gu")
+  ks = [112,144,150,155,168,170]
+  for k1 in ks:
+    plot3(fw,k1=k1,png="flattened"+str(k1))
+  '''
 def goSkinBig():
   fr = FaultReskin()
   sk = readSkins(fsfbase)
@@ -633,6 +644,30 @@ def goHorizonExtraction3():
   plot3(gx)
   plot3(gx,horizon=surf)
 
+def goFlatten():
+  #fx = readImage("gw150")
+  fx = readImage("gx")
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(12.0,6.0)
+  lsf.findSlopes(fx,p2,p3,ep);
+  ep = pow(ep,2)
+  fl = Flattener3()
+  fl.setIterations(0.01,1000)
+  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+  gt = fm.flatten(fx)
+  writeImage(gtfile,gt)
+  #writeImage(gufile,gt)
+  '''
+  gt = readImage(gtfile)
+  fx = gain(fx)
+  gt = gain(gt)
+  plot3(fx)
+  plot3(gt)
+  '''
+
+
 def goFlattenC():
   print "Flatten with control points..."
   gx = readImage(gxfile)
@@ -815,7 +850,7 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           tg=None,horizon=None,xyz=None,cells=None,skins=None,fbs=None,
-          smax=0.0,slices=None,links=False,curve=False,trace=False,png=None):
+          smax=0.0,k1=n1,links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -832,13 +867,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-0.5,0.5)
+      ipg.setClips(-50000,50000)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-0.5,0.5)
+    ipg.setClips1(-50000,50000)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -968,15 +1003,14 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(85,5,56)
-  #ipg.setSlices(85,5,43)
-  #ipg.setSlices(85,5,102)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
-  ipg.setSlices(n1,376,350)
+  ipg.setSlices(168,1540,0)
+  ipg.setSlices(172,1540,0)
+  ipg.setSlices(k1,1540,0)
+  #ipg.setSlices(260,1540,555)
   if cbar:
     sf.setSize(1037,700)
   else:
-    sf.setSize(900,700)
+    sf.setSize(1200,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
@@ -984,11 +1018,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
-  #ov.setScale(2.5)
+  #ov.setScale(1.5)
+  ov.setScale(2.1)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.00,-0.05))
-  ov.setAzimuthAndElevation(45.0,35.0)
+  ov.setTranslate(Vector3(0.0,-0.15,0.1))
+  ov.setAzimuthAndElevation(115.0,40.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
