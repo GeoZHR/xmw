@@ -118,7 +118,7 @@ def main(args):
   '''
   gx = readImage("fu")
   sk = readSkins(fsulbase)
-  plot3(gx,skins=sk,smax=120)
+  plot3(gx,skins=[sk[0]],smax=120)
   '''
 def shiftFaults():
   fr = FaultReskin()
@@ -501,7 +501,7 @@ def goSlip():
     fsl.computeDipSlips(skins,0,30)
 
     sks = readSkins(fsubase)
-    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.setOffset(4.0) # the default is 2.0 samples
     fsl.computeDipSlips(sks,0,140)
     skins[0] = sks[0]
 
