@@ -34,7 +34,7 @@ fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
-fsulbase = "fsul" # fault skin (basename only)
+fsulbase = "fslu" # fault skin (basename only)
 fsfbase = "fsa" # fault skin (basename only)
 fsubase = "fsu" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
@@ -501,8 +501,8 @@ def goSlip():
     fsl.computeDipSlips(skins,0,30)
 
     sks = readSkins(fsubase)
-    fsl.setOffset(4.0) # the default is 2.0 samples
-    fsl.computeDipSlips(sks,0,140)
+    fsl.setOffset(3.0) # the default is 2.0 samples
+    fsl.computeDipSlips(sks,0,100)
     skins[0] = sks[0]
 
     removeAllSkinFiles(fsulbase)
