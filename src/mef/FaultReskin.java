@@ -21,10 +21,89 @@ import static mef.FaultGeometry.*;
 
 public class FaultReskin {
 
- 
- public float[][] faultSurfer(int n1, int n2, int n3, FaultSkin skin) {
-   float[][] sf = new float[n3][n2];
-   return sf;
+ public float[][][] apply(final float[][][] ux, final float[][][] f) {
+   final double d1 = 1;
+   final double f1 = 0;
+   final int n3 = f.length;
+   final int n2 = f[0].length;
+   final int n1 = f[0][0].length;
+   final SincInterpolator si = new SincInterpolator();
+   final float[][][] g = new float[n3][n2][n1];
+   Parallel.loop(n3,new Parallel.LoopInt() {
+   public void compute(int i3) {
+     for (int i2=0; i2<n2; ++i2)
+       si.interpolate(n1,d1,f1,f[i3][i2],n1,ux[i3][i2],g[i3][i2]);
+   }});
+   return g;
+ }
+
+ public float[][][] getFlImage(int n1, int n2, int n3, FaultSkin[] skins) {
+   float[][][] fls = new float[n3][n2][n1];
+   float[][][] g11 = new float[n3][n2][n1];
+   float[][][] g12 = new float[n3][n2][n1];
+   float[][][] g13 = new float[n3][n2][n1];
+   float[][][] g22 = new float[n3][n2][n1];
+   float[][][] g23 = new float[n3][n2][n1];
+   float[][][] g33 = new float[n3][n2][n1];
+   int nk = skins.length;
+   for (int ik=0; ik<nk; ++ik) {
+     FaultSkin skin = skins[ik];
+   for (FaultCell cell:skin) {
+     int i1 = cell.i1;
+     int i2 = cell.i2;
+     int i3 = cell.i3;
+     float fli = cell.fl;
+     if(ik==49) {fli=1f;}
+     fls[i3][i2][i1] = fli;
+     g11[i3][i2][i1] = cell.w11*fli;
+     g12[i3][i2][i1] = cell.w12*fli;
+     g13[i3][i2][i1] = cell.w13*fli;
+     g22[i3][i2][i1] = cell.w22*fli;
+     g23[i3][i2][i1] = cell.w23*fli;
+     g33[i3][i2][i1] = cell.w33*fli;
+   }}
+   System.out.println("assignments done...");
+   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(1);
+   rgf1.apply000(fls,fls);
+   System.out.println("fl smoothing done...");
+   RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(10);
+   float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+   for (float[][][] g:gs) {
+     rgf2.apply000(g,g);
+   }
+   System.out.println("gaussian smoothing done...");
+   float[][][] w1 = new float[n3][n2][n1];
+   float[][][] w2 = new float[n3][n2][n1];
+   float[][][] u1 = new float[n3][n2][n1];
+   float[][][] u2 = new float[n3][n2][n1];
+   float[][][] u3 = new float[n3][n2][n1];
+   solveEigenproblems(g11,g12,g13,g22,g23,g33,w1,w2,u1,u2,u3);
+   // Compute u1 such that u3 > 0.
+   for (int i3=0; i3<_n3; ++i3) {
+     for (int i2=0; i2<_n2; ++i2) {
+       for (int i1=0; i1<_n1; ++i1) {
+         float u1i = u2[i3][i2][i1];
+         float u2i = u2[i3][i2][i1];
+         float u3i = u3[i3][i2][i1];
+         float u1s = 1.0f-u2i*u2i-u3i*u3i;
+         u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
+         if (u3i<0.0f) {
+           u1i = -u1i;
+           u2i = -u2i;
+         }
+         u1[i3][i2][i1] = u1i;
+         u2[i3][i2][i1] = u2i;
+       }
+     }
+   }
+   System.out.println("eigentensors done...");
+   float[][][] eu = fillfloat(0.01f,_n1,_n2,_n3);
+   float[][][] ev = fillfloat(1.00f,_n1,_n2,_n3);
+   float[][][] ew = fillfloat(1.00f,_n1,_n2,_n3);
+   EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+   LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+   lsf.apply(et,10,fls,fls);
+   return fls;
  }
 
  //public TriangleGroup regrid(int n1, int n2, int n3, FaultSkin sk) {

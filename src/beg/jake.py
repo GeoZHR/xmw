@@ -112,16 +112,21 @@ def main(args):
   #goTest()
   #goTest1()
   #goSkinBig()
-  goFlatten()
+  #goFlatten()
   '''
-  gx = readImage("gx")
+  gx = readImage("fu")
   gt = readImage("gt")
-  sk = readSkins(fsfbase)
-  plot3(gt,k1=170)
-  plot3(gx,k1=170)
-  plot3(gt,skins=[sk[49]],k1=170)
+  #sk = readSkins(fsfbase)
+  plot3(gt,k1=170,clab="gt")
+  plot3(gx,k1=170,clab="fu")
+  #plot3(gt,skins=[sk[49]],k1=170)
   '''
-
+  shiftFaults()
+def shiftFaults():
+  sk = readSkins(fsfbase)
+  fr = FaultReskin()
+  fl = fr.getFlImage(n1,n2,n3,sk)
+  writeImage("fls",fl)
 def goResults():
   '''
   gx = readImage("gx")
