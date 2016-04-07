@@ -97,8 +97,8 @@ def main(args):
   #goSkinTv()
   #goReSkin()
   #goSmooth()
-  goSlip()
-  #goUnfaultS()
+  #goSlip()
+  goUnfaultS()
   #goFlattenWeights()
   #goHorizonExtraction1()
   #goHorizonExtraction2()
@@ -536,7 +536,8 @@ def goSlip():
   '''
 
 def goUnfaultS():
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
+  gx = readImage("fu")
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
     lof = LocalOrientFilter(8.0,4.0,4.0)
@@ -544,7 +545,7 @@ def goUnfaultS():
     et.setEigenvalues(0.001,1.0,1.0)
 
     wp = fillfloat(1.0,n1,n2,n3)
-    skins = readSkins(fslbase)
+    skins = readSkins(fslubase)
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
     mul(sp[3][0],10,sp[3][0])
@@ -555,17 +556,18 @@ def goUnfaultS():
     [t1,t2,t3] = uf.findShifts(sp,wp)
     #uf.convertShifts(40,[t1,t2,t3])
     uf.applyShifts([t1,t2,t3],gx,fw)
-    writeImage(fwsfile,fw)
-    writeImage(sw1file,t1)
-    writeImage(sw2file,t2)
-    writeImage(sw3file,t3)
+    #writeImage(fwsfile,fw)
+    writeImage("fuws",fw)
+    #writeImage(sw1file,t1)
+    #writeImage(sw2file,t2)
+    #writeImage(sw3file,t3)
   else :
     fw = readImage(fwsfile)
     gw = readImage(gwfile)
+  '''
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
   plot3(gw,png="fwuf")
-  '''
   skins = readSkins(fslbase)
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)
