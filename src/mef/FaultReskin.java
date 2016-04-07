@@ -21,20 +21,37 @@ import static mef.FaultGeometry.*;
 
 public class FaultReskin {
 
- public float[][][] apply(final float[][][] ux, final float[][][] f) {
+
+ public FaultSkin[] reskin(float[][][] fl) {
+   int n3 = fl.length;
+   int n2 = fl[0].length;
+   int n1 = fl[0][0].length;
+   float[][][] fp = new float[n3][n2][n1];
+   float[][][] ft = new float[n3][n2][n1];
+   computeStrikeDip(fl,fp,ft);
+   FaultSkinner  fs = new FaultSkinner();
+   fs.setGrowLikelihoods(0.01f,0.6f);
+   fs.setMaxDeltaStrike(10);
+   fs.setMaxPlanarDistance(0.2f);
+   fs.setMinSkinSize(10000);
+   FaultCell[] fcs = fs.findCells(new float[][][][]{fl,fp,ft});
+   return fs.findSkins(fcs);
+ }
+
+ public void apply(final float[][][] ux, final float[][][] f) {
    final double d1 = 1;
    final double f1 = 0;
    final int n3 = f.length;
    final int n2 = f[0].length;
    final int n1 = f[0][0].length;
    final SincInterpolator si = new SincInterpolator();
-   final float[][][] g = new float[n3][n2][n1];
    Parallel.loop(n3,new Parallel.LoopInt() {
    public void compute(int i3) {
-     for (int i2=0; i2<n2; ++i2)
-       si.interpolate(n1,d1,f1,f[i3][i2],n1,ux[i3][i2],g[i3][i2]);
+     for (int i2=0; i2<n2; ++i2) {
+       float[] ft = copy(f[i3][i2]);
+       si.interpolate(n1,d1,f1,ft,n1,ux[i3][i2],f[i3][i2]);
+     }
    }});
-   return g;
  }
 
  public float[][][] getFlImage(int n1, int n2, int n3, FaultSkin[] skins) {
@@ -97,9 +114,9 @@ public class FaultReskin {
      }
    }
    System.out.println("eigentensors done...");
-   float[][][] eu = fillfloat(0.01f,_n1,_n2,_n3);
-   float[][][] ev = fillfloat(1.00f,_n1,_n2,_n3);
-   float[][][] ew = fillfloat(1.00f,_n1,_n2,_n3);
+   float[][][] eu = fillfloat(0.01f,n1,n2,n3);
+   float[][][] ev = fillfloat(1.00f,n1,n2,n3);
+   float[][][] ew = fillfloat(1.00f,n1,n2,n3);
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
    lsf.apply(et,10,fls,fls);

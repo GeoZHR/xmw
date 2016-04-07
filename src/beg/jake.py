@@ -35,6 +35,7 @@ fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fsfbase = "fsa" # fault skin (basename only)
+fsubase = "fsu" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
 fskr = "fsr" # fault skin (basename only)
 fskc = "fsc" # fault skin (basename only)
@@ -123,10 +124,22 @@ def main(args):
   '''
   shiftFaults()
 def shiftFaults():
-  sk = readSkins(fsfbase)
   fr = FaultReskin()
+  '''
+  sk = readSkins(fsfbase)
   fl = fr.getFlImage(n1,n2,n3,sk)
   writeImage("fls",fl)
+  '''
+  x1 = readImage("fx1")
+  fl = readImage("fls")
+  fr.apply(x1,fl)
+  sub(fl,min(fl),fl)
+  div(fl,max(fl),fl)
+  sk = fr.reskin(fl)
+  removeAllSkinFiles(fsubase)
+  writeSkins(fsubase,skins)
+
+
 def goResults():
   '''
   gx = readImage("gx")
