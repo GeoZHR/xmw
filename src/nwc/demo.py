@@ -548,10 +548,10 @@ def goUnfaultS():
   else :
     gw = readImage(gwfile)
     fw = readImage(fwsfile)
+  '''
   fw = gain(fw)
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
-  '''
   plot3(gw,png="fwuf")
   skins = readSkins(fslbase)
   mark = -999.99
