@@ -114,44 +114,27 @@ def main(args):
   #goTest()
   #goTest1()
   #goSkinBig()
-  goFlatten()
-  #gx = readImage("gw150")
-  #gw = readImage("gu")
-  #plot3(gx)
-  #plot3(gw)
-  '''
-  sk = readSkins(fsulbase)
-  plot3(gx)
-  plot3(gx,skins=[sk[0]],smax=90)
-  '''
-def shiftFaults():
-  fr = FaultReskin()
-  '''
-  sk = readSkins(fsfbase)
-  fl = fr.getFlImage(n1,n2,n3,sk)
-  writeImage("fls",fl)
-  '''
-  x1 = readImage("fx1")
-  fl = readImage("fls")
-  fr.apply(x1,fl)
-  sub(fl,min(fl),fl)
-  div(fl,max(fl),fl)
-  sk = fr.reskin(fl)
-  removeAllSkinFiles(fsubase)
-  writeSkins(fsubase,skins)
-
-
+  #goFlatten()
+  #goResults()
+  fw = readImage("gu")
+  plot3(fw)
 def goResults():
-  '''
   gx = readImage("gx")
-  gw = readImage("gw150")
-  sk = readSkins(fsfbase)
+  #gw = readImage("gw150")
+  sks = readSkins(fsfbase)
+  fcs = []
+  for ski in sks:
+    for fci in ski:
+      if(fci.getFl()>0.15):
+        fcs.append(fci)
   plot3(gx,png="seismic")
-  plot3(gx,skins=sk,png="faults")
+  plot3(gx,cells=fcs,png="faults")
+  '''
   plot3(gw,png="unfault")
   fw = readImage("gu")
   ks = [112,144,150,155,168,170]
-  for k1 in ks:
+  #for k1 in ks:
+  for k1 in range(226,245,2):
     plot3(fw,k1=k1,png="flattened"+str(k1))
   '''
 def goSkinBig():
@@ -937,7 +920,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     cmap = ColorMap(0.0,1.0,ColorMap.JET)
-    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(2.0,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
@@ -1030,10 +1013,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(168,1540,0)
-  ipg.setSlices(172,1540,0)
-  ipg.setSlices(k1,1540,0)
-  #ipg.setSlices(260,1540,555)
+  #ipg.setSlices(168,1540,0)
+  #ipg.setSlices(172,1540,0)
+  #ipg.setSlices(k1,n2,0)
+  #ipg.setSlices(k1,1540,0)
+  ipg.setSlices(k1,1540,366)
   if cbar:
     sf.setSize(1037,700)
   else:

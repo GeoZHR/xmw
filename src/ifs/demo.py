@@ -37,7 +37,7 @@ bsfile  = "bs"  # fault block volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,20
+sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -61,9 +61,10 @@ pngDir = "../../../png/ifs/"
 def main(args):
   #goFakeData()
   #goSlopes()
+  #goScan()
+  #goThin()
+  goFbs()
   '''
-  goScan()
-  goThin()
   goSmooth()
   goSkin()
   goFR()
@@ -80,8 +81,7 @@ def main(args):
   #goSkin()
   #goSlip()
   #goCleanCells()
-  
-  goTV()
+  #goTV()
   #goSPS()
   #goPSS()
   #goFSS()
@@ -93,6 +93,18 @@ def main(args):
   #computeGaussian()
   #rosePlot()
   #goScanT()
+def goFbs():
+  sk = readSkins(fskbase)
+  fl = zerofloat(n1,n2,n3)
+  fs = FaultSkinnerX()
+  fs.getFl(sk,fl)
+  gx = readImage(gxfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fb = FaultBlocker()
+  fe = fb.findBlocks([fl,fp,ft])
+  plot3(gx,fe,cmin=min(fe),cmax=max(fe),cmap=jetRamp(1.0),
+        clab="Fault energy")
 
 def goScanT():
   p2 = readImage(p2file)
@@ -426,19 +438,18 @@ def goInterp():
   plot3(gx,fi,cmin=min(fi),cmax=max(fi),cmap=jetRamp(1.0),
         clab="fi",png="fi")
 
-
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
   nplanar = 3 # number of planar faults
-  conjugate = True # if True, two large planar faults will intersect
+  conjugate = False # if True, two large planar faults will intersect
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
+  gx,p2,p3 = FakeDataH.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
   writeImage(p2kfile,p2)
@@ -450,8 +461,7 @@ def goFakeData():
   if impedance:
     gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
   plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-  #plot3(gx,p2,cmap=bwrNotch(1.0))
-  #plot3(gx,p3,cmap=bwrNotch(1.0))
+
 
 def goSlopes():
   print "goSlopes ..."

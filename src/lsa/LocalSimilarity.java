@@ -132,6 +132,7 @@ public class LocalSimilarity {
       _a  = a;
       _dir = dir;
       _sc = sum(pow(a,2))/a.length;
+      _sc = 0.01f;
       //testSpd();
     }
     public void apply(Vec vx, Vec vy) {

@@ -76,7 +76,7 @@ maxThrow = 30.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-#pngDir = "../../../png/beg/bp/sub1/"
+pngDir = "../../../png/nwc/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -92,7 +92,7 @@ def main(args):
   #goSkinMerge()
   #goSmooth()
   #goSlip()
-  #goUnfaultS()
+  goUnfaultS()
   #goDisplay()
   #goFaultImages()
   #gx = readImage(gxfile)
@@ -111,7 +111,13 @@ def main(args):
   plot3(gu1)
   plot3(gu2)
   '''
-  goResults()
+  #goResults()
+  #goSlices()
+def goSlices():
+  gu = readImage(gufile)
+  gu = gain(gu)
+  for k1 in range(440,480,1):
+    plot3(gu,k1=k1,png="gu"+str(k1))
 def goResults():
   gx = readImage(gxfile)
   gw = readImage("fws1")
@@ -120,15 +126,15 @@ def goResults():
   gx = gain(gx)
   gw = gain(gw)
   gu = gain(gu)
-  plot3(gx)
+  plot3(gx,png="gx")
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFls(sk,flt)
-  plot3(gx,flt,skins=sk,clab="Fault likelihood")
+  plot3(gx,skins=sk,clab="Fault likelihood",png="gxf")
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood")
-  plot3(gw)
-  plot3(gu)
+        clab="Fault likelihood",png="flt")
+  plot3(gw,png="gw")
+  plot3(gu,png="gu")
 
 
 def goTest():
@@ -542,9 +548,10 @@ def goUnfaultS():
   else :
     gw = readImage(gwfile)
     fw = readImage(fwsfile)
-  '''
+  fw = gain(fw)
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
+  '''
   plot3(gw,png="fwuf")
   skins = readSkins(fslbase)
   mark = -999.99
@@ -655,7 +662,7 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           horizon=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,png=None):
+          k1=n1/2,links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -787,7 +794,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(450,530,393)
+  #ipg.setSlices(450,530,393)
+  ipg.setSlices(k1,596,n3)
   if cbar:
     sf.setSize(1037,900)
   else:
@@ -799,11 +807,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
+  ov.setScale(1.6)
   #ov.setScale(2.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.00,-0.01))
-  ov.setAzimuthAndElevation(225.0,35.0)
+  ov.setTranslate(Vector3(0.0,-0.15,-0.01))
+  ov.setAzimuthAndElevation(225.0,40.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:

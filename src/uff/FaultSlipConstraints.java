@@ -8,7 +8,6 @@ package uff;
 
 import ipfx.*;
 import java.util.*;
-import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -58,7 +57,7 @@ public class FaultSlipConstraints {
     int n3 = ws.length;
     int n2 = ws[0].length;
     int n1 = ws[0][0].length;
-    computeUnfaultShifts(n1,n2,n3,_sks);
+    computeUnfaultShifts(_sks);
     setCellsC(n1,n2,n3);
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
     for (FaultSkin sk:_sks) {
@@ -120,7 +119,6 @@ public class FaultSlipConstraints {
     int n2 = wp[0].length;
     int n1 = wp[0][0].length;
     computeUnfaultShifts(_sks);
-    //computeUnfaultShifts(n1,n2,n3,_sks);
     setCells(n1,n2,n3);
     flNormalization();
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
@@ -200,7 +198,50 @@ public class FaultSlipConstraints {
     return cs;
   }
 
+  private void computeUnfaultShifts(FaultSkin[] skins) {
+    int ik = 0;
+    for (FaultSkin skin:skins) {
+      ik++;
+      System.out.println("ik="+ik);
+      final FaultCell[] cells = skin.getCells();
+      final int nc = cells.length;
+      for (int ic=0; ic<nc; ++ic) {
+        FaultCell fci = cells[ic];
+        FaultCell fcd = cells[ic];
+        FaultCell fcu = cells[ic];
+        float s1 = fci.getS1();
+        float s2 = fci.getS2();
+        float s3 = fci.getS3();
+        float[] yd = new float[3];
+        float[] yu = new float[3];
+        yd[0] = fci.getX1();
+        yd[1] = fci.getX2();
+        yd[2] = fci.getX3();
+        yu[0] = fci.getX1();
+        yu[1] = fci.getX2();
+        yu[2] = fci.getX3();
+        float st = round(s1);
+        if (st>0) {
+          for (; st>=1.0f; st-=1.0f) {
+            fcd = fcd.walkDownDipFrom(yd);
+            fcu = fcu.walkUpDipFrom(yu);
+          }
+        } else {
+          for (; st<=-1.0f; st+=1.0f) {
+            fcu = fcu.walkDownDipFrom(yu);
+            fcd = fcd.walkUpDipFrom(yd);
+          }
+        }
+        float du = s1-fcu.getS1();
+        float dd = fcd.getS1()-s1;
+        s1 -= (du+dd)*0.5f;
+        fci.setUnfaultShifts(new float[]{s1,s2,s3});
+      }
+    }
+  }
 
+
+  /*
   private void computeUnfaultShifts(FaultSkin[] skins) {
     int ik = 0;
     for (FaultSkin skin:skins) {
@@ -271,7 +312,7 @@ public class FaultSlipConstraints {
             x2p[ip] = xc[1][pc];
             x3p[ip] = xc[2][pc];
           }
-          SibsonInterp sip = new SibsonInterp(s1p,x1p,x2p,x3p);
+          SibsonInterpolator3 sip = new SibsonInterpolator3(s1p,x1p,x2p,x3p);
           sip.setBounds(min(x1p)-5,max(x1p)+5,min(x2p)-5,max(x2p)+5,
                         min(x3p)-5,max(x3p)+5);
           float dp = sip.interpolate(p1,p2,p3)-s1;
@@ -282,7 +323,7 @@ public class FaultSlipConstraints {
             x2m[im] = xc[1][mc];
             x3m[im] = xc[2][mc];
           }
-          SibsonInterp sim = new SibsonInterp(s1m,x1m,x2m,x3m);
+          SibsonInterpolator3 sim = new SibsonInterpolator3(s1m,x1m,x2m,x3m);
           sim.setBounds(min(x1m)-5,max(x1m)+5,min(x2m)-5,max(x2m)+5,
                         min(x3m)-5,max(x3m)+5);
           float dm = s1-sim.interpolate(m1,m2,m3);
@@ -293,73 +334,7 @@ public class FaultSlipConstraints {
 
     }
   }
-  private void computeUnfaultShifts(
-    final int n1, final int n2, final int n3, final FaultSkin[] skins) {
-    final int nk = skins.length;
-    for (int ik=0; ik<nk; ++ik) {
-    //Parallel.loop(nk,new Parallel.LoopInt() {
-    //public void compute(int ik) {
-      System.out.println("skin="+ik);
-      final FaultCell[] cells = skins[ik].getCells();
-      final int nc = cells.length;
-      FloatList x1l = new FloatList();
-      FloatList x2l = new FloatList();
-      FloatList x3l = new FloatList();
-      FloatList s1l = new FloatList();
-      for (int ic=0; ic<nc; ++ic) {
-        FaultCell cell = cells[ic];
-        x1l.add(cell.getX1());
-        x2l.add(cell.getX2());
-        x3l.add(cell.getX3());
-        s1l.add(cell.getS1());
-      }
-      float[] x1a = x1l.trim();
-      float[] x2a = x2l.trim();
-      float[] x3a = x3l.trim();
-      float[] s1a = s1l.trim();
-      float x1min = 0;
-      float x2min = 0;
-      float x3min = 0;
-      float x1max = n1-1;
-      float x2max = n2-1;
-      float x3max = n3-1;
-      SibsonInterp s1i = new SibsonInterp(s1a,x1a,x2a,x3a);
-      s1i.setBounds(x1min,x1max,x2min,x2max,x3min,x3max);
-      for (int ic=0; ic<nc; ++ic) {
-        //System.out.println("ic="+ic);
-        FaultCell cell = cells[ic];
-        float s1 = cell.getS1();
-        float s2 = cell.getS2();
-        float s3 = cell.getS3();
-        float p1 = cell.getX1()+s1;
-        float p2 = cell.getX2()+s2;
-        float p3 = cell.getX3()+s3;
-        float m1 = cell.getX1()-s1;
-        float m2 = cell.getX2()-s2;
-        float m3 = cell.getX3()-s3;
-
-        if(p1>x1max){p1=x1max;}
-        if(p2>x2max){p2=x2max;}
-        if(p3>x3max){p3=x3max;}
-        if(p1<x1min){p1=x1min;}
-        if(p2<x2min){p2=x2min;}
-        if(p3<x3min){p3=x3min;}
-        if(m1>x1max){m1=x1max;}
-        if(m2>x2max){m2=x2max;}
-        if(m3>x3max){m3=x3max;}
-        if(m1<x1min){m1=x1min;}
-        if(m2<x2min){m2=x2min;}
-        if(m3<x3min){m3=x3min;}
-
-        float dp = s1i.interpolate(p1,p2,p3)-s1;
-        float dm = s1-s1i.interpolate(m1,m2,m3);
-        s1 -= (dp+dm)*0.5f;
-        cell.setUnfaultShifts(new float[]{s1,s2,s3});
-      }
-    }
-    //}});
-    //checkUnfaultShifts();
-  }
+  */
 
   private void checkUnfaultShifts() {
     int nk = _sks.length;

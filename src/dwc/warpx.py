@@ -27,6 +27,8 @@ from edu.mines.jtk.awt import *
 from edu.mines.jtk.dsp import *
 from edu.mines.jtk.io import *
 from edu.mines.jtk.mosaic import *
+from edu.mines.jtk.ogl.Gl import *
+from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
@@ -34,8 +36,8 @@ from dwc import *
 
 #############################################################################
 
-pngDir = "../../../png/shifts/"
-seismicDir = "../../../data/seis/shifts/"
+pngDir = "../../../png/dwc/"
+seismicDir = "../../../data/seis/dwc/"
 #pngDir = None
 
 seed = 99 
@@ -49,8 +51,19 @@ nrms = 0.0
 strainMax = 1.0
 
 def main(args):
-  goFigures()
-
+  #goFigures()
+  goWarpc()
+def goWarpc():
+  ml = 0.2
+  f,g=makeTraces()
+  s1 = Sampling(len(f))
+  dw = DynamicWarpingRC(8,-10,10,s1)
+  dw.setStrainLimits(-ml,ml)
+  dw.setSmoothness(4)
+  sf = dw.findShifts(s1,f,s1,g)
+  h = dw.applyShifts(s1,g,sf)
+  plotfg(f,g,png="fg")
+  plotfg(f,h,png="fh")
 def goFigures():
   global nrms,strainMax
   ml = 33
@@ -86,7 +99,6 @@ def goFigures():
       ef = dw.accumulateForward(e)
       er = dw.accumulateReverse(e)
       es = sub(add(ef,er),e)
-
       #es = dw.smoothErrors(e) # this method normalizes after smoothing
       plotc(dtran(ef),None,None,perc=97,png="cef")
       plotc(dtran(er),None,None,perc=97,png="cer")
@@ -106,6 +118,12 @@ def goFigures():
     #print " esumu =",dw.sumErrors(e,u), "  esums =",dw.sumErrors(e,s);
     #print "easumu =",dw.sumErrors(ea,ua)," easums =",dw.sumErrors(ea,s);
   '''
+def makeTraces():
+  fp = FakeData.seismicAndSlopes2d2014A(0.0)
+  plot2(fp[0],None,None,perc=97)
+  plot2(fp[1],None,None,perc=97)
+  return fp[0][80],fp[0][240]
+
 def smooth(u):
   v = copy(u)
   rgf = RecursiveGaussianFilter(4)
@@ -194,6 +212,17 @@ def writeToFile(name,f):
   aos.writeFloats(f)
   aos.close()
   return f
+def readImage(n1,n2,n3,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 #############################################################################
 # plotting
@@ -210,8 +239,8 @@ def plotfg(f,g,png=None):
   gv = panel.addPoints(1,0,g)
   fv.setLineWidth(2)
   gv.setLineWidth(2)
-  panel.setVLimits(0,-1.3,1.3)
-  panel.setVLimits(1,-1.3,1.3)
+  panel.setVLimits(0,-4.3,4.3)
+  panel.setVLimits(1,-4.3,4.3)
   #panel.setHLabel("sample index i")
   #panel.setVLabel(0,"f")
   #panel.setVLabel(1,"g")
@@ -225,11 +254,47 @@ def plotfg(f,g,png=None):
     png += "n"+str(int(10*nrms))
     frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
 
+def plot2(c,s=None,u=None,cmin=0.0,cmax=0.0,perc=None,png=None):
+  n,nlag = len(c[0]),len(c)
+  s1 = Sampling(n,1.0,0.0)
+  slag = Sampling(nlag,1.0,0)
+  #panel = PlotPanel(1,1,PlotPanel.Orientation.X1RIGHT_X2UP)
+  panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
+  panel.setHLimits(0,0,n-1)
+  panel.setVLimits(0,slag.first,slag.last)
+  cv = panel.addPixels(0,0,s1,slag,c)
+  cv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  if perc:
+    cv.setPercentiles(100-perc,perc)
+  elif cmin<cmax:
+    cv.setClips(cmin,cmax)
+  if s:
+    sv = panel.addPoints(0,0,s)
+    sv.setLineColor(Color.WHITE)
+    sv.setLineStyle(PointsView.Line.DOT)
+    sv.setLineWidth(3)
+  if u:
+    uv = panel.addPoints(0,0,u)
+    uv.setLineColor(Color.WHITE)
+    uv.setLineWidth(3)
+  #panel.addColorBar()
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(backgroundColor)
+  frame.setFontSizeForPrint(8,240)
+  frame.setSize(1000,470)
+  frame.setVisible(True)
+  if png and pngDir:
+    png += "n"+str(int(10*nrms))
+    png += "s"+str(int(10*strainMax))
+    frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
+
 def plotc(c,s=None,u=None,cmin=0.0,cmax=0.0,perc=None,png=None):
   n,nlag = len(c[0]),len(c)
   s1 = Sampling(n,1.0,0.0)
   slag = Sampling(nlag,1.0,-(nlag-1)/2)
-  panel = PlotPanel(1,1,PlotPanel.Orientation.X1RIGHT_X2UP)
+  #panel = PlotPanel(1,1,PlotPanel.Orientation.X1RIGHT_X2UP)
+  panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
   panel.setHLimits(0,0,n-1)
   panel.setVLimits(0,slag.first,slag.last)
   cv = panel.addPixels(0,0,s1,slag,c)
@@ -356,6 +421,27 @@ def plot3c(c,s,u,cmin=0.0,cmax=0.0,png=None):
     png += "n"+str(int(10*nrms))
     #png += "s"+str(int(10*strainMax))
     frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
+def plot3(f,cmin=None,cmax=None,clab=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  d1,d2,d3=s1.getDelta(),s2.getDelta(),s3.getDelta()
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  ipg = sf.addImagePanels(s1,s2,s3,f)
+  ipg.setClips(-2.0,1.5)
+  sf.setSize(750,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  radius = 0.48*sqrt(n1*n1+n2*n2+n3*n3)
+  zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
+  ov = sf.getOrbitView()
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
+  ov.setAzimuthAndElevation(120.0,25.0)
+  ov.setTranslate(Vector3(0.02,0.16,-0.27))
+  ov.setScale(1.25)
+  sf.setVisible(True)
 
 #############################################################################
 # Do everything on Swing thread.

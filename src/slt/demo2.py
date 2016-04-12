@@ -9,14 +9,15 @@ pngDir = getPngDir() #"../../../png/slt/2d/sub1/"
 gxfile = "gx" # input image (maybe after bilateral filtering)
 elfile = "el"
 slfile = "sl"
-stfile = "st"
+st1file = "st1"
+st2file = "st2"
 sffile = "sf"
 
 
 def main(args):
   #goLinear()
   #goSaltLike()
-  goSaltSurfer()
+  #goSaltSurfer()
   goSaltSurferC()
   #goTest()
 def goTest():
@@ -74,7 +75,8 @@ def goSaltLike():
   st1,st2 = ssf.thin(0.3,sl,u1,u2)
   writeImage(elfile,el)
   writeImage(slfile,sl)
-  writeImage(stfile,st1)
+  writeImage(st1file,st1)
+  writeImage(st2file,st2)
   plot2(gx,s1,s2,label="Amplitude",png="gx")
   plot2(gx,s1,s2,el,cmin=0.1,cmax=0.9,cmap=jetRamp(1.0),
         label="Linearity",png="el")
@@ -86,7 +88,8 @@ def goSaltSurfer():
   gx = readImage2d(gxfile)
   el = readImage2d(elfile)
   sl = readImage2d(slfile)
-  st = readImage2d(stfile)
+  st1 = readImage2d(st1file)
+  st2 = readImage2d(st2file)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   g1 = zerofloat(n1,n2)
@@ -98,21 +101,26 @@ def goSaltSurfer():
   mul(u2,sl,g2)
   sps = ScreenPoissonSurfer()
   sps.setSmoothings(20,20,20)
-  mk = pow(st,12)
+  mk = pow(st2,7)
   sf = sps.saltIndicator(mk,g1,g2)
   writeImage(sffile,sf)
   print min(sf)
   print max(sf)
-  plot2(gx,s1,s2,st,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+  plot2(gx,s1,s2,st2,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         label="Salt likelihood")
-  plot2(gx,s1,s2,sf,u=sf,cmin=-18,cmax=18,cmap=bwrRamp(1.0),
+  plot2(gx,s1,s2,st2,u=sf,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        label="Salt likelihood",png="sb")
+  plot2(gx,s1,s2,sf,cmin=-15,cmax=15,cmap=bwrRamp(1.0),
         label="Salt indicator",png="sf")
+  plot2(gx,s1,s2,sf,u=sf,cmin=-15,cmax=15,cmap=bwrRamp(1.0),
+        label="Salt indicator",png="sfb")
 
 def goSaltSurferC():
   gx = readImage2d(gxfile)
   el = readImage2d(elfile)
   sl = readImage2d(slfile)
-  st = readImage2d(stfile)
+  st1 = readImage2d(st1file)
+  st2 = readImage2d(st2file)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   g1 = zerofloat(n1,n2)
@@ -126,15 +134,19 @@ def goSaltSurferC():
   spc.setSmoothings(20,20,20)
   k1 = [116, 90, 98, 73, 80, 97, 85]#106, 90, 97, 78, 72, 80, 86, 97, 74]
   k2 = [139,162,173,190,213,235,269]#118,162,173,186,198,213,221,235,276]
-  mk = pow(st,12)
+  mk = pow(st1,12)
   sf = spc.saltIndicator(k1,k2,mk,g1,g2)
   writeImage(sffile,sf)
   print min(sf)
   print max(sf)
-  plot2(gx,s1,s2,st,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        label="Thinned salt likelihood")
-  plot2(gx,s1,s2,sf,u=sf,k1=k1,k2=k2,cmin=-18,cmax=18,
+  plot2(gx,s1,s2,st2,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        label="Salt likelihood")
+  plot2(gx,s1,s2,sf,cmin=-15,cmax=15,
         cmap=bwrRamp(1.0),label="Salt indicator",png="sfc")
+  plot2(gx,s1,s2,st2,u=sf,k1=k1,k2=k2,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        label="Salt likelihood",png="stbc")
+  plot2(gx,s1,s2,sf,u=sf,k1=k1,k2=k2,cmin=-15,cmax=15,
+        cmap=bwrRamp(1.0),label="Salt indicator",png="sfbc")
 
 
 def gain(x):

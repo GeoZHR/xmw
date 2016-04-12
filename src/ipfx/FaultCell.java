@@ -614,12 +614,12 @@ public class FaultCell implements Serializable {
    * @param p input and output array {p1,p2,p3} of point coordinates.
    * @return the cell with a plane that contains the output point.
    */
-  FaultCell walkUpDipFrom(float[] p) {
+  public FaultCell walkUpDipFrom(float[] p) {
     FaultCell cell = this;
     float p1 = p[0];
     float p2 = p[1];
     float p3 = p[2];
-    assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
+    //assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
 
     // Use dip vector of specified cell to walk the point up its plane.
     p1 -= 1.0f;
@@ -637,7 +637,7 @@ public class FaultCell implements Serializable {
     }
 
     // Return updated point and cell.
-    assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
+    //assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
     p[0] = p1;
     p[1] = p2;
     p[2] = p3;
@@ -653,12 +653,12 @@ public class FaultCell implements Serializable {
    * @param p input and output array {p1,p2,p3} of point coordinates.
    * @return the cell with a plane that contains the output point.
    */
-  FaultCell walkDownDipFrom(float[] p) {
+  public FaultCell walkDownDipFrom(float[] p) {
     FaultCell cell = this;
     float p1 = p[0];
     float p2 = p[1];
     float p3 = p[2];
-    assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
+    //assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
 
     // Use dip vector of specified cell to walk the point down its plane.
     p1 += 1.0f;
@@ -676,7 +676,7 @@ public class FaultCell implements Serializable {
     }
 
     // Return updated point and cell.
-    assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
+    //assert abs(cell.distanceFromPlaneTo(p1,p2,p3))<0.01f;
     p[0] = p1;
     p[1] = p2;
     p[2] = p3;

@@ -309,7 +309,7 @@ public class DynamicWarpingX {
     int nl = d[0].length;
     float[][] p = new float[n1][nl];
     float[][] s = new float[n1][nl];
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2.0);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.apply00(d,s);
     for (int i1=0; i1<n1; ++i1) {
     for (int il=1; il<nl-1; ++il) {

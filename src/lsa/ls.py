@@ -51,12 +51,12 @@ def main(args):
   goSimilarity()
 
 def goSimilarity():
-  ms = 33
+  ms = 20
   sd = 0.2
   f,g,s = makeSequences()
   ls = LocalSimilarity(-ms,ms,sd)
   ls.setStrain(0.2/sd)
-  sa = ls.apply(g,f)
+  sa = ls.apply(f,g)
   se = dtran(sa)
   df = ls.accumulateForward(se)
   dr = ls.accumulateReverse(se)
@@ -71,7 +71,7 @@ def goSimilarity():
   plotc(ds,None,None,d=sd,perc=90,png="sa")
 def goFigures():
   global nrms,strainMax
-  ml = 33
+  ml = 20
   strainMax = 0.2
   for nrms in [0.7]:#,0.5]:
     f,g,s = makeSequences()
