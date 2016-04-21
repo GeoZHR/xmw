@@ -116,8 +116,14 @@ def main(args):
   #goSlices()
   goChannel()
 def goChannel():
-  gx = readImage(gxfile)
+  gx = readImage(gufile)
   '''
+  lof = LocalOrientFilterP(2,6);
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  lof.applyForNormal(gx,u1,u2,u3)
+
   gs = zerofloat(n1,n2,n3)
   lsf = LocalSmoothingFilter();
   lof = LocalOrientFilterP(2,6);
@@ -125,10 +131,10 @@ def goChannel():
   ets.setEigenvalues(0.0001,0.0001,1.0);
   lsf.apply(ets,64,gx,gs);
   '''
-  cs = ChannelScanner(1,2)
   print min(gx)
   print max(gx)
-  cl = cs.scan(3,4000,gx)
+  cs = ChannelScanner(2,5)
+  cl = cs.scan(4000,gx)
   writeImage(clfile,cl)
   '''
   cl = readImage(clfile)
@@ -138,7 +144,11 @@ def goChannel():
   plot3(gx)
   #plot3(gs)
   plot3(cl,cmin=0.0,cmax=max(cl)/2)
+  cc = cs.setSamples(0.1,cl,u1,u2,u3)
+  #print len(cc)
+  plot3(gx,cells=cc)
   '''
+
 
 
 def goSlices():
@@ -754,7 +764,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
-    cmap = ColorMap(0.0,1.0,ColorMap.JET)
+    cmap = ColorMap(0.0,0.5,ColorMap.JET)
     xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
