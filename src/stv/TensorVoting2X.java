@@ -142,6 +142,26 @@ public class TensorVoting2X {
   }
 
  
+  public float[][] initialOrient(
+    float sigma1, float sigma2, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float pi = (float)Math.PI;
+    float[][] os = new float[n2][n1];
+    float[][] u1 = new float[n2][n1];
+    float[][] u2 = new float[n2][n1];
+    float[][] el = new float[n2][n1];
+    LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2);
+    lof.applyForNormalLinear(fx,u1,u2,el);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float u1i = u1[i2][i1];
+      float u2i = u2[i2][i1];
+      os[i2][i1] = 0.5f*pi+atan2(u1i,u2i);
+    }}
+    return os;
+  }
+
   public float[][][] initialTensorField(
     float gmin, float gmax,
     float sigma1, float sigma2, float[][] fx) {
@@ -245,6 +265,7 @@ public class TensorVoting2X {
       float fxp = si.interpolate(s1,s2,fx,x1p,x2p);
       if(fxi>fxm&&fxi>fxp){
         rs[i2][i1]=fx[i2][i1];
+        /*
         if(abs(u1i)>abs(u2i)) {
           int i1m = max(i1-1,0);
           int i1p = min(i1+1,n1-1);
@@ -256,6 +277,7 @@ public class TensorVoting2X {
           rs[i2m][i1]=fx[i2m][i1];
           rs[i2p][i1]=fx[i2p][i1];
         }
+        */
       }
     }}
     return rs;

@@ -54,6 +54,7 @@ u2file = "u2" # second component of normal
 u3file = "u3" # third component of normal
 smfile = "sm"
 cmfile = "cm"
+clfile = "cl"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -76,8 +77,8 @@ maxThrow = 30.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/nwc/"
-plotOnly = False
+#pngDir = "../../../png/nwc/"
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -92,7 +93,7 @@ def main(args):
   #goSkinMerge()
   #goSmooth()
   #goSlip()
-  goUnfaultS()
+  #goUnfaultS()
   #goDisplay()
   #goFaultImages()
   #gx = readImage(gxfile)
@@ -113,11 +114,36 @@ def main(args):
   '''
   #goResults()
   #goSlices()
+  goChannel()
+def goChannel():
+  gx = readImage(gxfile)
+  '''
+  gs = zerofloat(n1,n2,n3)
+  lsf = LocalSmoothingFilter();
+  lof = LocalOrientFilterP(2,6);
+  ets = lof.applyForTensors(gx);
+  ets.setEigenvalues(0.0001,0.0001,1.0);
+  lsf.apply(ets,64,gx,gs);
+  '''
+  cs = ChannelScanner(1,2)
+  print min(gx)
+  print max(gx)
+  cl = cs.scan(1,1,gx)
+  writeImage(clfile,cl)
+  #plot3(gx)
+  #plot3(gs)
+  #plot3(cl)
+
+
 def goSlices():
   gu = readImage(gufile)
   gu = gain(gu)
+  gu = mul(gu,-1)
+  plot3(gu,k1=238,cmap=ColorMap.BLUE_WHITE_RED)
+  '''
   for k1 in range(440,480,1):
     plot3(gu,k1=k1,png="gu"+str(k1))
+  '''
 def goResults():
   gx = readImage(gxfile)
   gw = readImage("fws1")
@@ -547,11 +573,12 @@ def goUnfaultS():
     writeImage(sw3file,t3)
   else :
     gw = readImage(gwfile)
-    fw = readImage(fwsfile)
-  '''
+    #fw = readImage(fwsfile)
+    fw = readImage("fwt")
   fw = gain(fw)
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
+  '''
   plot3(gw,png="fwuf")
   skins = readSkins(fslbase)
   mark = -999.99

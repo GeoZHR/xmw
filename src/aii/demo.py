@@ -61,9 +61,9 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 plotOnly = False
 pngDir = "../../../png/aii/fake/"
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -90,7 +90,7 @@ def goImpedance3():
   gx = readImage(gxfile)
   px = readImage(pxfile)
   rx = readImage(rnfile)
-  smooth = 0.1 # for noisy data
+  smooth = 0.8 # for noisy data
   ep = fillfloat(1.0,n1,n2,n3)
   u1 = fillfloat(1.0,n1,n2,n3)
   u2 = fillfloat(1.0,n1,n2,n3)
@@ -106,21 +106,23 @@ def goImpedance3():
   ai3.setSmoothness(smooth)
   pt = zerofloat(n1,n2,n3)
   k1,k2,k3,fp = getLogs(px)
-  pi3 = ai3.initialInterp(wp,k1,k2,k3,fp)
-  '''
+  #pi3 = ai3.initialInterp(wp,k1,k2,k3,fp)
   ai3.setInitial(pt,k1,k2,k3,fp)
   pi3 = ai3.applyForImpedance(copy(pt),rx,wp,k1,k2,k3,fp)
-  '''
   samples = fp,k1,k2,k3
   print min(px)
   print max(px)
+  '''
   plot3(gx,clab="Amplitude",png="seismic")
-  plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="pTrue")
+  plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="refx")
   plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
+  '''
   plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
         samples=samples,png="pInitial")
+  '''
   plot3(gx,pi3,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pRecover09")
+        samples=samples,png="pRecover05")
+  '''
 
 def goImpedance2():
   gx = readImage(gxfile)
@@ -215,7 +217,7 @@ def goFakeData():
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.5 # (rms noise)/(rms signal) ratio
+  noise = 0.6 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
@@ -514,8 +516,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(109,138,31)
-  #ipg.setSlices(92,140,59)
+  #ipg.setSlices(109,138,31)
+  ipg.setSlices(109,138,7) # for logs only
   if uncs:
     sg = Group()
     ss = StateSet()

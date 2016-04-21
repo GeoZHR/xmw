@@ -6,9 +6,9 @@ Version: 2016.01.28
 
 from utils2d import * 
 #setupForSubset("pnz")
-#setupForSubset("parihaka")
+setupForSubset("parihaka")
 #setupForSubset("fake")
-setupForSubset("tccs")
+#setupForSubset("tccs")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 f1,f2 = s1.getFirst(),s2.getFirst()
@@ -17,8 +17,8 @@ d1,d2 = s1.getDelta(),s2.getDelta()
 pngDir = None
 pngDir = getPngDir()
 
-fxfile = "fx" # for pnz/tccs data
-#fxfile = "fk114" # for paraihaka data
+#fxfile = "fx" # for pnz/tccs data
+fxfile = "fk114" # for paraihaka data
 edfile = "edge"
 f1file = "f1"
 f2file = "f2"
@@ -34,7 +34,31 @@ def main(args):
   #goTestXX()
   #testSteer()
   #goFake()
-  goTccs()
+  #goTccs()
+  goTest()
+def goTest():
+  fx = readImage(fxfile)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  eu = zerofloat(n1,n2)
+  ev = zerofloat(n1,n2)
+  cs = ChannelScanner(1,2)
+  cl = cs.scan(1.0,3500,fx,u1,u2)
+  cu = cs.scan(3500,fx)
+  lof = LocalOrientFilterP(4.0,4.0)
+  lof.applyForNormal(fx,u1,u2)
+  tv = TensorVoting2X(12,6)
+  clr = tv.findRidges(cu[2])
+  rgf = RecursiveGaussianFilterP(1.0)
+  rgf.apply00(clr,clr)
+  cls = cs.smooth(64,u1,u2,clr)
+  cls = tv.findRidges(cls)
+  rgf.apply00(cls,cls)
+  plot(fx)
+  plot(cl,cmin=0.01,cmax=0.2)
+  plot(clr,cmin=0.01,cmax=0.2)
+  plot(cls,cmin=0.01,cmax=0.1)
+
 
 def goTccs():
   fx = readImage(fxfile)
@@ -493,17 +517,6 @@ def goSnakeFake():
   plot(f,ap=[x1,x2])
   plot(f,ap=[x1s,x2s])
 
-def goTest():
-  f = goFakeImage()
-  x = [20,30,50,60,80,85,85,85,85,70,65,50,40,30,20,20,20]
-  y = [20,20,20,20,20,20,25,35,50,55,50,50,50,50,50,30,20]
-  acs = ActiveSnake(x,y)
-  snake = acs.releaseSnake(s1,s2)
-  xs = snake.getArrayX1()
-  ys = snake.getArrayX2()
-  plot(f,ap=[y,x])
-  plot(f,ap=[ys,xs])
-  
 
 def goFakeImage():
   f = zerofloat(n1,n2)
