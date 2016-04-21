@@ -24,8 +24,8 @@ from mef import *
 from beg import *
 from hv import *
 from he import *
-from nwc import *
 from scl import *
+from nwc import *
 
 #############################################################################
 # Run the function main on the Swing thread

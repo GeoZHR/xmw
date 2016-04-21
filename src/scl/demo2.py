@@ -44,9 +44,13 @@ def goTest():
   u2 = zerofloat(n1,n2)
   eu = zerofloat(n1,n2)
   ev = zerofloat(n1,n2)
-  cs = ChannelScanner(1,2)
+  cs = ChannelScanner(1,3)
   cl = cs.scan(1.0,3500,fx,u1,u2)
   cu = cs.scan(3500,fx)
+  plot(fx)
+  plot(cl,cmin=0.01,cmax=0.2)
+  plot(cu[2],cmin=0.01,cmax=max(cu[2])/10000)
+  '''
   lof = LocalOrientFilterP(4.0,4.0)
   lof.applyForNormal(fx,u1,u2)
   tv = TensorVoting2X(12,6)
@@ -60,6 +64,7 @@ def goTest():
   plot(cl,cmin=0.01,cmax=0.2)
   plot(clr,cmin=0.01,cmax=0.2)
   plot(cls,cmin=0.01,cmax=0.1)
+  '''
 
 
 def goTccs():

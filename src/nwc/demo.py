@@ -134,9 +134,8 @@ def goChannel():
   print min(gx)
   print max(gx)
   cs = ChannelScanner(2,5)
-  cl = cs.scan(4000,gx)
-  writeImage(clfile,cl)
-  '''
+  #cl = cs.scan(4000,gx)
+  #writeImage(clfile,cl)
   cl = readImage(clfile)
   print min(cl)
   print max(cl)
@@ -147,7 +146,6 @@ def goChannel():
   cc = cs.setSamples(0.1,cl,u1,u2,u3)
   #print len(cc)
   plot3(gx,cells=cc)
-  '''
 
 
 

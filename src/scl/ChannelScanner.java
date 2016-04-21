@@ -279,12 +279,13 @@ public class ChannelScanner {
           u1i = -u1i;
           u2i = -u2i;
         }
-        if (eui>=0f) {continue;}
+        //if (eui<=0f) {continue;}
         float b = evi*evi/(eui*eui);
         float s = eui*eui+evi*evi;
         u1[i2][i1] = u1i;
         u2[i2][i1] = u2i;
-        cl[i2][i1] = exp(-b*betas)*(1f-exp(-s*gammas));
+        if (eui==0f) {continue;}
+        cl[i2][i1] = abs(eui)/abs(evi);//exp(-b*betas)*(1f-exp(-s*gammas));
       }
     }
     return cl;

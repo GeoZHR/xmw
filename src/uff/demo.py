@@ -54,7 +54,7 @@ ftx3file = "ftx3"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,20
+sigmaPhi,sigmaTheta = 15,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -78,13 +78,12 @@ plotOnly = False
 def main(args):
   #goFakeData()
   #goSlopes()
-  #goScan()
-  #goThin()
-  #goSkin()
-  #goReSkin()
+  goScan()
+  goThin()
+  goSkin()
   #goSmooth()
   #goSlip()
-  goUnfaultS()
+  #goUnfaultS()
   #goUnfaultC()
   #go2dFault()
   #goSub2d()
@@ -261,7 +260,7 @@ def goSmooth():
   gx = readImage(gxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  skins = readSkins(fskgood)
+  skins = readSkins(fskbase)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
@@ -280,7 +279,7 @@ def goSlip():
   gsx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  skins = readSkins(fskgood)
+  skins = readSkins(fskbase)
   fsl = FaultSlipper(gsx,p2,p3)
   fsl.setOffset(1.0) # the default is 2.0 samples
   #fsl.setErrorPower(2.0)
