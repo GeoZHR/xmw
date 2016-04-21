@@ -128,11 +128,17 @@ def goChannel():
   cs = ChannelScanner(1,2)
   print min(gx)
   print max(gx)
-  cl = cs.scan(1,1,gx)
+  cl = cs.scan(3,4000,gx)
   writeImage(clfile,cl)
-  #plot3(gx)
+  '''
+  cl = readImage(clfile)
+  print min(cl)
+  print max(cl)
+  gx = gain(gx)
+  plot3(gx)
   #plot3(gs)
-  #plot3(cl)
+  plot3(cl,cmin=0.0,cmax=max(cl)/2)
+  '''
 
 
 def goSlices():

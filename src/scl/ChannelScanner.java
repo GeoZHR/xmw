@@ -173,7 +173,6 @@ public class ChannelScanner {
     final int n2 = x[0].length;
     final int n1 = x[0][0].length;
     float[][][] g1 = new float[n3][n2][n1];
-    float[][][] g2 = new float[n3][n2][n1];
     final float[][][] h11 = new float[n3][n2][n1];
     final float[][][] h12 = new float[n3][n2][n1];
     final float[][][] h13 = new float[n3][n2][n1];
@@ -185,10 +184,10 @@ public class ChannelScanner {
     rgf.applyX2X(x,h22);
     rgf.applyXX2(x,h33);
     rgf.apply1XX(x,g1);
-    rgf.applyX1X(x,g2);
     rgf.applyX1X(g1,h12);
     rgf.applyXX1(g1,h13);
-    rgf.applyXX1(g2,h23);
+    rgf.applyX1X(x,h23);
+    rgf.applyXX1(h23,h23);
 
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     LocalOrientFilterP lof = new LocalOrientFilterP(2.0,6.0,6.0);
@@ -200,6 +199,7 @@ public class ChannelScanner {
     lsf.apply(ets,64,h22,h22);
     lsf.apply(ets,64,h23,h23);
     lsf.apply(ets,64,h33,h33);
+
     float alpha  = 0.5f;
     final float sigmas = sigma*sigma;
     final float alphas = 0.5f/(alpha*alpha);
@@ -236,7 +236,7 @@ public class ChannelScanner {
           float ra = e2*e2/(e3*e3);
           float rb = e1*e1/abs(e2*e3);
           float rc = e1*e1+e2*e2+e3*e3;
-          if(e2>0||e3>0) {continue;}
+          if(e2>=0||e3>=0) {continue;}
           cli[i1] = (1-exp(-ra*alphas))*exp(-rb*betas)*(1-exp(-rc*gammas));
         }
       }

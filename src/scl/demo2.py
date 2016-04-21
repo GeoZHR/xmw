@@ -38,6 +38,8 @@ def main(args):
   goTest()
 def goTest():
   fx = readImage(fxfile)
+  print min(fx)
+  print max(fx)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   eu = zerofloat(n1,n2)
