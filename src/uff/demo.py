@@ -54,7 +54,7 @@ ftx3file = "ftx3"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 15,30
+sigmaPhi,sigmaTheta = 20,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -78,11 +78,11 @@ plotOnly = False
 def main(args):
   #goFakeData()
   #goSlopes()
-  goScan()
-  goThin()
-  goSkin()
-  #goSmooth()
-  #goSlip()
+  #goScan()
+  #goThin()
+  #goSkin()
+  goSmooth()
+  goSlip()
   #goUnfaultS()
   #goUnfaultC()
   #go2dFault()
