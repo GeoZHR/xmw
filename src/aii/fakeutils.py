@@ -48,17 +48,10 @@ def setupForSubset(name):
     """ subset of F3 """
     print "setupForSubset: f3d"
     seismicDir = _datdir+"f3d/"
-    #n1,n2,n3 = 462,951,591
-    n1,n2,n3 = 190,480,500
+    n1,n2,n3 = 2897,945,645
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-    '''
-    gx = readImage("f3draw")
-    n1,n2,n3=190,480,500
-    j1,j2,j3=210,0  ,0
-    gxs = copy(n1,n2,n3,j1,j2,j3,gx)
-    '''
   elif name=="tp1":
     print "setupForSubset: subt"
     seismicDir = _datdir+"tp1/"
@@ -90,6 +83,19 @@ def readImage(name):
   ais.readFloats(image)
   ais.close()
   return image
+
+def readImage2D(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 
 def writeImage(name,image):
   """ 

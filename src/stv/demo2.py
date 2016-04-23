@@ -8,14 +8,15 @@ from utils2d import *
 #setupForSubset("pnz")
 #setupForSubset("parihaka")
 #setupForSubset("fake")
-setupForSubset("tccs")
+#setupForSubset("tccs")
+setupForSubset("nwc")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 f1,f2 = s1.getFirst(),s2.getFirst()
 d1,d2 = s1.getDelta(),s2.getDelta()
 
-pngDir = None
 pngDir = getPngDir()
+pngDir = None
 
 fxfile = "fx" # for pnz/tccs data
 #fxfile = "fk114" # for paraihaka data
@@ -34,7 +35,8 @@ def main(args):
   #goTestXX()
   #testSteer()
   #goFake()
-  goTccs()
+  #goTccs()
+  goNwc()
 
 def goTccs():
   fx = readImage(fxfile)
@@ -94,6 +96,32 @@ def goFake():
   os = copy(n1,n2,ps)
   print max(ss)
   plot2(ss,cmin=0.0,cmax=1.0,png="ss"+str(nd)+str(sig))
+
+def goNwc():
+  fx = readImage(fxfile)
+  nd,sig = 8,8
+  #nd,sig = 8,4
+  tv = TensorVoting2X(nd,sig)
+  gx,os=tv.initialTensorField(0.09,0.9,2,2,fx)
+  normalize(gx)
+  ss,ps = tv.applyVoting(gx,os)
+  normalize(ss)
+  ss = tv.findRidges(ss)
+  ss,ps = tv.applyVoting(ss,ps)
+  normalize(ss)
+  ss = tv.findRidges(ss)
+  ss,ps = tv.applyVoting(ss,ps)
+  ss = copy(n1,n2,ss)
+  os = copy(n1,n2,ps)
+  normalize(ss)
+  #normalize(gx)
+  se,fs = tv.smoothEdge(2,2,fx)
+  plot(fx,png="fx"+"Pari")
+  plot(fs,png="fs"+"Pari")
+  plot(ss,cmin=0.01,cmax=0.2,png="ss"+str(nd)+str(sig))
+  plot(gx,cmin=0.01,cmax=0.6,png="gx")
+  plot(se,cmin=0.01,cmax=0.5,png="se")
+
 def goParihaka():
   ft = readImage(fxfile)
   fx = zerofloat(n1,n2)

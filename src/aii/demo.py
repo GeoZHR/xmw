@@ -5,9 +5,9 @@ Version: 2015.02.09
 """
 
 from fakeutils import *
-setupForSubset("fake")
+#setupForSubset("fake")
 #setupForSubset("tp")
-#setupForSubset("f3d")
+setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -71,7 +71,14 @@ def main(args):
   #goFakeData()
   #goImpedance2()
   #goImpedance3()
-  goReflectivity()
+  #goReflectivity()
+  goF3d()
+def goF3d():
+  hd = readImage2D(11,590732,'hd')
+  rt = readImage2D(2897,590732,'rx')
+  rs = Reshape(303,103,945,645)
+  rx = rs.apply(hd,rt)
+  plot3(rx)
 def goReflectivity():
   gx = readImage(gxfile)
   rx = readImage(rxfile)

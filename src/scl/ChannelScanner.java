@@ -175,26 +175,27 @@ public class ChannelScanner {
   public float[][][] scan(float gamma, float[][] x) {
     int n2 = x.length;
     int n1 = x[0].length;
-    float[][] cl = new float[n2][n1];
-    float[][] u1 = new float[n2][n1];
-    float[][] u2 = new float[n2][n1];
-    float[][] u1k = new float[n2][n1];
-    float[][] u2k = new float[n2][n1];
+    float[][][] cl = new float[2][n2][n1];
     float sigMin = (float)_sigmaMin;
     float sigMax = (float)_sigmaMax;
     for (float sigma=sigMin; sigma<=sigMax; sigma = sigma+1.0f) {
-      float[][] clk = scan(sigma,gamma,x,u1k,u2k);
+      float[][][] clk = scan(sigma,gamma,x);
       for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
-        float clt = clk[i2][i1];
-        if(clt>cl[i2][i1]) {
-          cl[i2][i1] = clt;
-          u1[i2][i1] = u1k[i2][i1];
-          u2[i2][i1] = u2k[i2][i1];
+        float cl1 = clk[0][i2][i1];
+        float cl2 = clk[1][i2][i1];
+        //cl[0][i2][i1] += cl1;
+        //cl[1][i2][i1] += cl2;
+        if(cl1>cl[0][i2][i1]) {
+          cl[0][i2][i1] = cl1;
         }
+        if(cl2>cl[1][i2][i1]) {
+          cl[1][i2][i1] = cl2;
+        }
+
       }}
     }
-    return new float[][][]{u1,u2,cl};
+    return cl;
   }
 
   public float[][][] scan(float gamma, float[][][] x) {
@@ -230,26 +231,24 @@ public class ChannelScanner {
    * @param eu largest eigenvalue corresponding to the eigenvector u.
    * @param ev smallest eigenvalue corresponding to the eigenvector v.
    */
-  public float[][] scan(float sigma, float gamma, 
-    float[][] x, float[][] u1, float[][] u2) 
-  {
+  public float[][][] scan(float sigma, float gamma, float[][] x) {
     int n2 = x.length;
     int n1 = x[0].length;
     float[][] h11 = new float[n2][n1];
     float[][] h12 = new float[n2][n1];
     float[][] h22 = new float[n2][n1];
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
-    rgf.apply2X(x,h11);
-    rgf.apply1X(x,h12);
-    rgf.applyX1(h12,h12);
-    rgf.applyX2(x,h22);
+    rgf.apply20(x,h11);
+    rgf.apply10(x,h12);
+    rgf.apply01(h12,h12);
+    rgf.apply02(x,h22);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    LocalOrientFilterP lof = new LocalOrientFilterP(4f,4f);
+    LocalOrientFilterP lof = new LocalOrientFilterP(6f,6f);
     EigenTensors2 ets = lof.applyForTensors(x);
     ets.setEigenvalues(0.0001f,1.0f);
-    lsf.apply(ets,64,h11,h11);
-    lsf.apply(ets,64,h12,h12);
-    lsf.apply(ets,64,h22,h22);
+    lsf.apply(ets,32,h11,h11);
+    lsf.apply(ets,32,h12,h12);
+    lsf.apply(ets,32,h22,h22);
 
     mul(h11,sigma*sigma,h11);
     mul(h12,sigma*sigma,h12);
@@ -259,8 +258,8 @@ public class ChannelScanner {
     float[][] a = new float[2][2];
     float[][] z = new float[2][2];
     float[] e = new float[2];
-    float[][] cl = new float[n2][n1];
-    float beta = 0.5f;
+    float[][][] cl = new float[2][n2][n1];
+    float beta = 1.5f;
     float gammas = 0.5f/(gamma*gamma);
     float betas = 0.5f/(beta*beta);
 
@@ -273,19 +272,14 @@ public class ChannelScanner {
         solveSymmetric22(a,z,e);
         float eui = e[0];
         float evi = e[1];
-        float u1i = z[0][0];
-        float u2i = z[0][1];
-        if (u1i<0.0f) {
-          u1i = -u1i;
-          u2i = -u2i;
-        }
         //if (eui<=0f) {continue;}
         float b = evi*evi/(eui*eui);
         float s = eui*eui+evi*evi;
-        u1[i2][i1] = u1i;
-        u2[i2][i1] = u2i;
-        if (eui==0f) {continue;}
-        cl[i2][i1] = abs(eui)/abs(evi);//exp(-b*betas)*(1f-exp(-s*gammas));
+        if (eui<=0f) {
+          cl[0][i2][i1] = exp(-b*betas)*(1f-exp(-s*gammas));
+        } else {
+          cl[1][i2][i1] = exp(-b*betas)*(1f-exp(-s*gammas));
+        }
       }
     }
     return cl;

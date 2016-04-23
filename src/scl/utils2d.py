@@ -8,8 +8,8 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/stv/"
-_pngdir = "../../../png/stv/"
+_datdir = "../../../data/seis/scl/"
+_pngdir = "../../../png/scl/"
 
 #############################################################################
 # Setup
@@ -45,6 +45,28 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2 = 0.0,0.0 # = 0.000,0.000,0.000
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+  elif name=="vessel":
+    """ nwc horizon """
+    print "setupForSubset: vessel"
+    pngDir = _pngdir+"vessel/"
+    seismicDir = _datdir+"vessel/"
+    n1,n2 = 512,512
+    d1,d2 = 1.0,1.0 
+    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
+    f1,f2 = 0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+
+  elif name=="nwc":
+    """ nwc horizon """
+    print "setupForSubset: nwc"
+    pngDir = _pngdir+"nwc/"
+    seismicDir = _datdir+"nwc/"
+    n1,n2 = 601,401
+    d1,d2 = 1.0,1.0 
+    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
+    f1,f2 = 0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+
   elif name=="fake":
     """ fake """
     print "setupForSubset: fake"

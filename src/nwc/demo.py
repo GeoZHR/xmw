@@ -117,6 +117,11 @@ def main(args):
   goChannel()
 def goChannel():
   gx = readImage(gufile)
+  gc = zerofloat(n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      gc[i3][i2] = gx[i3][i2][160]
+  writeImage("gx160",gc)
   '''
   lof = LocalOrientFilterP(2,6);
   u1 = zerofloat(n1,n2,n3)
@@ -130,6 +135,7 @@ def goChannel():
   ets = lof.applyForTensors(gx);
   ets.setEigenvalues(0.0001,0.0001,1.0);
   lsf.apply(ets,64,gx,gs);
+  '''
   '''
   print min(gx)
   print max(gx)
@@ -146,6 +152,7 @@ def goChannel():
   cc = cs.setSamples(0.1,cl,u1,u2,u3)
   #print len(cc)
   plot3(gx,cells=cc)
+  '''
 
 
 

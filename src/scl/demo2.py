@@ -6,7 +6,9 @@ Version: 2016.01.28
 
 from utils2d import * 
 #setupForSubset("pnz")
-setupForSubset("parihaka")
+#setupForSubset("parihaka")
+#setupForSubset("vessel")
+setupForSubset("nwc")
 #setupForSubset("fake")
 #setupForSubset("tccs")
 s1,s2 = getSamplings()
@@ -17,8 +19,8 @@ d1,d2 = s1.getDelta(),s2.getDelta()
 pngDir = None
 pngDir = getPngDir()
 
-#fxfile = "fx" # for pnz/tccs data
-fxfile = "fk114" # for paraihaka data
+fxfile = "fx" # for pnz/tccs data
+#fxfile = "fk114" # for paraihaka data
 edfile = "edge"
 f1file = "f1"
 f2file = "f2"
@@ -36,20 +38,20 @@ def main(args):
   #goFake()
   #goTccs()
   goTest()
+
 def goTest():
   fx = readImage(fxfile)
   print min(fx)
   print max(fx)
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
   eu = zerofloat(n1,n2)
   ev = zerofloat(n1,n2)
-  cs = ChannelScanner(1,3)
-  cl = cs.scan(1.0,3500,fx,u1,u2)
-  cu = cs.scan(3500,fx)
+  cs = ChannelScanner(1,15)
+  cls = cs.scan(2000,fx)
+  cl1 = cls[0]
+  cl2 = cls[1]
   plot(fx)
-  plot(cl,cmin=0.01,cmax=0.2)
-  plot(cu[2],cmin=0.01,cmax=max(cu[2])/10000)
+  plot(cl1,cmin=0.01,cmax=max(cl1))
+  plot(cl2,cmin=0.01,cmax=max(cl2)/2)
   '''
   lof = LocalOrientFilterP(4.0,4.0)
   lof.applyForNormal(fx,u1,u2)
