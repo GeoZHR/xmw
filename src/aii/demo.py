@@ -72,7 +72,11 @@ def main(args):
   #goImpedance2()
   #goImpedance3()
   #goReflectivity()
-  goF3d()
+  #goF3d()
+  rt = readImage('rxr')
+  rx = copy(n1,n2,590,0,0,0,rt)
+  writeImage('rx',rx)
+  #plot3(rx,cmin=min(rx)/10,cmax=max(rx)/10)
 def goF3d():
   hd = readImage2D(11,590732,'hd')
   rt = readImage2D(2897,590732,'rx')
