@@ -285,6 +285,42 @@ public class ChannelScanner {
     return cl;
   }
 
+  public float[][] scanX(float sigma, float[][] x) {
+    int n2 = x.length;
+    int n1 = x[0].length;
+    float[][] h11 = new float[n2][n1];
+    float[][] h12 = new float[n2][n1];
+    float[][] h22 = new float[n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+    rgf.apply20(x,h11);
+    rgf.apply10(x,h12);
+    rgf.apply01(h12,h12);
+    rgf.apply02(x,h22);
+
+    mul(h11,sigma*sigma,h11);
+    mul(h12,sigma*sigma,h12);
+    mul(h22,sigma*sigma,h22);
+
+    // Compute eigenvectors, eigenvalues, and outputs that depend on them.
+    float[][] a = new float[2][2];
+    float[][] z = new float[2][2];
+    float[] e = new float[2];
+    float[][] cl = new float[n2][n1];
+
+    for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        a[0][0] = h11[i2][i1];
+        a[0][1] = h12[i2][i1];
+        a[1][0] = h12[i2][i1];
+        a[1][1] = h22[i2][i1];
+        solveSymmetric22(a,z,e);
+        cl[i2][i1] = e[0];
+      }
+    }
+    return cl;
+  }
+
+
   public float[][][] scan(float sigma, float gamma, float[][][] x) {
     final int n3 = x.length;
     final int n2 = x[0].length;

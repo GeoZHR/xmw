@@ -37,8 +37,35 @@ def main(args):
   #testSteer()
   #goFake()
   #goTccs()
-  goTest()
-
+  #goTest()
+  goSemb()
+def goSemb():
+  fx = readImage(fxfile)
+  fx = div(fx,max(fx))
+  sn = zerofloat(n1,n2)
+  sd = zerofloat(n1,n2)
+  se = zerofloat(n1,n2)
+  sig = 4
+  rgf = RecursiveGaussianFilter(sig)
+  fs = mul(fx,fx)
+  rgf.apply2X(fx,sd)
+  rgf.apply0X(fs,sn)
+  sd = mul(sd,sd)
+  sd = mul(sig*sig,sd)
+  lof = LocalOrientFilterP(6,6)
+  ets = lof.applyForTensors(fx)
+  ets.setEigenvalues(0.001,1.0)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,32,sd,sd)
+  lsf.apply(ets,32,sn,sn)
+  for i2 in range(n2):
+    for i1 in range(n1):
+      if(abs(sn[i2][i1])>0.0001):
+        se[i2][i1] = sd[i2][i1]/sn[i2][i1]
+  print min(se)
+  print max(se)
+  plot(fx)
+  plot(se,cmin=0.001,cmax=max(se)/4)
 def goTest():
   fx = readImage(fxfile)
   print min(fx)

@@ -90,6 +90,120 @@ public class ChannelScanner {
     return mul(vf,vfscl);
   }
 
+
+  public float[][][] semblanceX(float sig1, float sig2, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    float[][][] sn = new float[n3][n2][n1];
+    float[][][] nt = new float[n3][n2][n1];
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    float[][][] s1 = new float[n3][n2][n1];
+    float[][][] s2 = new float[n3][n2][n1];
+    float[][][] s3 = new float[n3][n2][n1];
+    LocalOrientFilterP lof1 = new LocalOrientFilterP(2,2);
+    lof1.applyForNormal(gx,u1,u2,u3);
+    LocalOrientFilterP lof2 = new LocalOrientFilterP(6,6);
+    EigenTensors3 ets = lof2.applyForTensors(gx);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    ets.setEigenvalues(0.0001f,1.0000f,0.0001f);
+    lsf.apply(ets,sig1,u1,s1);
+    lsf.apply(ets,sig1,u2,s2);
+    lsf.apply(ets,sig1,u3,s3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float s1i = s1[i3][i2][i1];
+      float s2i = s2[i3][i2][i1];
+      float s3i = s3[i3][i2][i1];
+      nt[i3][i2][i1] = s1i*s1i+s2i*s2i+s3i*s3i;
+    }}}
+    ets.setEigenvalues(0.0001f,0.0001f,1.0000f);
+    lsf.apply(ets,sig2,nt,sn);
+    return sn;
+  }
+
+  public float[][][][] semblanceV(float sig1, float sig2, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    LocalOrientFilterP lof1 = new LocalOrientFilterP(2,2);
+    lof1.applyForNormal(gx,u1,u2,u3);
+    LocalOrientFilterP lof2 = new LocalOrientFilterP(6,6);
+    EigenTensors3 ets = lof2.applyForTensors(gx);
+    float[][][] s1 = semblance(sig1,sig2,ets,u1);
+    System.out.println("s1 done...");
+    float[][][] s2 = semblance(sig1,sig2,ets,u2);
+    System.out.println("s2 done...");
+    float[][][] s3 = semblance(sig1,sig2,ets,u3);
+    System.out.println("s3 done...");
+    return new float[][][][]{s1,s2,s3};
+
+  }
+
+  public float[][][] semblance(
+    float sig1, float sig2, EigenTensors3 ets, float[][][] gx) 
+  {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    float[][][] gs = mul(gx,gx);
+    float[][][] sn = new float[n3][n2][n1];
+    float[][][] sd = new float[n3][n2][n1];
+    float[][][] nt = new float[n3][n2][n1];
+    float[][][] dt = new float[n3][n2][n1];
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    ets.setEigenvalues(0.0001f,1.0000f,0.0001f);
+    lsf.apply(ets,sig1,gx,nt);
+    lsf.apply(ets,sig1,gs,dt);
+    ets.setEigenvalues(0.0001f,0.0001f,1.0000f);
+    nt = mul(nt,nt);
+    lsf.apply(ets,sig2,nt,sn);
+    lsf.apply(ets,sig2,dt,sd);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float sni = sn[i3][i2][i1];
+      float sdi = sd[i3][i2][i1];
+      if(sni>sdi) {sni=sdi;}
+      if(sdi>0.0001f && sni>0f) {
+        sn[i3][i2][i1] = sni/sdi;
+      } else {
+        sn[i3][i2][i1] = 0.0f;
+      }
+    }}}
+    return sn;
+  }
+
+
+  public float[][][] semblance(float sig1, float sig2, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    float[][][] gs = mul(gx,gx);
+    float[][][] sn = new float[n3][n2][n1];
+    float[][][] sd = new float[n3][n2][n1];
+    float[][][] nt = new float[n3][n2][n1];
+    float[][][] dt = new float[n3][n2][n1];
+    LocalOrientFilterP lof = new LocalOrientFilterP(6,6);
+    EigenTensors3 ets = lof.applyForTensors(gx);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    ets.setEigenvalues(0.0001f,1.0000f,0.0001f);
+    lsf.apply(ets,sig1,gx,nt);
+    lsf.apply(ets,sig1,gs,dt);
+    nt = mul(nt,nt);
+    ets.setEigenvalues(0.0001f,0.0001f,1.0000f);
+    lsf.apply(ets,sig2,nt,sn);
+    lsf.apply(ets,sig2,dt,sd);
+    float[][][] se = div(sn,sd);
+    return se;
+  }
+
   /**
    * Returns slopes and planarities of features in a specified image.
    * Image features are assumed to be locally planar, with slopes that may

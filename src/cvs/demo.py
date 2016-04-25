@@ -5,7 +5,7 @@ Version: 2014.07.17
 """
 
 from pnzutils import *
-setupForSubset("pnz")
+setupForSubset("pnzbs")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -76,49 +76,39 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goSubset()
-  #goSemblance()
-  goTest()
+  goSemblance()
+  #goTest()
 
-def goTest():
-  gx = readImage("gxb")
-  gx = div(gx,max(gx)*0.1)
-  cs = ChannelScanner(8,20)
-  cl = cs.gradient(64,4,2,gx)
-  writeImage(clfie,cl)
-  plot3(gx,cl,cmin=0,cmax=0.4,cmap=jetRamp(1.0),
-        clab="Channel likelihoods")
 
 def goSemblance():
-  gx = readImage("gxb")
-  #gs = copy(136,n2,n3,186,0,0,gx)
-  #writeImage("gxb",gs)
+  print n1
+  gx = readImage("gx")
   plot3(gx)
-  g1 = zerofloat(n1,n2,n3)
-  g2 = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilter(2,2)
-  et1 = lof.applyForTensors(gx)
-  et2 = lof.applyForTensors(gx)
-  et1.setEigenvalues(0.0001,1.0000,1.0000)
-  et2.setEigenvalues(0.0001,0.0001,1.0000)
-  lsf = LocalSmoothingFilter()
-  lsf.apply(et1,64,gx,g1)
-  lsf.apply(et2,64,gx,g2)
-  plot3(gx)
-  plot3(g1)
-  plot3(g2)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  cs = ChannelScanner(20,4)
+  lof = LocalOrientFilterP(2,2)
+  lof.applyForNormal(gx,u1,u2,u3)
+  lof = LocalOrientFilterP(6,6)
+  ets = lof.applyForTensors(gx)
+  s1 = cs.semblance(8,20,ets,u1)
+  s2 = cs.semblance(8,20,ets,u2)
+  s3 = cs.semblance(8,20,ets,u3)
+  ss = add(s1,s2)
+  ss = add(s3,ss)
+  ss = div(ss,3)
+  ss = sub(1,ss)
+  print max(ss)
+  plot3(ss,cmin=0, cmax=0.8)
   '''
-  plot3(sub(g2,g1))
-  cs = ChannelScanner(8,20)
-  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
-  p2,p3 = ChannelScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  sb = cs.scan(2,12,gx,p2,p3)
-  writeImage("sb",sb)
-  print min(sb)
-  print max(sb)
-  plot3(gx)
-  plot3(sb,cmin=min(sb),cmax=max(sb))
+  s1 = sub(1,ss[0])
+  s2 = sub(1,ss[1])
+  s3 = sub(1,ss[2])
+  plot3(s1,cmin=0, cmax=max(s1)/2)
+  plot3(s2,cmin=0, cmax=max(s2)/2)
+  plot3(s3,cmin=0, cmax=max(s3)/2)
   '''
-
 
 def goSlopes():
   print "goSlopes ..."
