@@ -37,7 +37,7 @@ pngDir = "../../../png/aii/f3d/"
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goLogs()
-  goLinearity()
+  #goLinearity()
   goImpedance()
 def goLinearity():
   print "goLinearity..."
