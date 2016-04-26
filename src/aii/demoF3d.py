@@ -61,8 +61,8 @@ def goImpedance():
   et3 = lof.applyForTensors(gx,True)
   print "tensor computation done..."
   et3.setEigenvalues(0.000001,1.0,1.0)
-  ai3 = AcousticImpedanceInv3(6.0,6.0)
-  ai3.setIterations(0.001,500)
+  ai3 = AcousticImpedanceInv3(8.0,8.0)
+  ai3.setIterations(0.001,200)
   ai3.setTensors(et3)
   ai3.setSmoothness(smooth)
   pt = zerofloat(n1,n2,n3)

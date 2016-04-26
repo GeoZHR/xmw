@@ -5,9 +5,8 @@ Version: 2015.02.09
 """
 
 from fakeutils import *
-#setupForSubset("fake")
+setupForSubset("fake")
 #setupForSubset("tp")
-setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -70,7 +69,7 @@ pngDir = None
 def main(args):
   #goFakeData()
   #goImpedance2()
-  #goImpedance3()
+  goImpedance3()
 
 def goImpedance3():
   gx = readImage(gxfile)
@@ -87,7 +86,7 @@ def goImpedance3():
   wp = pow(ep,6.0)
   et3.setEigenvalues(0.000001,1.0,1.0)
   ai3 = AcousticImpedanceInv3(6.0,6.0)
-  ai3.setIterations(0.001,500)
+  ai3.setIterations(0.001,200)
   ai3.setTensors(et3)
   ai3.setSmoothness(smooth)
   pt = zerofloat(n1,n2,n3)
