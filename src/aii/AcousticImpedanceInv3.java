@@ -228,7 +228,7 @@ public class AcousticImpedanceInv3 {
       for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
         if(d!=null){d.getTensor(i1,i2,i3,di);}
         float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
-        float wps = wpi*wpi;
+        float wps = wpi*wpi*_sc;
         float d11 = di[0];
         float d12 = di[1];
         float d13 = di[2];

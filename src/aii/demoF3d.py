@@ -5,8 +5,6 @@ Version: 2015.02.09
 """
 
 from fakeutils import *
-#setupForSubset("fake")
-#setupForSubset("tp")
 setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -68,32 +66,33 @@ pngDir = None
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
-  #goImpedance2()
-  #goImpedance3()
-
-def goImpedance3():
+  #goLogs()
+  goImpedance()
+def goImpedance():
+  smooth = 0.5
+  rx = readImage(rxfile)
   gx = readImage(gxfile)
-  px = readImage(pxfile)
-  rx = readImage(rnfile)
-  smooth = 0.5 # for noisy data
   ep = fillfloat(1.0,n1,n2,n3)
   u1 = fillfloat(1.0,n1,n2,n3)
   u2 = fillfloat(1.0,n1,n2,n3)
   u3 = fillfloat(1.0,n1,n2,n3)
   lof = LocalOrientFilter(8.0,2.0)
   et3 = lof.applyForTensors(gx)
+  print "tensor computation done..."
   lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  wp = pow(ep,6.0)
+  wp = pow(ep,10.0)
+  print "linearity computation done..."
   et3.setEigenvalues(0.000001,1.0,1.0)
   ai3 = AcousticImpedanceInv3(6.0,6.0)
   ai3.setIterations(0.001,500)
   ai3.setTensors(et3)
   ai3.setSmoothness(smooth)
   pt = zerofloat(n1,n2,n3)
-  k1,k2,k3,fp = getLogs(px)
+  fp,k1,k2,k3,fps = getF3dLogs()
   ai3.setInitial(pt,k1,k2,k3,fp)
-  pi3 = ai3.applyForImpedance(copy(pt),rx,wp,k1,k2,k3,fp)
+  pi3 = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
+  writeImage(pxfile,pi3)
+  '''
   samples = fp,k1,k2,k3
   print min(px)
   print max(px)
@@ -103,137 +102,44 @@ def goImpedance3():
   plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
         samples=samples,png="pInitial")
   plot3(gx,pi3,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pRecover01")
+        samples=samples,png="pRecover05")
+  '''
 
-def goImpedance2():
-  gx = readImage(gxfile)
-  px = readImage(pxfile)
-  rx = readImage(rnfile)
-  #rx = readImage(rxfile)
-  #smooth = 0.5 # for clean data
-  rx = readImage(rnfile)
-  smooth = 0.9 # for noisy data
-  r3,p3,g3 = rx[50],px[50],gx[50]
-  k1,k2,fp = setWells(p3)
-  ep = fillfloat(1.0,n1,n2)
-  u1 = fillfloat(1.0,n1,n2)
-  u2 = fillfloat(1.0,n1,n2)
-  lof = LocalOrientFilter(8.0,2.0)
-  et2 = lof.applyForTensors(g3)
-  lof.applyForNormalLinear(r3,u1,u2,ep)
-  wp = pow(ep,6.0)
-  et2.setEigenvalues(0.000001,1.0)
-  ai2 = AcousticImpedanceInv2(6.0,6.0)
-  ai2.setIterations(0.001,800)
-  ai2.setTensors(et2)
-  ai2.setSmoothness(smooth)
-  pt = zerofloat(n1,n2)
-  ai2.setInitial(u1,pt,k1,k2,fp)
-  pi2 = ai2.applyForImpedance(r3,wp,k1,k2,fp)
-  plot2(s1,s2,r3,clab="Reflectivity",cmin=-0.05,cmax=0.05,png="rx")
-  plot2(s1,s2,p3,cmap=ColorMap.JET,clab="True impedance",
-        cmin=min(p3),cmax=max(p3),png="p3")
-  plot2(s1,s2,pt,cmap=ColorMap.JET,clab="Initial impedance",
-        cmin=min(p3),cmax=max(p3),interp=False,png="pt")
-  plot2(s1,s2,pi2,cmap=ColorMap.JET,clab="Recovered impedance",
-        cmin=min(p3),cmax=max(p3),png="pi")
+def goLogs():
+  rx = readImage(rxfile)
+  print min(rx)
+  print max(rx)
+  fp,k1,k2,k3,fps = getF3dLogs()
+  r1 = rx[259][ 33]
+  r2 = rx[619][545]
+  r3 = rx[339][704]
+  r4 = rx[141][ 84]
+  frs = [r1,r2,r3,r4]
+  plot1s(s1,frs,rs=fps)
+  samples=fp,k1,k2,k3
+  plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,samples=samples)
 
-def getLogs(px):
-  k2u = [81,56,20,8,96,50]
-  k3u = [90,93,65,8,20,30]
-  np = len(k2u)
-  k1,k2,k3,fp = [],[],[],[]
-  for ip in range(np):
-    i2 = round(k2u[ip])
-    i3 = round(k3u[ip])
-    for i1 in range(n1):
-      k1.append(i1)
-      k2.append(i2)
-      k3.append(i3)
-      fp.append(px[i3][i2][i1])
-  return k1,k2,k3,fp
-
-def setWells3D(p3):
-  k1 = zerofloat(n1*2)
-  k2 = zerofloat(n1*2)
-  k3 = zerofloat(n1*2)
-  fp = zerofloat(n1*2)
-  k = 0
-  for i1 in range(n1):
-    k1[k] = i1
-    k2[k] = 15
-    fp[k] = p3[15][i1]
-    k = k+1
-  for i1 in range(n1):
-    k1[k] = i1
-    k2[k] = 61
-    fp[k] = p3[61][i1]
-    k = k+1
-  return k1,k2,fp
-
-def setWells(p3):
-  k1 = zerofloat(n1*2)
-  k2 = zerofloat(n1*2)
-  fp = zerofloat(n1*2)
-  k = 0
-  for i1 in range(n1):
-    k1[k] = i1
-    k2[k] = 15
-    fp[k] = p3[15][i1]
-    k = k+1
-  for i1 in range(n1):
-    k1[k] = i1
-    k2[k] = 61
-    fp[k] = p3[61][i1]
-    k = k+1
-  return k1,k2,fp
-
-def goFakeData():
-  #sequence = 'A' # 1 episode of faulting only
-  sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
-  #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
-  #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 0 # number of planar faults
-  conjugate = False # if True, two large planar faults will intersect
-  conical = False # if True, may want to set nplanar to 0 (or not!)
-  impedance = False # if True, data = impedance model
-  wavelet = True # if False, no wavelet will be used
-  noise = 0.6 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
-      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
-  writeImage(gxfile,gx)
-  writeImage(p2kfile,p2)
-  writeImage(p3kfile,p3)
-  print "gx min =",min(gx)," max =",max(gx)
-  print "p2 min =",min(p2)," max =",max(p2)
-  print "p3 min =",min(p3)," max =",max(p3)
-  gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
-  if impedance:
-    gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
-  plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-
-def goSlopes():
-  print "goSlopes ..."
-  gx = readImage(gffile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  zm = ZeroMask(0.1,1,1,1,gx)
-  zero,tiny=0.0,0.01
-  zm.setValue(zero,p2)
-  zm.setValue(zero,p3)
-  zm.setValue(tiny,ep)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
-  print "p2  min =",min(p2)," max =",max(p2)
-  print "p3  min =",min(p3)," max =",max(p3)
-  print "ep min =",min(ep)," max =",max(ep)
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
+def getF3dLogs():
+  m2 = 4 # number of logs
+  m1 = 2873 # number of samples for each log
+  x2 = [ 33,545,704, 84]
+  x3 = [259,619,339,141]
+  logs = readImage2D(m1,m2,'logs')
+  k1 = []
+  k2 = []
+  k3 = []
+  fp = []
+  fps = zerofloat(n1,m2)
+  for i2 in range(m2):
+    for i1 in range(m1-1):
+      if(logs[i2][i1]!=-999.25):
+        k1.append(i1+0)
+        k2.append(x2[i2])
+        k3.append(x3[i2])
+        fp.append(0.5*log(logs[i2][i1]))
+        if(logs[i2][i1+1]!=-999.25):
+          fps[i2][i1] = 0.5*log(logs[i2][i1+1]/logs[i2][i1])
+  return fp,k1,k2,k3,fps
 
 def like(x):
   n2 = len(x)
@@ -409,7 +315,7 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ipg.setSlices(2850,850,75) # for logs only
   if samples:
     fx,x1,x2,x3 = samples
-    vmin,vmax,vmap= min(fx),max(fx)/2,ColorMap.JET
+    vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:

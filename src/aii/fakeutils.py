@@ -62,7 +62,6 @@ def setupForSubset(name):
     #f1,f2,f3 = 0.000,d2*29,d3*46
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
-
 def getSamplings():
   return s1,s2,s3
 

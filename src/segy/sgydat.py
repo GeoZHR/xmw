@@ -19,17 +19,48 @@ def main(args):
   #goCranfield2007()
   #goCranfield2010()
   #goSeam()
-  goF3dRef()
+  #goF3dRef()
+  goF3dSeis()
 def goF3dRef():
-  firstLook = True # fast, does not read all trace headers
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/aii/f3d/reflectivity.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 6987181696
+  number of traces = 590732
+  format = 1 (4-byte IBM floating point)
+  WARNING  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  WARNING: format may actually be 5 (IEEE float)
+  WARNING  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   303, i2max =  1247 (inline indices)
+    i3min =   103, i3max =   747 (crossline indices)
+    xmin = 6054.938000, xmax = 6294.992000 (x coordinates, in km)
+    ymin = 60736.334000, ymax = 60903.861000 (y coordinates, in km)
+  grid sampling:
+    n1 =  2897 (number of samples per trace)
+    n2 =   945 (number of traces in inline direction)
+    n3 =   645 (number of traces in crossline direction)
+    d1 = 0.000500 (time sampling interval, in s)
+    d2 = 0.250000 (inline sampling interval, in km)
+    d3 = 0.249993 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   303, i3min =   103, x = 6059.084000, y = 60736.334000
+    i2max =  1247, i3min =   103, x = 6294.992000, y = 60742.928000
+    i2min =   303, i3max =   747, x = 6054.589000, y = 60897.267000
+    i2max =  1247, i3max =   747, x = 6290.497000, y = 60903.861000
+  grid azimuth: 88.40 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
-  showImage = False # displays the image
-  basedir = "../../../data/seis/aii/"
+  showImage = True # displays the image
+  basedir = "../../../data/seis/aii/f3d/"
   sgyfile = basedir+"reflectivity.sgy"
   datfile = basedir+"rx.dat"
-  i1min,i1max,i2min,i2max,i3min,i3max = 0,850,1499,8507,1499,7505
-  i1min,i1max,i2min,i2max,i3min,i3max = 0,850,0,1168,0,1001
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,2896,303,1247,103,747
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
   if firstLook:
@@ -43,11 +74,67 @@ def goF3dRef():
     plotXY(si)
   if writeImage:
     scale = 1.00
-    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,6,6)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
   if showImage:
     x = readImage(datfile,n1,n2,n3)
-    gain(100,x)
+    show3d(x,clip=max(x)/2)
+
+def goF3dSeis():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/aii/f3d/seis05ms.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 9024543020
+  number of traces = 600515
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   300, i2max =  1250 (inline indices)
+    i3min =   100, i3max =   750 (crossline indices)
+    xmin =  605.416700, xmax =  629.576300 (x coordinates, in km)
+    ymin = 6073.556400, ymax = 6090.463200 (y coordinates, in km)
+  grid sampling:
+    n1 =  3697 (number of samples per trace)
+    n2 =   951 (number of traces in inline direction)
+    n3 =   651 (number of traces in crossline direction)
+    d1 = 0.000500 (time sampling interval, in s)
+    d2 = 0.025000 (inline sampling interval, in km)
+    d3 = 0.024999 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   300, i3min =   100, x =  605.835500, y = 6073.556400
+    i2max =  1250, i3min =   100, x =  629.576300, y = 6074.219900
+    i2min =   300, i3max =   750, x =  605.381800, y = 6089.799700
+    i2max =  1250, i3max =   750, x =  629.122600, y = 6090.463200
+  grid azimuth: 88.40 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/aii/f3d/"
+  sgyfile = basedir+"seis05ms.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,3696,300,1250,100,750
+  i1min,i1max,i2min,i2max,i3min,i3max = 800,3696,303,1247,103,747
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
     show3d(x,clip=max(x)/2)
 
 def goSeam():
