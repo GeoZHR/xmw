@@ -58,7 +58,7 @@ def goImpedance():
   ep = readImage(epfile)
   wp = pow(ep,10.0)
   lof = LocalOrientFilter(8.0,2.0)
-  et3 = lof.applyForTensors(gx)
+  et3 = lof.applyForTensors(gx,True)
   print "tensor computation done..."
   et3.setEigenvalues(0.000001,1.0,1.0)
   ai3 = AcousticImpedanceInv3(6.0,6.0)
