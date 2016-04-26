@@ -25,63 +25,41 @@ fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
 fptfile = "fpt" # fault strike thinned
-fttfile = "ftt" # fault dip thinned
-fs1file = "fs1" # fault slip (1st component)
-fs2file = "fs2" # fault slip (2nd component)
-fs3file = "fs3" # fault slip (3rd component)
-fskbase = "fsk" # fault skin (basename only)
-u1file = "u1"
-gffile = "gf"
-gufile = "gu"
-gsfile = "gs"
-gcfile = "gc"
-ghfile = "gh"
-grfile = "gr"
-dwfile = "dw"
-grifile = "gri"
 
-# These parameters control the scan over fault strikes and dips.
-# See the class FaultScanner for more information.
-minPhi,maxPhi = 0,145
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,30
-
-# These parameters control the construction of fault skins.
-# See the class FaultSkinner for more information.
-lowerLikelihood = 0.5
-upperLikelihood = 0.7
-minSkinSize = 3000
-
-# These parameters control the computation of fault dip slips.
-# See the class FaultSlipper for more information.
-minThrow = 0.01
-maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 plotOnly = False
-pngDir = "../../../png/aii/fake/"
 pngDir = None
+pngDir = "../../../png/aii/f3d/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goLogs()
+  goLinearity()
   goImpedance()
-def goImpedance():
-  smooth = 0.5
-  rx = readImage(rxfile)
+def goLinearity():
+  print "goLinearity..."
   gx = readImage(gxfile)
   ep = fillfloat(1.0,n1,n2,n3)
   u1 = fillfloat(1.0,n1,n2,n3)
   u2 = fillfloat(1.0,n1,n2,n3)
   u3 = fillfloat(1.0,n1,n2,n3)
   lof = LocalOrientFilter(8.0,2.0)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  writeImage(epfile,ep)
+
+def goImpedance():
+  print "goImpedance..."
+  smooth = 0.5
+  rx = readImage(rxfile)
+  gx = readImage(gxfile)
+  ep = readImage(epfile)
+  wp = pow(ep,10.0)
+  lof = LocalOrientFilter(8.0,2.0)
   et3 = lof.applyForTensors(gx)
   print "tensor computation done..."
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  wp = pow(ep,10.0)
-  print "linearity computation done..."
   et3.setEigenvalues(0.000001,1.0,1.0)
   ai3 = AcousticImpedanceInv3(6.0,6.0)
   ai3.setIterations(0.001,500)
