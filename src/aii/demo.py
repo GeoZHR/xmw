@@ -4,7 +4,7 @@ Author: Xinming Wu and Dave Hale, Colorado School of Mines
 Version: 2015.02.09
 """
 
-from fakeutils import *
+from utils import *
 setupForSubset("fake")
 #setupForSubset("tp")
 s1,s2,s3 = getSamplings()

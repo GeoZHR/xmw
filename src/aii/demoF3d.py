@@ -4,15 +4,15 @@ Author: Xinming Wu and Dave Hale, Colorado School of Mines
 Version: 2015.02.09
 """
 
-from fakeutils import *
+from utils import *
 setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-rxfile  = "rx" # reflectivity image
-rnfile  = "rn" # reflectivity image
+rxfile  = "rx" # shallower reflectivity image
+rxffile  = "rxf" # deeper reflectivity image
 pxfile  = "px" # impedance image
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
@@ -40,22 +40,32 @@ def main(args):
   #goLinearity()
   #goImpedance()
   #goTie()
-  rx = readImage(rxfile)
-  rs = copy(2121,n2,n3,0,0,0,rx)
-  writeImage("rs",rs)
-def goTie():
-  rx = readImage(rxfile)
-  fp,k1,k2,k3,wps,wrs = getF3dLogs()
+  #goWellSeisFit()
+  #goSeisTraces()
+  rx = readImage(rxffile)
+  rx = copy(1940,n2,n3,rx)
+  writeImage("rx",rx)
+def goSeisTracesAtWells():
+  rx = readImage(rxffile)
   frs = zerofloat(n1,4)
+  fcs = zerofloat(n1,4)
   x2s = [ 33,545,704, 84]
   x3s = [259,619,339,141]
   for k in range(4):
     x2 = x2s[k]
     x3 = x3s[k]
+    fcs[k] = rx[x3][x2]
     for i3 in range(x3-1,x3+2,1):
       for i2 in range(x2-1,x2+2,1):
         frs[k] = add(rx[i3][i2],frs[k])
   frs = div(frs,9)
+  plot1s(s1,frs,rs=fcs)
+  writeImage("frs",frs)
+def goTie():
+  m1,m2=2121,4
+  s1 = Sampling(m1)
+  fp,k1,k2,k3,wps,wrs = getF3dLogs()
+  frs = readImage2D(m1,m2,'frs')
   wrc = copy(wrs)
   wrm = copy(wrs)
   wpc = copy(wps)
@@ -67,15 +77,33 @@ def goTie():
     rs = dwk.findShifts(s1,frs[k],s1,wrs[k])
     wrc[k] = dwk.applyShifts(s1,wrs[k],rs)
     wpc[k] = dwk.applyShifts(s1,wps[k],rs)
+  plot1s(s1,wrs,rs=frs)
+  plot1s(s1,wrc,rs=frs,color=Color.BLUE)
+  plot1s(s1,wpc,rs=wps,color=Color.MAGENTA)
+  writeImage("wrc",wrc)
+  writeImage("wpc",wpc)
+
+def goWellSeisFit():
+  m1,m2=2121,4
+  fp,k1,k2,k3,wps,wrs = getF3dLogs()
+  wpc = readImage2D(m1,m2,'wpc')
+  frs = readImage2D(m1,m2,'frs')
+  l1,m2=1940,4
+  wpc = copy(l1,m2,0,0,wpc)
+  frs = copy(l1,m2,0,0,frs)
+  wrm = copy(frs)
+  wpm = copy(wpc)
+  for k in range(4):
     fis = FitLogImpWithSeisRef(6.0)
     fis.setSeisBalance(0.8)
     wpm[k] = fis.fitImpedance(wpc[k],frs[k])
-    for i1 in range(n1-1):
+    for i1 in range(l1-1):
       wrm[k][i1] = wpm[k][i1+1]-wpm[k][i1]
-  plot1s(s1,wrs,rs=frs)
-  plot1s(s1,wrc,rs=frs,color=Color.BLUE)
+  writeImage("wpm",wpm)
+  s1 = Sampling(l1)
   plot1s(s1,wrm,rs=frs,color=Color.MAGENTA)
-  plot1s(s1,wpc,rs=wpm,color=Color.MAGENTA)
+  plot1s(s1,wpm,rs=wpc,color=Color.MAGENTA)
+
 
 def goLinearity():
   print "goLinearity..."
@@ -136,13 +164,13 @@ def goLogs():
   r3 = rx[339][704]
   r4 = rx[141][ 84]
   frs = [r1,r2,r3,r4]
-  plot1s(s1,wrs,rs=wrs)
+  plot1s(s1,wrs,rs=frs)
   samples=wp,k1,k2,k3
   plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,samples=samples)
 
 def getF3dLogs():
   m2 = 4 # number of logs
-  m1 = 2873 # number of samples for each log
+  m1 = 2121 # number of samples for each log
   x2 = [ 33,545,704, 84]
   x3 = [259,619,339,141]
   logs = readImage2D(m1,m2,'logs')
@@ -162,6 +190,9 @@ def getF3dLogs():
         if(logs[i2][i1+1]!=-999.25):
           wps[i2][i1] = 0.5*log(logs[i2][i1])
           wrs[i2][i1] = 0.5*(log(logs[i2][i1+1])-log(logs[i2][i1]))
+      else:
+        print i1
+        print i2
   return fp,k1,k2,k3,wps,wrs
 
 def like(x):
