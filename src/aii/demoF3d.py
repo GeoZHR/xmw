@@ -40,7 +40,7 @@ def main(args):
   #goSeisTraces()
   #goTie()
   #goWellSeisFit()
-  goLinearity()
+  #goLinearity()
   goImpedance()
 def goSeisTracesAtWells():
   rx = readImage(rxffile)
@@ -116,8 +116,9 @@ def goLinearity():
 def goImpedance():
   print "goImpedance..."
   smooth = 0.6
+  m2 = 4
   rx = readImage(rxfile)
-  wpm = readImage2D(n1,4,'wpm')
+  wpm = readImage2D(n1,m2,'wpm')
   x2 = [ 33,545,704, 84]
   x3 = [259,619,339,141]
   k1,k2,k3,fp = [],[],[],[]
