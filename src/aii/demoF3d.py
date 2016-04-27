@@ -116,6 +116,7 @@ def goLinearity():
 def goImpedance():
   print "goImpedance..."
   smooth = 0.6
+  rx = readImage(rxfile)
   wpm = readImage2D(n1,4,'wpm')
   x2 = [ 33,545,704, 84]
   x3 = [259,619,339,141]
@@ -126,7 +127,6 @@ def goImpedance():
       k2.append(x2[i2])
       k3.append(x3[i2])
       fp.append(wpm[i2][i1])
-  rx = readImage(rxfile)
   if not plotOnly:
     gx = readImage(gxfile)
     ep = readImage(epfile)
@@ -143,8 +143,8 @@ def goImpedance():
     ai3.setInitial(pt,k1,k2,k3,fp)
     px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
     writeImage(pxfile,px)
-  else:
   '''
+  else:
   px = readImage(pxfile)
   samples = fp,k1,k2,k3
   print min(px)
