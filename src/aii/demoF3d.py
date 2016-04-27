@@ -38,7 +38,45 @@ pngDir = "../../../png/aii/f3d/"
 def main(args):
   #goLogs()
   #goLinearity()
-  goImpedance()
+  #goImpedance()
+  #goTie()
+  rx = readImage(rxfile)
+  rs = copy(2121,n2,n3,0,0,0,rx)
+  writeImage("rs",rs)
+def goTie():
+  rx = readImage(rxfile)
+  fp,k1,k2,k3,wps,wrs = getF3dLogs()
+  frs = zerofloat(n1,4)
+  x2s = [ 33,545,704, 84]
+  x3s = [259,619,339,141]
+  for k in range(4):
+    x2 = x2s[k]
+    x3 = x3s[k]
+    for i3 in range(x3-1,x3+2,1):
+      for i2 in range(x2-1,x2+2,1):
+        frs[k] = add(rx[i3][i2],frs[k])
+  frs = div(frs,9)
+  wrc = copy(wrs)
+  wrm = copy(wrs)
+  wpc = copy(wps)
+  wpm = copy(wps)
+  dwk = DynamicWarpingK(8,-160,160,s1)
+  dwk.setStrainLimits(-0.5,0.5)
+  dwk.setSmoothness(4)
+  for k in range(4):
+    rs = dwk.findShifts(s1,frs[k],s1,wrs[k])
+    wrc[k] = dwk.applyShifts(s1,wrs[k],rs)
+    wpc[k] = dwk.applyShifts(s1,wps[k],rs)
+    fis = FitLogImpWithSeisRef(6.0)
+    fis.setSeisBalance(0.8)
+    wpm[k] = fis.fitImpedance(wpc[k],frs[k])
+    for i1 in range(n1-1):
+      wrm[k][i1] = wpm[k][i1+1]-wpm[k][i1]
+  plot1s(s1,wrs,rs=frs)
+  plot1s(s1,wrc,rs=frs,color=Color.BLUE)
+  plot1s(s1,wrm,rs=frs,color=Color.MAGENTA)
+  plot1s(s1,wpc,rs=wpm,color=Color.MAGENTA)
+
 def goLinearity():
   print "goLinearity..."
   gx = readImage(gxfile)
@@ -52,6 +90,7 @@ def goLinearity():
 
 def goImpedance():
   print "goImpedance..."
+  '''
   smooth = 0.5
   rx = readImage(rxfile)
   gx = readImage(gxfile)
@@ -70,7 +109,6 @@ def goImpedance():
   ai3.setInitial(pt,k1,k2,k3,fp)
   pi3 = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
   writeImage(pxfile,pi3)
-  '''
   samples = fp,k1,k2,k3
   print min(px)
   print max(px)
@@ -79,22 +117,27 @@ def goImpedance():
   plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
   plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
         samples=samples,png="pInitial")
-  plot3(gx,pi3,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pRecover05")
   '''
+  px = readImage(pxfile)
+  fp,k1,k2,k3,fps = getF3dLogs()
+  samples=fp,k1,k2,k3
+  print min(fp)
+  print max(fp)
+  plot3X(px,px,cmin=-0.5,cmax=0.5,clab="Impedance",
+        samples=samples,png="pRecover05")
 
 def goLogs():
   rx = readImage(rxfile)
   print min(rx)
   print max(rx)
-  fp,k1,k2,k3,fps = getF3dLogs()
+  wp,k1,k2,k3,wps,wrs = getF3dLogs()
   r1 = rx[259][ 33]
   r2 = rx[619][545]
   r3 = rx[339][704]
   r4 = rx[141][ 84]
   frs = [r1,r2,r3,r4]
-  plot1s(s1,frs,rs=fps)
-  samples=fp,k1,k2,k3
+  plot1s(s1,wrs,rs=wrs)
+  samples=wp,k1,k2,k3
   plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,samples=samples)
 
 def getF3dLogs():
@@ -107,7 +150,8 @@ def getF3dLogs():
   k2 = []
   k3 = []
   fp = []
-  fps = zerofloat(n1,m2)
+  wrs = zerofloat(n1,m2)
+  wps = zerofloat(n1,m2)
   for i2 in range(m2):
     for i1 in range(m1-1):
       if(logs[i2][i1]!=-999.25):
@@ -116,8 +160,9 @@ def getF3dLogs():
         k3.append(x3[i2])
         fp.append(0.5*log(logs[i2][i1]))
         if(logs[i2][i1+1]!=-999.25):
-          fps[i2][i1] = 0.5*log(logs[i2][i1+1]/logs[i2][i1])
-  return fp,k1,k2,k3,fps
+          wps[i2][i1] = 0.5*log(logs[i2][i1])
+          wrs[i2][i1] = 0.5*(log(logs[i2][i1+1])-log(logs[i2][i1]))
+  return fp,k1,k2,k3,wps,wrs
 
 def like(x):
   n2 = len(x)
@@ -209,7 +254,7 @@ def plot1s(s1,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
   sp.setVLimits(0,n1)
   if vmin and vmax:
     sp.setVLimits(vmin,vmax)
-  sp.setHLimits(0,len(ys))
+  sp.setHLimits(0,len(ys)+1)
   for il,y in enumerate(ys):
     ya = sum(y)/len(y)
     y = sub(y,ya)
@@ -293,7 +338,8 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ipg.setSlices(2850,850,75) # for logs only
   if samples:
     fx,x1,x2,x3 = samples
-    vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
+    #vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
+    vmin,vmax,vmap= -2,2,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:

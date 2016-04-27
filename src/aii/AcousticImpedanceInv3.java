@@ -108,7 +108,6 @@ public class AcousticImpedanceInv3 {
     }
   }
 
-
   ///////////////////////////////////////////////////////////////////////////
   // private
   private Tensors3 _d = null;

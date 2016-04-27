@@ -20,5 +20,21 @@ public class Reshape {
     }
     return gx;
   }
+
+  public float[][][] resample(int d1, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    int m1 = (n1-1)/8+1;
+    float[][][] gx = new float[n3][n2][m1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int k1=0;
+    for (int i1=0; i1<n1; i1+=8) {
+      gx[i3][i2][k1] = fx[i3][i2][i1];
+      k1++;
+    }}}
+    return gx;
+  }
   private int _j2, _j3, _n2, _n3;
 }
