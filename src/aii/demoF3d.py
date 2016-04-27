@@ -37,14 +37,11 @@ pngDir = "../../../png/aii/f3d/"
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goLogs()
-  #goLinearity()
-  #goImpedance()
+  #goSeisTraces()
   #goTie()
   #goWellSeisFit()
-  #goSeisTraces()
-  gx = readImage("gxf")
-  gx = copy(1940,n2,n3,gx)
-  writeImage("gx",gx)
+  goLinearity()
+  goImpedance()
 def goSeisTracesAtWells():
   rx = readImage(rxffile)
   frs = zerofloat(n1,4)
@@ -131,7 +128,6 @@ def goImpedance():
       k2.append(x2[i2])
       k3.append(x3[i2])
       fp.append(wpm[i2][i1])
-
   rx = readImage(rxfile)
   gx = readImage(gxfile)
   ep = readImage(epfile)

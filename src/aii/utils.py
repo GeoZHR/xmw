@@ -48,7 +48,8 @@ def setupForSubset(name):
     """ subset of F3 """
     print "setupForSubset: f3d"
     seismicDir = _datdir+"f3d/"
-    n1,n2,n3 = 2121,945,645
+    #n1,n2,n3 = 2121,945,645 #rxf
+    n1,n2,n3 = 1940,945,645
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
