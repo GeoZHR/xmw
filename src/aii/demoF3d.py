@@ -42,9 +42,9 @@ def main(args):
   #goTie()
   #goWellSeisFit()
   #goSeisTraces()
-  rx = readImage(rxffile)
-  rx = copy(1940,n2,n3,rx)
-  writeImage("rx",rx)
+  gx = readImage("gxf")
+  gx = copy(1940,n2,n3,gx)
+  writeImage("gx",gx)
 def goSeisTracesAtWells():
   rx = readImage(rxffile)
   frs = zerofloat(n1,4)
@@ -118,25 +118,37 @@ def goLinearity():
 
 def goImpedance():
   print "goImpedance..."
-  '''
-  smooth = 0.5
+  smooth = 0.6
+  wpm = readImage2D(n1,4,'wpm')
+  x2 = [ 33,545,704, 84]
+  x3 = [259,619,339,141]
+  k1,k2,k3,fp = [],[],[],[]
+  wrs = zerofloat(n1,m2)
+  wps = zerofloat(n1,m2)
+  for i2 in range(m2):
+    for i1 in range(n1):
+      k1.append(i1)
+      k2.append(x2[i2])
+      k3.append(x3[i2])
+      fp.append(wpm[i2][i1])
+
   rx = readImage(rxfile)
   gx = readImage(gxfile)
   ep = readImage(epfile)
-  wp = pow(ep,10.0)
+  wp = pow(ep,4.0)
   lof = LocalOrientFilter(8.0,2.0)
   et3 = lof.applyForTensors(gx,True)
   print "tensor computation done..."
   et3.setEigenvalues(0.000001,1.0,1.0)
   ai3 = AcousticImpedanceInv3(8.0,8.0)
-  ai3.setIterations(0.001,200)
+  ai3.setIterations(0.001,max(n2,n3))
   ai3.setTensors(et3)
   ai3.setSmoothness(smooth)
   pt = zerofloat(n1,n2,n3)
-  fp,k1,k2,k3,fps = getF3dLogs()
   ai3.setInitial(pt,k1,k2,k3,fp)
-  pi3 = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
-  writeImage(pxfile,pi3)
+  px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
+  writeImage(pxfile,px)
+  '''
   samples = fp,k1,k2,k3
   print min(px)
   print max(px)
@@ -145,7 +157,6 @@ def goImpedance():
   plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
   plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
         samples=samples,png="pInitial")
-  '''
   px = readImage(pxfile)
   fp,k1,k2,k3,fps = getF3dLogs()
   samples=fp,k1,k2,k3
@@ -153,6 +164,7 @@ def goImpedance():
   print max(fp)
   plot3X(px,px,cmin=-0.5,cmax=0.5,clab="Impedance",
         samples=samples,png="pRecover05")
+  '''
 
 def goLogs():
   rx = readImage(rxfile)
