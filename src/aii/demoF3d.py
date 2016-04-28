@@ -6,6 +6,7 @@ Version: 2015.02.09
 
 from utils import *
 setupForSubset("f3d")
+#setupForSubset("f3dSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -42,6 +43,57 @@ def main(args):
   #goWellSeisFit()
   #goLinearity()
   goImpedance()
+  #goImpSub()
+def goImpSub():
+  print "goImpedance..."
+  m2 = 2
+  smooth = 0.2
+  wpm = readImage2D(n1,m2,'wpm')
+  x2 = [ 33, 84]
+  x3 = [159, 41]
+  k1,k2,k3,fp = [],[],[],[]
+  for i2 in range(m2):
+    for i1 in range(n1):
+      k1.append(i1)
+      k2.append(x2[i2])
+      k3.append(x3[i2])
+      fp.append(wpm[i2][i1])
+  if not plotOnly:
+    rx = readImage(rxfile)
+    rx = div(rx,2.5)
+    gx = readImage(gxfile)
+    #ep = readImage(epfile)
+    #wp = pow(ep,0.0)
+    wp = fillfloat(1.0,n1,n2,n3)
+    lof = LocalOrientFilter(8.0,2.0)
+    et3 = lof.applyForTensors(gx,True)
+    print "tensor computation done..."
+    et3.setEigenvalues(0.000001,1.0,1.0)
+    ai3 = AcousticImpedanceInv3(8.0,8.0)
+    ai3.setIterations(0.001,20)
+    ai3.setTensors(et3)
+    ai3.setSmoothness(smooth)
+    pt = zerofloat(n1,n2,n3)
+    ai3.setInitial(pt,k1,k2,k3,fp)
+    px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
+    writeImage(pxfile,px)
+  else:
+    px = readImage(pxfile)
+  samples = fp,k1,k2,k3
+  '''
+  plot3(gx,clab="Amplitude",png="seismic")
+  plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="refx")
+  plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
+  plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
+        samples=samples,png="pInitial")
+  '''
+  rx = readImage(rxfile)
+  plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,clab="Impedance",
+        samples=samples)
+
+  plot3X(px,px,cmin=min(fp),cmax=max(fp),clab="Impedance",
+        samples=samples)
+
 def goSeisTracesAtWells():
   rx = readImage(rxffile)
   frs = zerofloat(n1,4)
@@ -97,8 +149,7 @@ def goWellSeisFit():
     for i1 in range(l1-1):
       wrm[k][i1] = wpm[k][i1+1]-wpm[k][i1]
   writeImage("wpm",wpm)
-  s1 = Sampling(l1)
-  plot1s(s1,wrm,rs=frs,color=Color.MAGENTA)
+  plot1s(s1,wrm,rs=fcs,color=Color.MAGENTA)
   plot1s(s1,wpm,rs=wpc,color=Color.MAGENTA)
 
 
@@ -115,9 +166,8 @@ def goLinearity():
 
 def goImpedance():
   print "goImpedance..."
-  smooth = 0.6
   m2 = 4
-  rx = readImage(rxfile)
+  smooth = 0.2
   wpm = readImage2D(n1,m2,'wpm')
   x2 = [ 33,545,704, 84]
   x3 = [259,619,339,141]
@@ -129,9 +179,10 @@ def goImpedance():
       k3.append(x3[i2])
       fp.append(wpm[i2][i1])
   if not plotOnly:
+    rx = readImage(rxfile)
+    rx = div(rx,2.5)
     gx = readImage(gxfile)
-    ep = readImage(epfile)
-    wp = pow(ep,4.0)
+    wp = fillfloat(1.0,n1,n2,n3)#readImage(epfile)
     lof = LocalOrientFilter(8.0,2.0)
     et3 = lof.applyForTensors(gx,True)
     print "tensor computation done..."
@@ -144,20 +195,20 @@ def goImpedance():
     ai3.setInitial(pt,k1,k2,k3,fp)
     px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
     writeImage(pxfile,px)
-  '''
   else:
-  px = readImage(pxfile)
+    px = readImage(pxfile)
   samples = fp,k1,k2,k3
-  print min(px)
-  print max(px)
+  print px[259][33][100]
+  print wpm[0][100]
+  '''
   plot3(gx,clab="Amplitude",png="seismic")
   plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="refx")
   plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
   plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
         samples=samples,png="pInitial")
-  plot3X(px,px,cmin=-0.5,cmax=0.5,clab="Impedance",
-        samples=samples,png="pRecover05")
   '''
+  plot3X(px,px,cmin=min(px),cmax=max(px)-1,clab="Impedance",
+        samples=samples,png="pRecover05")
 
 def goLogs():
   rx = readImage(rxfile)
@@ -183,8 +234,8 @@ def getF3dLogs():
   k2 = []
   k3 = []
   fp = []
-  wrs = zerofloat(n1,m2)
-  wps = zerofloat(n1,m2)
+  wrs = zerofloat(m1,m2)
+  wps = zerofloat(m1,m2)
   for i2 in range(m2):
     for i1 in range(m1-1):
       if(logs[i2][i1]!=-999.25):
@@ -374,8 +425,8 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ipg.setSlices(2850,850,75) # for logs only
   if samples:
     fx,x1,x2,x3 = samples
-    #vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
-    vmin,vmax,vmap= -2,2,ColorMap.JET
+    vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
+    #vmin,vmax,vmap= 0,4,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:

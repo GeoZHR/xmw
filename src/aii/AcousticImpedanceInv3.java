@@ -97,6 +97,12 @@ public class AcousticImpedanceInv3 {
     int n3 = p.length;
     int n2 = p[0].length;
     int n1 = p[0][0].length;
+    float fa = sum(f)/(float)np;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      p[i3][i2][i1] = fa;
+    }}}
     for (int ip=0; ip<np; ++ip) {
       int i1 = round(k1[ip]);
       int i2 = round(k2[ip]);
