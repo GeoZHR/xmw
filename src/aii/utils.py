@@ -62,6 +62,15 @@ def setupForSubset(name):
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="f3dFaultSub":
+    """ subset of F3Sub """
+    print "setupForSubset: f3dSub"
+    seismicDir = _datdir+"f3d/sub/"
+    #n1,n2,n3 = 2897,400,500
+    n1,n2,n3 = 194,350,500
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="tp1":
     print "setupForSubset: subt"
     seismicDir = _datdir+"tp1/"

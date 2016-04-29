@@ -75,7 +75,7 @@ def goImpedance3():
   gx = readImage(gxfile)
   px = readImage(pxfile)
   rx = readImage(rnfile)
-  smooth = 0.5 # for noisy data
+  smooth = 0.8 # for noisy data
   ep = fillfloat(1.0,n1,n2,n3)
   u1 = fillfloat(1.0,n1,n2,n3)
   u2 = fillfloat(1.0,n1,n2,n3)

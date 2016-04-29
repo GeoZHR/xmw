@@ -736,6 +736,7 @@ public class SegyImage {
     writeFloats(fileName,1.0,0,_n1-1,_i2min,_i2max,_i3min,_i3max,1,1);
   }
 
+
   /**
    * Writes a subset of this image to a simple file of floats.
    * Writes zeros for any missing traces; however, all minimum and 
@@ -798,6 +799,46 @@ public class SegyImage {
       throw new RuntimeException("cannot write trace ("+e+")");
     }
   }
+
+  public void writeFloats(
+    String fileName,
+    double scaleFactor,
+    int i1min, int i1max,
+    int i2min, int i2max,
+    int d2)
+  {
+    loadTraceHeaderInfo();
+    checkSampleIndex(i1min);
+    checkSampleIndex(i1max);
+    System.out.println("i2min="+_i2min);
+    Check.argument(i1min<=i1max,"i1min<=i1max");
+    Check.argument(i2min<=i2max,"i2min<=i2max");
+    try {
+      ArrayOutputStream aos = new ArrayOutputStream(fileName);
+      int m1 = 1+i1max-i1min;
+      int m2 = 1+(i2max-i2min)/d2;
+      int mb = (int)(0.5+4.0*m1*m2/1.0e6);
+      System.out.print(
+        "writing "+m1+"*"+m2+" floats ("+mb+" MB) ");
+      float[] f = new float[_n1];
+      float[] g = new float[m1];
+      float s = (float)scaleFactor;
+      for (int i2=i2min; i2<=i2max; i2+=d2) {
+        getTrace(i2,f);
+        copy(m1,i1min,f,0,g);
+        if (s!=1.0f) {
+          for (int i1=0; i1<m1; ++i1)
+            g[i1] *= s;
+        }
+        aos.writeFloats(g);
+      }
+      aos.close();
+      System.out.println(" done");
+    } catch (IOException e) {
+      throw new RuntimeException("cannot write trace ("+e+")");
+    }
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private

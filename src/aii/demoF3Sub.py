@@ -20,16 +20,34 @@ p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
 p3kfile = "p3k" # crossline slopes (known)
-flfile  = "fl" # fault likelihood
-fpfile  = "fp" # fault strike (phi)
-ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
-fptfile = "fpt" # fault strike thinned
+flfile  = "fli" # fault likelihood
+fpfile  = "fpi" # fault strike (phi)
+ftfile  = "fti" # fault dip (theta)
+fltfile = "flit" # fault likelihood thinned
+fptfile = "fpit" # fault strike thinned
+fttfile = "ftit" # fault dip thinned
+
+# These parameters control the scan over fault strikes and dips.
+# See the class FaultScanner for more information.
+minPhi,maxPhi = 0,360
+minTheta,maxTheta = 70,80
+sigmaPhi,sigmaTheta = 10,20
+
+# These parameters control the construction of fault skins.
+# See the class FaultSkinner for more information.
+lowerLikelihood = 0.3
+upperLikelihood = 0.5
+minSkinSize = 8000
+
+# These parameters control the computation of fault dip slips.
+# See the class FaultSlipper for more information.
+minThrow = 0.0
+maxThrow = 20.0
 
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = True
+plotOnly = False
 pngDir = None
 pngDir = "../../../png/aii/f3d/sub/"
 
@@ -40,8 +58,73 @@ def main(args):
   #goTie()
   #goLinearity()
   #goImpedance()
-  goInitial() # display only
+  #goInitial() # display only
   #goSeisTracesAtWells()
+  #goFaults()
+  #goThin()
+  goSkin()
+def goFaults():
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  gx = readImage(gxfile)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,ft,cmin=70,cmax=80,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+
+def goThin():
+  print "goThin ..."
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+  writeImage(fltfile,flt)
+  writeImage(fptfile,fpt)
+  writeImage(fttfile,ftt)
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+  plot3(gx,ftt,cmin=70,cmax=80,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+
+def goSkin():
+  print "goSkin ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.2)
+    fs.setMinSkinSize(minSkinSize)
+    cells = fs.findCells([fl,fp,ft])
+    skins = fs.findSkins(cells)
+    for skin in skins:
+      skin.smoothCellNormals(4)
+    print "total number of cells =",len(cells)
+    print "total number of skins =",len(skins)
+    print "number of cells in skins =",FaultSkin.countCells(skins)
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skins)
+    plot3(gx,cells=cells,png="cells")
+  else:
+    skins = readSkins(fskbase)
+  flt = like(gx)
+  FaultSkin.getLikelihood(skins,flt)
+  #plot3(gx,skins=skins)
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="fls")
+
 def goInitial():
   wps,frs=goTie()
   wpm = goWellSeisFit(wps,frs)
@@ -503,7 +586,7 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov = sf.getOrbitView()
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(3.5)
+  ov.setScale(3.6)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(-0.06,0.005,0.015))
   ov.setAzimuthAndElevation(50,36.0)
@@ -521,7 +604,10 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   n2 = len(f[0])
   n1 = len(f[0][0])
   s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  f1,f2,f3 = s1.first,s2.first,s3.first
   d1,d2,d3=s1.getDelta(),s2.getDelta(),s3.getDelta()
+
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -644,7 +730,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         #ct = ct+1
     sf.world.addChild(sg)
   #ipg.setSlices(109,138,31)
-  ipg.setSlices(109,138,7) # for logs only
+  ipg.setSlices(1396,20,128) # for logs only
   if uncs:
     sg = Group()
     ss = StateSet()
@@ -673,25 +759,19 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:
-    sf.setSize(887,700)
+    sf.setSize(907,700)
   else:
     sf.setSize(750,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
-  radius = 0.48*sqrt(n1*n1+n2*n2+n3*n3)
-  zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
+  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
-  ov.setAzimuthAndElevation(120.0,25.0)
-  #ov.setTranslate(Vector3(0.02,0.16,-0.27))
-  ov.setTranslate(Vector3(0.02,0.23,-0.27))
-  ov.setScale(1.25)
-  # for subset plots
-  #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  #ov.setAzimuthAndElevation(-40.0,25.0)
-  #ov.setTranslate(Vector3(0.0241,-0.0400,0.0103))
-  #ov.setScale(1.3) #use only for subset plots
+  ov.setScale(3.6)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(-0.06,0.005,0.015))
+  ov.setAzimuthAndElevation(50,36.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

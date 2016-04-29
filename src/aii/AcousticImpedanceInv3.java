@@ -63,7 +63,7 @@ public class AcousticImpedanceInv3 {
     A3 a3 = new A3(_d,wp);
     M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,k1,k2,k3);
     vb.zero();
-    makeRhs(wp,r,b);
+    makeRhs(r,b);
     cs.solve(a3,m3,vb,vp);
     return p;
   }
@@ -146,12 +146,12 @@ public class AcousticImpedanceInv3 {
   private static void applyLhs(
     Tensors3 et, float[][][] w, float[][][] x, float[][][] y) 
   {
-    if(_sc<1.0f) {applyLhs1(w,x,y);}
+    applyLhs1(x,y);
     if(_sc>0.0f) {applyLhs2(et,w,x,y);}
   }
 
   private static void applyLhs1(
-    final float[][][] w, final float[][][] x, final float[][][] y) 
+    final float[][][] x, final float[][][] y) 
   {
     final int n3 = x.length;
     final int n2 = x[0].length;
@@ -160,13 +160,11 @@ public class AcousticImpedanceInv3 {
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
     for (int i2=0; i2<n2; ++i2) {
-      float[] w32 = w[i3][i2];
       float[] x32 = x[i3][i2];
       float[] y32 = y[i3][i2];
       for (int i1=1; i1<n1; ++i1) {
         float xa=0.0f;
-        float wi=w32[i1]*sc;
-        float ws=wi*wi; 
+        float ws=sc*sc; 
         xa  = x32[i1  ];
         xa -= x32[i1-1];
         xa *= ws;
@@ -177,7 +175,7 @@ public class AcousticImpedanceInv3 {
   }
 
   private static void makeRhs(
-    final float[][][] w, final float[][][] r, final float[][][] y) 
+    final float[][][] r, final float[][][] y) 
   {
     zero(y);
     final int n3 = y.length;
@@ -187,12 +185,10 @@ public class AcousticImpedanceInv3 {
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
     for (int i2=0; i2<n2; ++i2) {
-      float[] w32 = w[i3][i2];
       float[] r32 = r[i3][i2];
       float[] y32 = y[i3][i2];
     for (int i1=1; i1<n1; ++i1) {
-      float wi = w32[i1]*sc;
-      float ws = wi*wi;
+      float ws = sc*sc;
       float ri = ws*r32[i1];
       y32[i1  ] += ri;
       y32[i1-1] -= ri;
@@ -233,7 +229,7 @@ public class AcousticImpedanceInv3 {
       for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
         if(d!=null){d.getTensor(i1,i2,i3,di);}
         float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
-        float wps = wpi*wpi*_sc;
+        float wps = wpi*wpi*_sc*_sc;
         float d11 = di[0];
         float d12 = di[1];
         float d13 = di[2];

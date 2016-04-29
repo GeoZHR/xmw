@@ -20,7 +20,64 @@ def main(args):
   #goCranfield2010()
   #goSeam()
   #goF3dRef()
-  goF3dSeis()
+  #goF3dSeis()
+  goHan()
+def goHan():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/oregan/han.segy
+  byte order = BIG_ENDIAN
+  number of bytes = 857506644
+  number of traces = 60201
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   600, i2max = 60800 (inline indices)
+    i3min =     1, i3max =     1 (crossline indices)
+    xmin =  244.359000, xmax =  314.023000 (x coordinates, in km)
+    ymin = 4907.830000, ymax = 5277.575000 (y coordinates, in km)
+  grid sampling:
+    n1 =  3501 (number of samples per trace)
+    n2 = 60201 (number of traces in inline direction)
+    n3 =     1 (number of traces in crossline direction)
+    d1 = 0.002000 (time sampling interval, in s)
+    d2 = 0.006250 (inline sampling interval, in km)
+    d3 = 0.000000 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   600, i3min =     1, x =  314.023000, y = 4907.830000
+    i2max = 60800, i3min =     1, x =  244.359000, y = 5277.575000
+    i2min =   600, i3max =     1, x =  314.023000, y = 4907.830000
+    i2max = 60800, i3max =     1, x =  244.359000, y = 5277.575000
+  grid azimuth: -10.67 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = True  # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/oregan/"
+  sgyfile = basedir+"han.segy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max = 0,3500,600,60800
+  n1,n2 = 1+i1max-i1min,1+i2max-i2min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,0,0,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2)
+    show2d(x,clip=max(x)/2)
+
 def goF3dRef():
   '''
   ****** beginning of SEG-Y file info ******

@@ -4,11 +4,11 @@ Author: Xinming Wu, Colorado School of Mines
 Version: 2015.05.07
 """
 from utils import *
-setupForSubset("f3dSub")
+setupForSubset("f3dFaultSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile = "gx" # input image
+gxfile = "gs" # input image
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -62,7 +62,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
   #goScan()
   #goThin()
   #goThinImages()
@@ -70,12 +70,31 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
+  goInterp()
+def goInterp():
+  m1 = 1547
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fli = zerofloat(m1,n2,n3)
+  fpi = zerofloat(m1,n2,n3)
+  fti = zerofloat(m1,n2,n3)
+  s1 = Sampling(n1,8,0)
+  si1 = Sampling(m1)
+  sic = SincInterpolator()
+  sic.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      sic.interpolate(s1,fl[i3][i2],si1,fli[i3][i2])
+      sic.interpolate(s1,fp[i3][i2],si1,fpi[i3][i2])
+      sic.interpolate(s1,ft[i3][i2],si1,fti[i3][i2])
+  writeImage("fli",fli)
+  writeImage("fpi",fpi)
+  writeImage("fti",fti)
 
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  print min(gx)
-  print max(gx)
   sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
@@ -84,19 +103,16 @@ def goSlopes():
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   print "ep min =",min(ep)," max =",max(ep)
-  '''
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
-  '''
 
 def goScan():
   print "goScan ..."
   gx = readImage(gxfile)
-  gx = gain(gx)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
@@ -113,15 +129,12 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-
-  '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
+  plot3(gx,ft,cmin=70,cmax=80,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
-  '''
 def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
@@ -132,18 +145,15 @@ def goThin():
   writeImage(fltfile,flt)
   writeImage(fptfile,fpt)
   writeImage(fttfile,ftt)
-  '''
-  gx = gain(gx)
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fl")
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=35,cmax=50,cmap=jetFillExceptMin(1.0),
+  plot3(gx,ftt,cmin=70,cmax=80,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -164,7 +174,6 @@ def goStat():
   plotStat(st,tfl,"Fault dip (degrees)")
 def goThinImages():
   gx = readImage(gxfile)
-  gx = gain(gx)
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
@@ -187,7 +196,6 @@ def goThinImages():
 def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
-  gx = gain(gx)
   if not plotOnly:
     fl = readImage(flfile)
     fp = readImage(fpfile)
@@ -238,7 +246,6 @@ def goReSkin():
   flt = like(gx)
   #FaultSkin.getLikelihood(skins,flt)
   FaultSkin.getLikelihoods(skins,flt)
-  gx = gain(gx)
   plot3(gx)
   plot3(gx,skins=skins,png="skins")
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
@@ -261,8 +268,6 @@ def goSmooth():
     gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
     writeImage(gsxfile,gsx)
   gsx = readImage(gsxfile)
-  gx = gain(gx)
-  gsx = gain(gsx)
   plot3(gx,clab="Amplitude",png="gx")
   plot3(gsx,clab="Amplitude",png="gsx")
 
@@ -270,7 +275,6 @@ def goSmooth():
 def goSlip():
   print "goSlip ..."
   gx = readImage(gxfile)
-  gx = gain(gx)
   if not plotOnly:
     skins = readSkins(fskgood)
     plot3(gx,skins=skins,png="skinsfl")
@@ -297,297 +301,6 @@ def goSlip():
   #plot3(gx,skins=skins,png="skinsfl")
   #plot3(gx,skins=skins,smax=6,png="skinss1")
 
-def goUnfault():
-  smark = -999.999
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  skins = readSkins(fslbase)
-  '''
-  fsl = FaultSlipper(gx,gx,gx)
-  s1,s2,s3=fsl.getDipSlips(skins,smark)
-  s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
-  gw = fsl.unfault([s1,s2,s3],gx)
-  gw = gain(gw)
-  plot3(gx)
-  plot3(gw)
-  '''
-  mark = -1000000
-  flt = like(gx)
-  fss = fillfloat(mark,n1,n2,n3)
-  FaultSkin.getThrowThick(mark,skins,fss)
-  FaultSkin.getLikelihood(skins,flt)
-  fss = mul(fss,4) #convert to ms
-  for i3 in range(n3):
-    for i2 in range(n2):
-      for i1 in range(n1):
-        fssi = fss[i3][i2][i1]
-        if fssi<=0.0 and fssi>mark:
-          fss[i3][i2][i1]=0.05
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="fls")
-  plot3(gx,fss,cmin=-0.05,cmax=25,cmap=jetFillExceptMin(1.0),
-      slices=[93,180,192],clab="Fault throw (ms)",cint=8,png="throw3D")
-
-def goUnfaultS():
-  if not plotOnly:
-    gx = readImage(gxfile)
-    fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,2.0,2.0)
-    et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
-
-    wp = fillfloat(1.0,n1,n2,n3)
-    skins = readSkins(fslbase)
-    fsc = FaultSlipConstraints(skins)
-    sp = fsc.screenPoints(wp)
-
-    uf = UnfaultS(4.0,2.0)
-    uf.setIters(100)
-    uf.setTensors(et)
-    mul(sp[3][0],10,sp[3][0])
-    [x1,x2,x3] = uf.findShifts(sp,wp)
-    [t1,t2,t3] = uf.convertShifts(40,[x1,x2,x3])
-    uf.applyShifts([t1,t2,t3],gx,fw)
-    fx = zerofloat(n1,n2,n3)
-    uf.applyShiftsX([x1,x2,x3],fw,fx)
-    '''
-    writeImage(fwsfile,fw)
-    writeImage(ft1file,t1)
-    writeImage(ft2file,t2)
-    writeImage(ft3file,t3)
-    writeImage(sx1file,x1)
-    writeImage(sx2file,x2)
-    writeImage(sx3file,x3)
-    '''
-
-  else :
-    gx = readImage(gxfile)
-    fw = readImage(fwsfile)
-    t1 = readImage(ft1file)
-    t2 = readImage(ft2file)
-    t3 = readImage(ft3file)
-  gx = gain(gx)
-  fw = gain(fw)
-  plot3(gx)
-  plot3(fw,png="unfaulted")
-  t1 = mul(t1,4) # convert to ms
-  t2 = mul(t2,25) # convert to m
-  t3 = mul(t3,25) # convert to m
-  print min(t2) 
-  print max(t2)
-  print min(t3) 
-  print max(t3)
-  '''
-  plot3(gx,t1,cmin=-20,cmax=20,cmap=jetFill(0.3),
-        clab="Vertical shift (ms)",png="gxs1i")
-  '''
-  plot3(gx,t2,cmin=-30,cmax=30,cmap=jetFill(0.3),
-        clab="Inline shift (m)",png="gxs2i")
-  plot3(gx,t3,cmin=-30,cmax=30,cmap=jetFill(0.3),
-        clab="Crossline shift (m)",png="gxs3i")
-  '''
-  skins = readSkins(fslbase)
-  mark = -100
-  flt = like(gx)
-  fss = fillfloat(mark,n1,n2,n3)
-  FaultSkin.getThrow(mark,skins,fss)
-  FaultSkin.getLikelihood(skins,flt)
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="fls")
-  plot3(gx,fss,cmin=-0.5,cmax=10,cmap=jetFillExceptMin(1.0),
-      slices=[93,180,192],clab="Fault throw (ms)",cint=5,png="throw3D")
-  '''
-
-def goUncScan():
-  sig1s,sig2s=1.0,2.0
-  gx = readImage(gxfile)
-  fw = readImage(fwsfile)
-  if not plotOnly:
-    fw = smoothF(fw)
-    ip = InsPhase()
-    cs = like(fw)
-    ip.applyForCosine(fw,cs)
-    unc = UncSurfer()
-    unc.setSampling(2,2)
-    unc.setForLof(sig1s,sig2s)
-    ul=unc.likelihood(cs)
-    ult = like(ul)
-    unc.thin(0.1,ul,ult)
-    sfs = unc.surfer(n2,n3,0.1,2000,ult,ul)
-    #unc.surfaceUpdate(2.0,2.0,fw,sfs)
-    removeAllUncFiles(uncfile)
-    writeUncs(uncfile,sfs)
-    uli = unc.interp(n1,n2,n3,ul)
-    writeImage(ulfile,uli)
-  fw = gain(fw)
-  uc = readImage(ulfile)
-  ul = zerofloat(n1,n2,n3)
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
-  unc = UncSurfer()
-  ult = like(ul)
-  unc.thin(0.2,ul,ult)
-  ul = div(exp(ul),exp(1.0))
-  sfs = unc.surfer2(n2,n3,0.2,3000,ult)
-  sfs = unc.extractUncs(sfs,fw)
-  removeAllUncFiles(uncfile)
-  writeUncs(uncfile,sfs)
-  uc = gain2(uc,12)
-  uc = sub(uc,min(uc))
-  uc = div(uc,max(uc))
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
-  plot3(fw,ul,cmin=0.3,cmax=1.0,cmap=jetRamp(1.0),
-        clab="Unconformity likelihood",png="ul")
-  plot3(fw,uncs=sfs,png="uncs")
-
-def goUncConvert():
-  gx  = readImage(gxfile)
-  fw  = readImage(fwsfile)
-  rw1 = readImage(ft1file)
-  rw2 = readImage(ft2file)
-  rw3 = readImage(ft3file)
-  rgt = readImage(rgtfile)
-  sks = readSkins(fskgood)
-  uncs = readUncs(uncfile)
-
-  uc = readImage(ulfile)
-  ul = zerofloat(n1,n2,n3)
-  uc = gain2(uc,12)
-  uc = sub(uc,min(uc))
-  uc = div(uc,max(uc))
-  copy(n1-4,n2,n3,0,0,0,uc,4,0,0,ul)
-  uf = UnfaultS(4.0,2.0)
-  hfr = HorizonFromRgt(s1,s2,s3,None,rgt)
-  funcs = hfr.ulOnSurface(uncs,ul)
-  fw = gain(fw)
-  #plot3(fw,uncs=[uncs[0]],png="unc1")
-  #plot3(fw,uncs=[uncs[1]],png="unc2")
-  for unc in uncs:
-    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
-  hs = hfr.trigSurfaces(-1.0,uncs,sks,funcs)
-  gx = gain(gx)
-  #plot3(gx,hs=[hs[0]],png="unc1X")
-  #plot3(gx,hs=[hs[1]],png="unc2X")
-  plot3(gx,hs=hs,png="uncsX")
-def goFlatten():
-  fw = readImage(fwsfile)
-  if not plotOnly:
-    sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,5.0
-    p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,fw)
-    wp = pow(ep,8.0)
-    lmt = n1-1
-    se = SurfaceExtractorC()
-    se.setWeights(0.0)
-    se.setSmoothings(4.0,4.0)
-    se.setCG(0.01,100)
-    k11 = [ 31, 38, 39, 36]
-    k12 = [ 25, 38,282,290]
-    k13 = [105,249,232,145]
-    surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
-    se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
-    uncs = readUncs(uncfile)
-    sc = SetupConstraints()
-    cs = sc.constraintsFromSurfaces([sub(uncs[1],1.0),surf])
-    #cs = sc.constraintsFromSurfaces([surf])
-    #cs = sc.constraintsFromSurfaces([uncs[0]])
-    #cs = sc.constraintsFromSurfaces(uncs)
-    sfs = copy(uncs)
-    for i3 in range(206,n3):
-      for i2 in range(180,n2):
-        sfs[0][i3][i2] = -100
-    for i3 in range(n3-150,n3):
-      for i2 in range(0,120):
-        sfs[1][i3][i2] = -100
-    sfs = sc.uncConstraints(sfs)
-    rs = zerofloat(n1,n2,n3)
-    fl3 = Flattener3Unc()
-    sig1,sig2=4.0,4.0
-    fl3.setSmoothings(sig1,sig2)
-    fl3.setIterations(0.01,300);
-    #fl3.computeShifts(p2,p3,wp,cs,sfs,rs)
-    mp = fl3.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp,cs,sfs,rs)
-    #mp = fl3.getMappingsFromShifts(s1,s2,s3,rs)
-    rgt = mp.u1
-    fg  = mp.flatten(fw)
-    writeImage(fgfile,fg)
-    writeImage(rgtfile,rgt)
-  fg  = readImage(fgfile)
-  rgt = readImage(rgtfile)
-  fw = gain(fw)
-  fg = gain(fg)
-  #plot3(fw)
-  #plot3(fg,png="fg")
-  fs = zerofloat(n1,n2,n3)
-  for i3 in range(n3):
-    for i2 in range(n2):
-      for i1 in range(n1):
-        fs[i3][i2][i1] = rgt[i3][i2][i1]-i1
-  fs = mul(fs,4) # convert to ms
-  plot3(fw,fs,cmin=-110,cmax=70,cmap=jetFill(1.0),
-        clab="Vertical shift (ms)",png="shifts")
-  plot3(fw,rgt,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
-        clab="Relative geologic time",png="rgt")
-
-def goHorizons():
-  gx  = readImage(gxfile)
-  rgt = readImage(rgtfile)
-  sx1 = readImage(sx1file)
-  sx2 = readImage(sx2file)
-  sx3 = readImage(sx3file)
-  rw1 = readImage(ft1file)
-  rw2 = readImage(ft2file)
-  rw3 = readImage(ft3file)
-
-  sks = readSkins(fslbase)
-  uncs = readUncs(uncfile)
-  rgtx = zerofloat(n1,n2,n3)
-  uf = UnfaultS(4.0,2.0)
-  uf.applyShiftsX([sx1,sx2,sx3],rgt,rgtx)
-  hfr = HorizonExtraction(s1,s2,s3,None,rgtx)
-  gx = gain(gx)
-  '''
-  fs = [20,58,72]
-  dt = 2
-  ns = ["horizonsSlide","horizonsub1Slide","horizonsub2Slide"]
-  for ik, ft in enumerate(fs):
-    name = ns[ik]
-    nt = (round((n1-ft)/dt)-10)
-    st = Sampling(nt,dt,ft)
-    hs = hfr.multipleHorizons(st,sks)
-    plot3(gx,hs=hs,png=name)
-  '''
-  '''
-  ft=60  
-  dt=5
-  nt = (round((n1-ft)/dt)-1)
-  st = Sampling(nt,dt,ft)
-  hs = hfr.multipleHorizons(st,sks)
-  for unc in uncs:
-    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
-  hc = hfr.trigSurfaces(0.1,uncs,sks,None)
-  plot3(gx,hs=hs,png="cwpLettersHorizons")
-  ft = 20
-  dt = 2
-  nt = (round((n1-ft)/dt)-1)
-  st = Sampling(nt,dt,ft)
-  k3,k2=249,25
-  for unc in uncs:
-    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
-  sub(uncs,1,uncs)
-  hls  = hfr.horizonCurves(st,k2,k3,sks,uncs)
-  uls = hfr.horizonCurves(uncs,k2,k3,sks)
-  plot3(gx,curve=True,hs=hls,uncx=uls,png="horizonLines")
-  '''
-
-  ft=20  
-  dt=2
-  nt = (round((n1-ft)/dt)-10)
-  st = Sampling(nt,dt,ft)
-  hs = hfr.multipleHorizons(st,sks)
-  for unc in uncs:
-    uf.applyShiftsR([rw1,rw2,rw3],unc,unc)
-  sub(uncs,1,uncs)
-  hc = hfr.trigSurfaces(0.1,uncs,sks,None)
-  #plot3(gx,skins=sks,hs=hs,uncx=hc,png="allSurfaces")
 
 def smoothF(x):
   fsigma = 4.0
@@ -694,7 +407,8 @@ def rgbFromHeight(h,r,g,b):
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
           links=False,curve=False,trace=False,hs=None,uncs=None,uncx=None,png=None):
-  n1,n2,n3 = s1.count,s2.count,s3.count
+  n1,n2,n3 = len(f[0][0]),len(f[0]),len(f)
+  s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
