@@ -62,12 +62,9 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  writeImage(gxfile,gx)
   goSlopes()
-  goScan()
-  goThin()
+  #goScan()
+  #goThin()
   #goThinImages()
   #goSkin()
   #goReSkin()
@@ -76,6 +73,9 @@ def main(args):
 
 def goSlopes():
   print "goSlopes ..."
+  gx = readImage(gxfile)
+  print min(gx)
+  print max(gx)
   sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
