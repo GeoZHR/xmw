@@ -37,7 +37,7 @@ sigmaPhi,sigmaTheta = 10,20
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
 upperLikelihood = 0.5
-minSkinSize = 8000
+minSkinSize = 1000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -119,11 +119,13 @@ def goSkin():
     plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
+  '''
   flt = like(gx)
   FaultSkin.getLikelihood(skins,flt)
   #plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
+  '''
 
 def goInitial():
   wps,frs=goTie()
