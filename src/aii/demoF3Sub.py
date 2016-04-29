@@ -64,8 +64,14 @@ def goInitial():
   '''
   samples = fp,k1,k2,k3
   rx = readImage(rxfile)
+  gx = readImage(gxfile)
+  gx = gain(gx)
+  writeImage(gxfile,gx)
   plot3X(rx,cmin=-0.15,cmax=0.15,clab="Reflectivity",
         samples=samples,png="ref")
+  print min(gx)
+  print max(gx)
+  plot3X(gx,clab="Amplitude", samples=samples,png="seis")
 
 def goReflectivity():
   #rx = readImage(rxfile)
@@ -323,7 +329,7 @@ def like(x):
 
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(10.0)
+  ref = RecursiveExponentialFilter(80.0)
   ref.apply1(g,g)
   y = like(x)
   div(x,sqrt(g),y)
@@ -480,11 +486,11 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     cbar.setWidthMinimum(140)
   #ipg.setSlices(109,138,31)
-  ipg.setSlices(2850,20,128) # for logs only
+  ipg.setSlices(1396,20,128) # for logs only
   if samples:
     fx,x1,x2,x3 = samples
     #vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
-    vmin,vmax,vmap= 3500,5500,ColorMap.JET
+    vmin,vmax,vmap= 3000,6500,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:
