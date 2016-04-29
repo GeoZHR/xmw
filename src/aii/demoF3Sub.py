@@ -26,6 +26,7 @@ ftfile  = "fti" # fault dip (theta)
 fltfile = "flit" # fault likelihood thinned
 fptfile = "fpit" # fault strike thinned
 fttfile = "ftit" # fault dip thinned
+fskbase = "fsk"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
