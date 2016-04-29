@@ -36,7 +36,7 @@ sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.3
+lowerLikelihood = 0.2
 upperLikelihood = 0.5
 minSkinSize = 1000
 
@@ -117,7 +117,6 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
-    plot3(gx,cells=cells,png="cells")
   else:
     skins = readSkins(fskbase)
   '''
