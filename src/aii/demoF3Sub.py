@@ -5,8 +5,7 @@ Version: 2015.02.09
 """
 
 from utils import *
-setupForSubset("f3d")
-#setupForSubset("f3dSub")
+setupForSubset("f3dSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -32,39 +31,41 @@ fptfile = "fpt" # fault strike thinned
 # otherwise, must create the specified directory before running this script.
 plotOnly = True
 pngDir = None
-pngDir = "../../../png/aii/f3d/"
+pngDir = "../../../png/aii/f3d/sub/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goLogs()
-  #goSeisTraces()
   #goTie()
-  #goWellSeisFit()
   #goLinearity()
   #goImpedance()
-  #goReflectivity() # displya only
-  goInitial() # displya only
+  goInitial() # display only
+  #goSeisTracesAtWells()
 def goInitial():
-  m2 = 4
-  px = readImage(pxfile)
-  wpm = readImage2D(n1,m2,'wpm')
-  x2 = [ 33,545,704, 84]
-  x3 = [259,619,339,141]
+  wps,frs=goTie()
+  wpm = goWellSeisFit(wps,frs)
+  x2 = [ 33, 84]
+  x3 = [259,141]
   k1,k2,k3,fp = [],[],[],[]
-  for i2 in range(m2):
-    for i1 in range(n1):
-      k1.append(i1)
+  for i2 in range(2):
+    m1 = len(wpm[i2])
+    for i1 in range(1350,m1):
       k2.append(x2[i2])
       k3.append(x3[i2])
+      k1.append(i1-1350)
       fp.append(exp(wpm[i2][i1]*2))
+  '''
   ai3 = AcousticImpedanceInv3(8.0,8.0)
   pt = zerofloat(n1,n2,n3)
   ai3.setInitial(pt,k1,k2,k3,fp)
-  samples = fp,k1,k2,k3
-  plot3X(pt,pt,cmin=3000,cmax=5400,clab="Impedance",
+  plot3X(pt,pt,cmin=3500,cmax=5500,clab="Impedance",
         samples=samples,png="initial")
-
+  '''
+  samples = fp,k1,k2,k3
+  rx = readImage(rxfile)
+  plot3X(rx,cmin=-0.15,cmax=0.15,clab="Reflectivity",
+        samples=samples,png="ref")
 
 def goReflectivity():
   #rx = readImage(rxfile)
@@ -125,61 +126,81 @@ def goImpSub():
 
 def goSeisTracesAtWells():
   rx = readImage(rxffile)
-  frs = zerofloat(n1,4)
-  fcs = zerofloat(n1,4)
-  x2s = [ 33,545,704, 84]
-  x3s = [259,619,339,141]
-  for k in range(4):
+  frs = zerofloat(n1,2)
+  x2s = [ 33, 84]
+  x3s = [259,141]
+  for k in range(2):
     x2 = x2s[k]
     x3 = x3s[k]
-    fcs[k] = rx[x3][x2]
-    for i3 in range(x3-1,x3+2,1):
-      for i2 in range(x2-1,x2+2,1):
-        frs[k] = add(rx[i3][i2],frs[k])
-  frs = div(frs,9)
-  plot1s(s1,frs,rs=fcs)
+    frs[k] = rx[x3][x2]
   writeImage("frs",frs)
-def goTie():
-  m1,m2=2121,4
-  s1 = Sampling(m1)
-  fp,k1,k2,k3,wps,wrs = getF3dLogs()
-  frs = readImage2D(m1,m2,'frs')
-  wrc = copy(wrs)
-  wrm = copy(wrs)
-  wpc = copy(wps)
-  wpm = copy(wps)
-  dwk = DynamicWarpingK(8,-160,160,s1)
-  dwk.setStrainLimits(-0.5,0.5)
-  dwk.setSmoothness(4)
-  for k in range(4):
-    rs = dwk.findShifts(s1,frs[k],s1,wrs[k])
-    wrc[k] = dwk.applyShifts(s1,wrs[k],rs)
-    wpc[k] = dwk.applyShifts(s1,wps[k],rs)
-  plot1s(s1,wrs,rs=frs)
-  plot1s(s1,wrc,rs=frs,color=Color.BLUE)
-  plot1s(s1,wpc,rs=wps,color=Color.MAGENTA)
-  writeImage("wrc",wrc)
-  writeImage("wpc",wpc)
 
-def goWellSeisFit():
-  m1,m2=2121,4
-  fp,k1,k2,k3,wps,wrs = getF3dLogs()
-  wpc = readImage2D(m1,m2,'wpc')
-  frs = readImage2D(m1,m2,'frs')
-  l1,m2=1940,4
-  wpc = copy(l1,m2,0,0,wpc)
-  frs = copy(l1,m2,0,0,frs)
-  wrm = copy(frs)
-  wpm = copy(wpc)
-  for k in range(4):
+def goTie():
+  wpt = readImage2D(2873,4,'logs')
+  rxs = readImage2D(2897,2,'frs')
+  wp1 = copy(2121,0,wpt[0])
+  wp2 = copy(2473,0,wpt[3])
+  wps = [wp1,wp2]
+  frs = []
+  wrs = []
+  wrc = []
+  wpc = []
+  k = 0
+  ss = []
+  rgf = RecursiveGaussianFilterP(1.0)
+  for wpi in wps:
+    m1 = len(wpi)
+    wri = zerofloat(m1)
+    rgf.apply0(wpi,wpi)
+    for i1 in range(m1-1):
+      wri[i1] = 0.5*(log(wpi[i1+1])-log(wpi[i1]))
+      wpi[i1] = 0.5*log(wpi[i1])
+    wpi[m1-1] = 0.5*log(wpi[m1-1])
+    s1 = Sampling(m1)
+    ss.append(s1)
+    fri = copy(m1,0,rxs[k])
+    frs.append(fri)
+    wrs.append(wri)
+    dwk = DynamicWarpingK(8,-160,160,s1)
+    dwk.setStrainLimits(-0.2,0.2)
+    dwk.setSmoothness(4)
+    rs = dwk.findShifts(s1,fri,s1,wri)
+    wrci = dwk.applyShifts(s1,wri,rs)
+    wpci = dwk.applyShifts(s1,wpi,rs)
+    wpc.append(wpci)
+    wrc.append(wrci)
+    k=k+1
+  plot1s(ss,wrs,rs=frs,color=Color.BLUE)
+  plot1s(ss,wrc,rs=frs)
+  return wpc,frs
+
+def goWellSeisFit(wps,frs):
+  wrm = []
+  wpm = []
+  wpc = []
+  frc = []
+  ss = []
+  for k in range(2):
     fis = FitLogImpWithSeisRef(6.0)
     fis.setSeisBalance(0.8)
-    wpm[k] = fis.fitImpedance(wpc[k],frs[k])
-    for i1 in range(l1-1):
-      wrm[k][i1] = wpm[k][i1+1]-wpm[k][i1]
-  writeImage("wpm",wpm)
-  plot1s(s1,wrm,rs=fcs,color=Color.MAGENTA)
-  plot1s(s1,wpm,rs=wpc,color=Color.MAGENTA)
+    wpk = wps[k]
+    frk = frs[k]
+    if (k==0):
+      wpk = copy(1959,0,wps[k])
+      frk = copy(1959,0,frs[k])
+    wpc.append(wpk)
+    frc.append(frk)
+    wpmk = fis.fitImpedance(wpk,frk)
+    m1 = len(wpmk)
+    wrmk = zerofloat(m1)
+    for i1 in range(m1-1):
+      wrmk[i1] = wpmk[i1+1]-wpmk[i1]
+    wrm.append(wrmk)
+    wpm.append(wpmk)
+    ss.append(Sampling(m1))
+  plot1s(ss,wrm,rs=frc,color=Color.MAGENTA)
+  plot1s(ss,wpm,rs=wpc,color=Color.MAGENTA)
+  return wpm
 
 
 def goLinearity():
@@ -255,39 +276,37 @@ def goLogs():
   print max(rx)
   wp,k1,k2,k3,wps,wrs = getF3dLogs()
   r1 = rx[259][ 33]
-  r2 = rx[619][545]
-  r3 = rx[339][704]
-  r4 = rx[141][ 84]
-  frs = [r1,r2,r3,r4]
-  plot1s(s1,wrs,rs=frs)
+  r2 = rx[141][ 84]
+  frs = [r1,r2]
+  #plot1s(s1,wrs,rs=frs)
   samples=wp,k1,k2,k3
   plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,samples=samples)
 
 def getF3dLogs():
   m2 = 4 # number of logs
-  m1 = 2121 # number of samples for each log
-  x2 = [ 33,545,704, 84]
-  x3 = [259,619,339,141]
-  logs = readImage2D(m1,m2,'logs')
+  m1 = 2873 # number of samples for each log
+  x2 = [ 33, 84]
+  x3 = [259,141]
+  lgt = readImage2D(m1,m2,'logs')
+  lgs = zerofloat(m1,2)
+  lgs[0] = lgt[0]
+  lgs[1] = lgt[3]
   k1 = []
   k2 = []
   k3 = []
   fp = []
-  wrs = zerofloat(m1,m2)
-  wps = zerofloat(m1,m2)
-  for i2 in range(m2):
+  wrs = zerofloat(m1,2)
+  wps = zerofloat(m1,2)
+  for i2 in range(2):
     for i1 in range(m1-1):
-      if(logs[i2][i1]!=-999.25):
+      if(lgs[i2][i1]!=-999.25):
         k1.append(i1+0)
         k2.append(x2[i2])
         k3.append(x3[i2])
-        fp.append(0.5*log(logs[i2][i1]))
-        if(logs[i2][i1+1]!=-999.25):
-          wps[i2][i1] = 0.5*log(logs[i2][i1])
-          wrs[i2][i1] = 0.5*(log(logs[i2][i1+1])-log(logs[i2][i1]))
-      else:
-        print i1
-        print i2
+        fp.append(0.5*log(lgs[i2][i1]))
+        if(lgs[i2][i1+1]!=-999.25):
+          wps[i2][i1] = 0.5*log(lgs[i2][i1])
+          wrs[i2][i1] = 0.5*(log(lgs[i2][i1+1])-log(lgs[i2][i1]))
   return fp,k1,k2,k3,wps,wrs
 
 def like(x):
@@ -372,12 +391,12 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
   pg.setStates(ss)
   return pg
 
-def plot1s(s1,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
+def plot1s(ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
   hlabel="Seismic traces",vlabel="time (ms)",png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sf = 1.0
   yf = sf
-  sp.setVLimits(0,n1)
+  sp.setVLimits(0,2500)
   if vmin and vmax:
     sp.setVLimits(vmin,vmax)
   sp.setHLimits(0,len(ys)+1)
@@ -385,7 +404,7 @@ def plot1s(s1,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
     ya = sum(y)/len(y)
     y = sub(y,ya)
     y = add(y,yf)
-    pv = sp.addPoints(s1,y)
+    pv = sp.addPoints(ss[il],y)
     pv.setLineColor(color)
     yf = yf+sf
   rf = sf
@@ -394,7 +413,7 @@ def plot1s(s1,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
       ra = sum(r)/len(r)
       r = sub(r,ra)
       r = add(r,rf)
-      pv = sp.addPoints(s1,r)
+      pv = sp.addPoints(ss[il],r)
       pv.setLineColor(Color.BLACK)
       rf = rf+sf
   sp.setSize(600,500)
@@ -461,10 +480,11 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     cbar.setWidthMinimum(140)
   #ipg.setSlices(109,138,31)
-  ipg.setSlices(2850,850,75) # for logs only
+  ipg.setSlices(2850,20,128) # for logs only
   if samples:
     fx,x1,x2,x3 = samples
-    vmin,vmax,vmap= 2500,5500,ColorMap.JET
+    #vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
+    vmin,vmax,vmap= 3500,5500,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:
@@ -477,10 +497,10 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov = sf.getOrbitView()
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(2.5)
+  ov.setScale(3.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.04,0.00,0.075))
-  ov.setAzimuthAndElevation(140,35.0)
+  ov.setTranslate(Vector3(-0.06,0.005,0.015))
+  ov.setAzimuthAndElevation(50,36.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

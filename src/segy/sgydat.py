@@ -54,13 +54,14 @@ def goF3dRef():
   ****** end of SEG-Y file info ******
   '''
   firstLook = False # fast, does not read all trace headers
-  secondLook = False # slow, must read all trace headers
-  writeImage = False # reads all traces, writes an image
+  secondLook = False  # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
   showImage = True # displays the image
-  basedir = "../../../data/seis/aii/f3d/"
+  basedir = "../../../data/seis/aii/f3d/sub/"
   sgyfile = basedir+"reflectivity.sgy"
   datfile = basedir+"rx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,2896,303,1247,103,747
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,2896,303,702,103,602
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
   if firstLook:
@@ -111,13 +112,13 @@ def goF3dSeis():
   '''
   firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
-  writeImage = False # reads all traces, writes an image
+  writeImage = True # reads all traces, writes an image
   showImage = True # displays the image
-  basedir = "../../../data/seis/aii/f3d/"
+  basedir = "../../../data/seis/aii/f3d/sub/"
   sgyfile = basedir+"seis05ms.sgy"
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,3696,300,1250,100,750
-  i1min,i1max,i2min,i2max,i3min,i3max = 800,3696,303,1247,103,747
+  i1min,i1max,i2min,i2max,i3min,i3max =2150,3696,303,652,103,602
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
   if firstLook:
