@@ -31,9 +31,9 @@ upperLikelihood = 0.5
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 pngDir = "../../../png/oregan/"
-plotOnly = False
+pngDir = None
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -76,9 +76,9 @@ def goScan():
     fl = readImage(flfile)
     ft = readImage(ftfile)
   plot2(s1,s2,gx,g=fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
+      label="Fault likelihood",png="fl")
   plot2(s1,s2,gx,g=ft,cmin=65,cmax=85,cmap=jetFill(1.0),
-      clab="Fault dip (degrees)",png="ft")
+      label="Fault dip (degrees)",png="ft")
 
 def goThin():
   print "goThin ..."

@@ -269,7 +269,7 @@ def goLinearity():
 def goImpedance():
   print "goImpedance..."
   if not plotOnly:
-    smooth = 0.8
+    smooth = 0.6
     wps,frs=goTie()
     wpm = goWellSeisFit(wps,frs)
     x2 = [ 33, 84]
@@ -288,12 +288,12 @@ def goImpedance():
     wp = readImage(fltfile)
     wp = sub(1,wp)
     wp = pow(wp,4)
-    lof = LocalOrientFilter(8.0,2.0)
+    lof = LocalOrientFilter(64.0,2.0)
     et3 = lof.applyForTensors(gx,True)
     print "tensor computation done..."
     et3.setEigenvalues(0.000001,1.0,1.0)
     ai3 = AcousticImpedanceInv3(8.0,8.0)
-    ai3.setIterations(0.001,max(n2,n3))
+    ai3.setIterations(0.001,300)
     ai3.setTensors(et3)
     ai3.setSmoothness(smooth)
     pt = zerofloat(n1,n2,n3)
@@ -303,17 +303,17 @@ def goImpedance():
     px = exp(px)
     writeImage(pxfile,px)
   else:
-    m2 = 4
-    px = readImage(pxfile)
-    wpm = readImage2D(n1,m2,'wpm')
-    x2 = [ 33,545,704, 84]
-    x3 = [259,619,339,141]
+    wps,frs=goTie()
+    wpm = goWellSeisFit(wps,frs)
+    x2 = [ 33, 84]
+    x3 = [259,141]
     k1,k2,k3,fp = [],[],[],[]
-    for i2 in range(m2):
-      for i1 in range(n1):
-        k1.append(i1)
+    for i2 in range(2):
+      m1 = len(wpm[i2])
+      for i1 in range(1350,m1):
         k2.append(x2[i2])
         k3.append(x3[i2])
+        k1.append(i1-1350)
         fp.append(exp(wpm[i2][i1]*2))
   '''
   plot3(gx,clab="Amplitude",png="seismic")
