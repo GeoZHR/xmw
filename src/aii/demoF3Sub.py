@@ -36,7 +36,7 @@ sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.3
+lowerLikelihood = 0.4
 upperLikelihood = 0.5
 minSkinSize = 1000
 
@@ -48,7 +48,7 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = False
+plotOnly = True
 pngDir = None
 pngDir = "../../../png/aii/f3d/sub/"
 
@@ -58,10 +58,10 @@ def main(args):
   #goLogs()
   #goTie()
   #goLinearity()
-  #goImpedance()
+  #goFaults()
+  goImpedance()
   #goInitial() # display only
   #goSeisTracesAtWells()
-  goFaults()
 
 def goFaults():
   print "goSkin ..."
@@ -81,10 +81,8 @@ def goFaults():
     writeImage(fltfile,flt)
   else:
     flt = readImage(fltfile)
-  '''
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,flt,cmin=0.30,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
-  '''
 
 def goInitial():
   wps,frs=goTie()
@@ -267,22 +265,24 @@ def goLinearity():
 def goImpedance():
   print "goImpedance..."
   if not plotOnly:
-    m2 = 4
-    smooth = 0.2
-    wpm = readImage2D(n1,m2,'wpm')
-    x2 = [ 33,545,704, 84]
-    x3 = [259,619,339,141]
+    wps,frs=goTie()
+    wpm = goWellSeisFit(wps,frs)
+    x2 = [ 33, 84]
+    x3 = [259,141]
     k1,k2,k3,fp = [],[],[],[]
-    for i2 in range(m2):
-      for i1 in range(n1):
-        k1.append(i1)
+    for i2 in range(2):
+      m1 = len(wpm[i2])
+      for i1 in range(1350,m1):
         k2.append(x2[i2])
         k3.append(x3[i2])
+        k1.append(i1-1350)
         fp.append(wpm[i2][i1])
     rx = readImage(rxfile)
     rx = div(rx,2.5)
     gx = readImage(gxfile)
-    wp = fillfloat(1.0,n1,n2,n3)#readImage(epfile)
+    wp = readImage(fltfile)
+    wp = sub(1,wp)
+    wp = pow(wp,4)
     lof = LocalOrientFilter(8.0,2.0)
     et3 = lof.applyForTensors(gx,True)
     print "tensor computation done..."
@@ -315,10 +315,10 @@ def goImpedance():
   plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
   plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
         samples=samples,png="pInitial")
-  '''
   samples = fp,k1,k2,k3
   plot3X(px,px,cmin=3000,cmax=5400,clab="Impedance",
         samples=samples,png="pRecover02")
+  '''
 
 def goLogs():
   rx = readImage(rxfile)
