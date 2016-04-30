@@ -269,6 +269,7 @@ def goLinearity():
 def goImpedance():
   print "goImpedance..."
   if not plotOnly:
+    smooth = 0.8
     wps,frs=goTie()
     wpm = goWellSeisFit(wps,frs)
     x2 = [ 33, 84]
