@@ -135,6 +135,36 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     }
   }
 
+  public static void getLikelihoods(FaultCell[] cells, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] sc = new float[n3][n2][n1];
+    for (FaultCell cell:cells) {
+      int i1i = cell.i1;
+      int i2m = cell.i2m;
+      int i3m = cell.i3m;
+      int i2p = cell.i2p;
+      int i3p = cell.i3p;
+      if(i2m<0){i2m=0;}if(i2m>=n2){i2m=n2-1;}
+      if(i2p<0){i2p=0;}if(i2p>=n2){i2p=n2-1;}
+      if(i3m<0){i3m=0;}if(i3m>=n3){i3m=n3-1;}
+      if(i3p<0){i3p=0;}if(i3p>=n3){i3p=n3-1;}
+      sc[i3m][i2m][i1i] += 1f;
+      sc[i3p][i2p][i1i] += 1f;
+      fl[i3m][i2m][i1i] += cell.fl;
+      fl[i3p][i2p][i1i] += cell.fl;
+    }
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float sci = sc[i3][i2][i1];
+      if(sci>1f){fl[i3][i2][i1] /= sci;}
+    }}}
+
+  }
+
+
 
   public static void getLikelihoods(FaultSkin[] skins, float[][][] fl) {
     int n3 = fl.length;

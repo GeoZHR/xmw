@@ -824,7 +824,8 @@ public class SegyImage {
       float[] g = new float[m1];
       float s = (float)scaleFactor;
       for (int i2=i2min; i2<=i2max; i2+=d2) {
-        getTrace(i2,f);
+        int id = _itrace[0][i2-_i2min];
+        getTrace(id,f);
         copy(m1,i1min,f,0,g);
         if (s!=1.0f) {
           for (int i1=0; i1<m1; ++i1)

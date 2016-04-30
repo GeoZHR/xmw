@@ -36,7 +36,7 @@ sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
+lowerLikelihood = 0.3
 upperLikelihood = 0.5
 minSkinSize = 1000
 
@@ -61,42 +61,9 @@ def main(args):
   #goImpedance()
   #goInitial() # display only
   #goSeisTracesAtWells()
-  #goFaults()
-  #goThin()
-  goSkin()
+  goFaults()
+
 def goFaults():
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  gx = readImage(gxfile)
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-      clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,ft,cmin=70,cmax=80,cmap=jetFill(1.0),
-      clab="Fault dip (degrees)",png="ft")
-
-def goThin():
-  print "goThin ..."
-  gx = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
-  plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,ftt,cmin=70,cmax=80,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
-
-def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
   if not plotOnly:
@@ -109,20 +76,12 @@ def goSkin():
     fs.setMaxPlanarDistance(0.2)
     fs.setMinSkinSize(minSkinSize)
     cells = fs.findCells([fl,fp,ft])
-    skins = fs.findSkins(cells)
-    for skin in skins:
-      skin.smoothCellNormals(4)
-    print "total number of cells =",len(cells)
-    print "total number of skins =",len(skins)
-    print "number of cells in skins =",FaultSkin.countCells(skins)
-    removeAllSkinFiles(fskbase)
-    writeSkins(fskbase,skins)
+    flt = like(gx)
+    FaultSkin.getLikelihoods(cells,flt)
+    writeImage(fltfile,flt)
   else:
-    skins = readSkins(fskbase)
+    flt = readImage(fltfile)
   '''
-  flt = like(gx)
-  FaultSkin.getLikelihood(skins,flt)
-  #plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="fls")
   '''

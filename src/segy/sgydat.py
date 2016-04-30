@@ -72,7 +72,7 @@ def goHan():
     plotXY(si)
   if writeImage:
     scale = 1.00
-    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,0,0,1,1)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,1)
   si.close()
   if showImage:
     x = readImage(datfile,n1,n2)
