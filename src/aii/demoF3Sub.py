@@ -218,8 +218,10 @@ def goTie():
     wpc.append(wpci)
     wrc.append(wrci)
     k=k+1
+  '''
   plot1s(ss,wrs,rs=frs,color=Color.BLUE)
   plot1s(ss,wrc,rs=frs)
+  '''
   return wpc,frs
 
 def goWellSeisFit(wps,frs):
@@ -246,8 +248,10 @@ def goWellSeisFit(wps,frs):
     wrm.append(wrmk)
     wpm.append(wpmk)
     ss.append(Sampling(m1))
+  '''
   plot1s(ss,wrm,rs=frc,color=Color.MAGENTA)
   plot1s(ss,wpm,rs=wpc,color=Color.MAGENTA)
+  '''
   return wpm
 
 
