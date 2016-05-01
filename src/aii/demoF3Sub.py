@@ -58,8 +58,8 @@ def main(args):
   #goLogs()
   #goTie()
   #goLinearity()
-  goSkin()
-  #goFaults()
+  #goSkin()
+  goFaults()
   #goImpedance()
   #goInitial() # display only
   #goSeisTracesAtWells()

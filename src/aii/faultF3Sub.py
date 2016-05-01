@@ -39,7 +39,7 @@ sx3file = "sx3"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 70,80
+minTheta,maxTheta = 75,89
 sigmaPhi,sigmaTheta = 10,20
 
 # These parameters control the construction of fault skins.
@@ -62,15 +62,15 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   #goThin()
   #goThinImages()
   #goSkin()
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goInterp()
+  #goInterp()
 def goInterp():
   m1 = 1547
   fl = readImage(flfile)
@@ -95,7 +95,7 @@ def goInterp():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  sigma1,sigma2,sigma3,pmax = 128.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -133,7 +133,7 @@ def goScan():
       clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,ft,cmin=70,cmax=80,cmap=jetFill(1.0),
+  plot3(gx,ft,cmin=75,cmax=89,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
 def goThin():
   print "goThin ..."
