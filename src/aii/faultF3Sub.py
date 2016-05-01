@@ -8,7 +8,7 @@ setupForSubset("f3dFaultSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile = "gs" # input image
+gxfile = "gx" # input image
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
