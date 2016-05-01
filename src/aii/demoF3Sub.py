@@ -27,6 +27,7 @@ fltfile = "flit" # fault likelihood thinned
 fptfile = "fpit" # fault strike thinned
 fttfile = "ftit" # fault dip thinned
 fskbase = "fsk"
+fskgood = "fsg"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -59,8 +60,8 @@ def main(args):
   #goTie()
   #goLinearity()
   #goSkin()
-  goFaults()
-  #goImpedance()
+  #goFaults()
+  goImpedance()
   #goInitial() # display only
   #goSeisTracesAtWells()
 def goSkin():
@@ -298,7 +299,7 @@ def goImpedance():
   print "goImpedance..."
   gx = readImage(gxfile)
   if not plotOnly:
-    smooth = 0.6
+    smooth = 0.5
     wps,frs=goTie()
     wpm = goWellSeisFit(wps,frs)
     x2 = [ 33, 84]
@@ -313,9 +314,15 @@ def goImpedance():
         fp.append(wpm[i2][i1])
     rx = readImage(rxfile)
     rx = div(rx,2.5)
+    '''
     wp = readImage(fltfile)
     wp = sub(1,wp)
     wp = pow(wp,4)
+    '''
+    fh = FaultHelper()
+    fk = readSkins(fskgood)
+    wp = fillfloat(1,n1,n2,n3)
+    fh.setValueOnFaultsInt(0,fk,wp)
     lof = LocalOrientFilter(64.0,2.0)
     et3 = lof.applyForTensors(gx,True)
     print "tensor computation done..."
@@ -333,8 +340,7 @@ def goImpedance():
   else:
     wps,frs=goTie()
     wpm = goWellSeisFit(wps,frs)
-    #px = readImage(pxfile)
-    px = readImage("ps")
+    px = readImage(pxfile)
     x2 = [ 33, 84]
     x3 = [259,141]
     k1,k2,k3,fp = [],[],[],[]

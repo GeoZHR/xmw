@@ -8,7 +8,8 @@ setupForSubset("f3dFaultSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile = "gx" # input image
+gxfile = "gs" # input image
+gmfile = "gm" # input image
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -34,19 +35,22 @@ rgtfile = "rgt" #relative geologic time image
 sx1file = "sx1"
 sx2file = "sx2"
 sx3file = "sx3"
+h1file = "h1"
+h2file = "h2"
+h3file = "h3"
 
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 75,89
-sigmaPhi,sigmaTheta = 10,20
+minTheta,maxTheta = 75,85
+sigmaPhi,sigmaTheta = 15,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.2
-upperLikelihood = 0.5
-minSkinSize = 1000
+upperLikelihood = 0.3
+minSkinSize = 500
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -57,20 +61,57 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved.
 #pngDir = None
 pngDir = "../../../png/aii/f3d/sub/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
-  goScan()
+  #goSlopes()
+  #goScan()
   #goThin()
   #goThinImages()
-  #goSkin()
+  goSkin()
   #goReSkin()
   #goSmooth()
   #goSlip()
   #goInterp()
+  #goHorizons()
+def goHorizons():
+  k31 = [ 89,110,104,115,136,137]
+  k32 = [128,309, 58,177,304,101]
+  k33 = [ 27, 92,161,314,436,475]
+
+  k21 = [ 55, 64, 62, 69, 69, 69, 79, 89]
+  k22 = [132,309, 75, 32,310, 59,285, 65]
+  k23 = [ 22, 27, 67, 67,167,218,345,440]
+
+  k11 = [ 30, 31, 35, 28, 31, 30, 26, 28]
+  k12 = [285,183, 44,245, 75, 38,230, 55]
+  k13 = [456,429,396,272,253,212,201, 47]
+
+  gx = readImage(gxfile)
+  sigma1,sigma2,sigma3,pmax = 6.0,2.0,2.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  wp = pow(ep,10.0) 
+  lmt = n1-1
+  se = SurfaceExtractorC()
+  se.setWeights(0.0)
+  se.setSmoothings(4.0,4.0)
+  se.setCG(0.01,100)
+  surf1 = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
+  surf2 = se.surfaceInitialization(n2,n3,lmt,k21,k22,k23)
+  surf3 = se.surfaceInitialization(n2,n3,lmt,k31,k32,k33)
+  se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf1)
+  se.surfaceUpdateFromSlopes(wp,p2,p3,k21,k22,k23,surf2)
+  se.surfaceUpdateFromSlopes(wp,p2,p3,k31,k32,k33,surf3)
+  gm = copy(gx)
+  fh = FaultHelper()
+  fh.mask(surf1,gm)
+  fh.mask(surf2,surf3,gm)
+  writeImage(gmfile,gm)
+  plot3(gx)
+  plot3(gm)
+
 def goInterp():
   m1 = 1547
   fl = readImage(flfile)
@@ -94,8 +135,8 @@ def goInterp():
 
 def goSlopes():
   print "goSlopes ..."
-  gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 128.0,2.0,2.0,5.0
+  gx = readImage(gmfile)
+  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -112,7 +153,7 @@ def goSlopes():
 
 def goScan():
   print "goScan ..."
-  gx = readImage(gxfile)
+  gx = readImage(gmfile)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
@@ -133,7 +174,7 @@ def goScan():
       clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,ft,cmin=75,cmax=89,cmap=jetFill(1.0),
+  plot3(gx,ft,cmin=70,cmax=80,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
 def goThin():
   print "goThin ..."
@@ -239,16 +280,12 @@ def goReSkin():
     removeAllSkinFiles(fskgood)
     writeSkins(fskgood,sks)
   skins = readSkins(fskgood)
-  sks = []
-  for ski in skins:
-    if(ski.size()>3000):
-      sks.append(ski)
   flt = like(gx)
   #FaultSkin.getLikelihood(skins,flt)
   FaultSkin.getLikelihoods(skins,flt)
   plot3(gx)
   plot3(gx,skins=skins,png="skins")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,flt,cmin=0.20,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flc")
 
 def goSmooth():
@@ -406,7 +443,7 @@ def rgbFromHeight(h,r,g,b):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,hs=None,uncs=None,uncx=None,png=None):
+          links=False,curve=False,trace=False,hz=None,uncs=None,uncx=None,png=None):
   n1,n2,n3 = len(f[0][0]),len(f[0]),len(f)
   s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
@@ -454,6 +491,10 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     #ss.add(ps)
     #pg.setStates(ss)
     sf.world.addChild(pg)
+  if hz:
+    tg=TriangleGroup(True,s3,s2,hz)
+    tg.setColor(Color.YELLOW)
+    sf.world.addChild(tg)
   if cells:
     ss = StateSet()
     lms = LightModelState()
@@ -511,21 +552,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         ls.setSmooth(False)
         ss.add(ls)
         sf.world.addChild(lg)
-  if hs:
-    for hi in hs:
-      if not curve:
-        tg = TriangleGroup(True,hi[0],hi[1])
-        sf.world.addChild(tg)
-      else:
-        lg = LineGroup(hi[0],hi[1])
-        ss = StateSet()
-        lg.setStates(ss)
-        ls = LineState()
-        ls.setWidth(2)
-        ls.setSmooth(False)
-        ss.add(ls)
-        sf.world.addChild(lg)
-
   if skins:
     sg = Group()
     ss = StateSet()
