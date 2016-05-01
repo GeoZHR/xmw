@@ -114,7 +114,7 @@ def main(args):
   '''
   #goResults()
   #goSlices()
-  goChannel()
+  #goChannel()
 def goChannel():
   gx = readImage(gufile)
   gc = zerofloat(n2,n3)

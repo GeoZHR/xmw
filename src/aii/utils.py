@@ -131,11 +131,11 @@ def writeImage(name,image):
 # read/write fault skins
 
 def skinName(basename,index):
-  return basename+("%03i"%(index))
+  return basename+("%04i"%(index))
 def skinIndex(basename,fileName):
   assert fileName.startswith(basename)
   i = len(basename)
-  return int(fileName[i:i+3])
+  return int(fileName[i:i+4])
 
 def listAllSkinFiles(basename):
   """ Lists all skins with specified basename, sorted by index. """

@@ -5,14 +5,14 @@ Version: 2015.02.09
 """
 
 from utils import *
-setupForSubset("f3dSub")
+setupForSubset("nwc")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-rxfile  = "rx" # shallower reflectivity image
-rxffile  = "rxf" # deeper reflectivity image
+rxfile  = "rx" # reflectivity image
+rnfile  = "rn" # reflectivity image
 pxfile  = "px" # impedance image
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
@@ -20,381 +20,194 @@ p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
 p3kfile = "p3k" # crossline slopes (known)
-flfile  = "fli" # fault likelihood
-fpfile  = "fpi" # fault strike (phi)
-ftfile  = "fti" # fault dip (theta)
-fltfile = "flit" # fault likelihood thinned
-fptfile = "fpit" # fault strike thinned
-fttfile = "ftit" # fault dip thinned
-fskbase = "fsk"
-
-# These parameters control the scan over fault strikes and dips.
-# See the class FaultScanner for more information.
-minPhi,maxPhi = 0,360
-minTheta,maxTheta = 70,80
-sigmaPhi,sigmaTheta = 10,20
-
-# These parameters control the construction of fault skins.
-# See the class FaultSkinner for more information.
-lowerLikelihood = 0.3
-upperLikelihood = 0.5
-minSkinSize = 1000
-
-# These parameters control the computation of fault dip slips.
-# See the class FaultSlipper for more information.
-minThrow = 0.0
-maxThrow = 20.0
-
+flfile  = "fl" # fault likelihood
+fpfile  = "fp" # fault strike (phi)
+ftfile  = "ft" # fault dip (theta)
+fltfile = "flt" # fault likelihood thinned
+fptfile = "fpt" # fault strike thinned
+fttfile = "ftt" # fault dip thinned
+fs1file = "fs1" # fault slip (1st component)
+fs2file = "fs2" # fault slip (2nd component)
+fs3file = "fs3" # fault slip (3rd component)
+fskbase = "fsk" # fault skin (basename only)
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 plotOnly = False
+pngDir = "../../../png/aii/nwc/"
 pngDir = None
-pngDir = "../../../png/aii/f3d/sub/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goLogs()
-  #goTie()
-  #goLinearity()
-  goSkin()
-  #goFaults()
-  #goImpedance()
-  #goInitial() # display only
-  #goSeisTracesAtWells()
-def goSkin():
-  print "goSkin ..."
+  #goFakeData()
+  #goImpedance2()
+  goImpedance3()
+def goRef():
   gx = readImage(gxfile)
-  if not plotOnly:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-    fs = FaultSkinner()
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-    cells = fs.findCells([fl,fp,ft])
-    skins = fs.findSkins(cells)
-    for skin in skins:
-      skin.smoothCellNormals(4)
-    print "total number of cells =",len(cells)
-    print "total number of skins =",len(skins)
-    print "number of cells in skins =",FaultSkin.countCells(skins)
-    removeAllSkinFiles(fskbase)
-    writeSkins(fskbase,skins)
-  else:
-    skins = readSkins(fskbase)
-
-def goFaults():
-  print "goSkin ..."
+  rf = Reflectivity(60,1.0)
+def goImpedance3():
   gx = readImage(gxfile)
-  if not plotOnly:
-    '''
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-    fs = FaultSkinner()
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-    cells = fs.findCells([fl,fp,ft])
-    '''
-    fsk = readSkins(fskbase)
-    cells = FaultSkin.getCells(fsk)
-    flt = like(gx)
-    FaultSkin.getLikelihoods(cells,flt)
-    #writeImage(fltfile,flt)
-  else:
-    flt = readImage(fltfile)
-  plot3(gx,flt,cmin=0.30,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="fls")
-
-def goInitial():
-  wps,frs=goTie()
-  wpm = goWellSeisFit(wps,frs)
-  x2 = [ 33, 84]
-  x3 = [259,141]
-  k1,k2,k3,fp = [],[],[],[]
-  for i2 in range(2):
-    m1 = len(wpm[i2])
-    for i1 in range(1350,m1):
-      k2.append(x2[i2])
-      k3.append(x3[i2])
-      k1.append(i1-1350)
-      fp.append(exp(wpm[i2][i1]*2))
-  '''
-  ai3 = AcousticImpedanceInv3(8.0,8.0)
-  pt = zerofloat(n1,n2,n3)
-  ai3.setInitial(pt,k1,k2,k3,fp)
-  plot3X(pt,pt,cmin=3500,cmax=5500,clab="Impedance",
-        samples=samples,png="initial")
-  '''
-  samples = fp,k1,k2,k3
-  rx = readImage(rxfile)
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  writeImage(gxfile,gx)
-  plot3X(rx,cmin=-0.15,cmax=0.15,clab="Reflectivity",
-        samples=samples,png="ref")
-  print min(gx)
-  print max(gx)
-  plot3X(gx,clab="Amplitude", samples=samples,png="seis")
-
-def goReflectivity():
-  #rx = readImage(rxfile)
-  gx = readImage(gxfile)
-  gx = div(gx,10000)
-  #plot3X(rx,cmin=-0.15,cmax=0.15,clab="Reflectivity", png="ref")
-  plot3X(gx,cmin=-1.5,cmax=1.5,clab="Amplitude", png="seis")
-
-def goImpSub():
-  print "goImpedance..."
-  m2 = 2
-  smooth = 0.2
-  wpm = readImage2D(n1,m2,'wpm')
-  x2 = [ 33, 84]
-  x3 = [159, 41]
-  k1,k2,k3,fp = [],[],[],[]
-  for i2 in range(m2):
-    for i1 in range(n1):
-      k1.append(i1)
-      k2.append(x2[i2])
-      k3.append(x3[i2])
-      fp.append(wpm[i2][i1])
-  if not plotOnly:
-    rx = readImage(rxfile)
-    rx = div(rx,2.5)
-    gx = readImage(gxfile)
-    #ep = readImage(epfile)
-    #wp = pow(ep,0.0)
-    wp = fillfloat(1.0,n1,n2,n3)
-    lof = LocalOrientFilter(8.0,2.0)
-    et3 = lof.applyForTensors(gx,True)
-    print "tensor computation done..."
-    et3.setEigenvalues(0.000001,1.0,1.0)
-    ai3 = AcousticImpedanceInv3(8.0,8.0)
-    ai3.setIterations(0.001,20)
-    ai3.setTensors(et3)
-    ai3.setSmoothness(smooth)
-    pt = zerofloat(n1,n2,n3)
-    ai3.setInitial(pt,k1,k2,k3,fp)
-    px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
-    writeImage(pxfile,px)
-  else:
-    px = readImage(pxfile)
-  samples = fp,k1,k2,k3
-  '''
-  plot3(gx,clab="Amplitude",png="seismic")
-  plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="refx")
-  plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
-  plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pInitial")
-  '''
-  rx = readImage(rxfile)
-  plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,clab="Impedance",
-        samples=samples)
-
-  plot3X(px,px,cmin=min(fp),cmax=max(fp),clab="Impedance",
-        samples=samples)
-
-def goSeisTracesAtWells():
-  rx = readImage(rxffile)
-  frs = zerofloat(n1,2)
-  x2s = [ 33, 84]
-  x3s = [259,141]
-  for k in range(2):
-    x2 = x2s[k]
-    x3 = x3s[k]
-    frs[k] = rx[x3][x2]
-  writeImage("frs",frs)
-
-def goTie():
-  wpt = readImage2D(2873,4,'logs')
-  rxs = readImage2D(2897,2,'frs')
-  wp1 = copy(2121,0,wpt[0])
-  wp2 = copy(2473,0,wpt[3])
-  wps = [wp1,wp2]
-  frs = []
-  wrs = []
-  wrc = []
-  wpc = []
-  k = 0
-  ss = []
-  rgf = RecursiveGaussianFilterP(1.0)
-  for wpi in wps:
-    m1 = len(wpi)
-    wri = zerofloat(m1)
-    rgf.apply0(wpi,wpi)
-    for i1 in range(m1-1):
-      wri[i1] = 0.5*(log(wpi[i1+1])-log(wpi[i1]))
-      wpi[i1] = 0.5*log(wpi[i1])
-    wpi[m1-1] = 0.5*log(wpi[m1-1])
-    s1 = Sampling(m1)
-    ss.append(s1)
-    fri = copy(m1,0,rxs[k])
-    frs.append(fri)
-    wrs.append(wri)
-    dwk = DynamicWarpingK(8,-160,160,s1)
-    dwk.setStrainLimits(-0.2,0.2)
-    dwk.setSmoothness(4)
-    rs = dwk.findShifts(s1,fri,s1,wri)
-    wrci = dwk.applyShifts(s1,wri,rs)
-    wpci = dwk.applyShifts(s1,wpi,rs)
-    wpc.append(wpci)
-    wrc.append(wrci)
-    k=k+1
-  '''
-  plot1s(ss,wrs,rs=frs,color=Color.BLUE)
-  plot1s(ss,wrc,rs=frs)
-  '''
-  return wpc,frs
-
-def goWellSeisFit(wps,frs):
-  wrm = []
-  wpm = []
-  wpc = []
-  frc = []
-  ss = []
-  for k in range(2):
-    fis = FitLogImpWithSeisRef(6.0)
-    fis.setSeisBalance(0.9)
-    wpk = wps[k]
-    frk = frs[k]
-    if (k==0):
-      wpk = copy(1959,0,wps[k])
-      frk = copy(1959,0,frs[k])
-    wpc.append(wpk)
-    frc.append(frk)
-    wpmk = fis.fitImpedance(wpk,frk)
-    m1 = len(wpmk)
-    wrmk = zerofloat(m1)
-    for i1 in range(m1-1):
-      wrmk[i1] = wpmk[i1+1]-wpmk[i1]
-    wrm.append(wrmk)
-    wpm.append(wpmk)
-    ss.append(Sampling(m1))
-  '''
-  plot1s(ss,wrm,rs=frc,color=Color.MAGENTA)
-  plot1s(ss,wpm,rs=wpc,color=Color.MAGENTA)
-  '''
-  return wpm
-
-
-def goLinearity():
-  print "goLinearity..."
-  gx = readImage(gxfile)
+  px = readImage(pxfile)
+  rx = readImage(rnfile)
+  smooth = 0.8 # for noisy data
   ep = fillfloat(1.0,n1,n2,n3)
   u1 = fillfloat(1.0,n1,n2,n3)
   u2 = fillfloat(1.0,n1,n2,n3)
   u3 = fillfloat(1.0,n1,n2,n3)
   lof = LocalOrientFilter(8.0,2.0)
+  et3 = lof.applyForTensors(gx)
   lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  writeImage(epfile,ep)
-
-def goImpedance():
-  print "goImpedance..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    smooth = 0.6
-    wps,frs=goTie()
-    wpm = goWellSeisFit(wps,frs)
-    x2 = [ 33, 84]
-    x3 = [259,141]
-    k1,k2,k3,fp = [],[],[],[]
-    for i2 in range(2):
-      m1 = len(wpm[i2])
-      for i1 in range(1350,m1):
-        k2.append(x2[i2])
-        k3.append(x3[i2])
-        k1.append(i1-1350)
-        fp.append(wpm[i2][i1])
-    rx = readImage(rxfile)
-    rx = div(rx,2.5)
-    wp = readImage(fltfile)
-    wp = sub(1,wp)
-    wp = pow(wp,4)
-    lof = LocalOrientFilter(64.0,2.0)
-    et3 = lof.applyForTensors(gx,True)
-    print "tensor computation done..."
-    et3.setEigenvalues(0.000001,1.0,1.0)
-    ai3 = AcousticImpedanceInv3(8.0,8.0)
-    ai3.setIterations(0.001,300)
-    ai3.setTensors(et3)
-    ai3.setSmoothness(smooth)
-    pt = zerofloat(n1,n2,n3)
-    ai3.setInitial(pt,k1,k2,k3,fp)
-    px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
-    px = mul(px,2.0)
-    px = exp(px)
-    writeImage(pxfile,px)
-  else:
-    wps,frs=goTie()
-    wpm = goWellSeisFit(wps,frs)
-    #px = readImage(pxfile)
-    px = readImage("ps")
-    x2 = [ 33, 84]
-    x3 = [259,141]
-    k1,k2,k3,fp = [],[],[],[]
-    for i2 in range(2):
-      m1 = len(wpm[i2])
-      for i1 in range(1350,m1):
-        k2.append(x2[i2])
-        k3.append(x3[i2])
-        k1.append(i1-1350)
-        fp.append(exp(wpm[i2][i1]*2))
-  '''
+  wp = pow(ep,6.0)
+  et3.setEigenvalues(0.000001,1.0,1.0)
+  ai3 = AcousticImpedanceInv3(6.0,6.0)
+  ai3.setIterations(0.001,200)
+  ai3.setTensors(et3)
+  ai3.setSmoothness(smooth)
+  pt = zerofloat(n1,n2,n3)
+  k1,k2,k3,fp = getLogs(px)
+  ai3.setInitial(pt,k1,k2,k3,fp)
+  pi3 = ai3.applyForImpedance(copy(pt),rx,wp,k1,k2,k3,fp)
+  samples = fp,k1,k2,k3
+  print min(px)
+  print max(px)
   plot3(gx,clab="Amplitude",png="seismic")
+  plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="refx")
   plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
   plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
         samples=samples,png="pInitial")
-  '''
-  samples = fp,k1,k2,k3
+  plot3(gx,pi3,cmin=min(px),cmax=max(px),clab="Impedance",
+        samples=samples,png="pRecover01")
 
-  plot3X(gx,clab="Amplitude", samples=samples,png="seis")
-  plot3X(px,px,cmin=2500,cmax=6000,clab="Impedance",
-        samples=samples,png="pRecover02")
+def goImpedance2():
+  gx = readImage(gxfile)
+  px = readImage(pxfile)
+  rx = readImage(rnfile)
+  #rx = readImage(rxfile)
+  #smooth = 0.5 # for clean data
+  rx = readImage(rnfile)
+  smooth = 0.9 # for noisy data
+  r3,p3,g3 = rx[50],px[50],gx[50]
+  k1,k2,fp = setWells(p3)
+  ep = fillfloat(1.0,n1,n2)
+  u1 = fillfloat(1.0,n1,n2)
+  u2 = fillfloat(1.0,n1,n2)
+  lof = LocalOrientFilter(8.0,2.0)
+  et2 = lof.applyForTensors(g3)
+  lof.applyForNormalLinear(r3,u1,u2,ep)
+  wp = pow(ep,6.0)
+  et2.setEigenvalues(0.000001,1.0)
+  ai2 = AcousticImpedanceInv2(6.0,6.0)
+  ai2.setIterations(0.001,800)
+  ai2.setTensors(et2)
+  ai2.setSmoothness(smooth)
+  pt = zerofloat(n1,n2)
+  ai2.setInitial(u1,pt,k1,k2,fp)
+  pi2 = ai2.applyForImpedance(r3,wp,k1,k2,fp)
+  plot2(s1,s2,r3,clab="Reflectivity",cmin=-0.05,cmax=0.05,png="rx")
+  plot2(s1,s2,p3,cmap=ColorMap.JET,clab="True impedance",
+        cmin=min(p3),cmax=max(p3),png="p3")
+  plot2(s1,s2,pt,cmap=ColorMap.JET,clab="Initial impedance",
+        cmin=min(p3),cmax=max(p3),interp=False,png="pt")
+  plot2(s1,s2,pi2,cmap=ColorMap.JET,clab="Recovered impedance",
+        cmin=min(p3),cmax=max(p3),png="pi")
 
-def goLogs():
-  rx = readImage(rxfile)
-  print min(rx)
-  print max(rx)
-  wp,k1,k2,k3,wps,wrs = getF3dLogs()
-  r1 = rx[259][ 33]
-  r2 = rx[141][ 84]
-  frs = [r1,r2]
-  #plot1s(s1,wrs,rs=frs)
-  samples=wp,k1,k2,k3
-  plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,samples=samples)
+def getLogs(px):
+  k2u = [81,56,20,8,96,50]
+  k3u = [90,93,65,8,20,30]
+  np = len(k2u)
+  k1,k2,k3,fp = [],[],[],[]
+  for ip in range(np):
+    i2 = round(k2u[ip])
+    i3 = round(k3u[ip])
+    for i1 in range(n1):
+      k1.append(i1)
+      k2.append(i2)
+      k3.append(i3)
+      fp.append(px[i3][i2][i1])
+  return k1,k2,k3,fp
 
-def getF3dLogs():
-  m2 = 4 # number of logs
-  m1 = 2873 # number of samples for each log
-  x2 = [ 33, 84]
-  x3 = [259,141]
-  lgt = readImage2D(m1,m2,'logs')
-  lgs = zerofloat(m1,2)
-  lgs[0] = lgt[0]
-  lgs[1] = lgt[3]
-  k1 = []
-  k2 = []
-  k3 = []
-  fp = []
-  wrs = zerofloat(m1,2)
-  wps = zerofloat(m1,2)
-  for i2 in range(2):
-    for i1 in range(m1-1):
-      if(lgs[i2][i1]!=-999.25):
-        k1.append(i1+0)
-        k2.append(x2[i2])
-        k3.append(x3[i2])
-        fp.append(0.5*log(lgs[i2][i1]))
-        if(lgs[i2][i1+1]!=-999.25):
-          wps[i2][i1] = 0.5*log(lgs[i2][i1])
-          wrs[i2][i1] = 0.5*(log(lgs[i2][i1+1])-log(lgs[i2][i1]))
-  return fp,k1,k2,k3,wps,wrs
+def setWells3D(p3):
+  k1 = zerofloat(n1*2)
+  k2 = zerofloat(n1*2)
+  k3 = zerofloat(n1*2)
+  fp = zerofloat(n1*2)
+  k = 0
+  for i1 in range(n1):
+    k1[k] = i1
+    k2[k] = 15
+    fp[k] = p3[15][i1]
+    k = k+1
+  for i1 in range(n1):
+    k1[k] = i1
+    k2[k] = 61
+    fp[k] = p3[61][i1]
+    k = k+1
+  return k1,k2,fp
+
+def setWells(p3):
+  k1 = zerofloat(n1*2)
+  k2 = zerofloat(n1*2)
+  fp = zerofloat(n1*2)
+  k = 0
+  for i1 in range(n1):
+    k1[k] = i1
+    k2[k] = 15
+    fp[k] = p3[15][i1]
+    k = k+1
+  for i1 in range(n1):
+    k1[k] = i1
+    k2[k] = 61
+    fp[k] = p3[61][i1]
+    k = k+1
+  return k1,k2,fp
+
+def goFakeData():
+  #sequence = 'A' # 1 episode of faulting only
+  sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
+  #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
+  #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
+  nplanar = 0 # number of planar faults
+  conjugate = False # if True, two large planar faults will intersect
+  conical = False # if True, may want to set nplanar to 0 (or not!)
+  impedance = False # if True, data = impedance model
+  wavelet = True # if False, no wavelet will be used
+  noise = 0.6 # (rms noise)/(rms signal) ratio
+  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
+      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
+  writeImage(gxfile,gx)
+  writeImage(p2kfile,p2)
+  writeImage(p3kfile,p3)
+  print "gx min =",min(gx)," max =",max(gx)
+  print "p2 min =",min(p2)," max =",max(p2)
+  print "p3 min =",min(p3)," max =",max(p3)
+  gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
+  if impedance:
+    gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
+  plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
+
+def goSlopes():
+  print "goSlopes ..."
+  gx = readImage(gffile)
+  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  zm = ZeroMask(0.1,1,1,1,gx)
+  zero,tiny=0.0,0.01
+  zm.setValue(zero,p2)
+  zm.setValue(zero,p3)
+  zm.setValue(tiny,ep)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  print "p2  min =",min(p2)," max =",max(p2)
+  print "p3  min =",min(p3)," max =",max(p3)
+  print "ep min =",min(ep)," max =",max(ep)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+        clab="Planarity")
 
 def like(x):
   n2 = len(x)
@@ -410,7 +223,7 @@ def like(x):
 
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(80.0)
+  ref = RecursiveExponentialFilter(10.0)
   ref.apply1(g,g)
   y = like(x)
   div(x,sqrt(g),y)
@@ -478,20 +291,20 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
   pg.setStates(ss)
   return pg
 
-def plot1s(ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
+def plot1s(s1,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
   hlabel="Seismic traces",vlabel="time (ms)",png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sf = 1.0
   yf = sf
-  sp.setVLimits(0,2500)
+  sp.setVLimits(0,n1)
   if vmin and vmax:
     sp.setVLimits(vmin,vmax)
-  sp.setHLimits(0,len(ys)+1)
+  sp.setHLimits(0,len(ys))
   for il,y in enumerate(ys):
     ya = sum(y)/len(y)
     y = sub(y,ya)
     y = add(y,yf)
-    pv = sp.addPoints(ss[il],y)
+    pv = sp.addPoints(s1,y)
     pv.setLineColor(color)
     yf = yf+sf
   rf = sf
@@ -500,7 +313,7 @@ def plot1s(ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
       ra = sum(r)/len(r)
       r = sub(r,ra)
       r = add(r,rf)
-      pv = sp.addPoints(ss[il],r)
+      pv = sp.addPoints(s1,r)
       pv.setLineColor(Color.BLACK)
       rf = rf+sf
   sp.setSize(600,500)
@@ -565,17 +378,16 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
   if cbar:
-    cbar.setWidthMinimum(140)
+    cbar.setWidthMinimum(120)
   #ipg.setSlices(109,138,31)
-  ipg.setSlices(1396,20,128) # for logs only
+  ipg.setSlices(2850,850,75) # for logs only
   if samples:
     fx,x1,x2,x3 = samples
-    #vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
-    vmin,vmax,vmap= 1800,6600,ColorMap.JET
+    vmin,vmax,vmap= min(fx),max(fx)/2,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:
-    sf.setSize(907,700)
+    sf.setSize(887,700)
   else:
     sf.setSize(750,700)
   vc = sf.getViewCanvas()
@@ -584,10 +396,10 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov = sf.getOrbitView()
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(3.6)
+  ov.setScale(3.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.06,0.005,0.015))
-  ov.setAzimuthAndElevation(50,36.0)
+  ov.setTranslate(Vector3(-0.04,0.00,0.05))
+  ov.setAzimuthAndElevation(130,35.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
@@ -602,10 +414,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   n2 = len(f[0])
   n1 = len(f[0][0])
   s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
-  l1,l2,l3 = s1.last,s2.last,s3.last
-  f1,f2,f3 = s1.first,s2.first,s3.first
   d1,d2,d3=s1.getDelta(),s2.getDelta(),s3.getDelta()
-
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -728,7 +537,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         #ct = ct+1
     sf.world.addChild(sg)
   #ipg.setSlices(109,138,31)
-  ipg.setSlices(1396,20,128) # for logs only
+  ipg.setSlices(109,138,7) # for logs only
   if uncs:
     sg = Group()
     ss = StateSet()
@@ -757,19 +566,25 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:
-    sf.setSize(907,700)
+    sf.setSize(887,700)
   else:
     sf.setSize(750,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
-  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
+  radius = 0.48*sqrt(n1*n1+n2*n2+n3*n3)
+  zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(3.6)
-  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.06,0.005,0.015))
-  ov.setAzimuthAndElevation(50,36.0)
+  ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
+  ov.setAzimuthAndElevation(120.0,25.0)
+  #ov.setTranslate(Vector3(0.02,0.16,-0.27))
+  ov.setTranslate(Vector3(0.02,0.23,-0.27))
+  ov.setScale(1.25)
+  # for subset plots
+  #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
+  #ov.setAzimuthAndElevation(-40.0,25.0)
+  #ov.setTranslate(Vector3(0.0241,-0.0400,0.0103))
+  #ov.setScale(1.3) #use only for subset plots
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

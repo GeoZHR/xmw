@@ -72,10 +72,10 @@ def goHan():
     plotXY(si)
   if writeImage:
     scale = 1.00
-    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,1)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,4)
   si.close()
   if showImage:
-    x = readImage(datfile,n1,n2)
+    x = readImage(datfile,n1,1506)
     show2d(x,clip=max(x)/2)
 
 def goF3dRef():
