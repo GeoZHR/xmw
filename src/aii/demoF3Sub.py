@@ -49,7 +49,7 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = False
+plotOnly = True
 pngDir = None
 pngDir = "../../../png/aii/f3d/sub/"
 
@@ -58,9 +58,7 @@ pngDir = "../../../png/aii/f3d/sub/"
 def main(args):
   #goLogs()
   #goTie()
-  #goLinearity()
   #goSkin()
-  #goFaults()
   goImpedance()
   #goInitial() # display only
   #goSeisTracesAtWells()
@@ -88,31 +86,6 @@ def goSkin():
   else:
     skins = readSkins(fskbase)
 
-def goFaults():
-  print "goSkin ..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    '''
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-    fs = FaultSkinner()
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-    cells = fs.findCells([fl,fp,ft])
-    '''
-    fsk = readSkins(fskbase)
-    cells = FaultSkin.getCells(fsk)
-    flt = like(gx)
-    FaultSkin.getLikelihoods(cells,flt)
-    #writeImage(fltfile,flt)
-  else:
-    flt = readImage(fltfile)
-  plot3(gx,flt,cmin=0.30,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="fls")
-
 def goInitial():
   wps,frs=goTie()
   wpm = goWellSeisFit(wps,frs)
@@ -126,23 +99,12 @@ def goInitial():
       k3.append(x3[i2])
       k1.append(i1-1350)
       fp.append(exp(wpm[i2][i1]*2))
-  '''
+  samples = fp,k1,k2,k3
   ai3 = AcousticImpedanceInv3(8.0,8.0)
   pt = zerofloat(n1,n2,n3)
   ai3.setInitial(pt,k1,k2,k3,fp)
-  plot3X(pt,pt,cmin=3500,cmax=5500,clab="Impedance",
-        samples=samples,png="initial")
-  '''
-  samples = fp,k1,k2,k3
-  rx = readImage(rxfile)
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  writeImage(gxfile,gx)
-  plot3X(rx,cmin=-0.15,cmax=0.15,clab="Reflectivity",
-        samples=samples,png="ref")
-  print min(gx)
-  print max(gx)
-  plot3X(gx,clab="Amplitude", samples=samples,png="seis")
+  plot3X(pt,pt,cmin=3800,cmax=5500,clab="Impedance",
+        samples=samples,png="initSub")
 
 def goReflectivity():
   #rx = readImage(rxfile)
@@ -151,55 +113,6 @@ def goReflectivity():
   #plot3X(rx,cmin=-0.15,cmax=0.15,clab="Reflectivity", png="ref")
   plot3X(gx,cmin=-1.5,cmax=1.5,clab="Amplitude", png="seis")
 
-def goImpSub():
-  print "goImpedance..."
-  m2 = 2
-  smooth = 0.2
-  wpm = readImage2D(n1,m2,'wpm')
-  x2 = [ 33, 84]
-  x3 = [159, 41]
-  k1,k2,k3,fp = [],[],[],[]
-  for i2 in range(m2):
-    for i1 in range(n1):
-      k1.append(i1)
-      k2.append(x2[i2])
-      k3.append(x3[i2])
-      fp.append(wpm[i2][i1])
-  if not plotOnly:
-    rx = readImage(rxfile)
-    rx = div(rx,2.5)
-    gx = readImage(gxfile)
-    #ep = readImage(epfile)
-    #wp = pow(ep,0.0)
-    wp = fillfloat(1.0,n1,n2,n3)
-    lof = LocalOrientFilter(8.0,2.0)
-    et3 = lof.applyForTensors(gx,True)
-    print "tensor computation done..."
-    et3.setEigenvalues(0.000001,1.0,1.0)
-    ai3 = AcousticImpedanceInv3(8.0,8.0)
-    ai3.setIterations(0.001,20)
-    ai3.setTensors(et3)
-    ai3.setSmoothness(smooth)
-    pt = zerofloat(n1,n2,n3)
-    ai3.setInitial(pt,k1,k2,k3,fp)
-    px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
-    writeImage(pxfile,px)
-  else:
-    px = readImage(pxfile)
-  samples = fp,k1,k2,k3
-  '''
-  plot3(gx,clab="Amplitude",png="seismic")
-  plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="refx")
-  plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
-  plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pInitial")
-  '''
-  rx = readImage(rxfile)
-  plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,clab="Impedance",
-        samples=samples)
-
-  plot3X(px,px,cmin=min(fp),cmax=max(fp),clab="Impedance",
-        samples=samples)
 
 def goSeisTracesAtWells():
   rx = readImage(rxffile)
@@ -284,22 +197,10 @@ def goWellSeisFit(wps,frs):
   return wpm
 
 
-def goLinearity():
-  print "goLinearity..."
-  gx = readImage(gxfile)
-  ep = fillfloat(1.0,n1,n2,n3)
-  u1 = fillfloat(1.0,n1,n2,n3)
-  u2 = fillfloat(1.0,n1,n2,n3)
-  u3 = fillfloat(1.0,n1,n2,n3)
-  lof = LocalOrientFilter(8.0,2.0)
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  writeImage(epfile,ep)
-
 def goImpedance():
   print "goImpedance..."
   gx = readImage(gxfile)
   if not plotOnly:
-    smooth = 0.5
     wps,frs=goTie()
     wpm = goWellSeisFit(wps,frs)
     x2 = [ 33, 84]
@@ -323,14 +224,14 @@ def goImpedance():
     fk = readSkins(fskgood)
     wp = fillfloat(1,n1,n2,n3)
     fh.setValueOnFaultsInt(0,fk,wp)
-    lof = LocalOrientFilter(64.0,2.0)
+    lof = LocalOrientFilter(32.0,2.0)
     et3 = lof.applyForTensors(gx,True)
     print "tensor computation done..."
     et3.setEigenvalues(0.000001,1.0,1.0)
     ai3 = AcousticImpedanceInv3(8.0,8.0)
-    ai3.setIterations(0.001,300)
+    ai3.setIterations(0.001,500)
     ai3.setTensors(et3)
-    ai3.setSmoothness(smooth)
+    ai3.setSmoothness(0.5)
     pt = zerofloat(n1,n2,n3)
     ai3.setInitial(pt,k1,k2,k3,fp)
     px = ai3.applyForImpedance(pt,rx,wp,k1,k2,k3,fp)
@@ -341,6 +242,7 @@ def goImpedance():
     wps,frs=goTie()
     wpm = goWellSeisFit(wps,frs)
     px = readImage(pxfile)
+    ps = readImage("ps")
     x2 = [ 33, 84]
     x3 = [259,141]
     k1,k2,k3,fp = [],[],[],[]
@@ -352,16 +254,22 @@ def goImpedance():
         k1.append(i1-1350)
         fp.append(exp(wpm[i2][i1]*2))
   '''
-  plot3(gx,clab="Amplitude",png="seismic")
-  plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
-  plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pInitial")
-  '''
+  fh = FaultHelper()
+  fk = readSkins(fskgood)
+  wp = fillfloat(0,n1,n2,n3)
+  fh.getFlOnFaultsInt(fk,wp)
+  wp = pow(wp,0.5)
+  rx = readImage(rxfile)
+  plot3X(rx,cmin=-0.1,cmax=0.1, clab="Reflectivity",png="ref")
+  plot3X(gx,wp,cmin=0.3,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="fls")
   samples = fp,k1,k2,k3
+  plot3X(px,cmin=3800,cmax=5500,cmap=ColorMap.JET,clab="Impedance",
+        samples=samples,png="px05")
+  plot3X(ps,cmin=3800,cmax=5500,cmap=ColorMap.JET,clab="Impedance",
+        samples=samples,png="ps05")
+  '''
 
-  plot3X(gx,clab="Amplitude", samples=samples,png="seis")
-  plot3X(px,px,cmin=2500,cmax=6000,clab="Impedance",
-        samples=samples,png="pRecover02")
 
 def goLogs():
   rx = readImage(rxfile)
@@ -433,6 +341,8 @@ def jetFillExceptMin(alpha):
   return ColorMap.setAlpha(ColorMap.JET,a)
 def jetRamp(alpha):
   return ColorMap.setAlpha(ColorMap.JET,rampfloat(0.0,alpha/256,256))
+def hueRamp(alpha):
+  return ColorMap.setAlpha(ColorMap.HUE,rampfloat(0.0,alpha/256,256))
 def bwrFill(alpha):
   return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,alpha)
 def bwrNotch(alpha):
@@ -443,8 +353,20 @@ def bwrNotch(alpha):
     else:
       a[i] = alpha*(i-127.0)/128.0
   return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,a)
+
+def hueMapX(h0, h255):
+  c = []
+  for i in range(256):
+    h = h0+i*(h255-h0)/255.0
+    rgb = Color.getHSBColor(h,1.0,1.0)
+    c.append(Color(rgb.getRed(),rgb.getGreen(),rgb.getBlue()))
+  return ColorMap.makeIndexColorModel(c)
+
 def hueFill(alpha):
   return ColorMap.getHue(0.0,1.0,alpha)
+def prismFill(alpha):
+  return ColorMap.getGmtJet()
+
 def hueFillExceptMin(alpha):
   a = fillfloat(alpha,256)
   a[0] = 0.0
@@ -573,11 +495,11 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     cbar.setWidthMinimum(140)
   #ipg.setSlices(109,138,31)
-  ipg.setSlices(1396,20,128) # for logs only
+  ipg.setSlices(1212,30,141) # for logs only
   if samples:
     fx,x1,x2,x3 = samples
     #vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
-    vmin,vmax,vmap= 1800,6600,ColorMap.JET
+    vmin,vmax,vmap= 3400,6100,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:

@@ -21,7 +21,7 @@ fttfile = "ftt" # fault dip thinned
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minTheta,maxTheta = 65,85
+minTheta,maxTheta = 70,89
 sigmaTheta = 30
 
 # These parameters control the construction of fault skins.
@@ -33,15 +33,14 @@ upperLikelihood = 0.5
 # otherwise, must create the specified directory before running this script.
 pngDir = "../../../png/oregan/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
-  #goThin()
-
+  #goScan()
+  goThin()
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
@@ -84,21 +83,15 @@ def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
   fl = readImage(flfile)
-  fp = readImage(fpfile)
   ft = readImage(ftfile)
-  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+  flt,ftt = FaultScanner2.thin([fl,ft])
   writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
   writeImage(fttfile,ftt)
-  plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=15,cmax=55,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
+  plot2(s1,s2,gx,label="Amplitude",png="gx")
+  plot2(s1,s2,gx,g=flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        label="Fault likelihood",png="fl")
+  plot2(s1,s2,gx,g=ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
+        label="Fault dip (degrees)",png="ftt")
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -384,6 +377,9 @@ def gain(x):
 
 gray = ColorMap.GRAY
 jet = ColorMap.JET
+def jetFill(alpha):
+  return ColorMap.setAlpha(ColorMap.JET,alpha)
+
 def jetFillExceptMin(alpha):
   a = fillfloat(alpha,256)
   a[0] = 0.0

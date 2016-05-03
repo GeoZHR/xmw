@@ -28,11 +28,18 @@ def setupForSubset(name):
     seismicDir = _datdir+"oregan/"
     n1,n2 = 3501,60201
     s1,s2 = Sampling(n1),Sampling(n2)
+  elif name=="fake":
+    """ oregan image """
+    print "setupForSubset: oreganSub"
+    seismicDir = _datdir+"oregan/fake/"
+    n1,n2 = 121,152
+    s1,s2 = Sampling(n1),Sampling(n2)
+
   elif name=="oreganSub":
     """ oregan image """
     print "setupForSubset: oreganSub"
     seismicDir = _datdir+"oregan/sub/"
-    n1,n2 = 2351,60201
+    n1,n2 = 2351,15051
     s1,s2 = Sampling(n1),Sampling(n2)
 
 def getSamplings():

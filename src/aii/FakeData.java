@@ -5,8 +5,6 @@ the Common Public License - v1.0, which accompanies this distribution, and is
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package aii;
-
-import java.awt.*;
 import java.util.Random;
 import javax.swing.*;
 
@@ -26,8 +24,8 @@ import static ipf.FaultGeometry.*;
  * Jacobians of functions used in folding and faulting have been implemented
  * but not tested. Therefore, beware of errors in calculated slopes p2 and p3.
  * </em>
- * @author Dave Hale, Colorado School of Mines
- * @version 2014.06.04
+ * @author Dave Hale and Xinming Wu, Colorado School of Mines
+ * @version 2015.06.04
  */
 public class FakeData {
 
@@ -43,7 +41,6 @@ public class FakeData {
       }
     });
   }
-
   private static void go(String[] args) {
     if (args.length==0 || args[0].equals("seismicAndSlopes2d2014A")) {
       float[][][] gp = seismicAndSlopes2d2014A(0.0);
@@ -78,8 +75,9 @@ public class FakeData {
         } else {
           ipg.setColorModel(ColorMap.GRAY);
         }
-        ViewCanvas vc = frame.getViewCanvas();
+        //ViewCanvas vc = frame.getViewCanvas();
         OrbitView ov = frame.getOrbitView();
+        //vc.setBackground(Color.WHITE);
         ov.setAzimuthAndElevation(40.0,25.0);
         ov.setScale(2.2);
         ov.setTranslate(new Vector3(-0.0102,-0.0508,0.0395));
@@ -113,8 +111,8 @@ public class FakeData {
       String sequence, int nplanar, boolean conjugate, boolean conical,
       boolean impedance, boolean wavelet, double noise) {
     int n1 = 101;
-    int n2 = 102;
-    int n3 = 103;
+    int n2 = 152;
+    int n3 = 153;
     int m1 = n1+50;
 
     // Number of episodes in deformation sequence of folding and faulting.
@@ -167,8 +165,7 @@ public class FakeData {
     float[][][][] p = makeReflectivityWithNormals(m1,n2,n3);
     p = addChannels(p);
     if (impedance)
-      p = impedanceFromReflectivityX(p);
-      //p = impedanceFromReflectivity(p);
+      p = impedanceFromReflectivity(p);
 
     // Apply the deformation sequence.
     for (int js=0; js<ns; ++js) {
@@ -185,7 +182,7 @@ public class FakeData {
     // Wavelet and noise.
     if (wavelet)
       p = addWavelet(0.15,p);
-    //p[0] = mul(1.0f/rms(p[0]),p[0]);
+    p[0] = mul(1.0f/rms(p[0]),p[0]);
     p[0] = addNoise(noise,p[0]);
 
     // Slopes.
@@ -199,6 +196,151 @@ public class FakeData {
 
     return new float[][][][]{p[0],p[2],p[3]};
   }
+
+  /**
+   * Returns a fake 3D seismic image with slopes.
+   * @param sequence string of 'O' and 'A' for fOlding and fAulting.
+   * @param nplanar number of planar faults.
+   * @param conjugate true, to make one of the faults a conjugate fault.
+   * @param conical true, to include a conical fault.
+   * @param impedance true, for impedance instead of reflectivity.
+   * @param wavelet true, for wavelet; false, for no wavelet.
+   * @param noise rms of noise (relative to signal) added to the image.
+   * @return array of arrays {f,p2,p3} with image f and slopes p2 and p3.
+   */
+  public static float[][][][] seismicAndSlopes3d2015A(
+      String sequence, int nplanar, boolean conjugate, boolean conical,
+      boolean impedance, boolean wavelet, boolean lateralViriation, double noise) {
+    int n1 = 121;
+    int n2 = 152;
+    int n3 = 153;
+    int m1 = n1+50;
+
+    // Number of episodes in deformation sequence of folding and faulting.
+    int ns = sequence.length();
+    int no = 0;
+    int na = 0;
+    for (int js=0; js<ns; ++js) {
+      if (sequence.charAt(js)=='O') {
+        ++no;
+      } else if (sequence.charAt(js)=='A') {
+        ++na;
+      }
+    }
+
+    // Scale factors for folding and faulting.
+    float so = 1.0f/no;
+    float sa = 1.0f/na;
+
+    // Folding transforms
+    Random r = new Random(2);
+    int ng = 31;
+    float[] g2 = mul(n2-1,randfloat(r,ng));
+    float[] g3 = mul(n3-1,randfloat(r,ng));
+    float[] sg = clip(4.0f,8.0f,mul(0.5f*(max(n2,n3)-1),randfloat(r,ng)));
+    float[] hg = mul(neg(sg),randfloat(r,ng));
+    T1 s1 = new Linear1(0.0f,so*2.0f/n1);
+    T2 s2 = new Gaussians2(g2,g3,sg,hg);
+    VerticalShear3X shearX = new VerticalShear3X(s1,s2);
+
+    // Faulting transforms
+    float r1a = 0.0f*n1, r2a = 0.5f*n2, r3a = 0.5f*n3;
+    float r1b = 0.0f*n1, r2b = 0.2f*n2, r3b = 0.3f*n3;
+    float r1c = 0.3f*n1, r2c = 0.8f*n2, r3c = 0.5f*n3;
+    float phia =  10.0f, thetaa = 75.0f; if (conjugate) phia += 180.0f;
+    float phib =  10.0f, thetab = 75.0f;
+    float phic = 190.0f, thetac = 75.0f;
+    float[] c1 = {0.0f}, c2 = {0.0f}, sc = {20.0f}, hc = {sa*8.0f};
+    T2 throwa = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwb = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwc = new Gaussians2(c1,c2,sc,hc);
+    PlanarFault3 faulta = new PlanarFault3(r1a,r2a,r3a,phia,thetaa,throwa);
+    PlanarFault3 faultb = new PlanarFault3(r1b,r2b,r3b,phib,thetab,throwb);
+    PlanarFault3 faultc = new PlanarFault3(r1c,r2c,r3c,phic,thetac,throwc);
+
+    // Reflectivity or impedance.
+    float[][][][] vd = makeVelocityAndDensityX(m1, n2, n3, lateralViriation);
+    addChannelsXX(vd);
+    float[][][] v1 = copy(vd[0]);
+    float[][][] v2 = copy(vd[0]);
+    float[][][] d1 = copy(vd[1]);
+    float[][][] d2 = copy(vd[1]);
+    float[][][][] p = makeReflectivityWithNormals(vd);
+    float[][][][] q = makeReflectivityWithNormals(vd);
+    if (impedance)
+      p = impedanceFromReflectivity(p);
+
+    // Apply the deformation sequence.
+    for (int js=0; js<ns; ++js) {
+      if (sequence.charAt(js)=='O') {
+        //p = apply(shear,p);
+        q = apply(shearX,q);
+        p = combine(32,p,q);
+        //v1 = apply(shear,v1);
+        v2 = apply(shearX,v2);
+        v1 = combine(32,v1,v2);
+        //d1 = apply(shear,d1);
+        d2 = apply(shearX,d2);
+        d1 = combine(32,d1,d2);
+        resetVelocityDensity(lateralViriation,32,p[0],v1,d1);
+      } else if (sequence.charAt(js)=='A') {
+        if (nplanar>0) {
+          p  = apply(faulta,p); 
+          v1 = apply(faulta,v1);
+          d1 = apply(faulta,d1);
+        }
+        if (nplanar>1) {
+          p  = apply(faultb,p);
+          v1 = apply(faultb,v1);
+          d1 = apply(faultb,d1);
+        }
+        if (nplanar>2) {
+          p  = apply(faultc,p);
+          v1 = apply(faultc,v1);
+          d1 = apply(faultc,d1);
+        }
+      }
+    }
+
+    float[][][] pc = new float[n3][n2][n1];
+    float[][][] rc = new float[n3][n2][n1];
+    float[][][] rn = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=1; i1<n1; ++i1) {
+      float vi = v1[i3][i2][i1];
+      float di = d1[i3][i2][i1];
+      float vm = v1[i3][i2][i1-1];
+      float dm = d1[i3][i2][i1-1];
+      pc[i3][i2][i1] = vi*di;
+      rc[i3][i2][i1] = 0.5f*(log(vi*di)-log(vm*dm));
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float vi = v1[i3][i2][0];
+      float di = d1[i3][i2][0];
+      pc[i3][i2][0] = vi*di;
+      rc[i3][i2][0] = rc[i3][i2][1];
+    }}
+    copy(rc,q[0]);
+    copy(p[1],q[1]);
+    copy(p[2],q[2]);
+    copy(p[3],q[3]);
+    rn = addNoise(noise,rc);
+    // Wavelet and noise.
+    if (wavelet) {
+      q = addWavelet(0.15,q);
+      p = addWavelet(0.15,p);
+      p[0] = addNoise(noise,p[0]);
+    }
+    q[0] = mul(1.0f/rms(q[0]),q[0]);
+    p[0] = mul(1.0f/rms(p[0]),p[0]);
+
+    p[0] = copy(n1,n2,n3,p[0]);
+    q[0] = copy(n1,n2,n3,q[0]);
+    return new float[][][][]{q[0],p[0],rn,pc};
+  }
+
 
   /**
    * Returns a fake noisy 2D seismic image with noise-free slopes.
@@ -243,30 +385,6 @@ public class FakeData {
     p[0] = addNoise(noise,p[0]);
     p[1] = neg(div(p[2],p[1]));
     return new float[][][]{p[0],p[1]};
-  }
-
-  public static float[][] simpleSeismic2D() {
-    int n1 = 501;
-    int n2 = 501;
-    float[][][] p = makeReflectivityWithNormals(n1,n2);
-    float[][][] q = makeReflectivityWithNormals(n1,n2);
-    float[][][] r = makeReflectivityWithNormals(n1,n2);
-    //Linear1 throw1 = new Linear1(0.0f,0.10f);
-    //Linear1 throw2 = new Linear1(0.0f,0.10f);
-    //LinearFault2 fault1 = new LinearFault2(0.0f,n2*0.2f, 15.0f,throw1);
-    //LinearFault2 fault2 = new LinearFault2(0.0f,n2*0.4f,-15.0f,throw2);
-    Sinusoidal2 fold = new Sinusoidal2(0.0f,0.05f,1.0e-4f,2.0e-4f);
-    VerticalShear2 shear = new VerticalShear2(new Linear1(0.0f,0.05f));
-    p = apply(fold,p);
-    p = combine(n1/3,q,p);
-    p = apply(shear,p);
-    p = combine(n1/6,r,p);
-    //p = apply(fault1,p);
-    //p = apply(fault2,p);
-    //p = addWavelet(0.1,p);
-    //p[1] = neg(div(p[2],p[1]));
-    //p[0] = addNoise(noise,p[0]);
-    return p[0];
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -752,7 +870,6 @@ public class FakeData {
         x3 -= _a3;
         float t = _t1.f(x1);
         float dt = _t1.df(x1);
-        float h = t*_ottheta;
         float xs = 1.0f/sqrt(x2*x2+x3*x3);
         float xs3 = xs*xs*xs;
         d11 -= dt;
@@ -828,6 +945,34 @@ public class FakeData {
     private T1 _s1;
     private T2 _s2;
   }
+
+  private static class VerticalShear3X implements T3 {
+    public VerticalShear3X(T1 s1, T2 s2) {
+      _s1 = s1;
+      _s2 = s2;
+    }
+    public C3 f(float x1, float x2, float x3) {
+      float c1 = _s1.f(x1);
+      C2 c2 = _s2.f(x2,x3);
+      x1 -= (c1*c2.c1+x2*0.15f);
+      return new C3(x1,x2,x3);
+    }
+    public D3 df(float x1, float x2, float x3) {
+      float c1 = _s1.f(x1);
+      float d1 = _s1.df(x1);
+      C2 c2 = _s2.f(x2,x3);
+      D2 d2 = _s2.df(x2,x3);
+      float d11 = 1.0f-d1*c2.c1;
+      float d12 = -c1*d2.d11;
+      float d13 = -c1*d2.d12;
+      return new D3( d11,  d12,  d13,
+                    0.0f, 1.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f);
+    }
+    private T1 _s1;
+    private T2 _s2;
+  }
+
 
   /**
    * A sum of 2D Gaussians. Each Gaussian is centered at (c1,c2), with radius
@@ -936,27 +1081,193 @@ public class FakeData {
     return new float[][][][]{z,r[1],r[2],r[3]};
   }
 
-  private static float[][][][] impedanceFromReflectivityX(float[][][][] r) {
-    int n1 = r[0][0][0].length;
-    int n2 = r[0][0].length;
-    int n3 = r[0].length;
-    float[][][] z = new float[n3][n2][n1];
+  private static float[][][][] makeVelocityAndDensityX(
+    int n1, int n2, int n3, boolean lateralViriation) {
+    int dn1 = 13;
+    int dn2 = 22;
+    int dn3 = 20;
+    Random random = new Random(43);
+    float[] r = randfloat(random,n1);
+    float[][][] v = new float[n3][n2][n1];
+    float[][][] d = new float[n3][n2][n1];
     for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        z[i3][i2][0] = 1.0f;
-        for (int i1=1; i1<n1; ++i1) {
-          float ri = r[0][i3][i2][i1];
-          z[i3][i2][i1] = z[i3][i2][i1-1]+ri;
-        }
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(i1<=dn1) {
+        v[i3][i2][i1] = 0.5f*r[i1]+3.0f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.2f;
       }
+      if(i1>dn1&&i1<=dn1+dn2) {
+        v[i3][i2][i1] = 0.5f*r[i1]+3.5f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.4f;
+      }
+      if(i1>dn1+dn2&&i1<=dn1+dn2+dn3) {
+        v[i3][i2][i1] = 0.6f*r[i1]+4.0f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.6f;
+      }
+      if(i1>dn1+dn2+dn3) {
+        v[i3][i2][i1] = 0.8f*r[i1]+4.5f;
+        d[i3][i2][i1] = 0.2f*r[i1]+2.8f;
+      }
+      v[i3][i2][i1] *= 1000f;
+    }}}
+    if(lateralViriation) {
+      makeLateralViriation(200f,v);
+      makeLateralViriation(.07f,d);
     }
-    //z = exp(mul(2f,z));
-    return new float[][][][]{z,r[1],r[2],r[3]};
+    return new float[][][][]{v,d};
+  }
+
+  private static void makeLateralViriation(float df, float[][][] f) {
+    int d1 = 15;
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+    SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=0; i1<n1; i1+=d1*2) {
+      int nk = 7;
+      double dk = 10;
+      double fk = 20;
+      for (int k1=i1; k1<i1+d1 && k1<n1; ++k1) {
+        float fi = f[i3][0][k1];
+        float[] fu = fillfloat(fi,7);
+        fu[0] = fi-df;
+        fu[6] = fi+df;
+        for (int i2=0; i2<n2; ++i2) {
+          f[i3][i2][k1] = si.interpolate(nk,dk,fk,fu,i2);
+        }
+        fk += 2.0;
+      }
+    }}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=d1; i1<n1; i1+=d1*2) {
+      int nk = 7;
+      double dk = 10;
+      double fk = 50;
+      for (int k1=i1; k1<i1+d1 && k1<n1; ++k1) {
+        float fi = f[i3][0][k1];
+        float[] fu = fillfloat(fi,7);
+        fu[0] = fi-df;
+        fu[6] = fi+df;
+        for (int i2=0; i2<n2; ++i2) {
+          f[i3][i2][k1] = si.interpolate(nk,dk,fk,fu,i2);
+        }
+        fk -= 2.0;
+      }
+    }}
+
+  }
+
+  private static float[][][][] makeVelocityAndDensity(int n1, int n2, int n3) {
+    int dn1 = round((n1-50)/4f)-20;
+    int dn2 = dn1+20;
+    int dn3 = dn1+20;
+    int dn4 = n1-dn1-dn2-dn3;
+    Random random = new Random(31);
+    float[] z = new float[n1];
+    float[] r = mul(0.05f,pow(mul(2.0f,sub(randfloat(random,n1),0.5f)),5.0f));
+    z[0] = 6000.0f;
+    for (int i1=1; i1<n1; ++i1) {
+      float ri = r[i1];
+       z[i1] = z[i1-1]*(1.0f+ri)/(1.0f-ri);
+    }
+    Random random1 = new Random(round((31f*dn1)/n1));
+    Random random2 = new Random(round((31f*dn2)/n1));
+    Random random3 = new Random(round((31f*dn3)/n1));
+    Random random4 = new Random(round((31f*dn4)/n1));
+    float[] dv1 = mul(1000f,mul(0.50f,add(randfloat(random1,dn1),5.0f)));
+    float[] dv2 = mul(1000f,mul(0.45f,add(randfloat(random2,dn2),5.0f)));
+    float[] dv3 = mul(1000f,mul(0.55f,add(randfloat(random3,dn3),5.0f)));
+    float[] dv4 = mul(1000f,mul(0.50f,add(randfloat(random4,dn4),6.0f)));
+
+    float[] d1 = new float[n1];
+    float[] v1 = new float[n1];
+    copy(dn1,0,dv1,0,v1);
+    copy(dn2,0,dv2,dn1,v1);
+    copy(dn3,0,dv3,dn1+dn2,v1);
+    copy(dn4,0,dv4,dn1+dn2+dn3,v1);
+    for (int i1=0; i1<n1; ++i1) {
+       float di = z[i1]/v1[i1];
+       d1[i1] = di;
+    }
+
+    float[][][] d = new float[n3][n2][n1];
+    float[][][] v = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      copy(v1,v[i3][i2]);
+      copy(d1,d[i3][i2]);
+    }}
+    return new float[][][][] {v,d};
+  }
+
+  private static void resetVelocityDensity(boolean lateralViriation,
+    int dn1, float[][][] p, float[][][] v, float[][][] d) 
+  {
+
+    Random random = new Random(43);
+    int n3 = v.length;
+    int n2 = v[0].length;
+    int n1 = v[0][0].length;
+    float[] r = randfloat(random,n1);
+    float[][][] ds = new float[n3][n2][dn1];
+    float[][][] vs = new float[n3][n2][dn1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<dn1; ++i1) {
+      ds[i3][i2][i1] = 0.2f*r[i1]+2.2f;
+      vs[i3][i2][i1] = (0.5f*r[i1]+3.0f)*1000f;
+    }}}
+    if(lateralViriation) {
+      makeLateralViriation(200f,vs);
+      makeLateralViriation(.07f,ds);
+    }
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<dn1; ++i1) {
+      d[i3][i2][i1] = ds[i3][i2][i1];
+      v[i3][i2][i1] = vs[i3][i2][i1];
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<dn1; ++i1) {
+      float vi = v[i3][i2][i1];
+      float di = d[i3][i2][i1];
+      float vp = v[i3][i2][i1+1];
+      float dp = d[i3][i2][i1+1];
+      p[i3][i2][i1] = (vp*dp-vi*di)/(vp*dp+vi*di);
+    }}}
+
+  }
+
+
+  private static float[][][][] makeReflectivityWithNormals(
+      float[][][][] vd) {
+    float[][][] v = vd[0];
+    float[][][] d = vd[1];
+    int n3 = v.length;
+    int n2 = v[0].length;
+    int n1 = v[0][0].length;
+    float[][][][] p = new float[4][n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1-1; ++i1) {
+      float vi = v[i3][i2][i1];
+      float di = d[i3][i2][i1];
+      float vp = v[i3][i2][i1+1];
+      float dp = d[i3][i2][i1+1];
+      p[0][i3][i2][i1] = (vp*dp-vi*di)/(vp*dp+vi*di);
+    }}}
+    p[1] = fillfloat(1.0f,n1,n2,n3);
+    p[2] = fillfloat(0.0f,n1,n2,n3);
+    p[3] = fillfloat(0.0f,n1,n2,n3);
+    return p;
   }
 
 
   private static float[][][][] addChannels(float[][][][] r) {
-    int n1 = r[0][0][0].length;
     int n2 = r[0][0].length;
     int n3 = r[0].length;
     float[][][] s = copy(r[0]);
@@ -981,6 +1292,57 @@ public class FakeData {
     return new float[][][][]{s,r[1],r[2],r[3]};
   }
 
+  private static void addChannelsX(float[][][][] r) {
+    int n3 = r[0].length;
+    int n2 = r[0][0].length;
+    int k1 = 70;
+    float[] c2 = {0.4f*n2,0.6f*n2,0.5f*n2,0.7f*n2};
+    float[] c3 = {0.1f*n3,0.5f*n3,0.7f*n3,0.9f*n3};
+    CubicInterpolator.Method method = CubicInterpolator.Method.SPLINE;
+    CubicInterpolator ci = new CubicInterpolator(method,c3,c2);
+    for (int i3=0; i3<n3; ++i3) {
+      float x2 = ci.interpolate(i3);
+      int j2 = (int)(x2+0.5);
+      for (int i2=j2-6; i2<j2+6; ++i2) {
+        if (0<i2 && i2<n2) {
+          float d2 = i2-j2;
+          float a = 0.1f*exp(-0.125f*d2*d2);
+          r[0][i3][i2][k1-1] += 4500f*a;
+          r[0][i3][i2][k1  ] += 9000f*a;
+          r[0][i3][i2][k1+1] += 4500f*a;
+
+          r[1][i3][i2][k1-1] += 1.5f*a;
+          r[1][i3][i2][k1  ] += 3.0f*a;
+          r[1][i3][i2][k1+1] += 1.5f*a;
+        }
+      }
+    }
+  }
+
+  private static void addChannelsXX(float[][][][] r) {
+    int n3 = r[0].length;
+    int n2 = r[0][0].length;
+    int k1 = 70;
+    float[] c2 = {0.1f*n2,0.5f*n2,0.7f*n2,0.9f*n2};
+    float[] c3 = {0.4f*n3,0.6f*n3,0.5f*n3,0.7f*n3};
+    CubicInterpolator.Method method = CubicInterpolator.Method.SPLINE;
+    CubicInterpolator ci = new CubicInterpolator(method,c2,c3);
+    for (int i2=0; i2<n2; ++i2) {
+      float x3 = ci.interpolate(i2);
+      int j3 = (int)(x3+0.5);
+      for (int i3=j3-5; i3<j3+5; ++i3) {
+        if (0<i3 && i3<n3) {
+          float d2 = i3-j3;
+          float a = 0.1f*exp(-0.125f*d2*d2);
+          r[0][i3][i2][k1-1] += 9000f*a;
+          r[0][i3][i2][k1  ] += 9000f*a;
+          r[0][i3][i2][k1+1] += 9000f*a;
+        }
+      }
+    }
+  }
+
+
   private static float[][][] combine(
     float depth, float[][][] pa, float[][][] pb) 
   {
@@ -997,6 +1359,26 @@ public class FakeData {
     }
     return pc;
   }
+
+  private static float[][][][] combine(
+    float depth, float[][][][] pa, float[][][][] pb) 
+  {
+    int n1 = pa[0][0][0].length;
+    int n2 = pa[0][0].length;
+    int n3 = pa[0].length;
+    int nc = pa.length;
+    float[][][][] pc = new float[nc][n3][n2][n1];
+    for (int ic=0; ic<nc; ++ic) {
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          pc[ic][i3][i2][i1] = (i1<depth)?pa[ic][i3][i2][i1]:pb[ic][i3][i2][i1];
+        }
+      }}
+    }
+    return pc;
+  }
+
 
   private static float[][][] addWavelet(double fpeak, float[][][] p) {
     double sigma = max(1.0,1.0/(2.0*PI*fpeak));

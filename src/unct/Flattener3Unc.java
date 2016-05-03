@@ -200,6 +200,7 @@ public class Flattener3Unc {
     final float d1 = (float)sx1.getDelta();
     final float[][][] g = new float[n3][n2][nu1];
     final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2)

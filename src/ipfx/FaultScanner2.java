@@ -163,7 +163,7 @@ public class FaultScanner2 {
     int n1 = flpt[0][0].length;
     int n2 = flpt[0].length;
     float[][] f = flpt[0];
-    float[][] t = flpt[2];
+    float[][] t = flpt[1];
     f = copy(f);
     RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
     rgf.applyX0(f,f);

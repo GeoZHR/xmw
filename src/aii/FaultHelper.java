@@ -43,6 +43,21 @@ public class FaultHelper {
     }
   }
 
+  public void setValuesOnFaults(float v, FaultSkin[] skins, float[][][] x) {
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.getI1();
+        int m2 = cell.getM2();
+        int m3 = cell.getM3();
+        int p2 = cell.getP2();
+        int p3 = cell.getP3();
+        x[m3][m2][i1] = v;
+        x[p3][p2][i1] = v;
+      }
+    }
+  }
+
+
   public void setValueOnFaultsInt(float v, FaultSkin[] skins, float[][][] x) {
     int n3 = x.length;
     int n2 = x[0].length;
@@ -54,6 +69,8 @@ public class FaultHelper {
         int m3 = cell.getM3();
         int p2 = cell.getP2();
         int p3 = cell.getP3();
+        int i2 = cell.getI2();
+        int i3 = cell.getI3();
         if(m2<0) {m2=0;}
         if(p2<0) {p2=0;}
         if(m2>=n2-1) {m2=n2-1;}
@@ -62,18 +79,83 @@ public class FaultHelper {
         if(p3<0) {p3=0;}
         if(m3>=n3-1) {m3=n3-1;}
         if(p3>=p3-1) {p3=n3-1;}
-
         int k1 = i1*8;
         for (int k=0; k<8; k++) {
           int p1 = k1+k;
           if (p1<n1) {
             x[m3][m2][k1+k] = v;
             x[p3][p2][k1+k] = v;
+            x[i3][i2][k1+k] = v;
           }
         }
       }
     }
   }
+
+  public void getFlOnFaults(FaultSkin[] skins, float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.getI1();
+        int m2 = cell.getM2();
+        int m3 = cell.getM3();
+        int p2 = cell.getP2();
+        int p3 = cell.getP3();
+        int i2 = cell.getI2();
+        int i3 = cell.getI3();
+        float fl = cell.getFl();
+        if(m2<0) {m2=0;}
+        if(p2<0) {p2=0;}
+        if(m2>=n2-1) {m2=n2-1;}
+        if(p2>=p2-1) {p2=n2-1;}
+        if(m3<0) {m3=0;}
+        if(p3<0) {p3=0;}
+        if(m3>=n3-1) {m3=n3-1;}
+        if(p3>=p3-1) {p3=n3-1;}
+        x[m3][m2][i1] = fl;
+        x[p3][p2][i1] = fl;
+        x[i3][i2][i1] = fl;
+      }
+    }
+  }
+
+
+  public void getFlOnFaultsInt(FaultSkin[] skins, float[][][] x) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.getI1();
+        int m2 = cell.getM2();
+        int m3 = cell.getM3();
+        int p2 = cell.getP2();
+        int p3 = cell.getP3();
+        int i2 = cell.getI2();
+        int i3 = cell.getI3();
+        float fl = cell.getFl();
+        if(m2<0) {m2=0;}
+        if(p2<0) {p2=0;}
+        if(m2>=n2-1) {m2=n2-1;}
+        if(p2>=p2-1) {p2=n2-1;}
+        if(m3<0) {m3=0;}
+        if(p3<0) {p3=0;}
+        if(m3>=n3-1) {m3=n3-1;}
+        if(p3>=p3-1) {p3=n3-1;}
+        int k1 = i1*8;
+        for (int k=0; k<8; k++) {
+          int p1 = k1+k;
+          if (p1<n1) {
+            x[m3][m2][k1+k] = fl;
+            x[p3][p2][k1+k] = fl;
+            x[i3][i2][k1+k] = fl;
+          }
+        }
+      }
+    }
+  }
+
 
 
   public void setValueOnFaults(float v, FaultCell[] cells, float[][][] x) {

@@ -11,9 +11,10 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
-gxfile  = "gx" # input image (maybe after bilateral filtering)
-rxfile  = "rx" # reflectivity image
+gcfile  = "gc" # input image (maybe after bilateral filtering)
+gnfile  = "gn" # input image (maybe after bilateral filtering)
 rnfile  = "rn" # reflectivity image
+pcfile  = "pc" # reflectivity image
 pxfile  = "px" # impedance image
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
@@ -31,6 +32,15 @@ fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
+fskgood = "fsg" # fault skin (basename only)
+fslbase = "fsl" # fault skin (basename only)
+sw1file = "sw1"
+sw2file = "sw2"
+sw3file = "sw3"
+rgtfile = "rgt"
+fwsfile = "fws"
+fgfile = "fg"
+uncfile = "unc"
 u1file = "u1"
 gffile = "gf"
 gufile = "gu"
@@ -39,7 +49,8 @@ gcfile = "gc"
 ghfile = "gh"
 grfile = "gr"
 dwfile = "dw"
-grifile = "gri"
+vxfile = "vx"
+dxfile = "dx"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -56,53 +67,112 @@ minSkinSize = 3000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.01
-maxThrow = 15.0
+maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 plotOnly = False
-pngDir = "../../../png/aii/fake/"
 pngDir = None
+pngDir = "../../../png/aii/fake/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
+  #goFaults()
   #goImpedance2()
-  goImpedance3()
-
-def goImpedance3():
-  gx = readImage(gxfile)
-  px = readImage(pxfile)
-  rx = readImage(rnfile)
-  smooth = 0.8 # for noisy data
-  ep = fillfloat(1.0,n1,n2,n3)
-  u1 = fillfloat(1.0,n1,n2,n3)
-  u2 = fillfloat(1.0,n1,n2,n3)
-  u3 = fillfloat(1.0,n1,n2,n3)
-  lof = LocalOrientFilter(8.0,2.0)
-  et3 = lof.applyForTensors(gx)
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  wp = pow(ep,6.0)
-  et3.setEigenvalues(0.000001,1.0,1.0)
+  #goSlip()
+  #goUnfaultS()
+  #goFlatten()
+  #goInitial()
+  #goImpedance3(0.1,0.0,1.0)
+  #goImpedance3(0.9,1.0,1.0)
+  #goImpedance3(0.9,0.0,1.0)
+  #goImpedance3(0.9,0.0,0.001)
+  goImpFlatten(0.1,0.0,1.0)
+  goImpFlatten(0.9,0.0,1.0)
+  goImpFlatten(0.9,0.0,0.001)
+def goInitial():
+  k1,k2,k3,fp = getImpLogs()
   ai3 = AcousticImpedanceInv3(6.0,6.0)
-  ai3.setIterations(0.001,200)
-  ai3.setTensors(et3)
-  ai3.setSmoothness(smooth)
   pt = zerofloat(n1,n2,n3)
-  k1,k2,k3,fp = getLogs(px)
   ai3.setInitial(pt,k1,k2,k3,fp)
-  pi3 = ai3.applyForImpedance(copy(pt),rx,wp,k1,k2,k3,fp)
+  print min(pt)
+  print max(pt)
+  samples=fp,k1,k2,k3
+  plot3(pt,cmin=6000,cmax=18000,cmap=ColorMap.JET,clab="Impedance",
+      samples=samples,png="pInitial")
+
+def goFaults():
+  fs = readSkins(fskgood) 
+  fh = FaultHelper()
+  fl = zerofloat(n1,n2,n3)
+  fh.getFlOnFaults(fs,fl)
+  gx = readImage(gnfile)
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0), 
+          clab="Fault likelihoods", png="seisFl")
+
+  
+def goImpedance3(smooth,wps,lambda2):
+  gx = readImage(gcfile)
+  pc = readImage(pcfile)
+  rx = readImage(rnfile)
+  k1,k2,k3,fp = getImpLogs()
+  fc = []
+  for fpi in fp:
+    fc.append(0.5*log(fpi))
+  if not plotOnly:
+    fh = FaultHelper()
+    fk = readSkins(fskgood)
+    wp = fillfloat(1,n1,n2,n3)
+    fh.setValuesOnFaults(wps,fk,wp)
+    lof = LocalOrientFilter(1.0,1.0)
+    et3 = lof.applyForTensors(gx)
+    et3.setEigenvalues(0.000001,lambda2,1.0)
+    ai3 = AcousticImpedanceInv3(6.0,6.0)
+    ai3.setIterations(0.001,1000)
+    ai3.setTensors(et3)
+    ai3.setSmoothness(smooth)
+    pt = zerofloat(n1,n2,n3)
+    ai3.setInitial(pt,k1,k2,k3,fc)
+    px = ai3.applyForImpedance(copy(pt),rx,wp,k1,k2,k3,fc)
+    px = mul(px,2.0)
+    px = exp(px)
+    writeImage(pxfile+str(smooth)+str(wps)+str(lambda2),px)
+  else:
+    px = readImage(pxfile+str(smooth)+str(wps)+str(lambda2))
   samples = fp,k1,k2,k3
-  print min(px)
-  print max(px)
+  pmin = 6000
+  pmax = 18000
   plot3(gx,clab="Amplitude",png="seismic")
-  plot3(rx,cmin=min(rx),cmax=max(rx),clab="Impedance",png="refx")
-  plot3(gx,px,cmin=min(px),cmax=max(px),clab="Impedance",png="pTrue")
-  plot3(gx,pt,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pInitial")
-  plot3(gx,pi3,cmin=min(px),cmax=max(px),clab="Impedance",
-        samples=samples,png="pRecover01")
+  plot3(rx,cmin=-0.15,cmax=0.15,clab="Reflectivity",png="refx")
+  plot3(pc,cmin=pmin,cmax=pmax,cmap=ColorMap.JET,clab="Impedance",png="pTrue")
+  plot3(px,cmin=pmin,cmax=pmax,cmap=ColorMap.JET,clab="Impedance",
+        samples=samples,png="px"+str(smooth)+str(wps)+str(lambda2))
+
+def goImpFlatten(smooth,wps,lambda2):
+  pc = readImage(pcfile)
+  px = readImage(pxfile+str(smooth)+str(wps)+str(lambda2))
+  t1 = readImage(sw1file)
+  t2 = readImage(sw2file)
+  t3 = readImage(sw3file)
+  gt = readImage(rgtfile)
+  uf = UnfaultS(8.0,4.0)
+  pxw = zerofloat(n1,n2,n3)
+  pcw = zerofloat(n1,n2,n3)
+  uf.applyShifts([t1,t2,t3],px,pxw)
+  uf.applyShifts([t1,t2,t3],pc,pcw)
+  fl3 = Flattener3Unc()
+  pxu = fl3.flatten(s1,s1,gt,pxw)
+  pcu = fl3.flatten(s1,s1,gt,pcw)
+  pmin = 6000
+  pmax = 18000
+  plot3(px,cmin=pmin,cmax=pmax,cmap=ColorMap.JET,clab="Impedance")
+  plot3(pcu,cmin=pmin,cmax=pmax,cmap=ColorMap.JET,clab="Impedance",
+         png="pcu")
+  plot3(pxu,cmin=pmin,cmax=pmax,cmap=ColorMap.JET,clab="Impedance",
+         png="pxu"+str(smooth)+str(wps)+str(lambda2))
+
 
 def goImpedance2():
   gx = readImage(gxfile)
@@ -136,6 +206,28 @@ def goImpedance2():
         cmin=min(p3),cmax=max(p3),interp=False,png="pt")
   plot2(s1,s2,pi2,cmap=ColorMap.JET,clab="Recovered impedance",
         cmin=min(p3),cmax=max(p3),png="pi")
+
+def getImpLogs():
+  k1u = [ 95,105,105,105,105, 21, 21]
+  k2u = [138,127, 81, 56, 20, 70,124]
+  k3u = [100, 90, 90, 93, 65, 30, 10]
+  np = len(k1u)
+  r2 = readImage(sw2file)
+  r3 = readImage(sw3file)
+  pc = readImage(pcfile)
+  x1,x2,x3,fx=[],[],[],[]
+  for ip in range(np):
+    i1 = round(k1u[ip])
+    i2 = round(k2u[ip])
+    i3 = round(k3u[ip])
+    k2 = round(k2u[ip]+r2[i3][i2][i1])
+    k3 = round(k3u[ip]+r3[i3][i2][i1])
+    for k1 in range(n1):
+      x1.append(k1)
+      x2.append(k2)
+      x3.append(k3)
+      fx.append(pc[k3][k2][k1])
+  return x1,x2,x3,fx
 
 def getLogs(px):
   k2u = [81,56,20,8,96,50]
@@ -188,28 +280,141 @@ def setWells(p3):
   return k1,k2,fp
 
 def goFakeData():
-  #sequence = 'A' # 1 episode of faulting only
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
-  #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 0 # number of planar faults
+  nplanar = 3 # number of planar faults
   conjugate = False # if True, two large planar faults will intersect
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
+  lateralViriation = False
   noise = 0.6 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
-      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
-  writeImage(gxfile,gx)
-  writeImage(p2kfile,p2)
-  writeImage(p3kfile,p3)
-  print "gx min =",min(gx)," max =",max(gx)
-  print "p2 min =",min(p2)," max =",max(p2)
-  print "p3 min =",min(p3)," max =",max(p3)
-  gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
+  if not plotOnly:
+    gc,gn,rn,pc = FakeData.seismicAndSlopes3d2015A(sequence,
+    nplanar,conjugate,conical,impedance,wavelet,lateralViriation,noise)
+    writeImage(gcfile,gc)
+    writeImage(gnfile,gn)
+    writeImage(rnfile,rn)
+    writeImage(pcfile,pc)
+  else:
+    gc = readImage(gcfile)
+    gn = readImage(gnfile)
+    rn = readImage(rnfile)
+    pc = readImage(pcfile)
+  dmin = 2.1
+  dmax = 3.2
+  rmin = -0.15
+  rmax = 0.15
+  pmin = 6000
+  pmax = 18000
+
+  pmap = ColorMap.JET
+  gmin,gmax,gmap = -2.0,1.5,ColorMap.GRAY
   if impedance:
     gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
-  plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
+  plot3(gc,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gc")
+  plot3(gn,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gn")
+  plot3(rn,cmin=rmin,cmax=rmax,cmap=gmap,clab="Reflectivity",png="rn")
+  plot3(pc,cmin=pmin,cmax=pmax,cmap=pmap,clab="Impedance",png="pc")
+
+def goSlip():
+  print "goSlip ..."
+  gsx = readImage(gcfile)
+  p2,p3,ep = FaultScanner.slopes(4.0,2.0,2.0,5.0,gsx)
+  skins = readSkins(fskgood)
+  fsl = FaultSlipper(gsx,p2,p3)
+  fsl.setOffset(2.0) # the default is 2.0 samples
+  fsl.setZeroSlope(False) # True only if we want to show the error
+  fsl.computeDipSlips(skins,minThrow,maxThrow)
+  print "  dip slips computed, now reskinning ..."
+  print "  number of skins before =",len(skins),
+  fsk = FaultSkinner() # as in goSkin
+  fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fsk.setMinSkinSize(minSkinSize)
+  fsk.setMinMaxThrow(minThrow,maxThrow)
+  skins = fsk.reskin(skins)
+  print ", after =",len(skins)
+  removeAllSkinFiles(fslbase)
+  writeSkins(fslbase,skins)
+  plot3(gsx,skins=skins,smax=15.0,slices=[85,5,60],png="skinss1")
+
+
+def goUnfaultS():
+  if not plotOnly:
+    gx = readImage(gcfile)
+    fw = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(4.0,2.0,2.0)
+    et = lof.applyForTensors(gx)
+    et.setEigenvalues(0.001,1.0,1.0)
+
+    wp = fillfloat(1.0,n1,n2,n3)
+    skins = readSkins(fslbase)
+    fsc = FaultSlipConstraints(skins)
+    sp = fsc.screenPoints(wp)
+
+    uf = UnfaultS(8.0,4.0)
+    uf.setIters(200)
+    uf.setTensors(et)
+    mul(sp[3][0],10,sp[3][0])
+    [t1,t2,t3] = uf.findShifts(sp,wp)
+    #[t1,t2,t3] = uf.convertShifts(40,[t1,t2,t3])
+    uf.applyShifts([t1,t2,t3],gx,fw)
+    writeImage(fwsfile,fw)
+    writeImage(sw1file,t1)
+    writeImage(sw2file,t2)
+    writeImage(sw3file,t3)
+  else :
+    t1 = readImage(sw1file)
+    t2 = readImage(sw2file)
+    t3 = readImage(sw3file)
+    gx = readImage(gnfile)
+    fw = zerofloat(n1,n2,n3)
+    uf = UnfaultS(8.0,4.0)
+    uf.applyShifts([t1,t2,t3],gx,fw)
+  plot3(gx,png="gxuf")
+  plot3(fw,png="fwuf")
+
+def goFlatten():
+  gw = readImage(fwsfile)
+  if not plotOnly:
+    sigma1,sigma2,sigma3,pmax = 2.0,1.0,1.0,5.0
+    p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gw)
+    zm = ZeroMask(0.2,1.0,1.0,1.0,gw)
+    zero = 0.00;
+    tiny = 0.01;
+    zm.setValue(zero,p2)#set inline slopes for samples above water bottom
+    zm.setValue(zero,p3)#set crossline slopes for samples above water bottom
+    zm.setValue(tiny,ep)#set planarities for samples above water bottom
+    wp = pow(ep,10)
+    uncs = readUncs(uncfile)
+    sc = SetupConstraints()
+    uncs = add(uncs,2.0)
+    cs = sc.constraintsFromSurfaces(uncs)
+    sfs = copy(uncs)
+    for i3 in range(0,35):
+      for i2 in range(115,n2):
+        sfs[0][i3][i2] = -100
+    sfs = sc.uncConstraints(sfs)
+    rs = zerofloat(n1,n2,n3)
+    fl3 = Flattener3Unc()
+    sig1,sig2=10.0,10.0
+    fl3.setSmoothings(sig1,sig2)
+    fl3.setIterations(0.01,400);
+    mp = fl3.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp,None,sfs,rs)
+    gt = mp.u1
+    su1 = Sampling(n1,1,1)
+    #gu  = mp.flatten(gw)
+    gu = fl3.flatten(s1,su1,gt,gw)
+    writeImage(fgfile,gu)
+    writeImage(rgtfile,gt)
+  gx = readImage(gcfile)
+  gu = readImage(fgfile)
+  gt = readImage(rgtfile)
+  plot3(gx)
+  plot3(gw)
+  plot3(gu,png="gu")
+
+
 
 def goSlopes():
   print "goSlopes ..."
@@ -286,7 +491,7 @@ def addColorBar(frame,clab=None,cint=None):
   cbar = ColorBar(clab)
   if cint:
     cbar.setInterval(cint)
-  cbar.setFont(Font("Arial",Font.PLAIN,32)) # size by experimenting
+  cbar.setFont(Font("Arial",Font.PLAIN,24)) # size by experimenting
   cbar.setWidthMinimum
   cbar.setBackground(Color.WHITE)
   frame.add(cbar,BorderLayout.EAST)
@@ -460,14 +665,14 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
-      cmap = jetFill(1.0)
+      cmap = jetFill(0.8)
     ipg.setColorModel2(cmap)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
   if cbar:
-    cbar.setWidthMinimum(120)
+    cbar.setWidthMinimum(137)
   if xyz:
     pg = PointGroup(0.2,xyz)
     ss = StateSet()
@@ -561,8 +766,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  #ipg.setSlices(109,138,31)
-  ipg.setSlices(109,138,7) # for logs only
+  ipg.setSlices(106,138,59)
+  #ipg.setSlices(92,140,59)
   if uncs:
     sg = Group()
     ss = StateSet()
@@ -587,7 +792,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(sg)
   if samples:
     fx,x1,x2,x3 = samples
-    vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
+    vmin,vmax,vmap= 6000,16000,ColorMap.JET
     pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
     sf.world.addChild(pg)
   if cbar:
@@ -602,8 +807,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
   ov.setAzimuthAndElevation(120.0,25.0)
-  #ov.setTranslate(Vector3(0.02,0.16,-0.27))
-  ov.setTranslate(Vector3(0.02,0.23,-0.27))
+  ov.setTranslate(Vector3(0.02,0.16,-0.27))
   ov.setScale(1.25)
   # for subset plots
   #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))

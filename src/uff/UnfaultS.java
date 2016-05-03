@@ -135,6 +135,7 @@ public class UnfaultS {
     final float[][][] gf = g;
     final float[][][] r1 = r[0], r2 = r[1], r3 = r[2];
     final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2)
