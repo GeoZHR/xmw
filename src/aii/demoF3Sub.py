@@ -49,7 +49,7 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = True
+plotOnly = False
 pngDir = None
 pngDir = "../../../png/aii/f3d/sub/"
 
