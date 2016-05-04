@@ -49,7 +49,7 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = False
+plotOnly = True
 pngDir = None
 pngDir = "../../../png/aii/f3d/sub/"
 
@@ -253,7 +253,6 @@ def goImpedance():
         k3.append(x3[i2])
         k1.append(i1-1350)
         fp.append(exp(wpm[i2][i1]*2))
-  '''
   fh = FaultHelper()
   fk = readSkins(fskgood)
   wp = fillfloat(0,n1,n2,n3)
@@ -268,7 +267,6 @@ def goImpedance():
         samples=samples,png="px05")
   plot3X(ps,cmin=3800,cmax=5500,cmap=ColorMap.JET,clab="Impedance",
         samples=samples,png="ps05")
-  '''
 
 
 def goLogs():

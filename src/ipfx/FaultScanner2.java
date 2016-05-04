@@ -139,6 +139,14 @@ public class FaultScanner2 {
     return scan(st,p2,g);
   }
 
+  public float[][][] scan(
+      double thetaMin, double thetaMax,
+      float sig1, float sig2, float smooth, float[][] g) {
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    return scan(st,sig1,sig2,smooth,g);
+  }
+
+
   /**
    * Scans with the specified sampling of fault strikes and dips.
    * @param thetaSampling sampling of fault dip angles, in degrees.
@@ -151,6 +159,13 @@ public class FaultScanner2 {
     float[][][] snd = semblanceNumDen(p2,g);
     return scanTheta(thetaSampling,snd);
   }
+
+  public float[][][] scan(
+      Sampling thetaSampling, float sig1, float sig2, float smooth, float[][] g) {
+    float[][][] snd = semblanceNumDen(sig1,sig2, smooth,g);
+    return scanTheta(thetaSampling,snd);
+  }
+
 
   /**
    * Thins fault images to include only ridges in fault likelihoods.
@@ -386,7 +401,53 @@ public class FaultScanner2 {
         }
       }}
     }
+
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = 1.0f/tan(theta);
+      float[][] sns = shear(si,shear,sn);
+      float[][] sds = shear(si,shear,sd);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(sns,sns);
+      ref.apply1(sds,sds);
+      float[][] ss = semblanceFromNumDen(sns,sds);
+      float[][] s2 = unshear(si,shear,ss);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        st = st*st; // semblance^8
+        float fi = 1.0f-st;
+        if (fi>f[i2][i1]) {
+          f[i2][i1] = fi;
+          t[i2][i1] = -ti;
+        }
+      }}
+    }
     return new float[][][]{f,t};
+  }
+
+
+  // Computes fault semblance numerators and denominators.
+  private static float[][][] semblanceNumDen(
+    float sig1, float sig2, float smooth, float[][] f) 
+  {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    float[][] sn = new float[n2][n1];
+    float[][] sd = new float[n2][n1];
+    float[][] fs = mul(f,f);
+    LocalOrientFilter lof = new LocalOrientFilter(sig1,sig2);
+    EigenTensors2 ets = lof.applyForTensors(f);
+    ets.setEigenvalues(0.00001f,1.0f);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(ets,smooth,f, sn);
+    lsf.apply(ets,smooth,fs,sd);
+    return new float[][][]{mul(sn,sn),sd};
   }
 
 

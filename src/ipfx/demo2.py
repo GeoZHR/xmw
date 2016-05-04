@@ -5,7 +5,7 @@ Version: 2014.07.17
 """
 
 from utils2 import *
-setupForSubset("oreganSub")
+setupForSubset("oregan")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 
@@ -21,19 +21,19 @@ fttfile = "ftt" # fault dip thinned
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minTheta,maxTheta = 70,89
-sigmaTheta = 30
+minTheta,maxTheta = 80,89
+sigmaTheta = 70
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.5
+lowerLikelihood = 0.5
+upperLikelihood = 0.7
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = "../../../png/oregan/"
 pngDir = None
-plotOnly = False
+plotOnly = True
+pngDir = "../../../png/oregan/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -41,32 +41,15 @@ def main(args):
   #goSlopes()
   #goScan()
   goThin()
-def goSlopes():
-  print "goSlopes ..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    sigma1,sigma2,pmax = 16.0,1.0,5.0
-    p2,el = FaultScanner2.slopes(sigma1,sigma2,pmax,gx)
-    writeImage(p2file,p2)
-    writeImage(epfile,el)
-  else:
-    p2 = readImage(p2file)
-    el = readImage(epfile)
-    print "p2  min =",min(p2)," max =",max(p2)
-    print "el min =",min(el)," max =",max(el)
-  plot2(s1,s2,gx,g=p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        label="Inline slope (sample/sample)")
-  plot2(s1,s2,gx,g=sub(1,el),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        label="Linearity")
 
 def goScan():
   print "goScan ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    p2 = readImage(p2file)
     gx = FaultScanner2.taper(10,0,gx)
     fs = FaultScanner2(sigmaTheta)
-    fl,ft = fs.scan(minTheta,maxTheta,p2,gx)
+    sig1,sig2,smooth=8.0,36.0,48.0
+    fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "ft min =",min(ft)," max =",max(ft)
     writeImage(flfile,fl)
@@ -76,22 +59,29 @@ def goScan():
     ft = readImage(ftfile)
   plot2(s1,s2,gx,g=fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
-  plot2(s1,s2,gx,g=ft,cmin=65,cmax=85,cmap=jetFill(1.0),
+  plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
       label="Fault dip (degrees)",png="ft")
 
 def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
-  fl = readImage(flfile)
-  ft = readImage(ftfile)
-  flt,ftt = FaultScanner2.thin([fl,ft])
-  writeImage(fltfile,flt)
-  writeImage(fttfile,ftt)
-  plot2(s1,s2,gx,label="Amplitude",png="gx")
-  plot2(s1,s2,gx,g=flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        label="Fault likelihood",png="fl")
-  plot2(s1,s2,gx,g=ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
-        label="Fault dip (degrees)",png="ftt")
+  if not plotOnly:
+    fl = readImage(flfile)
+    ft = readImage(ftfile)
+    flt,ftt = FaultScanner2.thin([fl,ft])
+    writeImage(fltfile,flt)
+    writeImage(fttfile,ftt)
+  else:
+    flt = readImage(fltfile)
+    ftt = readImage(fttfile)
+  c1 = Sampling(n1,1,1200)
+  for j2 in range(0,n2,1000):
+    c2 = Sampling(1000,1,j2)
+    gs  = copy(n1,1000,0,j2,gx)
+    fls = copy(n1,1000,0,j2,flt)
+    fts = copy(n1,1000,0,j2,ftt)
+    plot2(c1,c2,gs,g=fls,cmin=0.9,cmax=1,cmap=jetFillExceptMin(1.0),
+        png="section"+str(j2)+"~"+str(j2+1000))
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -417,16 +407,18 @@ def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
   panel = panel2Teapot()
   #panel.setHInterval(2.0)
   #panel.setVInterval(0.2)
-  panel.setHLabel("Inline (km)")
-  panel.setVLabel("Time (s)")
+  #panel.setHLabel("Inline (km)")
+  #panel.setVLabel("Time (s)")
   #panel.setHInterval(100.0)
   #panel.setVInterval(100.0)
   #panel.setHLabel("Pixel")
   #panel.setVLabel("Pixel")
+  '''
   if label:
     panel.addColorBar(label)
   else:
     panel.addColorBar()
+  '''
   panel.setColorBarWidthMinimum(130)
   pv = panel.addPixels(s1,s2,f)
   pv.setInterpolation(PixelsView.Interpolation.LINEAR)
@@ -448,8 +440,8 @@ def frame2Teapot(panel,png=None):
   #frame.setFontSizeForPrint(8,240)
   #frame.setSize(1240,774)
   #frame.setFontSizeForSlide(1.0,0.9)
-  frame.setFontSize(36)
-  frame.setSize(1080,650)
+  frame.setFontSize(12)
+  frame.setSize(1180,950)
   frame.setVisible(True)
   if png and pngDir:
     frame.paintToPng(400,3.2,pngDir+png+".png")
