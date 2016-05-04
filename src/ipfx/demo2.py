@@ -5,7 +5,7 @@ Version: 2014.07.17
 """
 
 from utils2 import *
-setupForSubset("oregan")
+setupForSubset("oreganSub")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 
@@ -32,7 +32,7 @@ upperLikelihood = 0.7
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = True
+plotOnly = False
 pngDir = "../../../png/oregan/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -48,7 +48,7 @@ def goScan():
   if not plotOnly:
     gx = FaultScanner2.taper(10,0,gx)
     fs = FaultScanner2(sigmaTheta)
-    sig1,sig2,smooth=8.0,36.0,48.0
+    sig1,sig2,smooth=24.0,36.0,48.0
     fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "ft min =",min(ft)," max =",max(ft)
@@ -74,6 +74,12 @@ def goThin():
   else:
     flt = readImage(fltfile)
     ftt = readImage(fttfile)
+  j2 = 0
+  gs  = copy(n1,2500,0,j2,gx)
+  fls = copy(n1,2500,0,j2,flt)
+  s2 = Sampling(2500,4,600)
+  plot2(s1,s2,gs,g=fls,cmin=0.95,cmax=1,cmap=jetFillExceptMin(1.0))
+  '''
   c1 = Sampling(n1,1,1200)
   for j2 in range(0,n2,1000):
     c2 = Sampling(1000,1,j2)
@@ -82,6 +88,7 @@ def goThin():
     fts = copy(n1,1000,0,j2,ftt)
     plot2(c1,c2,gs,g=fls,cmin=0.9,cmax=1,cmap=jetFillExceptMin(1.0),
         png="section"+str(j2)+"~"+str(j2+1000))
+  '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
