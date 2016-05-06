@@ -91,7 +91,12 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  goFaultImages()
+  #goFaultImages()
+  goRose()
+def goRose():
+  skins = readSkins(fskbase)
+  rp = RosePlot()
+  rp.rose(skins,36)
 def goDisplay():
   '''
   gx = readImage(gxfile)

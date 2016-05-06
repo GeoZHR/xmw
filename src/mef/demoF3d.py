@@ -69,8 +69,8 @@ maxThrow = 25.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 pngDir = getPngDir()
+pngDir = None
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -86,7 +86,7 @@ def main(args):
   #goSkin()
   #goCells()
   #goTv()
-  goSkinTv()
+  #goSkinTv()
   #goTI()
   #goReSkin()
   #goSmooth()
@@ -95,6 +95,21 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goComparison()
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  f2 = zerofloat(n1,n2,n3)
+  f3 = zerofloat(n1,n2,n3)
+  rgf = RecursiveGaussianFilterP(1.0)
+  rgf.apply010(fl,f2)
+  rgf.apply001(fl,f3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        fli = fl[i3][i2][i1]
+        if(fli<0.5):
+          f3[i3][i2][i1]=-30
+  plot3(gx, fbs=f3)
+
   '''
   gx = readImage(gxfile)
   plot3(gx)
@@ -733,6 +748,24 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if htgs:
     for htg in htgs:
       sf.world.addChild(htg)
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.MAGENTA)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
   if skins:
     sg = Group()
     ss = StateSet()
