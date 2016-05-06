@@ -91,8 +91,8 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  #goFaultImages()
-  goRose()
+  goFaultImages()
+  #goRose()
 def goRose():
   skins = readSkins(fskbase)
   rp = RosePlot()

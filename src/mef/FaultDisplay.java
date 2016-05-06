@@ -271,11 +271,8 @@ public class FaultDisplay {
         i2 = min(i2,n2-1); i2 = max(i2,0);
         i3 = min(i3,n3-1); i3 = max(i3,0);
         if(mk[i3][i2][i1]==1) {
-          float fpi = fci.getFp();
-          if(fpi>180f) {fpi -= 180f;}
-          fp[i3][i2][i1] = fpi;
+          fp[i3][i2][i1] = fci.getFp();
         }
-
       }}
     }
   }
