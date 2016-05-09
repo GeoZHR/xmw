@@ -42,6 +42,35 @@ public class RosePlot {
     rose(fps,nbin);
   }
 
+  public float[][] faultPoints(float[][][] fp) {
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    ArrayList<Float> fpa = new ArrayList<Float>();
+    ArrayList<Float> x1a = new ArrayList<Float>();
+    ArrayList<Float> x2a = new ArrayList<Float>();
+    ArrayList<Float> x3a = new ArrayList<Float>();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fpi = fp[i3][i2][i1];
+      if (fpi>=0.0f) {
+        fpa.add(fpi);
+        x1a.add((float)i1);
+        x2a.add((float)i2);
+        x3a.add((float)i3);
+      }
+    }}}
+    int np = fpa.size();
+    float[][] fps = new float[4][np];
+    for (int ip=0; ip<np; ++ip) {
+      fps[0][ip] = x1a.get(ip);
+      fps[1][ip] = x2a.get(ip);
+      fps[2][ip] = x3a.get(ip);
+      fps[3][ip] = fpa.get(ip);
+    }
+    return fps;
+  }
 
   public void rose(FaultSkin[] skins, int nbin) {
     FaultCell[] cells = FaultSkin.getCells(skins);
@@ -70,7 +99,8 @@ public class RosePlot {
     pvc.setLineColor(Color.RED);
     pvc.setLineWidth(4.f);
     addRadials(pp,Color.BLACK);
-    addBins(pp,bins);
+    //addBins(pp,bins);
+    addBinsF(pp,bins);
     PlotFrame pf = new PlotFrame(pp);
     pf.setFontSizeForPrint(8,240);
     pf.setVisible(true);
@@ -79,7 +109,7 @@ public class RosePlot {
 
   private float[] applyHistogram(int nbins, float[] phi) {
     int np = phi.length;
-    float ps = 2f/(float)np;
+    float ps = 1f/(float)np;
     float dp = 360f/(float)nbins;
     float[] bins = new float[nbins];
     for (int ip=0; ip<np; ++ip) {
@@ -107,12 +137,60 @@ public class RosePlot {
   private void addBins(PlotPanel pp, float[] bins) {
     int nb = bins.length;
     float dp = (float)(2*DBL_PI/nb);
+    float rmax = max(bins);
+    mul(bins,0.8f/rmax,bins);
     for (int ib=0; ib<nb; ++ib) {
       float phi = ib*dp;
       float rdi = bins[ib];
       Color rgb = getNextColor();
       float[][] rp1 = makeRadialPoints(rdi,phi);
       float[][] rp2 = makeRadialPoints(rdi,phi+dp);
+      /*
+      float[][] cps = makeCirclePoints(1000,rdi);
+      PointsView pvc = pp.addPoints(cps[0],cps[1]);
+      pvc.setLineStyle(PointsView.Line.DASH);
+      pvc.setLineColor(rgb);
+      pvc.setLineWidth(3.f);
+      */
+      float[] rx3 = new float[]{rp1[0][1],rp2[0][1]};
+      float[] ry3 = new float[]{rp1[1][1],rp2[1][1]};
+      float[][] rp3 = new float[][]{rx3,ry3};
+      PointsView pvr1 = pp.addPoints(rp1[0],rp1[1]);
+      PointsView pvr2 = pp.addPoints(rp2[0],rp2[1]);
+      PointsView pvr3 = pp.addPoints(rp3[0],rp3[1]);
+      pvr1.setLineColor(rgb);
+      pvr2.setLineColor(rgb);
+      pvr3.setLineColor(rgb);
+      pvr1.setLineWidth(4.f);
+      pvr2.setLineWidth(4.f);
+      pvr3.setLineWidth(4.f);
+    }
+  }
+
+  private void addBinsB(PlotPanel pp, float[] bins) {
+    int nb = bins.length;
+    float dp = (float)(2*DBL_PI/nb);
+    float rmax = max(bins);
+    mul(bins,0.8f/rmax,bins);
+    for (int ib=0; ib<nb; ++ib) {
+      float phi = ib*dp;
+      float rdi = bins[ib];
+      Color rgb = getNextColor();
+      float[][] rp1 = makeRadialPoints(rdi,phi);
+      float[][] rp2 = makeRadialPoints(rdi,phi+dp);
+      float dx = rp2[0][1] - rp1[0][1];
+      float dy = rp2[1][1] - rp1[1][1];
+      float ds = sqrt(dx*dx+dy*dy);
+      for (float di=0f; di<=ds; di+=0.01f) {
+        float xi = rp1[0][1]+dx*di/ds;
+        float yi = rp1[1][1]+dy*di/ds;
+        float[] xs = new float[]{0f,xi};
+        float[] ys = new float[]{0f,yi};
+        PointsView pvr = pp.addPoints(xs,ys);
+        pvr.setLineColor(rgb);
+        pvr.setLineWidth(4.f);
+      }
+      /*
       float[][] cps = makeCirclePoints(1000,rdi);
       PointsView pvc = pp.addPoints(cps[0],cps[1]);
       pvc.setLineStyle(PointsView.Line.DASH);
@@ -130,8 +208,56 @@ public class RosePlot {
       pvr1.setLineWidth(4.f);
       pvr2.setLineWidth(4.f);
       pvr3.setLineWidth(4.f);
+      */
     }
   }
+
+
+  private void addBinsF(PlotPanel pp, float[] bins) {
+    int nb = bins.length;
+    float dp = (float)(2*DBL_PI/nb);
+    float rmax = max(bins);
+    mul(bins,0.8f/rmax,bins);
+    for (int ib=0; ib<nb; ++ib) {
+      float phi = ib*dp;
+      float rdi = bins[ib];
+      Color rgb = getNextColor();
+      float[][] rp1 = makeRadialPoints(rdi,phi);
+      float[][] rp2 = makeRadialPoints(rdi,phi+dp);
+      float dx = rp2[0][1] - rp1[0][1];
+      float dy = rp2[1][1] - rp1[1][1];
+      float ds = sqrt(dx*dx+dy*dy);
+      for (float di=0f; di<=ds; di+=0.0001f) {
+        float xi = rp1[0][1]+dx*di/ds;
+        float yi = rp1[1][1]+dy*di/ds;
+        float[] xs = new float[]{0f,xi};
+        float[] ys = new float[]{0f,yi};
+        PointsView pvr = pp.addPoints(xs,ys);
+        pvr.setLineColor(rgb);
+        pvr.setLineWidth(4f);
+      }
+      /*
+      float[][] cps = makeCirclePoints(1000,rdi);
+      PointsView pvc = pp.addPoints(cps[0],cps[1]);
+      pvc.setLineStyle(PointsView.Line.DASH);
+      pvc.setLineColor(rgb);
+      pvc.setLineWidth(3.f);
+      float[] rx3 = new float[]{rp1[0][1],rp2[0][1]};
+      float[] ry3 = new float[]{rp1[1][1],rp2[1][1]};
+      float[][] rp3 = new float[][]{rx3,ry3};
+      PointsView pvr1 = pp.addPoints(rp1[0],rp1[1]);
+      PointsView pvr2 = pp.addPoints(rp2[0],rp2[1]);
+      PointsView pvr3 = pp.addPoints(rp3[0],rp3[1]);
+      pvr1.setLineColor(rgb);
+      pvr2.setLineColor(rgb);
+      pvr3.setLineColor(rgb);
+      pvr1.setLineWidth(4.f);
+      pvr2.setLineWidth(4.f);
+      pvr3.setLineWidth(4.f);
+      */
+    }
+  }
+
 
 
   // Makes array of points on the unit circle in a plane.

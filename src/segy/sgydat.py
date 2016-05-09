@@ -16,12 +16,72 @@ def main(args):
   #goJake()
   #goNathan()
   #goLulia()
-  goCranfield2007()
+  #goCranfield2007()
   #goCranfield2010()
   #goSeam()
   #goF3dRef()
   #goF3dSeis()
   #goHan()
+  goNwc()
+def goNwc():
+  '''
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/nwc/test16_nwc.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 665343180
+  number of traces = 233945
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =     1, i2max = 233945 (inline indices)
+    i3min =     0, i3max =     0 (crossline indices)
+    xmin =    0.000000, xmax =    0.000000 (x coordinates, in km)
+    ymin =    0.000000, ymax =    0.000000 (y coordinates, in km)
+  grid sampling:
+    n1 =   651 (number of samples per trace)
+    n2 = 233945 (number of traces in inline direction)
+    n3 =     1 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.000000 (inline sampling interval, in km)
+    d3 = 0.000000 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =     1, i3min =     0, x =    0.000000, y =    0.000000
+    i2max = 233945, i3min =     0, x =    0.000000, y =    0.000000
+    i2min =     1, i3max =     0, x =    0.000000, y =    0.000000
+    i2max = 233945, i3max =     0, x =    0.000000, y =    0.000000
+  grid azimuth: 90.00 degrees
+  ****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
+  basedir = "../../../data/seis/nwc/"
+  #sgyfile = basedir+"test16_nwc.sgy"
+  sgyfile = basedir+"gu.segy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,850,1499,8507,1499,7505
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,850,0,1168,0,1001
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,6,6)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    gain(100,x)
+    show3d(x,clip=max(x)/2)
+
 def goHan():
   '''
   ****** beginning of SEG-Y file info ******

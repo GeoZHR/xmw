@@ -91,12 +91,14 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  goFaultImages()
-  #goRose()
+  #goFaultImages()
+  goRose()
 def goRose():
-  skins = readSkins(fskbase)
   rp = RosePlot()
-  rp.rose(skins,36)
+  fpt = readImage(fptfile)
+  fpp = rp.faultPoints(fpt)
+  writeImage("fpp",fpp)
+  #rp.rose(fps[4],36)
 def goDisplay():
   '''
   gx = readImage(gxfile)
@@ -284,7 +286,8 @@ def goFaultImages():
     writeImage(fttfile,ftt)
   else:
     #flt = readImage(fltfile)
-    fpt = readImage(fptfile)
+    #fpt = readImage(fptfile)
+    fpt = readImage("fps")
     #ftt = readImage(fttfile)
   '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
