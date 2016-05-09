@@ -16,12 +16,12 @@ def main(args):
   #goJake()
   #goNathan()
   #goLulia()
-  #goCranfield2007()
+  goCranfield2007()
   #goCranfield2010()
   #goSeam()
   #goF3dRef()
   #goF3dSeis()
-  goHan()
+  #goHan()
 def goHan():
   '''
   ****** beginning of SEG-Y file info ******

@@ -291,9 +291,9 @@ def goFaultImages():
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=jetFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=20,png="fpt")
   '''
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=jetFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=20,png="fpt")
 def goSmooth():
   print "goSmooth ..."
   flstop = 0.1

@@ -7,6 +7,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package crf;
 
 import java.awt.*;
+import java.util.*;
 import edu.mines.jtk.mosaic.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -19,6 +20,28 @@ import mef.*;
  */
 
 public class RosePlot {
+
+  public void rose(float[][][] fp, int nbin) {
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    ArrayList<Float> fpa = new ArrayList<Float>();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fpi = fp[i3][i2][i1];
+      if (fpi>=0.0f) {fpa.add(fpi);}
+    }}}
+    int ip = 0;
+    int np = fpa.size();
+    float[] fps = new float[np];
+    for (float fpi:fpa) {
+      fps[ip] = fpi;
+      ip++;
+    }
+    rose(fps,nbin);
+  }
+
 
   public void rose(FaultSkin[] skins, int nbin) {
     FaultCell[] cells = FaultSkin.getCells(skins);

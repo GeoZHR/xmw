@@ -112,7 +112,7 @@ def main(args):
   plot3(gu1)
   plot3(gu2)
   '''
-  #goResults()
+  goResults()
   #goSlices()
   #goChannel()
 def goChannel():

@@ -50,7 +50,7 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * @author Xinming Wu, Colorado School of Mines
  * @version 2015.08.18
  */
-public class DynamicWarpingRC {
+public class DynamicWarpingR {
 
   /**
    * Constructs a dynamic warping.
@@ -61,7 +61,7 @@ public class DynamicWarpingRC {
    * @param smax upper bound on shift.
    * @param s1 sampling of shifts for 1st dimension.
    */
-  public DynamicWarpingRC(int k, double smin, double smax, Sampling s1) {
+  public DynamicWarpingR(int k, double smin, double smax, Sampling s1) {
     this(k,smin,smax,s1,null,null);
   }
 
@@ -75,7 +75,7 @@ public class DynamicWarpingRC {
    * @param s1 sampling of shifts for 1st dimension.
    * @param s2 sampling of shifts for 2nd dimension.
    */
-  public DynamicWarpingRC(
+  public DynamicWarpingR(
     int k, double smin, double smax, Sampling s1, Sampling s2) {
     this(k,smin,smax,s1,s2,null);
   }
@@ -89,7 +89,7 @@ public class DynamicWarpingRC {
    * @param s2 sampling of shifts for 2nd dimension.
    * @param s3 sampling of shifts for 3rd dimension.
    */
-  public DynamicWarpingRC(
+  public DynamicWarpingR(
     int k, double smin, double smax, 
     Sampling s1, Sampling s2, Sampling s3) 
   {
@@ -204,6 +204,14 @@ public class DynamicWarpingRC {
     _r3mins = r3mins; _r3maxs = r3maxs;
   }
 
+  public void setSmooth(
+    int[][][] k1mins, int[][][] k2mins, int[][][] k3mins) 
+  {
+    _k1mins = k1mins;
+    _k2mins = k2mins;
+    _k3mins = k3mins;
+  }
+
   public void setStrainsOnFaults(
     float mv, float rv, float[] mk, float[] rs) 
   {
@@ -213,13 +221,6 @@ public class DynamicWarpingRC {
     }
   }
 
-  public void setSmooth(
-    int[][][] k1mins, int[][][] k2mins, int[][][] k3mins) 
-  {
-    _k1mins = k1mins;
-    _k2mins = k2mins;
-    _k3mins = k3mins;
-  }
 
   /**
    * Sets the number of nonlinear smoothings of alignment errors.
@@ -456,15 +457,16 @@ public class DynamicWarpingRC {
 
     float[][] e1 = computeErrors(sf,f,sg,g);
     float[][] ek = subsampleErrors(_r1min1,_r1max1,k1s,ss,s1,e1);
+
     normalizeErrors(ek);
+
     for (int is=0; is<_esmooth-1; ++is) {
       smoothSubsampledErrors(_r1min1,_r1max1,k1s,ss,s1,ek);
       normalizeErrors(ek);
     }
-    float[] uk = findShiftsFromSubsampledErrors(
-        _r1min1,_r1max1,k1s,ss,s1,ek);
-    float[] u = interpolateShifts(s1,k1s,uk);
-    return u;
+
+    float[]  uk = findShiftsFromSubsampledErrors(_r1min1,_r1max1,k1s,ss,s1,ek);
+    return interpolateShifts(s1,k1s,uk);
   }
 
 
@@ -484,6 +486,7 @@ public class DynamicWarpingRC {
     Sampling se = _s1;
     int ns = ss.getCount();
     int ne = se.getCount();
+    int nf = sf.getCount();
     int ng = sg.getCount();
     float[][] e = new float[ne][ns];
     float[] fi = new float[ne];
@@ -548,6 +551,7 @@ public class DynamicWarpingRC {
    */
   public float[] applyShifts(Sampling sg, float[] g, float[] u) {
     Sampling s1 = _s1;
+    int ng = sg.getCount();
     int n1 = s1.getCount();
     float[] h = new float[n1];
     for (int i1=0; i1<n1; ++i1) {
@@ -590,7 +594,7 @@ public class DynamicWarpingRC {
   private int _k1min,_k2min,_k3min;
   private int _esmooth = 1;
   private SincInterpolator _si;
-  private float _epow = 1.00f;
+  private float _epow = 0.25f;
   private float[] _r1min1,_r1max1;
   private float[][][] _r1mins, _r2mins, _r3mins;
   private float[][][] _r1maxs, _r2maxs, _r3maxs;

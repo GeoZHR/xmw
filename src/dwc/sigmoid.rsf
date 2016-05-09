@@ -1,0 +1,29 @@
+1.8-svn	sfsigmoid	xmw/src/dwc:	xinwu@xinwu@mines	Sun May  8 17:30:08 2016
+
+	d2=0.008
+	o1=0
+	n2=210
+	label1="Time"
+	o2=0
+	data_format="native_float"
+	label2="Lateral"
+	esize=4
+	in="stdout"
+	unit1="s"
+	unit2="km"
+	d1=0.004
+	n1=220
+	in="stdin"
+
+1.8-svn	sfsmooth	xmw/src/dwc:	xinwu@xinwu@mines	Sun May  8 17:30:08 2016
+
+	data_format="native_float"
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sfsmooth	xmw/src/dwc:	xinwu@xinwu@mines	Sun May  8 17:30:08 2016
+
+	data_format="native_float"
+	esize=4
+	in="/scratch/sigmoid.rsf@"
