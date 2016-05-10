@@ -58,17 +58,17 @@ maxThrow =  15.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/ipfx/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
   #goSlopes()
-  #goScan()
-  #goThin()
-  goSkin()
-  goReSkin()
+  goScan()
+  goThin()
+  #goSkin()
+  #goReSkin()
   '''
   goSmooth()
   goSlip()

@@ -15,14 +15,63 @@ import mef.*;
 
 /**
  * Make a rosette-strike plot for faults/fault cells.
- * @author Xinming Wu, Colorado School of Mines
- * @version 2015.01.14
+ * @author Xinming Wu, University of Texas at Austin.
+ * @version 2016.05.09
  */
 
 public class RosePlot {
 
-  public void roseInDepths (float[][] fps, int nbin) {
+  public void applyForRosePlots(
+    float b1, float e1, int c2, int c3, int n2, int n3, 
+    int nbin, float[][] fp, float[][] ob) 
+  {
+    int np = fp[0].length;
+    int d2 = round(n2/c2);
+    int d3 = round(n3/c3);
+    int wx = min(round(1450f/c2),400);
+    int wy = wx+12;
+    int j3 = -1;
+    for (int i3=0; i3<c3; ++i3) {
+    //for (int i3=c3-1; i3>=0; --i3) {
+      j3++;
+      int b3 = i3*d3;
+      int e3 = (i3+1)*d3;
+      if(i3==(c3-1)){e3 = max(e3,n3);}
+      System.out.println("b3="+b3);
+      System.out.println("e3="+e3);
+    for (int i2=0; i2<c2; ++i2) {
+      int b2 = i2*d2;
+      int e2 = (i2+1)*d2;
+      if(i2==(c2-1)){e2 = max(e2,n2);}
+      System.out.println("b2="+b2);
+      System.out.println("e2="+e2);
+      ArrayList<Float> fpa = new ArrayList<Float>();
+      for (int ip=0; ip<np; ++ip) {
+        int k2 = (int)fp[1][ip];
+        int k3 = (int)fp[2][ip];
+        if(k2<b2 || k2>e2) {continue;}
+        if(k3<b3 || k3>e3) {continue;}
+        float obi = ob[k3][k2];
+        int k1 = (int)fp[0][ip];
+        if(k1>=(b1+obi) && k1<=(e1+obi)) {
+          float fpi = fp[3][ip];
+          fpa.add(fpi);
+        }
+      }
+      int npk = fpa.size();
+      System.out.println("npk="+npk);
+      float[] fpk = new float[npk];
+      for (int ik=0; ik<npk; ++ik) {
+        fpk[ik] = fpa.get(ik);
+      }
+      fpa.clear();
+      int x = i2*wx;
+      int y = j3*wy;
+      if(j3>0) {y+=20;}
+      rose(x, y, wx, wy,  fpk, nbin);
+    }}
   }
+
   public void rose(float[][][] fp, int nbin) {
     int n3 = fp.length;
     int n2 = fp[0].length;
@@ -84,13 +133,18 @@ public class RosePlot {
   }
 
   public void rose(float[] phi, int nbin) {
-    System.out.println("test1");
     float[] bins = applyHistogram(nbin,phi);
-    System.out.println("test2");
     applyForRose(bins);
   }
 
-  private void applyForRose(int nrow, int ncol,float[] bins) {
+  public void rose(int x, int y, int wx, int wy, float[] phi, int nbin) {
+    float[] bins = applyHistogram(nbin,phi);
+    applyForRose(x,y,wx,wy,bins);
+  }
+
+
+
+  private void applyForRose(int x, int y, int wx, int wy, float[] bins) {
     PlotPanel.AxesPlacement axes = PlotPanel.AxesPlacement.NONE;
     //PlotPanel.Orientation orient = PlotPanel.Orientation.X1DOWN_X2RIGHT;
     PlotPanel.Orientation orient = PlotPanel.Orientation.X1RIGHT_X2UP;
@@ -112,9 +166,10 @@ public class RosePlot {
     float rc = addBinsF(pp,bins);
     pp.setTitle("Red cycle: "+rc*100f+"%");
     PlotFrame pf = new PlotFrame(pp);
-    pf.setFontSizeForPrint(8,240);
+    pf.setFontSizeForPrint(10,480);
     pf.setVisible(true);
-    pf.setSize(750,800);
+    pf.setSize(wx,wy);
+    pf.setLocation(x,y);
   }
 
 
@@ -140,9 +195,9 @@ public class RosePlot {
     float rc = addBinsF(pp,bins);
     pp.setTitle("Red cycle: "+rc*100f+"%");
     PlotFrame pf = new PlotFrame(pp);
-    pf.setFontSizeForPrint(8,240);
+    pf.setFontSizeForPrint(10,480);
     pf.setVisible(true);
-    pf.setSize(750,800);
+    pf.setSize(400,412);
   }
 
   private float[] applyHistogram(int nbins, float[] phi) {

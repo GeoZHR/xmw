@@ -5,9 +5,7 @@ Version: 2016.01.22
 """
 
 from utils import *
-#setupForSubset("bpSub1")
 #setupForSubset("nathan")
-#setupForSubset("nathanSub1")
 setupForSubset("nathanSub3")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -92,13 +90,32 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
+  #getOceanBottom()
+  #goSeis()
   goRose()
-  getOceanBottom()
+  #gx = readImage(gxfile)
+  #plot3(gx,cmin=-10000,cmax=10000)
+def goSeis():
+  gx = readImage(gxfile)
+  plot3(gx)
+  #plot3(gx,cmin=-10000,cmax=10000)
+
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   fp = readImage2D(93641902,4,"fpp")
-  rp.rose(fp[3],36)
+  #rp.rose(fp[3],36)
+  c2,c3=6,2
+  tp,bt=  100, 200
+  #tp,bt= 40, 80
+  #tp,bt= 80,120
+  #tp,bt=120,160
+  #tp,bt=160,200
+  #tp,bt=200,240
+  #tp,bt=240,280
+  #tp,bt=320,360
+  #tp,bt=360,400
+  rp.applyForRosePlots(tp,bt,c2,c3,n2,n3,36,fp,ob)
 def getOceanBottom():
   hp = Helper()
   gx = readImage(gxfile)
