@@ -501,7 +501,7 @@ def goNathan():
     n1 =   601 (number of samples per trace)
     n2 =  4974 (number of traces in inline direction)
     n3 =   660 (number of traces in crossline direction)
-    d1 = 0.005000 (time sampling interval, in s)
+    d1 = 0.005000 (depth sampling interval, in km)
     d2 = 0.000000 (inline sampling interval, in km)
     d3 = 0.000000 (crossline sampling interval, in km)
   grid corner points:

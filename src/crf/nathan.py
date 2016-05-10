@@ -93,12 +93,21 @@ def main(args):
   #goDisplay()
   #goFaultImages()
   goRose()
+  getOceanBottom()
 def goRose():
   rp = RosePlot()
-  fpt = readImage(fptfile)
-  fpp = rp.faultPoints(fpt)
-  writeImage("fpp",fpp)
-  #rp.rose(fps[4],36)
+  ob = readImage2D(n2,n3,"ob")
+  fp = readImage2D(93641902,4,"fpp")
+  rp.rose(fp[3],36)
+def getOceanBottom():
+  hp = Helper()
+  gx = readImage(gxfile)
+  '''
+  ob = hp.getOceanBottom(0.1,gx)
+  writeImage("ob",ob)
+  '''
+  ob = readImage2D(n2,n3,"ob")
+  plot3(gx,horizon=ob)
 def goDisplay():
   '''
   gx = readImage(gxfile)
@@ -549,11 +558,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg.setStates(ss)
     sf.world.addChild(qg)
   if horizon:
-    sd = SurfaceDisplay()
-    ts = sd.horizonWithAmplitude([-0.5,0.5],horizon,f)
-    tg = TriangleGroup(True,ts[0],ts[1])
-    #tg = TriangleGroup(True,s3,s2,horizon)
-    #tg.setColor(Color.CYAN)
+    tg = TriangleGroup(True,s3,s2,horizon)
+    tg.setColor(Color.CYAN)
     sf.world.addChild(tg)
   if skins:
     sg = Group()

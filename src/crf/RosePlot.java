@@ -21,6 +21,8 @@ import mef.*;
 
 public class RosePlot {
 
+  public void roseInDepths (float[][] fps, int nbin) {
+  }
   public void rose(float[][][] fp, int nbin) {
     int n3 = fp.length;
     int n2 = fp[0].length;
@@ -88,19 +90,55 @@ public class RosePlot {
     applyForRose(bins);
   }
 
+  private void applyForRose(int nrow, int ncol,float[] bins) {
+    PlotPanel.AxesPlacement axes = PlotPanel.AxesPlacement.NONE;
+    //PlotPanel.Orientation orient = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+    PlotPanel.Orientation orient = PlotPanel.Orientation.X1RIGHT_X2UP;
+    PlotPanel pp = new PlotPanel(1,1,orient,axes);
+    for (float rdi=0.2f; rdi<=1.0f; rdi+=0.2f) {
+      float[][] cps = makeCirclePoints(1000,rdi);
+      PointsView pvc = pp.addPoints(cps[0],cps[1]);
+      pvc.setLineStyle(PointsView.Line.DASH);
+      if(rdi==1.0f) {
+        pvc.setLineColor(Color.RED);
+        pvc.setLineWidth(4.f);
+      } else {
+        pvc.setLineColor(Color.BLACK);
+        pvc.setLineWidth(3.f);
+      }
+    }
+    addRadials(pp,Color.BLACK);
+    //addBins(pp,bins);
+    float rc = addBinsF(pp,bins);
+    pp.setTitle("Red cycle: "+rc*100f+"%");
+    PlotFrame pf = new PlotFrame(pp);
+    pf.setFontSizeForPrint(8,240);
+    pf.setVisible(true);
+    pf.setSize(750,800);
+  }
+
 
   private void applyForRose(float[] bins) {
     PlotPanel.AxesPlacement axes = PlotPanel.AxesPlacement.NONE;
-    PlotPanel.Orientation orient = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+    //PlotPanel.Orientation orient = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+    PlotPanel.Orientation orient = PlotPanel.Orientation.X1RIGHT_X2UP;
     PlotPanel pp = new PlotPanel(1,1,orient,axes);
-    pp.setTitle("Rose-strike plot");
-    float[][] cps = makeCirclePoints(1000,1);
-    PointsView pvc = pp.addPoints(cps[0],cps[1]);
-    pvc.setLineColor(Color.RED);
-    pvc.setLineWidth(4.f);
+    for (float rdi=0.2f; rdi<=1.0f; rdi+=0.2f) {
+      float[][] cps = makeCirclePoints(1000,rdi);
+      PointsView pvc = pp.addPoints(cps[0],cps[1]);
+      pvc.setLineStyle(PointsView.Line.DASH);
+      if(rdi==1.0f) {
+        pvc.setLineColor(Color.RED);
+        pvc.setLineWidth(4.f);
+      } else {
+        pvc.setLineColor(Color.BLACK);
+        pvc.setLineWidth(3.f);
+      }
+    }
     addRadials(pp,Color.BLACK);
     //addBins(pp,bins);
-    addBinsF(pp,bins);
+    float rc = addBinsF(pp,bins);
+    pp.setTitle("Red cycle: "+rc*100f+"%");
     PlotFrame pf = new PlotFrame(pp);
     pf.setFontSizeForPrint(8,240);
     pf.setVisible(true);
@@ -213,49 +251,51 @@ public class RosePlot {
   }
 
 
-  private void addBinsF(PlotPanel pp, float[] bins) {
+  private float addBinsF(PlotPanel pp, float[] bins) {
     int nb = bins.length;
     float dp = (float)(2*DBL_PI/nb);
     float rmax = max(bins);
-    mul(bins,0.8f/rmax,bins);
+    float rc = round(rmax*120f)/100f;
+    mul(bins,1.0f/rc,bins);
     for (int ib=0; ib<nb; ++ib) {
       float phi = ib*dp;
       float rdi = bins[ib];
-      Color rgb = getNextColor();
+      float aci = (float)(0.5*phi/DBL_PI);
+      Color rgb = Color.getHSBColor(aci,1f,1f);//getNextColor();
       float[][] rp1 = makeRadialPoints(rdi,phi);
       float[][] rp2 = makeRadialPoints(rdi,phi+dp);
       float dx = rp2[0][1] - rp1[0][1];
       float dy = rp2[1][1] - rp1[1][1];
       float ds = sqrt(dx*dx+dy*dy);
-      for (float di=0f; di<=ds; di+=0.0001f) {
-        float xi = rp1[0][1]+dx*di/ds;
-        float yi = rp1[1][1]+dy*di/ds;
+      float dd = 0.001f;
+      float dk = dd*4f;
+      float de = ds-dk;
+      dx /= ds;
+      dy /= ds;
+      float di = dk;
+      for ( ; di<=de; di+=dd) {
+        float xi = rp1[0][1]+dx*di;
+        float yi = rp1[1][1]+dy*di;
         float[] xs = new float[]{0f,xi};
         float[] ys = new float[]{0f,yi};
         PointsView pvr = pp.addPoints(xs,ys);
-        pvr.setLineColor(rgb);
-        pvr.setLineWidth(4f);
+        if ((di-dk)<=dd||(di+dd)>=de) {
+          pvr.setLineColor(Color.BLACK);
+          pvr.setLineWidth(4f);
+        } else { 
+          pvr.setLineColor(rgb);
+          pvr.setLineWidth(4f);
+        }
       }
-      /*
-      float[][] cps = makeCirclePoints(1000,rdi);
-      PointsView pvc = pp.addPoints(cps[0],cps[1]);
-      pvc.setLineStyle(PointsView.Line.DASH);
-      pvc.setLineColor(rgb);
-      pvc.setLineWidth(3.f);
-      float[] rx3 = new float[]{rp1[0][1],rp2[0][1]};
-      float[] ry3 = new float[]{rp1[1][1],rp2[1][1]};
+      float[] rx3 = new float[]{rp1[0][1]+(dk+dd)*dx,rp1[0][1]+(di-dd)*dx};
+      float[] ry3 = new float[]{rp1[1][1]+(dk+dd)*dy,rp1[1][1]+(di-dd)*dy};
       float[][] rp3 = new float[][]{rx3,ry3};
-      PointsView pvr1 = pp.addPoints(rp1[0],rp1[1]);
-      PointsView pvr2 = pp.addPoints(rp2[0],rp2[1]);
       PointsView pvr3 = pp.addPoints(rp3[0],rp3[1]);
-      pvr1.setLineColor(rgb);
-      pvr2.setLineColor(rgb);
-      pvr3.setLineColor(rgb);
-      pvr1.setLineWidth(4.f);
-      pvr2.setLineWidth(4.f);
+      pvr3.setLineColor(Color.BLACK);
       pvr3.setLineWidth(4.f);
-      */
+
     }
+    return rc;
   }
 
 
@@ -267,8 +307,8 @@ public class RosePlot {
     float[] y = new float[nt];
     for (int it=0; it<nt; ++it) {
       float t = (float)(it*dt);
-      x[it] = r*cos(t);
-      y[it] = r*sin(t);
+      x[it] = r*sin(t);
+      y[it] = r*cos(t);
     }
     return new float[][]{x,y};
   }
@@ -276,8 +316,8 @@ public class RosePlot {
   private float[][] makeRadialPoints(float r, float phi) {
     float[] x = new float[2];
     float[] y = new float[2];
-    x[0] = 0.0f; x[1] = r*cos(phi); 
-    y[0] = 0.0f; y[1] = r*sin(phi);
+    x[0] = 0.0f; x[1] = r*sin(phi); 
+    y[0] = 0.0f; y[1] = r*cos(phi);
     return new float[][]{x,y};
   }
 
