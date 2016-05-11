@@ -310,7 +310,7 @@ def goSkin():
     #removeAllSkinFiles(fskbase)
     #writeSkins(fskbase,skins)
   else:
-    #skins = readSkins(fskbase)
+    skins = readSkins(fskbase)
   '''
   fd = FaultDisplay()
   sk = fd.getLargeFaults(20000,skins)
