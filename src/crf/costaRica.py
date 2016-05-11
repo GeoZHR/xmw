@@ -56,7 +56,7 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 75,88
-sigmaPhi,sigmaTheta = 10,40
+sigmaPhi,sigmaTheta = 10,50
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
