@@ -54,7 +54,7 @@ def setupForSubset(name):
   elif name=="nathanSub2":
     print "setupForSubset: nathanSub2"
     seismicDir = _datdir+"nathan/sub2/"
-    n1,n2,n3 = 400,800,550
+    n1,n2,n3 = 601,1838,550  #fx=gx(:,0:2:end,:)
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)

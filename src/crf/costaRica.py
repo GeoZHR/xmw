@@ -6,7 +6,7 @@ Version: 2016.01.22
 
 from utils import *
 #setupForSubset("nathan")
-setupForSubset("nathanSub3")
+setupForSubset("nathanSub2")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -55,8 +55,8 @@ cmfile = "cm"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 60,85
-sigmaPhi,sigmaTheta = 10,30
+minTheta,maxTheta = 75,88
+sigmaPhi,sigmaTheta = 15,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -74,15 +74,15 @@ maxThrow = 85.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/beg/bp/sub1/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goSkinTv()
   #goReSkin()
   #goSmooth()
@@ -94,18 +94,6 @@ def main(args):
   #goStrikeRotation()
   #goSeis()
   #goRose()
-  gx = readImage(gxfile)
-  hp = Helper()
-  fx = hp.resample(gx) 
-  writeImage("fs",fx)
-  '''
-  plot3(gx)
-  plot3(fx)
-  ftt = readImage(fttfile)
-  print max(ftt)
-  plot3(gx,ftt,cmin=70,cmax=89,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
-  '''
 
 def goSeis():
   gx = readImage(gxfile)
@@ -165,7 +153,7 @@ def goDisplay():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 16.0,4.0,4.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -226,12 +214,14 @@ def goThin():
     flt = readImage(fltfile)
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
+  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
+  '''
 
 def goSkinTv():
   print "go skin..."
@@ -307,11 +297,13 @@ def goSkin():
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
   else:
-    skins = readSkins(fsktv)
+    skins = readSkins(fskbase)
+  '''
   fd = FaultDisplay()
   sk = fd.getLargeFaults(20000,skins)
   print len(sk)
   plot3(gx,skins=sk)
+  '''
 
 def goFaultImages():
   gx = readImage(gxfile)
