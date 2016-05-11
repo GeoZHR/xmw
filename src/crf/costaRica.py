@@ -98,9 +98,9 @@ def main(args):
   hp = Helper()
   fx = hp.resample(gx) 
   writeImage("fs",fx)
+  '''
   plot3(gx)
   plot3(fx)
-  '''
   ftt = readImage(fttfile)
   print max(ftt)
   plot3(gx,ftt,cmin=70,cmax=89,cmap=jetFillExceptMin(1.0),
