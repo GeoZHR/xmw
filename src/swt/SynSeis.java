@@ -205,4 +205,85 @@ public class SynSeis {
     m.t = t;
     return m;
   }
+
+  public static Model getModel(float x2, float x3, 
+    float[] x1, float[] v, float[] d) 
+  {
+
+    // If depth sampling not uniform, then model is null.
+    int nz = x1.length;
+    double[] z = new double[nz];
+    for (int iz=0; iz<nz; ++iz)
+      z[iz] = x1[iz];
+    Sampling sz = new Sampling(z);
+    if (!sz.isUniform())
+      return null;
+
+    // Index of first non-null velocity and density.
+    int jz = 0;
+    while (jz<nz && (v[jz]==WellLog.NULL_VALUE || d[jz]==WellLog.NULL_VALUE))
+      ++jz;
+
+    // Index of last non-null velocity and density.
+    int lz = nz-1;
+    while (lz>=0 && (v[lz]==WellLog.NULL_VALUE || d[lz]==WellLog.NULL_VALUE))
+      --lz;
+
+    // If any null values between first and last, then model is null.
+    for (int iz=jz; iz<=lz; ++iz) {
+      if (v[iz]==WellLog.NULL_VALUE || d[iz]==WellLog.NULL_VALUE)
+        return null;
+    }
+
+    // If insufficient samples, then model is null.
+    nz = 1+lz-jz;
+    if (nz<=0)
+      return null;
+
+    // Uniformly sampled velocity, density, impedance and reflectivity.
+    v = copy(nz,jz,v);
+    d = copy(nz,jz,d);
+    float[] a = new float[nz];
+    float[] r = new float[nz];
+    a[0] = v[0]*d[0];
+    r[0] = 0.0f;
+    for (int mz=0,iz=1; iz<nz; ++mz,++iz) {
+      float ai = v[iz]*d[iz];
+      float am = v[mz]*d[mz];
+      a[iz] = ai;
+      r[iz] = (am-ai)/(am+ai);
+    }
+
+    // Velocity for depths less than those sampled.
+    float v0 = v[0]; // can we do better?
+
+    // Sampling of depth in km for non-null values; 1 ft = 0.0003048 km
+    float dz = (float)(sz.getDelta()*0.0003048);
+    float fz = (float)((sz.getDelta()*jz+z[0])*0.0003048);
+    //float fz = log.x1[jz];
+
+    // Two-way time, a sampled function depth.
+    float[] t = new float[nz];
+    float tz = 2.0f*fz/v0;
+    for (int iz=0; iz<nz; ++iz) {
+      t[iz] = tz;
+      tz += 2.0f*dz/v[iz];
+    }
+
+    // The model.
+    Model m = new Model();
+    m.x1 = fz;
+    m.x2 = x2;
+    m.x3 = x3;
+    m.nz = nz;
+    m.sz = new Sampling(nz,dz,fz);
+    m.v0 = v0;
+    m.v = v;
+    m.d = d;
+    m.a = a;
+    m.r = r;
+    m.t = t;
+    return m;
+  }
+
 }

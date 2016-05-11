@@ -71,7 +71,7 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goDisplay()
+  #goDisplay()
   #goSynsFlatten()
   #goSeisFlatten()
   #goSynsSeisTie()
@@ -85,24 +85,19 @@ def main(args):
   #goRefine3dV()
   #goReflectivity()
   #goImpedance()
-  '''
-  px = readImage(pxfile)
-  print min(px)
-  print max(px)
-  gx = readImage(gxfile)
-  plot3(gx,px,cmin=0,cmax=20,cmap=jetFill(1.0),
-        clab="Impedance",png="impedA")
-  gx = readImage(gxfile)
-  re = Reflectivity()
-  re.setParams(80,3)
-  rx = re.apply3D(d1,gx)
-  plot3(rx,cmin=-1,cmax=1)
-  '''
+  goSeisAndWells()
 def goSeisAndWells():
   gx = readImage(gxfile)
-  lgs = getLogs()
+  gx = div(gx,10000)
+  x12,x13,w1s = getLog242()
+  x22,x23,w2s = getLog271()
+  x32,x33,w3s = getLog281()
+  mds = []
+  mds.append(SynSeis.getModel(x12,x13,w1s[0],w1s[1],w1s[2]))
+  mds.append(SynSeis.getModel(x22,x23,w2s[0],w2s[1],w2s[2]))
+  mds.append(SynSeis.getModel(x32,x33,w3s[0],w3s[1],w3s[2]))
   swt = SeismicWellTie()
-  sps = swt.getSamples(s1,lgs)
+  sps = swt.getSamples(s1,mds)
   plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
   plot3(gx,sps=sps[0],wmin=2.4,wmax=5.0,clab="Velocity (km/s)",png="seisVel")
 
@@ -1050,7 +1045,7 @@ def wellGroup(logs,curve,cmin=0,cmax=0,cbar=None):
 
 def makeLogPoints(samples,cmin,cmax,cbar):
   lg = Group()
-  fl,x1l,x2l,x3l,fr = samples
+  fl,x1l,x2l,x3l = samples
   for i,f in enumerate(fl):
     f = fl[i]
     x1 = x1l[i]

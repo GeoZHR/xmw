@@ -28,9 +28,9 @@ def setupForSubset(name):
   global nz,nl,nc
   if name=="cfd2007":
     print "setupForSubset: cranfield 2007"
-    seismicDir = _datdir+"cfd2007"
+    seismicDir = _datdir+"cfd2007/"
     n1,n2,n3 = 3001,243,222
-    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 1.0,1.0,1.0 
     d1,d2,d3 = 0.002, 0.025146,  0.025146 # (s,km,km)
     f1,f2,f3 = 0.000,70.873811,115.947758 # (s,km,km)
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
@@ -83,6 +83,17 @@ def readImage2(n1,n2,basename):
   ais.close()
   return image
 
+def readLog(n1,n2,fileName):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+
 
 def writeImage(basename,image):
   """ 
@@ -104,8 +115,8 @@ def getLog242():
   x2,x3=236264.72,395566.00 #(ft)
   x2 = x2*fk #1 ft = 0.0003048 km
   x3 = x3*fk #1 ft = 0.0003048 km
-  ws = readImage2(n1,n2,"w242.dat")
-  mul(ws[0],fk,ws[0])
+  wlName = _welldir+"w242.dat"
+  ws = readLog(n1,n2,wlName)
   mul(ws[1],fk,ws[1])
   return x2,x3,ws
 def getLog271():
@@ -115,18 +126,18 @@ def getLog271():
   x2,x3=242565.70,393699.70 #(ft)
   x2 = x2*fk #1 ft = 0.0003048 km
   x3 = x3*fk #1 ft = 0.0003048 km
-  ws = readImage2(n1,n2,"w271.dat")
-  mul(ws[0],fk,ws[0])
+  wlName = _welldir+"w271.dat"
+  ws = readLog(n1,n2,wlName)
   mul(ws[1],fk,ws[1])
   return x2,x3,ws
 def getLog281():
   n1,n2=8729,3
   fk = 0.0003048 # 1 ft = 0.0003048 km
-  x2,x3=242561.74,393685.21 #(ft)
+  x2,x3=242557.93,393670.74 #(ft)
   x2 = x2*fk #1 ft = 0.0003048 km
   x3 = x3*fk #1 ft = 0.0003048 km
-  ws = readImage2(n1,n2,"w281.dat")
-  mul(ws[0],fk,ws[0])
+  wlName = _welldir+"w281.dat"
+  ws = readLog(n1,n2,wlName)
   mul(ws[1],fk,ws[1])
   return x2,x3,ws
 
