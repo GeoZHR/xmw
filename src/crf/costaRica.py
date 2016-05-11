@@ -6,7 +6,7 @@ Version: 2016.01.22
 
 from utils import *
 #setupForSubset("nathan")
-setupForSubset("nathanSub2")
+setupForSubset("nathanSub3")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -56,7 +56,7 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 75,88
-sigmaPhi,sigmaTheta = 10,50
+sigmaPhi,sigmaTheta = 10,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -79,11 +79,11 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
+  goSlopes()
+  goScan()
   #goThin()
   goSkin()
-  #goSkinTv()
+  goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -101,7 +101,8 @@ def goSeis():
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
   gx = readImage(gxfile)
-  fpt = readImage(fptfile)
+  #fpt = readImage(fptfile)
+  fpt = readImage("fps")
   hpr = Helper()
   hpr.rotate(29,fpt)
   hpr.convert(fpt)
@@ -244,6 +245,18 @@ def goSkinTv():
     skins = fsx.findSkins(n1,n2,n3,cells)
     removeAllSkinFiles(fsktv)
     writeSkins(fsktv,skins)
+    fd = FaultDisplay()
+    print "fault skins load finish..."
+    flt = fillfloat(-0.001,n1,n2,n3)
+    fpt = fillfloat(-0.001,n1,n2,n3)
+    ftt = fillfloat(-0.001,n1,n2,n3)
+    fd = FaultDisplay()
+    fd.getFlt(skins,gx,flt)
+    fd.getFpt(skins,gx,fpt)
+    fd.getFtt(skins,gx,ftt)
+    writeImage(fltfile,flt)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
   else:
     skins = readSkins(fsktv)
   '''
@@ -294,21 +307,9 @@ def goSkin():
     print "total number of cells =",len(cells)
     print "total number of skins =",len(skins)
     print "number of cells in skins =",FaultSkin.countCells(skins)
-    fd = FaultDisplay()
-    print "fault skins load finish..."
-    flt = fillfloat(-0.001,n1,n2,n3)
-    fpt = fillfloat(-0.001,n1,n2,n3)
-    ftt = fillfloat(-0.001,n1,n2,n3)
-    fd = FaultDisplay()
-    fd.getFlt(skins,gx,flt)
-    fd.getFpt(skins,gx,fpt)
-    fd.getFtt(skins,gx,ftt)
-    writeImage(fltfile,flt)
-    writeImage(fptfile,fpt)
-    writeImage(fttfile,ftt)
 
-    #removeAllSkinFiles(fskbase)
-    #writeSkins(fskbase,skins)
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skins)
   else:
     skins = readSkins(fskbase)
   '''
