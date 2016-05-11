@@ -16,13 +16,13 @@ def main(args):
   #goJake()
   #goNathan()
   #goLulia()
-  #goCranfield2007()
+  goCranfield2007()
   #goCranfield2010()
   #goSeam()
   #goF3dRef()
   #goF3dSeis()
   #goHan()
-  goNwc()
+  #goNwc()
 def goNwc():
   '''
   ****** beginning of SEG-Y file info ******
@@ -401,10 +401,10 @@ def goCranfield2007():
   ****** end of SEG-Y file info ******
   '''
   firstLook = False # fast, does not read all trace headers
-  secondLook = False # slow, must read all trace headers
+  secondLook = True # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
-  showImage = True # displays the image
-  basedir = "../../../data/seis/cfd/"
+  showImage = False # displays the image
+  basedir = "../../../data/seis/cfd/cfd2007/"
   sgyfile = basedir+"2007_baseline_dvd.sgy"
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,3000,109,351,3,224

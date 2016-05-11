@@ -21,6 +21,7 @@ import mef.*;
 
 public class RosePlot {
 
+
   public void applyForRosePlots(
     float b1, float e1, int c2, int c3, int n2, int n3, 
     int nbin, float[][] fp, float[][] ob) 
@@ -53,7 +54,8 @@ public class RosePlot {
         if(k3<b3 || k3>e3) {continue;}
         float obi = ob[k3][k2];
         int k1 = (int)fp[0][ip];
-        if(k1>=(b1+obi) && k1<=(e1+obi)) {
+        //if(k1>=(b1+obi) && k1<=(e1+obi)) {
+        if(k1>=b1 && k1<=e1) {
           float fpi = fp[3][ip];
           fpa.add(fpi);
         }

@@ -91,22 +91,42 @@ def main(args):
   #goDisplay()
   #goFaultImages()
   #getOceanBottom()
+  #goStrikeRotation()
   #goSeis()
-  goRose()
-  #gx = readImage(gxfile)
-  #plot3(gx,cmin=-10000,cmax=10000)
+  #goRose()
+  gx = readImage(gxfile)
+  hp = Helper()
+  fx = hp.resample(gx) 
+  writeImage("fs",fx)
+  plot3(gx)
+  plot3(fx)
+  '''
+  ftt = readImage(fttfile)
+  print max(ftt)
+  plot3(gx,ftt,cmin=70,cmax=89,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+  '''
+
 def goSeis():
   gx = readImage(gxfile)
   plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
+def goStrikeRotation():
+  gx = readImage(gxfile)
+  fpt = readImage(fptfile)
+  hpr = Helper()
+  hpr.rotate(29,fpt)
+  hpr.convert(fpt)
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
 
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   fp = readImage2D(93641902,4,"fpp")
   #rp.rose(fp[3],36)
-  c2,c3=6,2
-  tp,bt=  100, 200
+  c2,c3=8,2
+  tp,bt=  112, 115 
   #tp,bt= 40, 80
   #tp,bt= 80,120
   #tp,bt=120,160
@@ -321,8 +341,8 @@ def goFaultImages():
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   '''
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=jetFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=20,png="fpt")
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
 def goSmooth():
   print "goSmooth ..."
   flstop = 0.1
@@ -518,7 +538,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YIN_ZDOWN)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)
