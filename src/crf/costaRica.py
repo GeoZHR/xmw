@@ -56,7 +56,7 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 75,88
-sigmaPhi,sigmaTheta = 15,40
+sigmaPhi,sigmaTheta = 10,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -79,7 +79,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
   goScan()
   #goThin()
   goSkin()
