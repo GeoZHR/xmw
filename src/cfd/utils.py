@@ -13,6 +13,7 @@ _welldir = "../../../data/seis/cfd/wells/"
 #############################################################################
 # Setup
 
+
 def setupForSubset(name):
   """
   Setup for a specified directory includes:
@@ -20,6 +21,13 @@ def setupForSubset(name):
     samplings s1,s2,s3
   Example: setupForSubset("s1")
   """
+  # Location of w281
+  _x2,_x3=242557.93,393670.74 #(ft)
+  fk = 0.0003048 # 1 ft = 0.0003048 km
+  _x2 = _x2*fk #1 ft = 0.0003048 km
+  _x3 = _x3*fk #1 ft = 0.0003048 km
+  _i2,_i3 = 165, 81 # inline and crossline position
+  global _d2,_d3 # shifts to the seismic
   global seismicDir
   global welllogDir
   global s1,s2,s3
@@ -29,10 +37,14 @@ def setupForSubset(name):
   if name=="cfd2007":
     print "setupForSubset: cranfield 2007"
     seismicDir = _datdir+"cfd2007/"
-    n1,n2,n3 = 3001,243,222
-    #d1,d2,d3 = 1.0,1.0,1.0 
+    n1,n2,n3 = 950,243,222
     d1,d2,d3 = 0.002, 0.025146,  0.025146 # (s,km,km)
-    f1,f2,f3 = 0.000,70.873811,115.947758 # (s,km,km)
+    f1,f2,f3 = 0.600,70.873811,115.947758 # (s,km,km)
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0 
+
+    _d2 = f2+_i2*d2-_x2
+    _d3 = f3+_i3*d3-_x3
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   else:
     print "unrecognized subset:",name
@@ -113,8 +125,8 @@ def getLog242():
   #w281.dat  n1,n2=8729,3
   fk = 0.0003048 # 1 ft = 0.0003048 km
   x2,x3=236264.72,395566.00 #(ft)
-  x2 = x2*fk #1 ft = 0.0003048 km
-  x3 = x3*fk #1 ft = 0.0003048 km
+  x2 = x2*fk+_d2
+  x3 = x3*fk+_d3
   wlName = _welldir+"w242.dat"
   ws = readLog(n1,n2,wlName)
   mul(ws[1],fk,ws[1])
@@ -124,8 +136,8 @@ def getLog271():
   #w281.dat  n1,n2=8729,3
   fk = 0.0003048 # 1 ft = 0.0003048 km
   x2,x3=242565.70,393699.70 #(ft)
-  x2 = x2*fk #1 ft = 0.0003048 km
-  x3 = x3*fk #1 ft = 0.0003048 km
+  x2 = x2*fk+_d2
+  x3 = x3*fk+_d3
   wlName = _welldir+"w271.dat"
   ws = readLog(n1,n2,wlName)
   mul(ws[1],fk,ws[1])
@@ -134,8 +146,8 @@ def getLog281():
   n1,n2=8729,3
   fk = 0.0003048 # 1 ft = 0.0003048 km
   x2,x3=242557.93,393670.74 #(ft)
-  x2 = x2*fk #1 ft = 0.0003048 km
-  x3 = x3*fk #1 ft = 0.0003048 km
+  x2 = x2*fk+_d2
+  x3 = x3*fk+_d3
   wlName = _welldir+"w281.dat"
   ws = readLog(n1,n2,wlName)
   mul(ws[1],fk,ws[1])

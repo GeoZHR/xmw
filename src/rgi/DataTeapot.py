@@ -158,7 +158,7 @@ def plot2Teapot(f,x1,x2,s,s1,s2,g=None,gmin=None,gmax=None,
     pv.setClips(0.0,1000.0)
     pv.setClips(min(g),max(g))
   else:
-    if gmin and gmax:
+    if gmin:
       pv.setClips(gmin,gmax)
     else:
       pv.setClips(2.0,2.8)

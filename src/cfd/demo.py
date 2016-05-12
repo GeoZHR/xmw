@@ -1,7 +1,7 @@
 """
 Demonstrate simultaneous multiple-well ties
 Author: Xinming Wu, Colorado School of Mines
-Version: 2015.06.08
+Version: 2016.05.11
 """
 
 from utils import *
@@ -12,46 +12,35 @@ d1,d2,d3 = s1.delta,s2.delta,s3.delta
 f1,f2,f3 = s1.first,s2.first,s3.first
 
 # Names and descriptions of image files used below.
-gxfile = "gx" # input seismic image 
-gtfile = "gt" # RGT volume
-gtcfile = "gtc" # corrected RGT volume
-gsfile = "gt" # flatten shifts
-ghfile = "gh" # horizon volume
-grfile = "gr" # horizon volume
-dwfile = "dw" # horizon volume
-gffile = "gf" # flattened image 
-gufile = "gu" # flattened image 
-txfile = "tx"
-tufile = "tu"
-tsfile = "ts"
-wshifts = "wellShifts"
-wshiftd = "wellShiftsDimensions"
-wsample = "wellSampling"
+sfile = "cfs" # input seismic image 
+#logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax = 2.4,5.0
+logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.2,2.8
+gfile = "cfg"+logType # simple gridding with null for unknown samples
+pfile = "cfp"+logType # values of nearest known samples
+qfile = "cfq"+logType # output of blended gridder
+tfile = "cft"+logType # times to nearest known samples
 p2file = "p2"
 p3file = "p3"
-flfile  = "fl" # fault likelihood
-fpfile  = "fp" # fault strike (phi)
-ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
-fptfile = "fpt" # fault strike thinned
-fttfile = "ftt" # fault dip thinned
-fs1file = "fs1" # fault slip (1st component)
-fs2file = "fs2" # fault slip (2nd component)
-fs3file = "fs3" # fault slip (3rd component)
-fskbase = "fsk" # fault skin (basename only)
-fpifile  = "fpi" # nearest interp
-fqifile  = "fqi" # blended interp
-pxfile = "px" # impedance image
+epfile = "ep"
+gffile = "gf"
+u1file = "u1"
+fpfile = "fp"
+flfile = "fl"
+ftfile = "ft"
+dwfile = "dw"
+ghfile = "gh"
+fskbase = "fsk"
+fskgood = "fsg"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minPhi,maxPhi = 0,90
-minTheta,maxTheta = 70,89
-sigmaPhi,sigmaTheta = 10,40
+minPhi,maxPhi = 180,300
+minTheta,maxTheta = 75,85
+sigmaPhi,sigmaTheta = 20,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.5
+lowerLikelihood = 0.3
 upperLikelihood = 0.7
 minSkinSize = 20000
 
@@ -63,375 +52,148 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-#pngDir = "../../../png/swt/print/"
+#pngDir = ".././../png/swt/print/"
 pngDir = "../../../png/swt/slides/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDisplay()
-  #goSynsFlatten()
-  #goSeisFlatten()
-  #goSynsSeisTie()
-  #goTimeUpdateS()
-  #goTimeUpdateM()
+  #goSeisAndWells()
   #goSlopes()
   #goScan()
-  #goThin()
   #goSkin()
-  #goImageFlatten()
-  #goRefine3dV()
-  #goReflectivity()
-  #goImpedance()
-  goSeisAndWells()
+  #goReSkin()
+  goFlatten()
+
+  #gridNearest()
+  #goInterp()
+
 def goSeisAndWells():
-  gx = readImage(gxfile)
-  gx = div(gx,10000)
+  gx = readImage(sfile)
   x12,x13,w1s = getLog242()
-  x22,x23,w2s = getLog271()
-  x32,x33,w3s = getLog281()
-  mds = []
+  x22,x23,w2s = getLog281()
+  mds=[]
   mds.append(SynSeis.getModel(x12,x13,w1s[0],w1s[1],w1s[2]))
   mds.append(SynSeis.getModel(x22,x23,w2s[0],w2s[1],w2s[2]))
-  mds.append(SynSeis.getModel(x32,x33,w3s[0],w3s[1],w3s[2]))
   swt = SeismicWellTie()
   sps = swt.getSamples(s1,mds)
   plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
   plot3(gx,sps=sps[0],wmin=2.4,wmax=5.0,clab="Velocity (km/s)",png="seisVel")
 
-def goTimeUpdateS():
-  gx = readImage(gxfile)
-  lgs = getLogs()
-  nl = len(lgs)
-  fx = zerofloat(n1,nl)
-  for il, lg in enumerate(lgs):
-    model = SynSeis.getModel(lg)
-    i2 = s2.indexOfNearest(model.x2)
-    i3 = s3.indexOfNearest(model.x3)
-    fx[il] = gx[i3][i2]
-  swt = SeismicWellTie()
-  mds = swt.updateTimeDepthS(s1,s2,s3,lgs,gx)
-  ndfx = zerodouble(3,nl)
-  ndfu = zerodouble(3,nl)
-  wxs = swt.getSyns(True,lgs,ndfx)
-  wus = swt.getSyns(True,mds,ndfu)
-  swx = []
-  swu = []
-  for il in range(nl):
-    sxi = Sampling((int)(ndfx[il][0]),ndfx[il][1],ndfx[il][2])
-    sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
-    swx.append(sxi)
-    swu.append(sui)
-  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15, 
-         vlabel="Time (s)",png="synsSeisBS")
-  plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.15,
-         vlabel="Time (s)",png="synsSeisAS")
-  wxs[0]=wus[0]
-  swx[0]=swu[0]
-  wxs[1]=wus[1]
-  swx[1]=swu[1]
+def goSlopes():
+  print "goSlopes ..."
+  gx = readImage(sfile)
+  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  zm = ZeroMask(0.3,5,1,1,gx)
+  zero,tiny=0.0,0.01
+  zm.setValue(zero,p2)
+  zm.setValue(zero,p3)
+  zm.setValue(tiny,ep)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  print "p2  min =",min(p2)," max =",max(p2)
+  print "p3  min =",min(p3)," max =",max(p3)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
 
-  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15,
-         vlabel="Time (s)",png="synsSeisAS1")
-  '''
-  svw,sdw=swt.getSamples(s1,lgs)
-  svs,sds=swt.getSamples(s1,mds)
-  vlabel2 = "RGT"
-  vlabel1 = "Time (s)"
-  hlabel = "Synthetic seismic traces"
-  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.0,png="seisVelBS")
-  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelAS")
-  goRgtInterp(svw,"wS")
-  goRgtInterp(svs,"sS")
-  '''
-
-def goRgtInterp(sps,fname):
-  gx = readImage(gxfile)
-  gt = readImage(gtcfile)
-  swt = SeismicWellTie()
-  spc = swt.convertPoints(sps)
-  ri = RgtInterp3(spc[0],spc[1],spc[2],spc[3])
-  ri.setRgt(gt)
-  ri.setScales(0.001,1.0)
-  fti,fpi,fqi = ri.grid(True,s1,s2,s3)
-  writeImage(fpifile+fname,fpi)
-  #writeImage(fqifile+fname,fqi)
-  plot3(gx,fpi,cmin=2.4,cmax=5.0,cmap=jetRamp(1.0),
-        clab="Velocity (km/s)",png=fpifile+fname)
-  plot3(gx,fpi,sps=sps,cmin=2.4,cmax=5.0,wmin=2.4,wmax=5.0,cmap=jetRamp(1.0),
-        clab="Velocity (km/s)",png=fpifile+fname+"Wells")
-def goReflectivity(sps):
-  gx = readImage(gxfile)
-  re = Reflectivity()
-  re.setParams(60,3)
-  rx = re.apply3D(d1,gx)
-  print min(rx)
-  print max(rx)
-  plot3(gx)
-  plot3(rx,cmin=-1,cmax=1)
-
-
-def goImpedance():
-  gx = readImage(gxfile)
-  lgs = getLogs()
-  nl = len(lgs)
-  swt = SeismicWellTie()
-  ndfs = zerodouble(3,nl)
-  ndfw = zerodouble(3,nl)
-  fx,fs,fu=goSeisFlatten()
-  swsu,wsu,mds= swt.updateTimeDepthM(1,s1,lgs,fx,fs,fu)
-  svs,sds,spc=swt.getSamples(s1,mds)
-  sps = swt.convertPoints(spc)
-  k1,k2,k3,fp = sps[1],sps[2],sps[3],sps[0]
-  for ip in range(len(k1)):
-    k1[ip] = (k1[ip]-f1)/d1
-    k2[ip] = (k2[ip]-f2)/d2
-    k3[ip] = (k3[ip]-f3)/d3
-  '''
-  gt = readImage(gtcfile)
-  ri = RgtInterp3(sps[0],sps[1],sps[2],sps[3])
-  ri.setRgt(gt)
-  ri.setScales(0.001,1.0)
-  fti,fpi,fqi = ri.grid(False,s1,s2,s3)
-  plot3(gx,fpi,cmin=min(fpi),cmax=max(fpi),cmap=jetFill(1.0),
-        clab="Impedance",png="impedInitial")
-  '''
-  re = Reflectivity()
-  re.setParams(100,10)
-  rx = re.apply3D(d1,gx)
-  pa = abs(min(spc[4]))+abs(max(spc[4]))
-  pr = abs(min(rx))+abs(max(rx))
-  div(rx,-2*pr/pa,rx)
-  print min(rx)
-  print max(rx)
-  plot3(rx,cmin=min(rx),cmax=max(rx))
-  smooth = 0.5
-  ep = fillfloat(1.0,n1,n2,n3)
-  u1 = fillfloat(1.0,n1,n2,n3)
-  u2 = fillfloat(1.0,n1,n2,n3)
-  u3 = fillfloat(1.0,n1,n2,n3)
-  lof = LocalOrientFilter(8.0,2.0)
-  et3 = lof.applyForTensors(gx)
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  wp = pow(ep,2.0)
-  et3.setEigenvalues(0.000001,1.0,1.0)
-  ai3 = AcousticImpedanceInv3(6.0,6.0)
-  ai3.setTensors(et3)
-  ai3.setSmoothness(smooth)
-  ai3.setIterations(0.001,200)
-  pi3 = fillfloat(0.0,n1,n2,n3)
-  ai3.setInitial(pi3,k1,k2,k3,fp)
-  pi3 = ai3.applyForImpedance(pi3,rx,wp,k1,k2,k3,fp)
-  plot3(gx,sps=spc,curve="imped",wmin=min(fp),wmax=max(fp),png="impedB")
-  #pi3 = exp(mul(pi3,2.0))
-  #writeImage(pxfile,pi3)
-  plot3(gx,pi3,cmin=min(fp),cmax=max(fp),cmap=jetFill(1.0),
-        clab="Impedance",png="impedA")
-  plot3(gx,pi3,cmin=min(fp),cmax=max(fp),cmap=jetFill(1.0),
-        clab="Impedance",sps=spc,wmin=min(fp),wmax=max(fp),png="impedA")
-
-def goTimeUpdateM():
-  gx = readImage(gxfile)
-  lgs = getLogs()
-  nl = len(lgs)
-  swt = SeismicWellTie()
-  ndfs = zerodouble(3,nl)
-  ndfw = zerodouble(3,nl)
-  fx,fs,fu=goSeisFlatten()
-  swsu,wsu,mds= swt.updateTimeDepthM(1,s1,lgs,fx,fs,fu)
-  #swsu,wsu,mds= swt.updateTimeDepthM(3,s1,lgs,fx,fs,fu)
-  wwx = swt.getSyns(True,lgs,ndfw)
-  wsx = swt.getSyns(True,mds,ndfs)
-  swsx = []
-  swwx = []
-  for il in range(nl):
-    swi = Sampling((int)(ndfw[il][0]),ndfw[il][1],ndfw[il][2])
-    ssi = Sampling((int)(ndfs[il][0]),ndfs[il][1],ndfs[il][2])
-    swwx.append(swi)
-    swsx.append(ssi)
-  svw,sdw=swt.getSamples(s1,lgs)
-  svs,sds,sps,=swt.getSamples(s1,mds)
-  hlabel = "Log index"
-  vlabel1 = "Time (s)"
-  vlabel2 = "Relative geologic time (s)"
-  #plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
-  #plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
-  #plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
-  sdc = SeismicDepthConversion()
-  ndft = zerodouble(3)
-  gt = readImage(gtcfile)
-  gxc,gtc = sdc.imageCut(s1,mds,gx,gt,ndft)
-  st = Sampling((int)(ndft[0]),ndft[1],ndft[2])
-  vt = sdc.averageVelInterp(st,s2,s3,mds,gtc)
-  zt = sdc.depthTime(st,s2,s3,vt,gtc)
-  dz = 0.005
-  fz = min(zt)
-  lz = max(zt)
-  nz = round((lz-fz)/dz)
-  sz = Sampling(nz,dz,fz)
-  gcc = sdc.convert(sz,st,s1,s2,s3,gx,zt)
-  k1z = round((1.22-fz)/dz)
-  k1t = round((0.88-ndft[2])/d1)
-  plot3s(st,s2,s3,gxc,k1=k1t,label1="Time (s)")
-  plot3s(sz,s2,s3,gcc,k1=k1z,label1="Depth (km)")
-  plot3X(st,gxc,zt,cmin=min(zt),cmax=max(zt),cmap=jetRamp(1.0),
-        clab="Depth (km)")
-
-  plot3X(st,gxc,vt,cmin=min(vt),cmax=max(vt),cmap=jetRamp(1.0),
-        clab="Velocity (km/s)")
-  sps = sdc.averageVelAtWellsC(st,mds)
-  plot3X(st,gxc,vt,sps=sps,cmin=min(vt),cmax=max(vt),wmin=min(vt),wmax=max(vt),
-         cmap=jetRamp(1.0),clab="Velocity (km/s)")
-  '''
-  plot3s(sz,s2,s3,gcc,label1="Depth (km)")
-  plot3X(st,gxc,zt,cmin=min(zt),cmax=max(zt),cmap=jetRamp(1.0),
-        clab="Depth (km)")
-  '''
-  '''
-  sps = sdc.averageVelAtWellsX(st,mds)
-  plot3X(st,gxc,vt,sps=sps,cmin=min(vt),cmax=max(vt),wmin=min(vt),wmax=max(vt),
-         cmap=jetRamp(1.0),clab="Velocity (km/s)")
-  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.0,png="seisVelB")
-  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelA")
-  goRgtInterp(svw,"w")
-  goRgtInterp(svs,"s")
-  '''
-
-def goSynSeis():
-  simple = True
-  logs = getLogs()
-  nl = len(logs)
-  ndft = zerodouble(3,nl)
-  ndfz = zerodouble(3,nl)
-  sw = SeismicWellTie()
-  sa = sw.computeSyns(simple,logs,[ndft,ndfz])
-  ss = []
-  for il in range(nl):
-    sa[il] = normalize(sa[il])
-    sl = Sampling((int)(ndft[il][0]),ndft[il][1],ndft[il][2])
-    ss.append(sl)
-  gx = readImage(gxfile)
-  fx = zerofloat(n1,nl)
-  for il, log in enumerate(logs):
-    model = SynSeis.getModel(log)
-    i2 = s2.indexOfNearest(model.x2)
-    i3 = s3.indexOfNearest(model.x3)
-    fx[il] = gx[i3][i2]
-  plot1s(s1,ss,sa,hlabel="Seismic traces",vlabel="time (s)")
-  plot1s(s1,ss,sa,rs=fx,hlabel="Seismic traces",vlabel="time (s)")
-
-def goSynsFlatten():
-  smax = 40
-  epow = 0.0625
-  simple = True
-  logs = getLogs()
-  nl = len(logs)
-  ndfx = zerodouble(3,nl)
-  ndfu = zerodouble(3,nl)
-  swt = SeismicWellTie()
-  wx,ws,wu = swt.synsFlatten(simple,smax,epow,logs,ndfx,ndfu)
-  ssx = []
-  ssu = []
-  for il in range(nl):
-    sxi = Sampling((int)(ndfx[il][0]),ndfx[il][1],ndfx[il][2])
-    sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
-    ssx.append(sxi)
-    ssu.append(sui)
-  hlabel = "Log index"
-  vlabel1 = "Time (s)"
-  vlabel2 = "Relative geologic time (s)"
-  png1,png2="syns","synsF"
-  plot1s(s1,ssx,wx,vmin=0.1,vmax=1.15,hlabel=hlabel,vlabel=vlabel1,png=png1)
-  plot1s(s1,ssu,wu,vmin=0.1,vmax=1.15,hlabel=hlabel,vlabel=vlabel2,png=png2)
-  return wu,ssu
-
-def goSeisFlatten():
-  logs = getLogs()
-  nl = len(logs)
-  gx = readImage(gxfile)
-  fx = zerofloat(n1,nl)
-  for il, log in enumerate(logs):
-    model = SynSeis.getModel(log)
-    i2 = s2.indexOfNearest(model.x2)
-    i3 = s3.indexOfNearest(model.x3)
-    fx[il] = gx[i3][i2]
-  smax,epow = 40,0.125
-  swt = SeismicWellTie()
-  fs,fu = swt.seisFlatten(smax,epow,fx)
-  sst = []
-  for il in range(nl):
-    sst.append(s1)
-  writeImage(tufile,fu)
-  writeImage(txfile,fx)
-  hlabel = "Log index"
-  vlabel1 = "Time (s)"
-  vlabel2 = "Relative geologic time (s)"
-  plot1s(s1,sst,fx,vmin=0.1,vmax=1.15,color=Color.BLACK,
-        hlabel=hlabel,vlabel=vlabel1,png="seis")
-  plot1s(s1,sst,fu,vmin=0.1,vmax=1.15,color=Color.BLACK,
-        hlabel=hlabel,vlabel=vlabel2,png="seisF")
-  return fx,fs,fu
-
-def goSynsSeisTie():
-  gx,gs,gu=goSeisFlatten() 
-  wu,sw=goSynsFlatten()
-  dmin = 20*d1
-  smin,smax = -0.10,0.30
-  rmin,rmax = -0.05,0.05
-  swt = SeismicWellTie()
-  ndf = zerofloat(3,len(wu))
-  wgu = swt.synsToSeis(sw,s1,smin,smax,rmin,rmax,dmin,wu,gu,ndf)
-  swg = []
-  for il in range(len(wu)):
-    si = Sampling((int)(ndf[il][0]),ndf[il][1],ndf[il][2])
-    swg.append(si)
-  vlabel = "Relative geologic time (s)"
-  plot1s(s1,sw,wu,rs=gu,vmin=0.1,vmax=1.15,vlabel=vlabel,png="synSeisFB")
-  plot1s(s1,swg,wgu,rs=gu,vmin=0.1,vmax=1.15,vlabel=vlabel,png="synSeisFA")
-
-def goImageFlatten():
-  gx = readImage(gxfile)
+        clab="Planarity")
+def goScan():
+  print "goScan ..."
+  gx = readImage(sfile)
   if not plotOnly:
-    p2 = zerofloat(n1,n2,n3)
-    p3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    lsf = LocalSlopeFinder(4.0,2.0,2.0,5.0)
-    lsf.findSlopes(gx,p2,p3,ep)
-    zm = ZeroMask(0.1,1,1,1,gx)
-    zero,tiny=0.0,0.01
-    zm.setValue(zero,p2)
-    zm.setValue(zero,p3)
-    zm.setValue(tiny,ep)
-    ep = pow(ep,8)
-    p2 = mul(d1/d2,p2)
-    p3 = mul(d1/d3,p3)
-    fl = Flattener3()
-    fl.setWeight1(0.04)
-    fl.setIterations(0.001,200)
-    fl.setSmoothings(6.0,6.0)
-    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-    u1 = fm.u1
-    gs = fm.getShiftsR();
-    gs = div(gs,d1)
-    writeImage(gtfile,u1)
-    writeImage(gsfile,gs)
-    gf = fm.flatten(gx)
-    writeImage(gffile,gf)
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    gx = FaultScanner.taper(10,0,0,gx)
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    zm = ZeroMask(0.3,5,1,1,gx)
+    zero=0.0
+    zm.setValue(zero,fl)
+    zm.setValue(zero,fp)
+    zm.setValue(zero,ft)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(fpfile,fp)
+    writeImage(ftfile,ft)
   else:
-    gf = readImage(gffile)
-  plot3(gx,png="seisImage")
-  plot3(gf,png="seisImageFlat")
-  plot3(gf,gs,cmin=min(gs),cmax=max(gs),clab="Shifts (s)",
-        cmap=jetFill(0.3),png="dw1")
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+  plot3(gx,clab="Amplitude")
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=minPhi,cmax=maxPhi,cmap=jetFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,ft,cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
+        clab="Fault dip (degrees)",png="ft")
 
-def goRefine3dV():
-  gf = readImage(gffile)
+def goSkin():
+  print "goSkin ..."
+  gx = readImage(sfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(690):
+        fl[i3][i2][i1] = 0
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMinSkinSize(minSkinSize)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  cells = fs.findCells([fl,fp,ft])
+  skins = fs.findSkins(cells)
+  for skin in skins:
+    skin.smoothCellNormals(4)
+  print "total number of cells =",len(cells)
+  print "total number of skins =",len(skins)
+  print "number of cells in skins =",FaultSkin.countCells(skins)
+  removeAllSkinFiles(fskbase)
+  writeSkins(fskbase,skins)
+  plot3F(gx,cells=cells,png="cells")
+  plot3F(gx,skins=skins,png="skins")
+
+def goReSkin():
+  print "goReSkin ..."
+  useOldCells = True
+  gx = readImage(sfile)
   if not plotOnly:
+    fl = readImage(flfile)
     sk = readSkins(fskbase)
+    fsx = FaultSkinnerX()
+    fsx.setParameters(10,10,0.2)
+    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsx.setMinSkinSize(minSkinSize)
+    fsx.setMaxPlanarDistance(0.2)
+    fsx.setSkinning(useOldCells)
+    cells = FaultSkin.getCells(sk)
+    fsx.resetCells(cells)
+    skins = fsx.findSkinsXX(cells,fl)
+    removeAllSkinFiles(fskgood)
+    writeSkins(fskgood,skins)
+  skins = readSkins(fskgood)
+  for skin in skins:
+    skin.smoothCellNormals(4)
+  plot3F(gx,skins=skins,png="skinsNew")
+  plot3F(gx,skins=skins,links=True,png="skinsNewLinks")
+
+def goFlatten():
+  gf = readImage(sfile)
+  if not plotOnly:
+    sk = readSkins(fskgood)
     flr = FlattenerR()
-    k2,k3=57,37
+    k2,k3=125,60
     gr = flr.getReferImageX(k2,k3,gf)
     smin,smax = -15,15
     s1 = Sampling(n1)
@@ -465,109 +227,105 @@ def goRefine3dV():
   plot3(gr,clab="Amplitude",png="gr1")
   plot3(gf,dw,cmin=min(dw),cmax=max(dw),clab="Shifts (samples)",
         cmap=jetFill(1.0),png="dw1")
-def goSlopes():
-  print "goSlopes ..."
-  gx = readImage(gffile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  zm = ZeroMask(0.1,1,1,1,gx)
-  zero,tiny=0.0,0.01
-  zm.setValue(zero,p2)
-  zm.setValue(zero,p3)
-  zm.setValue(tiny,ep)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  print "p2  min =",min(p2)," max =",max(p2)
-  print "p3  min =",min(p3)," max =",max(p3)
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
 
-def goScan():
-  print "goScan ..."
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gx = readImage(gffile)
-  gx = FaultScanner.taper(10,0,0,gx)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
-  zm = ZeroMask(0.1,1,1,1,gx)
-  zero=0.0
-  zm.setValue(zero,fl)
-  zm.setValue(zero,fp)
-  zm.setValue(zero,ft)
 
-  print "fl min =",min(fl)," max =",max(fl)
-  print "fp min =",min(fp)," max =",max(fp)
-  print "ft min =",min(ft)," max =",max(ft)
-  writeImage(flfile,fl)
-  writeImage(fpfile,fp)
-  writeImage(ftfile,ft)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=145,cmap=jetFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
+def goInterp():
+  gx = readImage(sfile)
+  tm = TensorMaker()
+  mk = tm.mask(0.3,5.0,1.0,1.0,gx)
+  et = tm.applyForTensors(4.0,2.0,2.0,mk,gx)
+  et.setEigenvalues(0.0001,1.0,1.0)
+  k1,k2,k3,fx=getSamples()
+  wp = fillfloat(1.0,n1,n2,n3)
+  fp = FastInterp(6.0,6.0)
+  fp.setTensors(et)
+  fp.setIterations(0.001,500)
+  px = fp.interpolate(wp,k1,k2,k3,fx)
+  writeImage(qfile,px)
+  mds=[]
+  x12,x13,w1s = getLog242()
+  x22,x23,w2s = getLog281()
+  mds.append(SynSeis.getModel(x12,x13,w1s[0],w1s[1],w1s[2]))
+  mds.append(SynSeis.getModel(x22,x23,w2s[0],w2s[1],w2s[2]))
+  swt = SeismicWellTie()
+  sps = swt.getSamples(s1,mds)
+  plot3(gx,px,cmin=2.2,cmax=2.8,sps=sps[1],wmin=2.2,wmax=2.8,
+        clab="Density (g/cc)",png="seisDen")
 
-def goThin():
-  print "goThin ..."
-  gx = readImage(gffile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=145,cmap=jetFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
+def gridBlendedP():
+  tm = TensorMaker()
+  gx = readImage(sfile)
+  mk = tm.mask(0.3,5.0,1.0,1.0,gx)
+  et = tm.applyForTensors(4.0,2.0,2.0,mk,gx)
+  et.setEigenvalues(0.001,1.0,1.0)
+  bi = BlendedGridder3(et)
+  p = readImage(gfile)
+  t = bi.gridNearest(0.0,p)
+  writeImage(pfile,p)
+  writeImage(tfile,t)
 
-def goSkin():
-  print "goSkin ..."
-  gx = readImage(gffile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMinSkinSize(minSkinSize)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.2)
-  cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  print "total number of cells =",len(cells)
-  print "total number of skins =",len(skins)
-  print "number of cells in skins =",FaultSkin.countCells(skins)
-  removeAllSkinFiles(fskbase)
-  writeSkins(fskbase,skins)
-  plot3F(gx,cells=cells,png="cells")
-  plot3F(gx,skins=skins,png="skins")
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
 
-def normalize(f):
-  sigma = 100
-  n = len(f)
-  g = zerofloat(n)
-  ref = RecursiveExponentialFilter(sigma)
-  g = mul(f,f)
-  ref.apply(g,g)
-  g = div(f,sqrt(g))
-  return g
+def getSamples():
+  mds=[]
+  x12,x13,w1s = getLog242()
+  x22,x23,w2s = getLog281()
+  mds.append(SynSeis.getModel(x12,x13,w1s[0],w1s[1],w1s[2]))
+  mds.append(SynSeis.getModel(x22,x23,w2s[0],w2s[1],w2s[2]))
+  swt = SeismicWellTie()
+  sps = swt.getSamples(s1,mds)
+  i12 = round((x12-f2)/d2)
+  i13 = round((x13-f3)/d3)
+  i22 = round((x22-f2)/d2)
+  i23 = round((x23-f3)/d3)
+  i2s = [i12,i22]
+  i3s = [i13,i23]
+  k1s,k2s,k3s,fxs=[],[],[],[]
+  for il in range(2):
+    i2 = i2s[il]
+    i3 = i3s[il]
+    w1 = sps[0][1][il]
+    wv = sps[0][0][il]
+    wd = sps[1][0][il]
+    for k1 in range(len(w1)):
+      i1 = round((w1[k1]-f1)/d1)
+      k1s.append(i1)
+      k2s.append(i2)
+      k3s.append(i3)
+      if logType=="d":
+        fxs.append(wd[k1])
+      else:
+        fxs.add(wv[k1])
+  return k1s,k2s,k3s,fxs
+
+
+def gridNearest():
+  mds=[]
+  x12,x13,w1s = getLog242()
+  x22,x23,w2s = getLog281()
+  mds.append(SynSeis.getModel(x12,x13,w1s[0],w1s[1],w1s[2]))
+  mds.append(SynSeis.getModel(x22,x23,w2s[0],w2s[1],w2s[2]))
+  swt = SeismicWellTie()
+  sps = swt.getSamples(s1,mds)
+  i12 = round((x12-f2)/d2)
+  i13 = round((x13-f3)/d3)
+  i22 = round((x22-f2)/d2)
+  i23 = round((x23-f3)/d3)
+  i2s = [i12,i22]
+  i3s = [i13,i23]
+  gvs = zerofloat(n1,n2,n3)
+  gds = zerofloat(n1,n2,n3)
+  for il in range(2):
+    i2 = i2s[il]
+    i3 = i3s[il]
+    w1 = sps[0][1][il]
+    wv = sps[0][0][il]
+    wd = sps[1][0][il]
+    for k1 in range(len(w1)):
+      i1 = round((w1[k1]-f1)/d1)
+      gvs[i3][i2][i1] = wv[k1]
+      gds[i3][i2][i1] = wd[k1]
+  writeImage("cfgv",gvs)
+  writeImage("cfgd",gds)
 
 def like(x):
   n2 = len(x)
@@ -664,177 +422,6 @@ def plot2(w,sz,sl,wmin=0.0,wmax=0.0,vlabel="Time (s)",cbar=None,png=None):
   pv.setClips(wmin,wmax)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
-def plot3X(s1,f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          slices=None,surf=None,hs=None,logs=None,sps=None,curve=None,
-          wmin=0,wmax=0,png=None):
-  n1,n2,n3 = s1.count,s2.count,s3.count
-  d1,d2,d3 = s1.delta,s2.delta,s3.delta
-  f1,f2,f3 = s1.first,s2.first,s3.first
-  l1,l2,l3 = s1.last,s2.last,s3.last
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
-  cbar = None
-  if g==None:
-    ipg = sf.addImagePanels(s1,s2,s3,f)
-    if cmap!=None:
-      ipg.setColorModel(cmap)
-    if wmin!=0 and wmax!=0:
-      ipg.setClips(wmin,wmax)
-    if cmin!=None and cmax!=None:
-      ipg.setClips(cmin,cmax)
-    else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-2.0,1.5) # use for subset plots
-    if clab:
-      cbar = addColorBar(sf,clab,cint)
-      ipg.addColorMapListener(cbar)
-  else:
-    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2.0,1.5)
-    if cmin!=None and cmax!=None:
-      ipg.setClips2(cmin,cmax)
-    if cmap==None:
-      cmap = jetFill(0.8)
-    ipg.setColorModel2(cmap)
-    if clab:
-      cbar = addColorBar(sf,clab,cint)
-      ipg.addColorMap2Listener(cbar)
-    sf.world.addChild(ipg)
-  if cbar:
-    cbar.setWidthMinimum(120) # for slides
-    #cbar.setWidthMinimum(80)
-  if logs:
-    wg = wellGroup(logs,curve,wmin,wmax)
-    sf.world.addChild(wg)
-  if sps:
-    #samples = sps[0],sps[1],sps[2],sps[3]
-    wg = makeLogPoints(sps,wmin,wmax,cbar)
-    sf.world.addChild(wg)
-  if hs:
-    x1 = readImage(ghfile)
-    u1 = readImage(gtfile)
-    hfr = HorizonFromRgt(s1,s2,s3,x1,u1)
-    for hi in hs:
-      [xyz,rgb] = hfr.singleHorizon(hi)
-      tg = TriangleGroup(True,xyz,rgb)
-      sf.world.addChild(tg)
-  if surf:
-    tgs = Triangle()
-    xyz = tgs.trianglesForSurface(surf,0,n1-1)
-    tg  = TriangleGroup(True,xyz)
-    sf.world.addChild(tg)
-  ipg.setSlices(924,224,68)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
-  if cbar:
-    sf.setSize(837,700)
-  else:
-    sf.setSize(700,700) # for slides
-    #sf.setSize(740,700)
-  vc = sf.getViewCanvas()
-  vc.setBackground(Color.WHITE)
-  ov = sf.getOrbitView()
-  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
-  ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.1)
-  ov.setAzimuthAndElevation(235,25)
-  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,0.08))
-  sf.setVisible(True)
-  if png and pngDir:
-    sf.paintToFile(pngDir+png+".png")
-    if cbar:
-      cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
-      #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
-      cbar.setInterval(0.5)
-      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          slices=None,surf=None,hs=None,logs=None,sps=None,curve=None,
-          wmin=0,wmax=0,png=None):
-  n1,n2,n3 = s1.count,s2.count,s3.count
-  d1,d2,d3 = s1.delta,s2.delta,s3.delta
-  f1,f2,f3 = s1.first,s2.first,s3.first
-  l1,l2,l3 = s1.last,s2.last,s3.last
-  f1 = f1+d1*50
-  s1s = Sampling(n1-50,d1,f1)
-  f = copy(n1-50,n2,n3,50,0,0,f)
-  if g!=None:
-    g = copy(n1-50,n2,n3,50,0,0,g)
-
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
-  cbar = None
-  if g==None:
-    ipg = sf.addImagePanels(s1s,s2,s3,f)
-    if cmap!=None:
-      ipg.setColorModel(cmap)
-    if wmin!=0 and wmax!=0:
-      ipg.setClips(wmin,wmax)
-    if cmin!=None and cmax!=None:
-      ipg.setClips(cmin,cmax)
-    else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-2.0,1.5) # use for subset plots
-    if clab:
-      cbar = addColorBar(sf,clab,cint)
-      ipg.addColorMapListener(cbar)
-  else:
-    ipg = ImagePanelGroup2(s1s,s2,s3,f,g)
-    ipg.setClips1(-2.0,1.5)
-    if cmin!=None and cmax!=None:
-      ipg.setClips2(cmin,cmax)
-    if cmap==None:
-      cmap = jetFill(0.8)
-    ipg.setColorModel2(cmap)
-    if clab:
-      cbar = addColorBar(sf,clab,cint)
-      ipg.addColorMap2Listener(cbar)
-    sf.world.addChild(ipg)
-  if cbar:
-    cbar.setWidthMinimum(120) # for slides
-    #cbar.setWidthMinimum(80)
-  if logs:
-    wg = wellGroup(logs,curve,wmin,wmax)
-    sf.world.addChild(wg)
-  if sps:
-    #samples = sps[0],sps[1],sps[2],sps[3]
-    wg = makeLogPoints(sps,wmin,wmax,cbar)
-    sf.world.addChild(wg)
-  if hs:
-    x1 = readImage(ghfile)
-    u1 = readImage(gtfile)
-    hfr = HorizonFromRgt(s1s,s2,s3,x1,u1)
-    for hi in hs:
-      [xyz,rgb] = hfr.singleHorizon(hi)
-      tg = TriangleGroup(True,xyz,rgb)
-      sf.world.addChild(tg)
-  if surf:
-    tgs = Triangle()
-    xyz = tgs.trianglesForSurface(surf,0,n1-1)
-    tg  = TriangleGroup(True,xyz)
-    sf.world.addChild(tg)
-  ipg.setSlices(924,224,68)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
-  if cbar:
-    sf.setSize(837,700)
-  else:
-    sf.setSize(700,700) # for slides
-    #sf.setSize(740,700)
-  vc = sf.getViewCanvas()
-  vc.setBackground(Color.WHITE)
-  ov = sf.getOrbitView()
-  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
-  ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.1)
-  ov.setAzimuthAndElevation(235,25)
-  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,0.08))
-  sf.setVisible(True)
-  if png and pngDir:
-    sf.paintToFile(pngDir+png+".png")
-    if cbar:
-      cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
-      #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
-      cbar.setInterval(0.5)
-      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 def plot3F(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,fbs=None,smax=0.0,
@@ -978,53 +565,172 @@ def plot3F(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.paintToPng(137,1,pngDir+png+"cbar.png")
 
-def plot3s(s1,s2,s3,s,k1=300,g=None,cmin=0,cmax=0,
-           label1="Time (s)",cbar="Velocity (km/s)", png=None):
-  pp = PlotPanelPixels3(
-    PlotPanelPixels3.Orientation.X1DOWN_X2RIGHT,
-    PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM,
-    s1,s2,s3,s)
-  k2,k3=150,60
-  pp.setSlices(k1,k2,k3)
-  pp.setLabel1(label1)
-  pp.setLabel2("Crossline (km)")
-  pp.setLabel3("Inline (km)")
-  #pp.setClips(smin,smax)
-  pp.setClips(-2.0,1.5)
-  if g:
-    pp.setLineColor(Color.BLACK)
-    cb = pp.addColorBar(cbar)
-    cb.setInterval(1.0)
+
+def plot3X(s1,f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          slices=None,surf=None,hs=None,logs=None,sps=None,curve=None,
+          wmin=0,wmax=0,png=None):
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if wmin!=0 and wmax!=0:
+      ipg.setClips(wmin,wmax)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      #ipg.setClips(-2.0,2.0)
+      ipg.setClips(-2.0,1.5) # use for subset plots
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
   else:
-    pp.setLineColor(Color.YELLOW)
-    cb = pp.addColorBar("Amplitude")
-    cb.setInterval(5.0)
-  pp.setColorBarWidthMinimum(100)
-  pp.setInterval1(0.2)
-  pp.setInterval2(1.0)
-  pp.setInterval3(1.0)
-  pp.mosaic.setHeightElastic(0,100)
-  pp.mosaic.setHeightElastic(1,200)
-  if g:
-    pv12 = PixelsView(s1,s2,slice12(k3,g))
-    pv12.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
-    pv13 = PixelsView(s1,s3,slice13(k2,g))
-    pv13.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
-    pv23 = PixelsView(s2,s3,slice23(k1,g))
-    pv23.setOrientation(PixelsView.Orientation.X1RIGHT_X2UP)
-    for pv in [pv12,pv13,pv23]:
-      pv.setColorModel(ColorMap.getJet(0.5))
-      if cmin!=cmax:
-        pv.setClips(cmin,cmax)
-    pp.pixelsView12.tile.addTiledView(pv12)
-    pp.pixelsView13.tile.addTiledView(pv13)
-    pp.pixelsView23.tile.addTiledView(pv23)
-  pf = PlotFrame(pp)
-  pf.setFontSize(24)
-  pf.setSize(996,815)
-  pf.setVisible(True)
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-2.0,1.5)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120) # for slides
+    #cbar.setWidthMinimum(80)
+  if logs:
+    wg = wellGroup(logs,curve,wmin,wmax)
+    sf.world.addChild(wg)
+  if sps:
+    #samples = sps[0],sps[1],sps[2],sps[3]
+    wg = makeLogPoints(sps,wmin,wmax,cbar)
+    sf.world.addChild(wg)
+  if hs:
+    x1 = readImage(ghfile)
+    u1 = readImage(gtfile)
+    hfr = HorizonFromRgt(s1,s2,s3,x1,u1)
+    for hi in hs:
+      [xyz,rgb] = hfr.singleHorizon(hi)
+      tg = TriangleGroup(True,xyz,rgb)
+      sf.world.addChild(tg)
+  if surf:
+    tgs = Triangle()
+    xyz = tgs.trianglesForSurface(surf,0,n1-1)
+    tg  = TriangleGroup(True,xyz)
+    sf.world.addChild(tg)
+  ipg.setSlices(924,224,68)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
+  if cbar:
+    sf.setSize(837,700)
+  else:
+    sf.setSize(700,700) # for slides
+    #sf.setSize(740,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  ov = sf.getOrbitView()
+  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.1)
+  ov.setAzimuthAndElevation(235,25)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.0,0.05,0.08))
+  sf.setVisible(True)
   if png and pngDir:
-    pf.paintToPng(300,6,pngDir+png+".png")
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
+      #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
+      cbar.setInterval(0.5)
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+
+def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          slices=None,surf=None,hs=None,logs=None,sps=None,curve=None,
+          wmin=0,wmax=0,png=None):
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if wmin!=0 and wmax!=0:
+      ipg.setClips(wmin,wmax)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      #ipg.setClips(-2.0,2.0)
+      ipg.setClips(-2.0,1.5) # use for subset plots
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-2.0,1.5)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(1.0)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120) # for slides
+    #cbar.setWidthMinimum(80)
+  if logs:
+    wg = wellGroup(logs,curve,wmin,wmax)
+    sf.world.addChild(wg)
+  if sps:
+    #samples = sps[0],sps[1],sps[2],sps[3]
+    wg = makeLogPoints(sps,wmin,wmax,cbar)
+    sf.world.addChild(wg)
+  if hs:
+    x1 = readImage(ghfile)
+    u1 = readImage(gtfile)
+    hfr = HorizonFromRgt(s1,s2,s3,x1,u1)
+    for hi in hs:
+      [xyz,rgb] = hfr.singleHorizon(hi)
+      tg = TriangleGroup(True,xyz,rgb)
+      sf.world.addChild(tg)
+  if surf:
+    tgs = Triangle()
+    xyz = tgs.trianglesForSurface(surf,0,n1-1)
+    tg  = TriangleGroup(True,xyz)
+    sf.world.addChild(tg)
+  ipg.setSlices(924,224,68)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
+  if cbar:
+    sf.setSize(837,700)
+  else:
+    sf.setSize(700,700) # for slides
+    #sf.setSize(740,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  ov = sf.getOrbitView()
+  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.1)
+  ov.setAzimuthAndElevation(235,25)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.0,0.05,0.08))
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
+      #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
+      cbar.setInterval(0.5)
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 def wellGroup(logs,curve,cmin=0,cmax=0,cbar=None):
   print "number of logs =",len(logs)

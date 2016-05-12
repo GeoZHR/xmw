@@ -4,7 +4,7 @@ This program and accompanying materials are made available under the terms of
 the Common Public License - v1.0, which accompanies this distribution, and is 
 available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
-package aii;
+package cfd;
 
 import vec.*;
 
@@ -18,14 +18,9 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * @Version: 2015.10.10
  */
 
-public class AcousticImpedanceInv3 {
+public class FastInterp {
 
-  /**
-   * Constructs an unfaulter.
-   * @param sigma1 smoother half-width for 1st dimension.
-   * @param sigma2 smoother half-width for 2nd dimension.
-   */
-  public AcousticImpedanceInv3(double sigma1, double sigma2) {
+  public FastInterp(double sigma1, double sigma2) {
     _sigma1 = (float)sigma1;
     _sigma2 = (float)sigma2;
     _sigma3 = (float)sigma2;
@@ -41,38 +36,13 @@ public class AcousticImpedanceInv3 {
     _niter = niter;
   }
 
-  public void setSmoothness(float sc) {
-    _sc = sc;
-  }
-
   public void setTensors(Tensors3 d) {
     _d = d;
   }
 
-  public float[][][] applyForImpedance(float[][][] p,
-    float[][][] r, float[][][] wp, float[] k1, float[] k2, float[] k3, float[] f) 
-  {
-    int n3 = r.length;
-    int n2 = r[0].length;
-    int n1 = r[0][0].length;
-    float[][][] b = new float[n3][n2][n1];
-    setInitial(p,k1,k2,k3,f);
-    VecArrayFloat3 vb = new VecArrayFloat3(b);
-    VecArrayFloat3 vp = new VecArrayFloat3(p);
-    CgSolver cs = new CgSolver(_small,_niter);
-    A3 a3 = new A3(_d,wp);
-    M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,k1,k2,k3);
-    vb.zero();
-    makeRhs(r,b);
-    cs.solve(a3,m3,vb,vp);
-    return p;
-  }
-
-  public float[][][] initialInterp(
+  public float[][][] interpolate(
     float[][][] wp, float[] k1, float[] k2, float[] k3, float[] f) 
   {
-    float sct = _sc;
-    _sc = 1.0f;
     int n3 = wp.length;
     int n2 = wp[0].length;
     int n1 = wp[0][0].length;
@@ -86,7 +56,6 @@ public class AcousticImpedanceInv3 {
     M3 m3 = new M3(_sigma1,_sigma2,_sigma3,wp,k1,k2,k3);
     vb.zero();
     cs.solve(a3,m3,vb,vp);
-    _sc = sct;
     return p;
   }
 
@@ -144,58 +113,6 @@ public class AcousticImpedanceInv3 {
   }
 
   private static void applyLhs(
-    Tensors3 et, float[][][] w, float[][][] x, float[][][] y) 
-  {
-    applyLhs1(x,y);
-    if(_sc>0.0f) {applyLhs2(et,w,x,y);}
-  }
-
-  private static void applyLhs1(
-    final float[][][] x, final float[][][] y) 
-  {
-    final int n3 = x.length;
-    final int n2 = x[0].length;
-    final int n1 = x[0][0].length;
-    final float sc = (1f-_sc);
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-    for (int i2=0; i2<n2; ++i2) {
-      float[] x32 = x[i3][i2];
-      float[] y32 = y[i3][i2];
-      for (int i1=1; i1<n1; ++i1) {
-        float xa=0.0f;
-        float ws=sc*sc; 
-        xa  = x32[i1  ];
-        xa -= x32[i1-1];
-        xa *= ws;
-        y32[i1-1] -= xa;
-        y32[i1  ]  = xa;
-      }
-    }}});
-  }
-
-  private static void makeRhs(
-    final float[][][] r, final float[][][] y) 
-  {
-    zero(y);
-    final int n3 = y.length;
-    final int n2 = y[0].length;
-    final int n1 = y[0][0].length;
-    final float sc = (1f-_sc);
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-    for (int i2=0; i2<n2; ++i2) {
-      float[] r32 = r[i3][i2];
-      float[] y32 = y[i3][i2];
-    for (int i1=1; i1<n1; ++i1) {
-      float ws = sc*sc;
-      float ri = ws*r32[i1];
-      y32[i1  ] += ri;
-      y32[i1-1] -= ri;
-    }}}});
-  }
-
-  private static void applyLhs2(
     final Tensors3 d, final float[][][] wp, 
     final float[][][] x, final float[][][] y)
   { 

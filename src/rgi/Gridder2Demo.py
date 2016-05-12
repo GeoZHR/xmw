@@ -16,8 +16,8 @@ from DataSinSin import *
 from DataTeapot import *
 
 def main(args):
-  goImpedance()
-  #demoTeapot()
+  #goImpedance()
+  demoTeapot()
   #demoBlendedGridder("Saddle")
   #demoSplinesGridder("Saddle")
   #demoTensorGuided("NotreDame")
@@ -47,7 +47,7 @@ def goImpedance():
 def demoTeapot():
   t,x,f = wellTeapot()
   st,sx,s = imageTeapot()
-  plot2Teapot(f,t,x,s,st,sx,None,"Known value","tp2f")
+  plot2Teapot(f,t,x,s,st,sx,label="Known value",png="tp2f")
   smooth = 1.00 # smoothness for blended gridder
   fnull = -1.0
   sg = SimpleGridder2(f,t,x)
@@ -57,15 +57,15 @@ def demoTeapot():
   tensors = lof.applyForTensors(s)
   tensors.setEigenvalues(0.001,1.0)
   #tensors = makeImageTensors(s)
-  plot2Teapot(f,t,x,s,st,sx,None,"Known value","tp2f",et=tensors)
+  plot2Teapot(f,t,x,s,st,sx,label="Known value",png="tp2f",et=tensors)
   bg = makeBlendedGridder(f,t,x,smooth=smooth)
   bg.setTensors(tensors)
   d = bg.gridNearest(fnull,p)
-  plot2Teapot(f,t,x,s,st,sx,d,"Time (samples)","tp2t")
-  plot2Teapot(f,t,x,s,st,sx,p,"Nearest value","tp2p")
+  plot2Teapot(f,t,x,s,st,sx,g=d,label="Time (samples)",png="tp2t")
+  plot2Teapot(f,t,x,s,st,sx,g=p,label="Nearest value",png="tp2p")
   q = copy(p)
   bg.gridBlended(d,p,q)
-  plot2Teapot(f,t,x,s,st,sx,q,"Blended value","tp2q")
+  plot2Teapot(f,t,x,s,st,sx,g=q,label="Blended value",png="tp2q")
 
   '''
   rgt = rgtTeapot()

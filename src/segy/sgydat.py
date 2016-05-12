@@ -382,7 +382,7 @@ def goCranfield2007():
   units for spatial coordinates: ft (will be converted to km)
   indices and coordinates from trace headers:
     i2min =   109, i2max =   351 (inline indices)
-    i3min =     3, i3max =   224 (crossline indices)
+    i3min =  1003, i3max =  1224 (crossline indices)
     xmin =   70.873811, xmax =   76.432519 (x coordinates, in km)
     ymin =  115.947758, ymax =  122.034414 (y coordinates, in km)
   grid sampling:
