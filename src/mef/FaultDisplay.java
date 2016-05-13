@@ -292,7 +292,7 @@ public class FaultDisplay {
         i2 = min(i2,n2-1); i2 = max(i2,0);
         i3 = min(i3,n3-1); i3 = max(i3,0);
         fp[i3][i2][i1] = fci.getFp();
-      }}
+      }
     }
   }
 
