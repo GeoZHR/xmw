@@ -1,5 +1,6 @@
 package crf;
 
+import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -34,14 +35,14 @@ public class Helper {
   }
 
   public void resample(
-    Sampling s1, Sampling s2, Sampling s3, 
-    float d3i, float[][][] fx, float[][][] fi) 
+    final Sampling s1, final Sampling s2, final Sampling s3, 
+    final float d3i, final float[][][] fx, final float[][][] fi) 
   {
     final int n3 = fi.length;
     final int n2 = fi[0].length;
     final int n1 = fi[0][0].length;
-    final SincInterpolator = si = 
-      new SincInterpolator(SincInterpolator.Extrapolation.CONSTANT);
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       double x3i = i3*d3i;
