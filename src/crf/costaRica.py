@@ -95,7 +95,7 @@ def main(args):
   #goRose()
   #goStrikeRotation()
 
-def goSeis():
+def goSeisResample():
   hp = Helper()
   d3 = 12.5
   gx = readImage(gxfile)
