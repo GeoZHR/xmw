@@ -1,8 +1,10 @@
 package crf;
 
-import util.*;
-import ipfx.*;
+import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+
+import ipfx.*;
+import util.*;
 
 public class Helper {
 
@@ -31,21 +33,26 @@ public class Helper {
     }}}
   }
 
-  public float[][][] resample(float[][][] gx) {
-    int n3 = gx.length;
-    int n2 = gx[0].length;
-    int n1 = gx[0][0].length;
-    int m2 = round(n2/2f);
-    float[][][] fx = new float[n3][m2][n1];
-    for (int i3=0; i3<n3; i3++) {
-      int k2=-1;
-      for (int i2=0; i2<n2; i2+=2) {
-        k2++;
-      for (int i1=0; i1<n1; ++i1) {
-        fx[i3][k2][i1] = gx[i3][i2][i1];
-      }}
-    }
-    return fx;
+  public void resample(
+    Sampling s1, Sampling s2, Sampling s3, 
+    float d3i, float[][][] fx, float[][][] fi) 
+  {
+    final int n3 = fi.length;
+    final int n2 = fi[0].length;
+    final int n1 = fi[0][0].length;
+    final SincInterpolator = si = 
+      new SincInterpolator(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      double x3i = i3*d3i;
+      for (int i2=0; i2<n2; ++i2) {
+        double x2i = s2.getValue(i2);
+        for (int i1=0; i1<n1; ++i1) {
+          double x1i = s1.getValue(i1);
+          fi[i3][i2][i1] = si.interpolate(s1,s2,s3,fx,x1i,x2i,x3i);
+        }
+      }
+    }});
   }
 
   public void rotate(float phi, float[][][] fps) {

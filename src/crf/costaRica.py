@@ -89,24 +89,30 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  goFaultImages()
+  #goFaultImages()
   #getOceanBottom()
-  #goSeis()
+  goSeisResample()
   #goRose()
   #goStrikeRotation()
 
 def goSeis():
+  hp = Helper()
+  d3 = 12.5
   gx = readImage(gxfile)
-  plot3(gx)
+  c3 = Sampling(n3,18.75,0.0)
+  gi = zerofloat(n1,n2,round(n3*1.5))
+  hp.resample(s1,s2,c3,d3,gx,gi)
+  writeImage("gi",gi)
+  #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
   gx = readImage(gxfile)
   #fpt = readImage(fptfile)
   fpt = readImage("fps")
   hpr = Helper()
-  #hpr.rotate(29,fpt)
-  #hpr.convert(fpt)
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=jetFillExceptMin(1.0),
+  hpr.rotate(29,fpt)
+  hpr.convert(fpt)
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goRose():
