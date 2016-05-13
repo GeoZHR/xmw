@@ -79,21 +79,21 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
-  goScan()
+  #goSlopes()
+  #goScan()
   #goThin()
-  goSkin()
-  goSkinTv()
+  #goSkin()
+  #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  #goFaultImages()
+  goFaultImages()
   #getOceanBottom()
-  #goStrikeRotation()
   #goSeis()
   #goRose()
+  #goStrikeRotation()
 
 def goSeis():
   gx = readImage(gxfile)
@@ -104,19 +104,20 @@ def goStrikeRotation():
   #fpt = readImage(fptfile)
   fpt = readImage("fps")
   hpr = Helper()
-  hpr.rotate(29,fpt)
-  hpr.convert(fpt)
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=10,png="fpt")
+  #hpr.rotate(29,fpt)
+  #hpr.convert(fpt)
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=jetFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   fp = readImage2D(93641902,4,"fpp")
+  rp.rotate(29,fp[3])
+  rp.convert(fp[3])
   #rp.rose(fp[3],36)
-  c2,c3=8,2
-  tp,bt=  112, 115 
-  #tp,bt= 40, 80
+  c2,c3=10,2
+  tp,bt= 0, 80
   #tp,bt= 80,120
   #tp,bt=120,160
   #tp,bt=160,200
@@ -124,6 +125,7 @@ def goRose():
   #tp,bt=240,280
   #tp,bt=320,360
   #tp,bt=360,400
+
   rp.applyForRosePlots(tp,bt,c2,c3,n2,n3,36,fp,ob)
 def getOceanBottom():
   hp = Helper()
@@ -326,21 +328,21 @@ def goFaultImages():
     #skins = readSkins(fsktv)
     skins = readSkins(fskbase)
     print "fault skins load finish..."
-    flt = fillfloat(-0.001,n1,n2,n3)
+    #flt = fillfloat(-0.001,n1,n2,n3)
     fpt = fillfloat(-0.001,n1,n2,n3)
-    ftt = fillfloat(-0.001,n1,n2,n3)
+    #ftt = fillfloat(-0.001,n1,n2,n3)
     fd = FaultDisplay()
-    fd.getFlt(skins,gx,flt)
+    #fd.getFlt(skins,gx,flt)
     fd.getFpt(skins,gx,fpt)
-    fd.getFtt(skins,gx,ftt)
-    writeImage(fltfile,flt)
+    #fd.getFtt(skins,gx,ftt)
+    #writeImage(fltfile,flt)
     writeImage(fptfile,fpt)
-    writeImage(fttfile,ftt)
+    #writeImage(fttfile,ftt)
   else:
-    flt = readImage(fltfile)
-    fpt = readImage(fptfile)
-    #fpt = readImage("fps")
-    ftt = readImage(fttfile)
+    #flt = readImage(fltfile)
+    #fpt = readImage(fptfile)
+    fpt = readImage("fpk")
+    #ftt = readImage(fttfile)
   '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")

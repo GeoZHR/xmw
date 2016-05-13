@@ -31,19 +31,19 @@ def goDw():
   plot(gx)
   gr = gx[n2-1]
   gu = copy(gx)
-  smin,smax=-50,50
-  for i2 in range(n2-2,n2-40,-1):
+  smin,smax=-20,20
+  for i2 in range(n2-2,n2-20,-1):
     print i2
     dwc = DynamicWarpingR(1,smin,smax,s1)
     r1mins = fillfloat(-0.5,n1)
     r1maxs = fillfloat( 0.5,n1)
-    r1 = 10
+    r1 = 100
     #dwc.setStrainsOnFaults(0.3,-r1,fx[i2],r1mins)
-    #dwc.setStrainsOnFaults(0.3,-r1,ux[i2],r1mins)
+    dwc.setStrainsOnFaults(0.3,-r1,ux[i2],r1mins)
     #dwc.setStrainsOnFaults(0.3, r1,fx[i2],r1maxs)
     dwc.setStrainsOnFaults(0.3, r1,ux[i2],r1maxs)
     dwc.setStrains(r1mins,r1maxs)
-    #dwc.setSmoothness(4)
+    dwc.setSmoothness(4)
     xs = dwc.findShiftsX(s1,gr,s1,gx[i2])
     gu[i2] = dwc.applyShifts(s1,gx[i2],xs)
   plot(gu)

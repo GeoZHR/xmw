@@ -21,6 +21,29 @@ import mef.*;
 
 public class RosePlot {
 
+  public void rotate(float phi, float[] fps) {
+    int np = fps.length;
+    for (int ip=0; ip<np; ++ip) {
+      float fpi = fps[ip];
+      if(fpi>=0.0f) {
+        fpi += phi;
+        if (fpi>=360f) fpi-=360f;
+        fps[ip] = fpi;
+      }
+    }
+  }
+
+  public void convert(float[] fps) {
+    int np = fps.length;
+    for (int ip=0; ip<np; ++ip) {
+      float fpi = fps[ip];
+      if(fpi>180.0f) {
+        fpi -= 180f;
+        fps[ip] = fpi;
+      }
+    }
+  }
+
 
   public void applyForRosePlots(
     float b1, float e1, int c2, int c3, int n2, int n3, 
@@ -54,8 +77,8 @@ public class RosePlot {
         if(k3<b3 || k3>e3) {continue;}
         float obi = ob[k3][k2];
         int k1 = (int)fp[0][ip];
-        //if(k1>=(b1+obi) && k1<=(e1+obi)) {
-        if(k1>=b1 && k1<=e1) {
+        if(k1>=(b1+obi) && k1<=(e1+obi)) {
+        //if(k1>=b1 && k1<=e1) {
           float fpi = fp[3][ip];
           fpa.add(fpi);
         }
@@ -317,40 +340,59 @@ public class RosePlot {
     for (int ib=0; ib<nb; ++ib) {
       float phi = ib*dp;
       float rdi = bins[ib];
-      float aci = (float)(0.5*phi/DBL_PI);
-      Color rgb = Color.getHSBColor(aci,1f,1f);//getNextColor();
+      float aci = (float)(phi/DBL_PI);
+      Color rgb = Color.getHSBColor(aci,1f,1f);
       float[][] rp1 = makeRadialPoints(rdi,phi);
       float[][] rp2 = makeRadialPoints(rdi,phi+dp);
       float dx = rp2[0][1] - rp1[0][1];
       float dy = rp2[1][1] - rp1[1][1];
       float ds = sqrt(dx*dx+dy*dy);
       float dd = 0.001f;
-      float dk = dd*4f;
+      float dk = dd*5f;
       float de = ds-dk;
       dx /= ds;
       dy /= ds;
+      float xi,yi;
+      float[] xs, ys;
+      PointsView pvr;
       float di = dk;
-      for ( ; di<=de; di+=dd) {
-        float xi = rp1[0][1]+dx*di;
-        float yi = rp1[1][1]+dy*di;
-        float[] xs = new float[]{0f,xi};
-        float[] ys = new float[]{0f,yi};
-        PointsView pvr = pp.addPoints(xs,ys);
-        if ((di-dk)<=dd||(di+dd)>=de) {
-          pvr.setLineColor(Color.BLACK);
-          pvr.setLineWidth(4f);
-        } else { 
-          pvr.setLineColor(rgb);
-          pvr.setLineWidth(4f);
-        }
+      for ( ; di<de; di+=dd) {
+        xi = rp1[0][1]+dx*di;
+        yi = rp1[1][1]+dy*di;
+        xs = new float[]{-xi,xi};
+        ys = new float[]{-yi,yi};
+        pvr = pp.addPoints(xs,ys);
+        pvr.setLineColor(rgb);
+        pvr.setLineWidth(3f);
       }
-      float[] rx3 = new float[]{rp1[0][1]+(dk+dd)*dx,rp1[0][1]+(di-dd)*dx};
-      float[] ry3 = new float[]{rp1[1][1]+(dk+dd)*dy,rp1[1][1]+(di-dd)*dy};
-      float[][] rp3 = new float[][]{rx3,ry3};
-      PointsView pvr3 = pp.addPoints(rp3[0],rp3[1]);
-      pvr3.setLineColor(Color.BLACK);
-      pvr3.setLineWidth(4.f);
+      // add black bounds
+      xi = rp2[0][1];
+      yi = rp2[1][1];
+      xs = new float[]{-xi,xi};
+      ys = new float[]{-yi,yi};
+      pvr = pp.addPoints(xs,ys);
+      pvr.setLineColor(Color.BLACK);
+      pvr.setLineWidth(2f);
 
+      xi = rp1[0][1];
+      yi = rp1[1][1];
+      xs = new float[]{-xi,xi};
+      ys = new float[]{-yi,yi};
+      pvr = pp.addPoints(xs,ys);
+      pvr.setLineColor(Color.BLACK);
+      pvr.setLineWidth(2f);
+
+      float[][] rt1 = makeRadialPoints(rdi*1.01f,phi);
+      float[][] rt2 = makeRadialPoints(rdi*1.01f,phi+dp);
+      xs = new float[]{rt1[0][1],rt2[0][1]};
+      ys = new float[]{rt1[1][1],rt2[1][1]};
+      float[][] rp3 = new float[][]{xs,ys};
+      pvr = pp.addPoints(rp3[0],rp3[1]);
+      pvr.setLineColor(Color.BLACK);
+      pvr.setLineWidth(2.f);
+      pvr = pp.addPoints(mul(rp3[0],-1),mul(rp3[1],-1));
+      pvr.setLineColor(Color.BLACK);
+      pvr.setLineWidth(2.f);
     }
     return rc;
   }

@@ -535,7 +535,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   n2 = len(f[0])
   n1 = len(f[0][0])
   s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YIN_ZDOWN)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)
