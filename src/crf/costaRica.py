@@ -89,9 +89,9 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  #goFaultImages()
+  goFaultImages()
   #getOceanBottom()
-  goSeisResample()
+  #goSeisResample()
   #goRose()
   #goStrikeRotation()
 
@@ -328,7 +328,7 @@ def goSkin():
   '''
 
 def goFaultImages():
-  #gx = readImage(gxfile)
+  gx = readImage(gxfile)
   if not plotOnly:
     fd = FaultDisplay()
     #skins = readSkins(fsktv)
@@ -339,8 +339,7 @@ def goFaultImages():
     #ftt = fillfloat(-0.001,n1,n2,n3)
     fd = FaultDisplay()
     #fd.getFlt(skins,gx,flt)
-    #fd.getFpt(skins,gx,fpt)
-    fd.getFpt(skins,fpt)
+    fd.getFpt(skins,gx,fpt)
     #fd.getFtt(skins,gx,ftt)
     #writeImage(fltfile,flt)
     writeImage(fptfile,fpt)
