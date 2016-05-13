@@ -82,14 +82,14 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  goFaultImages()
+  #goFaultImages()
   #getOceanBottom()
   #goSeisResample()
   #goRose()
@@ -315,9 +315,14 @@ def goSkin():
     print "total number of cells =",len(cells)
     print "total number of skins =",len(skins)
     print "number of cells in skins =",FaultSkin.countCells(skins)
-
-    removeAllSkinFiles(fskbase)
-    writeSkins(fskbase,skins)
+    fd = FaultDisplay()
+    print "fault skins load finish..."
+    fpt = fillfloat(-0.001,n1,n2,n3)
+    fd = FaultDisplay()
+    fd.getFpt(skins,gx,fpt)
+    writeImage("fpk",fpt)
+    #removeAllSkinFiles(fskbase)
+    #writeSkins(fskbase,skins)
   else:
     skins = readSkins(fskbase)
   '''
@@ -342,7 +347,7 @@ def goFaultImages():
     fd.getFpt(skins,gx,fpt)
     #fd.getFtt(skins,gx,ftt)
     #writeImage(fltfile,flt)
-    writeImage(fptfile,fpt)
+    writeImage("fpk",fpt)
     #writeImage(fttfile,ftt)
   else:
     #flt = readImage(fltfile)
