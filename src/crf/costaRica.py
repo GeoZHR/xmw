@@ -98,7 +98,7 @@ def main(args):
 def goFaultPoints():
   fp = readImage("fpk")
   rp = RosePlot()
-  ps = rp.getFaultPoints(fp)
+  ps = rp.faultPoints(fp)
   print len(ps)
   print len(ps[0])
   writeImage("fpkp",ps)
