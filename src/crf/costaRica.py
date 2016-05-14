@@ -82,7 +82,7 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goSkinTv()
   #goReSkin()
   #goSmooth()
@@ -90,10 +90,18 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
+  goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
+def goFaultPoints():
+  fp = readImage("fpk")
+  rp = RosePlot()
+  ps = rp.getFaultPoints(fp)
+  print len(ps)
+  print len(ps[0])
+  writeImage("fpkp",ps)
 
 def goSeisResample():
   hp = Helper()
