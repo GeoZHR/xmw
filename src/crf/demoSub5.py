@@ -79,10 +79,10 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
-  goScan()
+  #goSlopes()
+  #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goSkinTv()
   #goReSkin()
   #goSmooth()
@@ -90,20 +90,20 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
-  #goFaultPoints()
+  goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
-  gx = readImage(gxfile)
-  plot3(gx)
+  #gx = readImage(gxfile)
+  #plot3(gx)
 def goFaultPoints():
-  fp = readImage("fpk")
+  fp = readImage(fptfile)
   rp = RosePlot()
   ps = rp.faultPoints(fp)
   print len(ps)
   print len(ps[0])
-  writeImage("fpkp",ps)
+  writeImage("fpp",ps)
 
 def goSeisResample():
   hp = Helper()
@@ -117,11 +117,12 @@ def goSeisResample():
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
   gx = readImage(gxfile)
-  #fpt = readImage(fptfile)
-  fpt = readImage("fpk")
+  fpt = readImage(fptfile)
+  '''
   hpr = Helper()
   hpr.rotate(29,fpt)
   hpr.convert(fpt)
+  '''
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 

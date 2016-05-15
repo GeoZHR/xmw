@@ -5,7 +5,6 @@ Version: 2016.01.22
 """
 
 from utils import *
-#setupForSubset("nathan")
 setupForSubset("nathanSub3")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -73,7 +72,7 @@ maxThrow = 85.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-#pngDir = "../../../png/beg/bp/sub1/"
+pngDir = "../../../png/beg/nathan/sub3/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -94,7 +93,7 @@ def main(args):
   #getOceanBottom()
   #goSeisResample()
   goRose()
-  goStrikeRotation()
+  #goStrikeRotation()
 def goFaultPoints():
   fp = readImage("fpk")
   rp = RosePlot()
@@ -113,35 +112,40 @@ def goSeisResample():
   writeImage("gi",gi)
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
+
 def goStrikeRotation():
   gx = readImage(gxfile)
-  #fpt = readImage(fptfile)
-  fpt = readImage("fpk")
+  k1 = 520
+  plot3(gx,clab="Amplitude",k1=520,png="seis"+str(k1))
+  '''
+  fpt = readImage(fptfile)
   hpr = Helper()
   hpr.rotate(29,fpt)
   hpr.convert(fpt)
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=20,png="fpt")
+  k1s = [140,190,240]
+  for k1i in k1s:
+    plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=20,k1=k1i,png="fpt"+str(k1i))
+  '''
 
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   fp = readImage2D(93641902,4,"fpp")
-  #fp = readImage2D(43503704,4,"fpkp")
   rp.rotate(29,fp[3])
   rp.convert(fp[3])
+  fc = rp.removeSignature(115,fp)
   #rp.rose(fp[3],36)
-  c2,c3=10,2
-  tp,bt= 0, 80
-  #tp,bt= 80,120
-  #tp,bt=120,160
-  #tp,bt=160,200
-  #tp,bt=200,240
-  #tp,bt=240,280
-  #tp,bt=320,360
-  #tp,bt=360,400
-
-  rp.applyForRosePlots(tp,bt,c2,c3,n2,n3,36,fp,ob)
+  c2,c3=8,2
+  for tp  in range(0,480,20):
+    bt = tp+20
+    pp = rp.applyForRosePlotsX(tp,bt,c2,c3,n2,n3,36,fc,ob)
+    pf = PlotFrame(pp)
+    wx = 1450
+    wy = round((2*1450.0)/c2)
+    pf.setSize(wx,wy)
+    pf.setVisible(True)
+    pf.paintToPng(720,6,pngDir+str(tp)+".png")
 def getOceanBottom():
   hp = Helper()
   gx = readImage(gxfile)
@@ -558,11 +562,11 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           horizon=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,png=None):
+          links=False,curve=False,trace=False,k1=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3,1.5,0)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
@@ -687,33 +691,38 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(150,5,56)
+  
+  ipg.setSlices(240,2486,492)
+  if k1:
+    #ipg.setSlices(k1,2486,492)
+    ipg.setSlices(k1,3268,492)
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
-  ipg.setSlices(n1,376,308)
   if cbar:
-    sf.setSize(1037,700)
+    sf.setSize(1437,850)
+    #sf.setSize(2737,1700)
   else:
-    sf.setSize(900,700)
+    sf.setSize(1300,850)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.4*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
-  #ov.setScale(2.5)
+  #ov.setScale(1.5)
+  #ov.setScale(4.0)
+  ov.setScale(2.0)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.00,-0.05))
-  ov.setAzimuthAndElevation(45.0,35.0)
+  ov.setTranslate(Vector3(0.0,-0.10,0.00))
+  ov.setAzimuthAndElevation(295.0,45.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
-      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+      cbar.paintToPng(720,4,pngDir+png+"cbar.png")
 
 
 #############################################################################
