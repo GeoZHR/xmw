@@ -73,7 +73,7 @@ maxThrow = 85.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-#pngDir = "../../../png/beg/bp/sub1/"
+pngDir = "../../../png/beg/nathan/sub5/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -82,8 +82,8 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  #goSkin()
-  #goSkinTv()
+  goSkin()
+  goSkinTv()
   #goReSkin()
   #goSmooth()
   #goSlip()
@@ -91,7 +91,7 @@ def main(args):
   #goDisplay()
   #goFaultImages()
   #goFaultPoints()
-  getOceanBottom()
+  #getOceanBottom()
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
@@ -116,27 +116,27 @@ def goSeisResample():
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
   fpt = readImage(fptfile)
   '''
   hpr = Helper()
   hpr.rotate(29,fpt)
   hpr.convert(fpt)
   '''
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  plot3(fpt,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   fp = readImage2D(104068862,4,"fpp")
-  rp.rotate(29,fp[3])
+  rp.rotateX(299,fp[3])
   rp.convert(fp[3])
-  fc = rp.removeSignature(115,fp)
+  fc = rp.removeSignature(29,fp)
   #rp.rose(fp[3],36)
   c2,c3=8,2
-  for tp  in range(0,80,80):
-    bt = tp+80
+  for tp  in range(0,480,20):
+    bt = tp+20
     pp = rp.applyForRosePlotsX(tp,bt,c2,c3,n2,n3,36,fc,ob)
     pf = PlotFrame(pp)
     wx = 1450
@@ -287,25 +287,6 @@ def goSkinTv():
   plot3(gx,skins=skins,png="skinsTv")
   '''
 
-
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
-
 def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
@@ -330,9 +311,9 @@ def goSkin():
     fpt = fillfloat(-0.001,n1,n2,n3)
     fd = FaultDisplay()
     fd.getFpt(skins,gx,fpt)
-    writeImage(fptfile,fpt)
-    #removeAllSkinFiles(fskbase)
-    #writeSkins(fskbase,skins)
+    writeImage("fpk",fpt)
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skins)
   else:
     skins = readSkins(fskbase)
   '''

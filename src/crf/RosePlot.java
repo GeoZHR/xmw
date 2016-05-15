@@ -50,6 +50,19 @@ public class RosePlot {
     }
   }
 
+  public void rotateX(float phi, float[] fps) {
+    int np = fps.length;
+    for (int ip=0; ip<np; ++ip) {
+      float fpi = fps[ip];
+      if(fpi>=0.0f) {
+        fpi = phi-fpi;
+        if (fpi<0f) fpi+=360f;
+        fps[ip] = fpi;
+      }
+    }
+  }
+
+
   public void convert(float[] fps) {
     int np = fps.length;
     for (int ip=0; ip<np; ++ip) {
