@@ -90,8 +90,8 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
-  goFaultPoints()
-  #getOceanBottom()
+  #goFaultPoints()
+  getOceanBottom()
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
@@ -129,31 +129,29 @@ def goStrikeRotation():
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
-  fp = readImage2D(93641902,4,"fpp")
-  #fp = readImage2D(43503704,4,"fpkp")
+  fp = readImage2D(104068862,4,"fpp")
   rp.rotate(29,fp[3])
   rp.convert(fp[3])
+  fc = rp.removeSignature(115,fp)
   #rp.rose(fp[3],36)
-  c2,c3=10,2
-  tp,bt= 0, 80
-  #tp,bt= 80,120
-  #tp,bt=120,160
-  #tp,bt=160,200
-  #tp,bt=200,240
-  #tp,bt=240,280
-  #tp,bt=320,360
-  #tp,bt=360,400
+  c2,c3=8,2
+  for tp  in range(0,80,80):
+    bt = tp+80
+    pp = rp.applyForRosePlotsX(tp,bt,c2,c3,n2,n3,36,fc,ob)
+    pf = PlotFrame(pp)
+    wx = 1450
+    wy = round((2*1450.0)/c2)
+    pf.setSize(wx,wy)
+    pf.setVisible(True)
+    pf.paintToPng(720,6,pngDir+str(tp)+".png")
 
-  rp.applyForRosePlots(tp,bt,c2,c3,n2,n3,36,fp,ob)
 def getOceanBottom():
   hp = Helper()
   gx = readImage(gxfile)
-  '''
   ob = hp.getOceanBottom(0.1,gx)
   writeImage("ob",ob)
-  '''
-  ob = readImage2D(n2,n3,"ob")
-  plot3(gx,horizon=ob)
+  #ob = readImage2D(n2,n3,"ob")
+  #plot3(gx,horizon=ob)
 def goDisplay():
   '''
   gx = readImage(gxfile)
