@@ -55,14 +55,14 @@ cmfile = "cm"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 75,85
-sigmaPhi,sigmaTheta = 20,60
+minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 15,80
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.6
-minSkinSize = 500
+lowerLikelihood = 0.3
+upperLikelihood = 0.7
+minSkinSize = 2000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -80,7 +80,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
@@ -99,8 +99,6 @@ def main(args):
   sk = readSkins(fskbase)
   plot3(gx,skins=sk)
   '''
-  gx = readImage(fptfile)
-  writeImage("fpt144",gx[144])
 def goFaultPoints():
   fp = readImage(fptfile)
   rp = RosePlot()
@@ -197,12 +195,10 @@ def goSlopes():
 def goScan():
   print "goScan ..."
   if not plotOnly:
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
     gx = readImage(gxfile)
-    gx = FaultScanner.taper(10,0,0,gx)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    sig1,sig2,smooth=4.0,2.0,2.0
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
     print "ft min =",min(ft)," max =",max(ft)

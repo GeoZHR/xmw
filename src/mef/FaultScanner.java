@@ -221,6 +221,28 @@ public class FaultScanner {
   public float[][][][] scan(
       double phiMin, double phiMax,
       double thetaMin, double thetaMax,
+      float sig1, float sig2, float smooth, float[][][] g) {
+    Sampling sp = makePhiSampling(phiMin,phiMax);
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    float[][][][] snd = semblanceNumDen(sig1,sig2,smooth,g);
+    return scan(sp,st,snd);
+  }
+
+
+  /**
+   * Scans a specified image for fault strikes and dips.
+   * @param phiMin minimum fault strike, in degrees.
+   * @param phiMax maximum fault strike, in degrees.
+   * @param thetaMin minimum fault dip, in degrees.
+   * @param thetaMax maximum fault dip, in degrees.
+   * @param p2 slopes in the 2nd dimension.
+   * @param p3 slopes in the 3rd dimension.
+   * @param g the image to be scanned.
+   * @return array {fl,fp,ft} of fault likelihoods, strikes, and dips.
+   */
+  public float[][][][] scan(
+      double phiMin, double phiMax,
+      double thetaMin, double thetaMax,
       float[][][] p2, float[][][] p3, float[][][] g) {
     Sampling sp = makePhiSampling(phiMin,phiMax);
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
@@ -946,6 +968,26 @@ public class FaultScanner {
     }
     return q;
   }
+
+    // Computes fault semblance numerators and denominators.
+  private static float[][][][] semblanceNumDen(
+    float sig1, float sig2, float smooth, float[][][] f) 
+  {
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+    float[][][] sn = new float[n3][n2][n1];
+    float[][][] sd = new float[n3][n2][n1];
+    float[][][] fs = mul(f,f);
+    LocalOrientFilterP lof = new LocalOrientFilterP(sig1,sig2,sig2);
+    EigenTensors3 ets = lof.applyForTensors(f);
+    ets.setEigenvalues(0.00001f,1.0f,1.0f);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(ets,smooth,f, sn);
+    lsf.apply(ets,smooth,fs,sd);
+    return new float[][][][]{mul(sn,sn),sd};
+  }
+
 
   // Computes fault semblance numerators and denominators.
   private static float[][][][] semblanceNumDen(
