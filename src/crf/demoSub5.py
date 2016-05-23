@@ -258,7 +258,7 @@ def goSkinTv():
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),8):
+    for ic in range(0,len(fcs),4):
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
