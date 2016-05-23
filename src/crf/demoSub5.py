@@ -82,9 +82,8 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   goSkinTv()
-  #goReSkin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -136,6 +135,7 @@ def goRose():
   #rp.rose(fp[3],36)
   c2,c3=8,2
   for tp  in range(0,480,20):
+  #for tp  in range(0,100,100):
     bt = tp+20
     pp = rp.applyForRosePlotsX(tp,bt,c2,c3,n2,n3,36,fc,ob)
     pf = PlotFrame(pp)
@@ -254,10 +254,12 @@ def goSkinTv():
     fsx.setMinSkinSize(minSkinSize)
     fsx.setMaxPlanarDistance(0.2)
     fsk = readSkins(fskbase)
+    print "fault skins load finish..."
     fcs = FaultSkin.getCells(fsk)
     cells = []
     for ic in range(0,len(fcs),8):
       cells.append(fcs[ic])
+    print "fault cells load finish..."
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
     skins = fsx.findSkins(n1,n2,n3,cells)

@@ -118,6 +118,7 @@ def main(args):
   #goResults()
   fw = readImage("gu")
   plot3(fw)
+  '''
   fk1 = zerofloat(n2-910,n3)
   print n2-910
   for k1 in range(110,116,1): 
@@ -128,6 +129,7 @@ def main(args):
         fk1[i3][k2] = fw[i3][i2][k1]
         k2 = k2+1
     writeImage(fname,fk1)
+  '''
 def goResults():
   gx = readImage("gx")
   #gw = readImage("gw150")
