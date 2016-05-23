@@ -260,6 +260,7 @@ def goSkinTv():
     cells = []
     for ic in range(0,len(fcs),8):
       cells.append(fcs[ic])
+    print len(cells)
     print "fault cells load finish..."
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
