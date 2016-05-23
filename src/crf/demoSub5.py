@@ -83,7 +83,7 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goSkinTv()
+  #goSkinTv()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -94,8 +94,13 @@ def main(args):
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
-  #gx = readImage(gxfile)
-  #plot3(gx)
+  '''
+  gx = readImage(gxfile)
+  sk = readSkins(fskbase)
+  plot3(gx,skins=sk)
+  '''
+  gx = readImage(fptfile)
+  writeImage("fpt144",gx[144])
 def goFaultPoints():
   fp = readImage(fptfile)
   rp = RosePlot()
@@ -554,7 +559,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YIN_ZDOWN)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)
@@ -642,7 +647,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         cmap = ColorMap(-smax,smax,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
       else: # show fault likelihood
-        cmap = ColorMap(0.0,1.0,ColorMap.JET)
+        cmap = ColorMap(0.2,0.8,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
       qg = QuadGroup(xyz,uvw,rgb)
       qg.setStates(None)
