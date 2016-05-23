@@ -244,7 +244,7 @@ def goThin():
 
 def goSkinTv():
   print "go skin..."
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
   if not plotOnly:
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fs.makePhiSampling(minPhi,maxPhi)
@@ -254,6 +254,7 @@ def goSkinTv():
     fsx.setMinSkinSize(minSkinSize)
     fsx.setMaxPlanarDistance(0.2)
     fsk = readSkins(fskbase)
+    print len(fsk)
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(fsk)
     cells = []
@@ -265,6 +266,7 @@ def goSkinTv():
     skins = fsx.findSkins(n1,n2,n3,cells)
     removeAllSkinFiles(fsktv)
     writeSkins(fsktv,skins)
+    '''
     fd = FaultDisplay()
     print "fault skins load finish..."
     flt = fillfloat(-0.001,n1,n2,n3)
@@ -277,6 +279,7 @@ def goSkinTv():
     writeImage(fltfile,flt)
     writeImage(fptfile,fpt)
     writeImage(fttfile,ftt)
+    '''
   else:
     skins = readSkins(fsktv)
   '''
