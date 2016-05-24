@@ -26,7 +26,6 @@ public class TensorMaker {
     return ets;
   }
 
-
   public float[][][] mask(
     double small, double sigma1, double sigma2, double sigma3,
     float[][][] x) 

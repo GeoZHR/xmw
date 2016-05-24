@@ -13,6 +13,7 @@ f1,f2,f3 = s1.first,s2.first,s3.first
 
 # Names and descriptions of image files used below.
 sfile = "cfs" # input seismic image 
+ssfile = "cfss" # smoothed seismic image 
 #logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax = 2.4,5.0
 logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.2,2.8
 gfile = "cfg"+logType # simple gridding with null for unknown samples
@@ -31,6 +32,7 @@ dwfile = "dw"
 gufile = "gu"
 fskbase = "fsk"
 fskgood = "fsg"
+fslbase = "fsl"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -55,7 +57,7 @@ maxThrow = 15.0
 #pngDir = ".././../png/swt/print/"
 pngDir = "../../../png/swt/slides/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -65,8 +67,8 @@ def main(args):
   #goScan()
   #goSkin()
   #goReSkin()
-  goFlatten()
   #gridNearest()
+  gridBlendedP()
   #goInterp()
 
 def goSeisAndWells():
@@ -84,7 +86,7 @@ def goSeisAndWells():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(sfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   zm = ZeroMask(0.3,5,1,1,gx)
   zero,tiny=0.0,0.01
@@ -187,46 +189,24 @@ def goReSkin():
   plot3F(gx,skins=skins,png="skinsNew")
   plot3F(gx,skins=skins,links=True,png="skinsNewLinks")
 
-
-def goFlatten():
-  gf = readImage(sfile)
-  if not plotOnly:
-    sk = readSkins(fskgood)
-    flr = FlattenerR()
-    k2,k3=125,60
-    gr = flr.getReferImageX(k2,k3,gf)
-    smin,smax = -15,15
-    s1 = Sampling(n1)
-    s2 = Sampling(n2)
-    s3 = Sampling(n3)
-    r1mins = fillfloat(-0.2,n1,n2,n3)
-    r1maxs = fillfloat( 0.2,n1,n2,n3)
-    r2mins = fillfloat(-0.2,n1,n2,n3)
-    r2maxs = fillfloat( 0.2,n1,n2,n3)
-    r3mins = fillfloat(-0.2,n1,n2,n3)
-    r3maxs = fillfloat( 0.2,n1,n2,n3)
-    FaultSkin.setValuesOnFaults(-10.0,sk,r1mins)
-    FaultSkin.setValuesOnFaults( 10.0,sk,r1maxs)
-    FaultSkin.setValuesOnFaults(-10.0,sk,r2mins)
-    FaultSkin.setValuesOnFaults( 10.0,sk,r2maxs)
-    FaultSkin.setValuesOnFaults(-10.0,sk,r3mins)
-    FaultSkin.setValuesOnFaults( 10.0,sk,r3maxs)
-    dwc = DynamicWarpingC(12,smin,smax,s1,s2,s3)
-    dwc.setStrains(r1mins,r2mins,r3mins,r1maxs,r2maxs,r3maxs)
-    dwc.setSmoothness(6,4,4)
-    dw = dwc.findShifts(s1,gr,s1,gf)
-    gh = dwc.applyShifts(s1,gf,dw)
-    writeImage(dwfile,dw)
-    writeImage(ghfile,gh)
-  else:
-    gh = readImage(ghfile)
-    gr = readImage(grfile)
-    dw = readImage(dwfile)
-  plot3(gf,clab="Amplitude",png="gf1")
-  plot3(gh,clab="Amplitude",png="gh1")
-  plot3(gr,clab="Amplitude",png="gr1")
-  plot3(gf,dw,cmin=min(dw),cmax=max(dw),clab="Shifts (samples)",
-        cmap=jetFill(1.0),png="dw1")
+def goSmooth():
+  print "goSmooth ..."
+  flstop = 0.1
+  fsigma = 8.0
+  gx = readImage(sfile)
+  skins = readSkins(fskgood)
+  flt = zerofloat(n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFl(skins,flt)
+  p2,p3,ep = FaultScanner.slopes(4.0,2.0,2.0,5.0,gx)
+  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  writeImage(ssfile,gsx)
+  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fli")
+  plot3(gsx,png="gsx")
 
 
 def goInterp():
@@ -257,12 +237,32 @@ def gridBlendedP():
   gx = readImage(sfile)
   mk = tm.mask(0.3,5.0,1.0,1.0,gx)
   et = tm.applyForTensors(4.0,2.0,2.0,mk,gx)
+  fs = FaultSkinnerX()
+  sks = readSkins(fskgood)
+  fls = fillfloat(0.01,n1,n2,n3)
+  fs.getFls(sks,fls)
+  et.scale(fls) # scale structure tensors by fls
+  et.invertStructure(1.0,1.0,1.0) # invert and normalize
   et.setEigenvalues(0.001,1.0,1.0)
   bi = BlendedGridder3(et)
   p = readImage(gfile)
   t = bi.gridNearest(0.0,p)
   writeImage(pfile,p)
   writeImage(tfile,t)
+
+def makeImageTensors(s):
+  """ 
+  Returns tensors for guiding along features in specified image.
+  """
+  sigma = 3
+  n1,n2 = len(s[0]),len(s)
+  lof = LocalOrientFilter(sigma)
+  t = lof.applyForTensors(s) # structure tensors
+  c = coherence(sigma,t,s) # structure-oriented coherence c
+  c = clip(0.0,0.99,c) # c clipped to range [0,1)
+  t.scale(sub(1.0,c)) # scale structure tensors by 1-c
+  t.invertStructure(1.0,1.0) # invert and normalize
+  return t
 
 
 def getSamples():

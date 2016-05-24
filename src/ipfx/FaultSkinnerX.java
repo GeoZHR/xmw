@@ -320,8 +320,12 @@ public class FaultSkinnerX {
         int i1p = fc.i1;
         int i2p = fc.i2p;
         int i3p = fc.i3p;
+        int i1i = fc.i1;
+        int i2i = fc.i2;
+        int i3i = fc.i3;
         if(i2m>=n2){continue;}
         if(i3m>=n3){continue;}
+        fl[i3i][i2i][i1i] = fc.fl;
         fl[i3m][i2m][i1m] = fc.fl;
         fl[i3p][i2p][i1p] = fc.fl;
       }

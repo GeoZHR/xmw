@@ -76,11 +76,12 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSemblanceS()
+  #goSemblanceS()
   #goSemblance()
   #goOrientScan()
   #goThinX()
   #goSkin()
+  goFirstScan()
 
 def goSemblanceS():
   gx = readImage(gxfile)
@@ -107,6 +108,14 @@ def goSemblance():
   plot3(gx,clab="Amplitude",cint=1.0,png="seis")
   plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),
         clab="Fault attribute",cint=0.2,png="sem")
+
+def goFirstScan():
+  gx = readImage(gxfile)
+  fs = LocalOrientScanner(3,sigmaPhi,sigmaTheta)
+  fl = fs.firstScan(40,minTheta,maxTheta,4,2,2,gx)
+  print "fl min =",min(fl)," max =",max(fl)
+  plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
+        clab="Enhanced fault attribute",cint=0.2,png="fl")
 
 def goOrientScan():
   gx = readImage(gxfile)

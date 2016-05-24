@@ -278,6 +278,33 @@ public class LocalOrientScanner {
   }
 
 
+  public float[][][] firstScan(
+    float sigmaTheta, float thetaMin, float thetaMax,
+    float sig1, float sig2, float smooth,float[][][] gx) 
+  {
+    return scanSlice3(sigmaTheta,thetaMin,thetaMax,sig1,sig2,smooth,gx); 
+    /*
+    float[][][] fl3=scanSlice3(sigmaTheta,thetaMin,thetaMax,sig1,sig2,smooth,gx); 
+    float[][][] fl2=scanSlice2(sigmaTheta,thetaMin,thetaMax,sig1,sig2,smooth,gx); 
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    float[][][] fls = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fl3i = fl3[i3][i2][i1];
+      float fl2i = fl2[i3][i2][i1];
+      if(fl3i>fl2i) {
+        fls[i3][i2][i1] = fl3i;
+      } else {
+        fls[i3][i2][i1] = fl2i;
+      }
+    }}}
+    return fls;
+    */
+  } 
+
   /**
    * Scans a specified image for fault strikes and dips.
    * @param phiMin minimum fault strike, in degrees.
@@ -567,6 +594,47 @@ public class LocalOrientScanner {
     return new float[][][][]{f,p,t};
   }
 
+  private float[][][] scanSlice3(
+    final float sigmaTheta, final float minTheta, final float maxTheta,
+    final float sigma1, final float sigma2, final float smooth, 
+    final float[][][] gx) {
+    final int n3 = gx.length;
+    final int n2 = gx[0].length;
+    final int n1 = gx[0][0].length;
+    final float[][][] fl = new float[n3][n2][n1];
+    final FaultScanner2 fs2 = new FaultScanner2(sigmaTheta);
+    loop(n3,new LoopInt() {
+    public void compute(int i3) {
+      System.out.println("i3="+i3);
+      float[][][] flt = fs2.scan(minTheta,maxTheta,sigma1,sigma2,smooth,gx[i3]);
+      float[][][] fltt = fs2.thin(flt);
+      fl[i3] = fltt[0];
+    }});
+    return fl;
+  }
+
+  private float[][][] scanSlice2(
+    final float sigmaTheta, final float minTheta, final float maxTheta,
+    final float sigma1, final float sigma2, final float smooth, 
+    final float[][][] gx) {
+    final int n3 = gx.length;
+    final int n2 = gx[0].length;
+    final int n1 = gx[0][0].length;
+    final float[][][] fl = new float[n3][n2][n1];
+    final FaultScanner2 fs2 = new FaultScanner2(sigmaTheta);
+    loop(n2,new LoopInt() {
+    public void compute(int i2) {
+      System.out.println("i2="+i2);
+      float[][] g2 = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3)
+        g2[i3] = gx[i3][i2];
+      float[][][] flt = fs2.scan(minTheta,maxTheta,sigma1,sigma2,smooth,g2);
+      float[][][] fltt = fs2.thin(flt);
+      for (int i3=0; i3<n3; ++i3)
+        fl[i3][i2] = fltt[0][i3];
+    }});
+    return fl;
+  }
 
   // Sampling of angles depends on extent of smoothing.
   private Sampling makePhiSampling(float phiMin, float phiMax) {

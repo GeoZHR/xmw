@@ -174,7 +174,7 @@ public class FaultScanner2 {
    * @param flpt array {fl,fp,ft} of fault likelihoods, strikes, and dips.
    * @return array {fl,fp,ft} of thinned fault likelihoods, strikes, and dips.
    */
-  public static float[][][] thin(float[][][] flpt) {
+  public float[][][] thin(float[][][] flpt) {
     int n1 = flpt[0][0].length;
     int n2 = flpt[0].length;
     float[][] f = flpt[0];
