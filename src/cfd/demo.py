@@ -237,12 +237,12 @@ def gridBlendedP():
   gx = readImage(sfile)
   mk = tm.mask(0.3,5.0,1.0,1.0,gx)
   et = tm.applyForTensors(4.0,2.0,2.0,mk,gx)
-  #fs = FaultSkinnerX()
-  #sks = readSkins(fskgood)
-  #fls = fillfloat(0.01,n1,n2,n3)
-  #fs.getFls(sks,fls)
-  #et.scale(fls) # scale structure tensors by fls
-  #et.invertStructure(1.0,1.0,1.0) # invert and normalize
+  fs = FaultSkinnerX()
+  sks = readSkins(fskgood)
+  fls = fillfloat(0.01,n1,n2,n3)
+  fs.getFls(sks,fls)
+  et.scale(fls) # scale structure tensors by fls
+  et.invertStructure(1.0,1.0,1.0) # invert and normalize
   et.setEigenvalues(0.001,1.0,1.0)
   bi = BlendedGridder3(et)
   p = readImage(gfile)
