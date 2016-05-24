@@ -28,7 +28,7 @@ fpfile = "fp"
 flfile = "fl"
 ftfile = "ft"
 dwfile = "dw"
-ghfile = "gh"
+gufile = "gu"
 fskbase = "fsk"
 fskgood = "fsg"
 
@@ -66,7 +66,6 @@ def main(args):
   #goSkin()
   #goReSkin()
   goFlatten()
-
   #gridNearest()
   #goInterp()
 
@@ -188,6 +187,7 @@ def goReSkin():
   plot3F(gx,skins=skins,png="skinsNew")
   plot3F(gx,skins=skins,links=True,png="skinsNewLinks")
 
+
 def goFlatten():
   gf = readImage(sfile)
   if not plotOnly:
@@ -211,9 +211,9 @@ def goFlatten():
     FaultSkin.setValuesOnFaults( 10.0,sk,r2maxs)
     FaultSkin.setValuesOnFaults(-10.0,sk,r3mins)
     FaultSkin.setValuesOnFaults( 10.0,sk,r3maxs)
-    dwc = DynamicWarpingC(8,smin,smax,s1,s2,s3)
+    dwc = DynamicWarpingC(12,smin,smax,s1,s2,s3)
     dwc.setStrains(r1mins,r2mins,r3mins,r1maxs,r2maxs,r3maxs)
-    dwc.setSmoothness(4,2,2)
+    dwc.setSmoothness(6,4,4)
     dw = dwc.findShifts(s1,gr,s1,gf)
     gh = dwc.applyShifts(s1,gf,dw)
     writeImage(dwfile,dw)

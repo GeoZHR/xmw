@@ -6,8 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package hv;
 
-import edu.mines.jtk.dsp.*;
-
+import util.*;
 /**
  * Estimates local slopes of features in 2D and 3D images.
  * 
@@ -161,9 +160,7 @@ public class LocalSlopeFinder {
     // Normal vectors and linearities.
     float[][] u1 = new float[n2][n1];
     float[][] u2 = p2;
-    LocalOrientFilter lof = new LocalOrientFilter(_sigma1,_sigma2);
-    //LocalOrientFilterX lofx = new LocalOrientFilterX(_sigma1,_sigma2);
-    //lofx.setScales(_scales2);
+    LocalOrientFilterP lof = new LocalOrientFilterP(_sigma1,_sigma2);
     lof.applyForNormalLinear(f,u1,u2,el);
 
     // Compute slopes from normal vectors.
@@ -200,9 +197,7 @@ public class LocalSlopeFinder {
     float[][][] u1 = new float[n3][n2][n1];
     float[][][] u2 = p2;
     float[][][] u3 = p3;
-    LocalOrientFilter lof = new LocalOrientFilter(_sigma1,_sigma2,_sigma3);
-    //LocalOrientFilterX lofx = new LocalOrientFilterX(_sigma1,_sigma2,_sigma3);
-    //lofx.setScales(_scales3);
+    LocalOrientFilterP lof = new LocalOrientFilterP(_sigma1,_sigma2,_sigma3);
     lof.applyForNormalPlanar(f,u1,u2,u3,ep);
 
     // Compute slopes from normal vectors.
