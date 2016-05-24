@@ -8,7 +8,7 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/mef/"
+_datdir = "../../../data/seis/"
 
 #############################################################################
 # Setup
@@ -29,7 +29,7 @@ def setupForSubset(name):
   if name=="f3d":
     """ subset with unconformities and faults """
     print "setupForSubset: f3d"
-    seismicDir = _datdir+"f3d/"
+    seismicDir = _datdir+"mef/f3d/"
     pngDir = "../../../png/mef/f3d/"
     #n1,n2,n3 = 118,310,300
     n1,n2,n3 = 65,380,591
@@ -41,7 +41,7 @@ def setupForSubset(name):
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="clyde":
     print "setupForSubset: subset of clyde"
-    seismicDir = _datdir+"clyde/"
+    seismicDir = _datdir+"mef/clyde/"
     pngDir = "../../../png/mef/clyde/"
     n1,n2,n3 = 400,801,300
     d1,d2,d3 = 1.0,1.0,1.0 
@@ -50,11 +50,19 @@ def setupForSubset(name):
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="clydeDave":
     print "setupForSubset: subset of clyde"
-    seismicDir = _datdir+"clyde/dave/"
+    seismicDir = _datdir+"mef/clyde/dave/"
     pngDir = "../../../png/mef/clyde/dave/"
     n1,n2,n3 = 400,801,300
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    f1,f2,f3 = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="shengwen":
+    print "setupForSubset: subset provided by Shengwen"
+    seismicDir = _datdir+"shengwen/"
+    pngDir = "../../../png/shengwen/"
+    n1,n2,n3 = 567,159,90
+    d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   else:
@@ -84,6 +92,19 @@ def readImage(name):
   ais.readFloats(image)
   ais.close()
   return image
+
+def readImageLittle(name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 
 def writeImage(name,image):
   """ 
