@@ -23,7 +23,41 @@ def main(args):
   #goF3dSeis()
   #goHan()
   #goNwc()
-  goShengwen()
+  #goShengwen()
+  goPoseidon()
+def goPoseidon():
+  firstLook = False # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
+  basedir = "../../../data/seis/poseidon/"
+  sgyfile = basedir+"poseidon_cropped.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,850,1499,8507,1499,7505
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,850,0,1168,0,1001
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,6,6)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    gain(100,x)
+    show3d(x,clip=max(x)/2)
+
+  basedir = "../../../data/seis/poseidon/"
+  sgyfile = basedir+"poseidon_cropped.sgy"
+
 def goShengwen():
   '''
   ****** beginning of SEG-Y file info ******

@@ -80,7 +80,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  goScan()
+  #goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
@@ -93,7 +93,7 @@ def main(args):
   #getOceanBottom()
   #goSeisResample()
   #goRose()
-  #goStrikeRotation()
+  goStrikeRotation()
   '''
   gx = readImage(gxfile)
   sk = readSkins(fskbase)
@@ -119,7 +119,7 @@ def goSeisResample():
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
   #gx = readImage(gxfile)
-  fpt = readImage(fptfile)
+  fpt = readImage("fpk")
   '''
   hpr = Helper()
   hpr.rotate(29,fpt)

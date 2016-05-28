@@ -332,6 +332,30 @@ public class FaultSkinnerX {
     }
   }
 
+  public void setValuesOnFaults(FaultSkin[] sks, float flv, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1m = fc.i1;
+        int i2m = fc.i2m;
+        int i3m = fc.i3m;
+        int i1p = fc.i1;
+        int i2p = fc.i2p;
+        int i3p = fc.i3p;
+        int i1i = fc.i1;
+        int i2i = fc.i2;
+        int i3i = fc.i3;
+        if(i2m>=n2){continue;}
+        if(i3m>=n3){continue;}
+        fl[i3i][i2i][i1i] = flv;
+        fl[i3m][i2m][i1m] = flv;
+        fl[i3p][i2p][i1p] = flv;
+      }
+    }
+  }
+
+
   /**
    * Sets the minimum number of cells in a skin. Skins smaller than this will
    * be discarded.

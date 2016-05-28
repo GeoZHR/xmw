@@ -14,8 +14,8 @@ f1,f2,f3 = s1.first,s2.first,s3.first
 # Names and descriptions of image files used below.
 sfile = "cfs" # input seismic image 
 ssfile = "cfss" # smoothed seismic image 
-#logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax = 2.4,5.0
-logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.2,2.8
+logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,5.0,1.0
+#logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
 gfile = "cfg"+logType # simple gridding with null for unknown samples
 pfile = "cfp"+logType # values of nearest known samples
 qfile = "cfq"+logType # output of blended gridder
@@ -55,9 +55,9 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = ".././../png/swt/print/"
-pngDir = "../../../png/swt/slides/"
-pngDir = None
 plotOnly = True
+pngDir = None
+pngDir = "../../../png/cfd/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -68,9 +68,27 @@ def main(args):
   #goSkin()
   #goReSkin()
   #gridNearest()
-  gridBlendedP()
-  #goInterp()
+  #gridBlendedP()
+  #gridBlendedQ()
+  goFigures()
 
+def goFigures():
+  g = readImage(sfile)
+  q = readImage(qfile)
+  mds=[]
+  x12,x13,w1s = getLog242()
+  x22,x23,w2s = getLog281()
+  mds.append(SynSeis.getModel(x12,x13,w1s[0],w1s[1],w1s[2]))
+  mds.append(SynSeis.getModel(x22,x23,w2s[0],w2s[1],w2s[2]))
+  swt = SeismicWellTie()
+  sps = swt.getSamples(s1,mds)
+  if logType=="v":
+    spc = sps[0]
+  if logType=="d":
+    spc = sps[1]
+  plot3(g,sps=spc,wmin=vmin,wmax=vmax,clab=logLabel,cint=cit,png="seis"+logType)
+  plot3(g,q,cmin=vmin,cmax=vmax,sps=spc,wmin=vmin,wmax=vmax,
+        clab=logLabel,cint=cit,png="interp"+logType)
 def goSeisAndWells():
   gx = readImage(sfile)
   x12,x13,w1s = getLog242()
@@ -249,6 +267,31 @@ def gridBlendedP():
   t = bi.gridNearest(0.0,p)
   writeImage(pfile,p)
   writeImage(tfile,t)
+
+def gridBlendedQ():
+  tm = TensorMaker()
+  gx = readImage(sfile)
+  mk = tm.mask(0.3,5.0,1.0,1.0,gx)
+  et = tm.applyForTensors(4.0,2.0,2.0,mk,gx)
+  fs = FaultSkinnerX()
+  sks = readSkins(fskgood)
+  fls = fillfloat(0.01,n1,n2,n3)
+  fs.getFls(sks,fls)
+  et.scale(fls) # scale structure tensors by fls
+  et.invertStructure(1.0,1.0,1.0) # invert and normalize
+  eu = fillfloat(0.001,n1,n2,n3)
+  ev = fillfloat(1.000,n1,n2,n3)
+  ew = fillfloat(1.000,n1,n2,n3)
+  et.setEigenvalues(eu,ev,ew)
+  bg = BlendedGridder3(et)
+  bg.setSmoothness(1.0)
+  p = readImage(pfile)
+  t = readImage(tfile)
+  t = clip(0.0,50.0,t)
+  q = copy(p)
+  bg.gridBlended(t,p,q)
+  writeImage(qfile,q)
+
 
 def makeImageTensors(s):
   """ 
@@ -707,7 +750,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     xyz = tgs.trianglesForSurface(surf,0,n1-1)
     tg  = TriangleGroup(True,xyz)
     sf.world.addChild(tg)
-  ipg.setSlices(924,224,68)
+  #ipg.setSlices(924,202,26)
+  ipg.setSlices(834,202,26)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
     sf.setSize(837,700)
@@ -717,10 +761,10 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   ov = sf.getOrbitView()
-  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.9*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.1)
-  ov.setAzimuthAndElevation(235,25)
+  ov.setAzimuthAndElevation(125,25)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,0.05,0.08))
   sf.setVisible(True)
@@ -729,7 +773,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
       #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
-      cbar.setInterval(0.5)
+      cbar.setInterval(cint)
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 def wellGroup(logs,curve,cmin=0,cmax=0,cbar=None):

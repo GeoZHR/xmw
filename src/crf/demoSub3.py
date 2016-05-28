@@ -92,8 +92,12 @@ def main(args):
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
-  goRose()
+  #goRose()
   #goStrikeRotation()
+  fpt = readImage(fptfile)
+  plot3(fpt,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=20)
+
 def goFaultPoints():
   fp = readImage("fpk")
   rp = RosePlot()

@@ -75,7 +75,8 @@ def goThin():
   if not plotOnly:
     fl = readImage2D(n1,n2,flfile)
     ft = readImage2D(n1,n2,ftfile)
-    flt,ftt = FaultScanner2.thin([fl,ft])
+    fs = FaultScanner2(sigmaTheta)
+    flt,ftt = fs.thin([fl,ft])
     writeImage(fltfile,flt)
     writeImage(fttfile,ftt)
   else:
