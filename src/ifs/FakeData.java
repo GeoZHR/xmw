@@ -78,7 +78,7 @@ public class FakeData {
         }
         ViewCanvas vc = frame.getViewCanvas();
         OrbitView ov = frame.getOrbitView();
-        vc.setBackground(Color.WHITE);
+        //vc.setBackground(Color.WHITE);
         ov.setAzimuthAndElevation(40.0,25.0);
         ov.setScale(2.2);
         ov.setTranslate(new Vector3(-0.0102,-0.0508,0.0395));

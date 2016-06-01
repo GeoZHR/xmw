@@ -4,7 +4,7 @@ apply plugin: 'scala'
 defaultTasks 'compileJava'
 
 description = "Xinming's research"
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 sourceSets {
   main {
@@ -31,8 +31,8 @@ allprojects {
 
 repositories.mavenCentral() // for Scala jars
 dependencies {
-  compile fileTree('../jtk/build/libs') // for edu_mines_jtk.jar
-  compile fileTree('../jtk/libs') // jars provided with the Mines JTK
+  compile fileTree('../jtk/core/build/libs') // for edu_mines_jtk.jar
+  compile fileTree('../libs') // jars provided with the old Mines JTK
   compile fileTree('../idh/bench/build/libs') // for idh
   compile fileTree('../idh/bench/libs') // for idh.jar
   compile fileTree('../ipf/build/libs') // for dave_ipf.jar
