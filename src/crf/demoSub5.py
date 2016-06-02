@@ -290,7 +290,7 @@ def goSkinTv():
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(sks)
     cells = []
-    for ic in range(0,len(fcs),8):
+    for ic in range(0,len(fcs),6):
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
@@ -308,20 +308,15 @@ def goSkinTv():
     skins = fsx.findSkins(n1,n2,n3,cells)
     removeAllSkinFiles(fsktv)
     writeSkins(fsktv,skins)
-    '''
     fd = FaultDisplay()
     print "fault skins load finish..."
-    flt = fillfloat(-0.001,n1,n2,n3)
-    fpt = fillfloat(-0.001,n1,n2,n3)
-    ftt = fillfloat(-0.001,n1,n2,n3)
     fd = FaultDisplay()
-    fd.getFlt(skins,gx,flt)
-    fd.getFpt(skins,gx,fpt)
-    fd.getFtt(skins,gx,ftt)
-    writeImage(fltfile,flt)
-    writeImage(fptfile,fpt)
-    writeImage(fttfile,ftt)
-    '''
+    fd.getFlt(skins,fl)
+    fd.getFpt(skins,fp)
+    fd.getFtt(skins,ft)
+    writeImage(fltfile,fl)
+    writeImage(fptfile,fp)
+    writeImage(fttfile,ft)
   else:
     skins = readSkins(fsktv)
   '''
