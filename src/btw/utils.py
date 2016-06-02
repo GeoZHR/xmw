@@ -8,7 +8,7 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/btong/"
+_datdir = "../../../data/seis/tbai/"
 
 #############################################################################
 # Setup
@@ -22,9 +22,9 @@ def setupForSubset(name):
   global seismicDir
   global s1,s2,s3
   global n1,n2,n3
-  if name=="btong":
+  if name=="tbai":
     """ fake image """
-    print "setupForSubset: btong"
+    print "setupForSubset: tbai"
     seismicDir = _datdir
     n1,n2,n3 = 3000,600,2
     d1,d2,d3 = 1.0,1,1.00
@@ -55,7 +55,7 @@ def readImage2(name):
   """
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2)
-  ais = ArrayInputStream(fileName)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
   return image
@@ -79,7 +79,7 @@ def writeImage(name,image):
   image: the image
   """
   fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image

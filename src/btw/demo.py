@@ -5,34 +5,29 @@ Version: 2015.02.09
 """
 
 from utils import *
-setupForSubset("btong")
+setupForSubset("tbai")
 #setupForSubset("tp")
 #setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
-n1,n2 = s1.count,s2.count
+n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
-g1file = "data1" # input image (maybe after bilateral filtering)
-g2file = "data2" # input image (maybe after bilateral filtering)
-gwfile = "gw"
+gofile = "Odat" # input image (maybe after bilateral filtering)
+gsfile = "Simu" # input image (maybe after bilateral filtering)
+gcfile = "gw"
 ssfile = "ss"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 plotOnly = False
-pngDir = "../../../png/zhiguang/"
+pngDir = "../../../png/tbai/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goWarp()
+  goWarp()
   #goTest()
-  gx = readImage("Odat")
-  fx = gx[0]
-  print min(fx)
-  print max(fx)
-  plot2(s1,s2,fx,clab="g",cmin=-0.01,cmax=0.01)
 def goTest():
   g = zerofloat(n1,n2)
   g1 = zerofloat(n1,n2)
@@ -49,27 +44,51 @@ def goTest():
   plot2(s1,s2,g,clab="g",cmin=0,cmax=1)
   plot2(s1,s2,g1,clab="g1",cmin=min(g1),cmax=max(g1))
 def goWarp():
-  g1 = readImage2(g1file)
-  g2 = readImage2(g2file)
-  g1 = clip(-0.0005,0.0005,g1)
-  g2 = clip(-0.0005,0.0005,g2)
-  g1 = mul(g1,10000)
-  g2 = mul(g2,10000)
-  smin,smax = -5.0,70.0
-  r1min,r1max = -0.8,0.8
-  r2min,r2max = -0.8,0.8
-  dwk = DynamicWarpingR(smin,smax,s1,s2)
-  dwk.setStrainLimits(r1min,r1max,r2min,r2max)
-  dwk.setSmoothness(8,8)
-  ss = dwk.findShifts(s1,g1,s1,g2)
-  gw = dwk.applyShifts(s1,g2,ss)
-  writeImage(gwfile,gw)
+  go = readImage(gofile)
+  gs = readImage(gsfile)
+  gc = zerofloat(n1,n2,n3)
+  smin,smax =  0.0,300.0
+  r1min,r1max = -0.5,0.5
+  r2min,r2max = -0.5,0.5
+  r3min,r3max = -0.001,0.001
+  dwk = DynamicWarpingK(8,smin,smax,s1,s2,s3)
+  dwk.setStrainLimits(r1min,r1max,r2min,r2max,r3min,r3max)
+  dwk.setSmoothness(4,2)
+  ss = dwk.findShifts(s1,go,s1,gs)
+  gc = dwk.applyShifts(s1,gs,ss)
+  writeImage(gcfile,gc)
+  '''
+  writeImage(gsfile,ss)
+  gc[0] = dwk.applyShifts(s1,gs[0],ss)
+  gc[1] = dwk.applyShifts(s1,gs[1],ss)
   writeImage(ssfile,ss)
-  plot2(s1,s2,g1,clab="g1",cmin=-2,cmax=2,png="g1")
-  plot2(s1,s2,g2,clab="g2",cmin=-2,cmax=2,png="g2")
-  plot2(s1,s2,gw,clab="gw",cmin=-2,cmax=2,png="gw")
-  plot2(s1,s2,ss,cmap=ColorMap.JET,
-   clab="Shifts (samples)",cmin=min(ss),cmax=max(ss),png="ss")
+  '''
+  '''
+  gc = readImage(gcfile)
+  ss = readImage2(ssfile)
+  '''
+  title1 = "Observed: component one"
+  title2 = "Simulated: component one"
+  title3 = "Simulated: component one (shifted)"
+  title4 = "Observed: component two"
+  title5 = "Simulated: component two"
+  title6 = "Simulated: component two (shifted)"
+  png1 = "obOne"
+  png2 = "smOne"
+  png3 = "smOneShift"
+  png4 = "obTwo"
+  png5 = "smTwo"
+  png6 = "smTwoShift"
+  '''
+  plot2(s1,s2,go[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title1,png=png1)
+  plot2(s1,s2,gs[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title2,png=png2)
+  plot2(s1,s2,gc[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title3,png=png3)
+  plot2(s1,s2,go[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title4,png=png4)
+  plot2(s1,s2,gs[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title5,png=png5)
+  plot2(s1,s2,gc[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title6,png=png6)
+  '''
+  #plot2(s1,s2,ss,cmap=ColorMap.JET,
+  # clab="Shifts (samples)",cmin=min(ss),cmax=max(ss),png="ss")
 
 def like2(x):
   n2 = len(x)
@@ -169,7 +188,7 @@ def plot2(s1,s2,x,cmap=ColorMap.GRAY,clab=None,cmin=0,cmax=0,
   if title:
     sp.setTitle(title)
   sp.addColorBar(clab)
-  sp.setSize(680,600)
+  sp.setSize(680,800)
   sp.plotPanel.setColorBarWidthMinimum(80)
   pv = sp.addPixels(s1,s2,x)
   pv.setColorModel(cmap)
