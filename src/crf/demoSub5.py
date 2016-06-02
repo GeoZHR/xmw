@@ -55,14 +55,14 @@ cmfile = "cm"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 20,80
+minTheta,maxTheta = 75,85
+sigmaPhi,sigmaTheta = 20,60
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
 upperLikelihood = 0.7
-minSkinSize = 2000
+minSkinSize = 500
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
