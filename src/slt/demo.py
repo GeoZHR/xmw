@@ -1,7 +1,7 @@
 """
-Demo of surface reconstruction from fault cells/oriented points
-Author: Xinming Wu and Dave Hale, Colorado School of Mines
-Version: 2015.02.09
+Demo of salt likelihoods and salt boundaries
+Author: Xinming Wu, Colorado School of Mines
+Version: 2015.12.19
 """
 
 from utils import *

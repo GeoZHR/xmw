@@ -1,6 +1,6 @@
 """
-Demonstrate 3D seismic image processing for faults and horizons
-Author: Dave Hale, Colorado School of Mines
+Demonstrate horizon volume with constraints
+Author: Xinming Wu, Colorado School of Mines
 Version: 2014.07.17
 """
 

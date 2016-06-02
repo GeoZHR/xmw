@@ -56,7 +56,7 @@ cmfile = "cm"
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 15,80
+sigmaPhi,sigmaTheta = 20,80
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -71,9 +71,9 @@ maxThrow = 85.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub5/"
+pngDir = None
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -84,6 +84,7 @@ def main(args):
   #goThin()
   #goSkin()
   #goSkinTv()
+  goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -93,7 +94,7 @@ def main(args):
   #getOceanBottom()
   #goSeisResample()
   #goRose()
-  goStrikeRotation()
+  #goStrikeRotation()
   '''
   gx = readImage(gxfile)
   sk = readSkins(fskbase)
@@ -118,14 +119,14 @@ def goSeisResample():
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
-  #gx = readImage(gxfile)
+  gx = readImage(gxfile)
   fpt = readImage("fpk")
   '''
   hpr = Helper()
   hpr.rotate(29,fpt)
   hpr.convert(fpt)
   '''
-  plot3(fpt,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goRose():
@@ -242,6 +243,34 @@ def goThin():
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   '''
+def goReSkin():
+  print "goReSkin ..."
+  useOldCells = True
+  #gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(flfile)
+    sk = readSkins(fskbase)
+    fsx = FaultSkinnerXX()
+    fsx.setParameters(10,10,0.2)
+    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsx.setMinSkinSize(minSkinSize)
+    fsx.setMaxPlanarDistance(0.2)
+    fsx.setSkinning(useOldCells)
+    cells = FaultSkin.getCells(sk)
+    fsx.resetCells(cells)
+    skins = fsx.findSkinsXX(cells,fl)
+    removeAllSkinFiles(fskgood)
+    writeSkins(fskgood,skins)
+  skins = readSkins(fskgood)
+  for skin in skins:
+    skin.smoothCellNormals(4)
+  #plot3(gx,skins=skins,png="skinsNew")
+  #plot3(gx,skins=skins,links=True,png="skinsNewLinks")
+  #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
+  '''
+  for iskin,skin in enumerate(skins):
+    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+  '''
 
 def goSkinTv():
   print "go skin..."
@@ -259,7 +288,7 @@ def goSkinTv():
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(fsk)
     cells = []
-    for ic in range(0,len(fcs),4):
+    for ic in range(0,len(fcs),8):
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."

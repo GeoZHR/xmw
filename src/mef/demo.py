@@ -26,6 +26,7 @@ fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
+fsktv = "fst"
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fwsfile = "fws" # unfaulted image
@@ -69,8 +70,9 @@ def main(args):
   #goRescan()
   #goOrientScan()
   #goThin()
-  goSkin()
-  #goReSkin()
+  #goSkin()
+  #goSkinTv()
+  goReSkin()
   '''
   goSmooth()
   goSlip()
@@ -306,53 +308,60 @@ def goStat():
 def goSkin():
   print "goSkin ..."
   gx = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.makePhiSampling(minPhi,maxPhi)
-  st = fs.makeThetaSampling(minTheta,maxTheta)
-
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.1)
-  fs.setMinSkinSize(minSkinSize)
-  cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  plot3(gx,skins=skins)
-  fr = FaultReskin()
-  #cells = FaultSkin.getCells(skins)
-  fl,fp,ft = fr.rescan(n1,n2,n3,sp,st,cells)
-  div(fl,max(fl),fl)
-  cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  plot3(gx,skins=skins)
-
-  #fl,fp,ft = fr.rescan(n1,n2,n3,cells)
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-      clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
-      clab="Fault dip (degrees)",png="ft")
-
-
-  '''
-  plot3(gx,skins=fsk)
-  skins = fs.findSkins(cells)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  print "total number of cells =",len(cells)
-  print "total number of skins =",len(skins)
-  print "number of cells in skins =",FaultSkin.countCells(skins)
-  removeAllSkinFiles(fskbase)
-  writeSkins(fskbase,skins)
+  if not plotOnly:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.2)
+    fs.setMinSkinSize(minSkinSize)
+    cells = fs.findCells([fl,fp,ft])
+    skins = fs.findSkins(cells)
+    for skin in skins:
+      skin.smoothCellNormals(4)
+    print "total number of cells =",len(cells)
+    print "total number of skins =",len(skins)
+    print "number of cells in skins =",FaultSkin.countCells(skins)
+    fd = FaultDisplay()
+    print "fault skins load finish..."
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skins)
+  else:
+    skins = readSkins(fskbase)
   plot3(gx,cells=cells,png="cells")
   plot3(gx,skins=skins)
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,)
-  '''
+
+def goSkinTv():
+  print "go skin..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    sp = fs.makePhiSampling(minPhi,maxPhi)
+    st = fs.makeThetaSampling(minTheta,maxTheta)
+    fsx = FaultSkinnerX()
+    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsx.setMinSkinSize(minSkinSize)
+    fsx.setMaxPlanarDistance(0.2)
+    fsk = readSkins(fskbase)
+    print len(fsk)
+    print "fault skins load finish..."
+    fcs = FaultSkin.getCells(fsk)
+    cells = []
+    for ic in range(0,len(fcs),8):
+      cells.append(fcs[ic])
+    print len(cells)
+    print "fault cells load finish..."
+    fsx.resetCells(cells)
+    fsx.setGaussWeights(sp,st)
+    skins = fsx.findSkins(n1,n2,n3,cells)
+    removeAllSkinFiles(fsktv)
+    writeSkins(fsktv,skins)
+  else:
+    skins = readSkins(fsktv)
+  plot3(gx,skins=skins,png="skinsTv")
+
 
 def goReSkin():
   print "goReSkin ..."
@@ -361,7 +370,7 @@ def goReSkin():
   if not plotOnly:
     fl = readImage(flfile)
     sk = readSkins(fskbase)
-    fsx = FaultSkinnerX()
+    fsx = FaultSkinnerXX()
     fsx.setParameters(10,10,0.2)
     fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsx.setMinSkinSize(minSkinSize)

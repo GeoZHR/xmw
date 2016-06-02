@@ -1,25 +1,34 @@
+"""
+Demo of salt likelihoods and salt boundaries
+Author: Xinming Wu, Colorado School of Mines
+Version: 2015.12.19
+"""
 from utils import *
 
 setupForSubset("2dSub1")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
+# Names and descriptions of image files used below.
+gxfile = "gx" # input image 
+elfile = "el" # linearity image
+slfile = "sl" # salt likelihoods
+st1file = "st1" # thinned salt likelihoods
+st2file = "st2" # thinned salt likelihoods
+sffile = "sf"   # salt indicator
+
 pngDir = None
 pngDir = getPngDir() #"../../../png/slt/2d/sub1/"
-gxfile = "gx" # input image (maybe after bilateral filtering)
-elfile = "el"
-slfile = "sl"
-st1file = "st1"
-st2file = "st2"
-sffile = "sf"
 
-
+# Processing begins here. When experimenting with one part of this demo, we
+# can comment out earlier parts that have already written results to files.
 def main(args):
-  #goLinear()
+  #goLinear()  
   #goSaltLike()
   #goSaltSurfer()
   goSaltSurferC()
   #goTest()
+
 def goTest():
   u1 = zerofloat(n1,n2)
   g1 = zerofloat(n1,n2)
