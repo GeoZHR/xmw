@@ -83,8 +83,8 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  #goSkinTv()
-  goReskin()
+  goSkinTv()
+  #goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -243,8 +243,8 @@ def goThin():
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   '''
-def goReSkin():
-  print "goReSkin ..."
+def goReskin():
+  print "goReskin ..."
   useOldCells = True
   #gx = readImage(gxfile)
   if not plotOnly:
@@ -276,6 +276,25 @@ def goSkinTv():
   print "go skin..."
   #gx = readImage(gxfile)
   if not plotOnly:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    fsk = FaultSkinner()
+    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsk.setMaxDeltaStrike(10)
+    fsk.setMaxPlanarDistance(0.2)
+    fsk.setMinSkinSize(minSkinSize)
+    cells = fsk.findCells([fl,fp,ft])
+    sks = fsk.findSkins(cells)
+    print len(sks)
+    print "fault skins load finish..."
+    fcs = FaultSkin.getCells(sks)
+    cells = []
+    for ic in range(0,len(fcs),8):
+      cells.append(fcs[ic])
+    print len(cells)
+    print "fault cells load finish..."
+
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)
@@ -283,15 +302,7 @@ def goSkinTv():
     fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsx.setMinSkinSize(minSkinSize)
     fsx.setMaxPlanarDistance(0.2)
-    fsk = readSkins(fskbase)
-    print len(fsk)
-    print "fault skins load finish..."
-    fcs = FaultSkin.getCells(fsk)
-    cells = []
-    for ic in range(0,len(fcs),8):
-      cells.append(fcs[ic])
-    print len(cells)
-    print "fault cells load finish..."
+
     fsx.resetCells(cells)
     fsx.setGaussWeights(sp,st)
     skins = fsx.findSkins(n1,n2,n3,cells)
