@@ -26,7 +26,7 @@ def setupForSubset(name):
     """ fake image """
     print "setupForSubset: tbai"
     seismicDir = _datdir
-    n1,n2,n3 = 3000,600,2
+    n1,n2,n3 = 2700,600,2
     d1,d2,d3 = 1.0,1,1.00
     f1,f2,f3 = 0.0,0,0.00
     s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)

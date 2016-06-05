@@ -327,6 +327,67 @@ public class DynamicWarpingK {
   }
 
   /**
+   * Returns shifts computed for specified 2D images.
+   * @param sf sampling of 1st dimension for the image f.
+   * @param f array of values for image f.
+   * @param sg sampling of 1st dimension for the image g.
+   * @param g array of values for image g.
+   * @return array of shifts.
+   */
+  public float[][] findShiftsX(
+    final Sampling sf, final float[][][] f,
+    final Sampling sg, final float[][][] g)
+  {
+    // Samplings.
+    final Sampling ss = _ss;
+    final Sampling s1 = _s1;
+    final Sampling s2 = sampling2(f);
+    final int n1 = s1.getCount();
+    final int n2 = s2.getCount();
+    final int n3 = f.length;
+
+    // Quasi-uniform subsamplings.
+    final int[] k1s = subsample(n1,_k1min);
+    final int[] k2s = subsample(n2,_k2min);
+    final int nk2 = k2s.length;
+
+    trace("findShifts: smoothing in 1st dimension ...");
+    final float[][][] ek = new float[n2][][];
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[][] es = computeErrors(sf,f[0][i2],sg,g[0][i2]);
+      for (int i3=1; i3<n3; ++i3) {
+        float[][] ei = computeErrors(sf,f[i3][i2],sg,g[i3][i2]);
+        add(es,ei,es);
+      }
+      ek[i2] = subsampleErrors(_r1min,_r1max,k1s,ss,s1,es);
+    }});
+    normalizeErrors(ek);
+
+    trace("findShifts: smoothing in 2nd dimension ...");
+    float[][][] ekk = smoothErrors2(_r2min,_r2max,k2s,ss,s2,ek);
+    normalizeErrors(ekk);
+
+    for (int is=0; is<_esmooth-1; ++is) {
+      smoothSubsampledErrors(_r1min,_r1max,k1s,
+                                   _r2min,_r2max,k2s,ss,s1,s2,ekk);
+      normalizeErrors(ekk);
+    }
+
+    trace("findShifts: finding shifts ...");
+    float[][] ukk = new float[nk2][];
+    for (int ik2=0; ik2<nk2; ++ik2) {
+      ukk[ik2] = findShiftsFromSubsampledErrors(
+        _r1min,_r1max,k1s,ss,s1,ekk[ik2]);
+    }
+    trace("findShifts: interpolating shifts ...");
+    float[][] u = interpolateShifts(s1,s2,k1s,k2s,ukk);
+    trace("findShifts: ... done");
+    return u;
+  }
+
+
+  /**
    * Returns shifts computed for specified 3D images.
    * @param sf sampling of 1st dimension for the image f.
    * @param f array of values for image f.
@@ -500,6 +561,22 @@ public class DynamicWarpingK {
       h[i2] = applyShifts(sg,g[i2],u[i2]);
     return h;
   }
+
+  public int getBound(Sampling s1, float[][] u) {
+    int n2 = u.length;
+    int n1 = u[0].length;
+    int[] bs = fillint(n1,n2);
+    double l1 = s1.getLast();
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      double x1 = s1.getValue(i1)+u[i2][i1];
+      if(x1>l1) {
+        bs[i2]=i1; break;
+      }
+    }}
+    return min(bs);
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private

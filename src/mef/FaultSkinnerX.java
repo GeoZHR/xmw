@@ -761,6 +761,15 @@ public class FaultSkinnerX {
 
   }
 
+  public float[][][][] setGaussWeights(
+    float sigu, float sigw, Sampling sp, Sampling st) 
+  {
+    _sp = sp;
+    _st = st;
+    _gw = gaussWeights(sigu,sigw);
+    return _gw;
+  }
+
 
   public float[][][][] setGaussWeights(Sampling sp, Sampling st) {
     _sp = sp;

@@ -16,37 +16,42 @@ p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 p2kfile = "p2k" # inline slopes (known)
 p3kfile = "p3k" # crossline slopes (known)
+semfile = "sem"
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
 fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
+flefile  = "fle" # fault likelihood
+fpefile  = "fpe" # fault strike (phi)
+ftefile  = "fte" # fault dip (theta)
+fletfile = "flet" # fault likelihood thinned
+fpetfile = "fpet" # fault strike thinned
+ftetfile = "ftet" # fault dip thinned
+flvfile  = "flv" # fault likelihood
+fpvfile  = "fpv" # fault strike (phi)
+ftvfile  = "ftv" # fault dip (theta)
 fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
-fskbase = "fsk" # fault skin (basename only)
+fskbaseF = "fskf" # fault skin (basename only)
+fskbaseE = "fske" # fault skin (basename only)
 fsktv = "fst"
-fslbase = "fsl" # fault skin (basename only)
-fskgood = "fsg" # fault skin (basename only)
-fwsfile = "fws" # unfaulted image
-sw1file = "sw1" # 1st component of unfaulting shifts
-sw2file = "sw2" # 2nd component of unfaulting shifts
-sw3file = "sw3" # 3rd component of unfaulting shifts
-gufile = "gu" # flattened image
-x1file = "x1" # horizon volume
-u1file = "u1" # relateive geologic time volume
+smfile = "sm"
+cmfile = "cm"
+semfile = "sem"
 
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
+sigmaPhi,sigmaTheta = 6,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
+lowerLikelihood = 0.3
 upperLikelihood = 0.5
 minSkinSize = 2000
 
@@ -57,86 +62,21 @@ maxThrow =  15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = "../../../png/mef/fake/"
-pngDir = None
 plotOnly = False
+pngDir = "../../../png/mef/fake/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  #goSlopes()
   #goScan()
-  #goRescan()
+  #goSkinF()
+  #goSemblance()
   #goOrientScan()
-  #goThin()
-  #goSkin()
+  #goThinE()
+  goSkinE()
+  #goTv()
   #goSkinTv()
-  goReSkin()
-  '''
-  goSmooth()
-  goSlip()
-  goUnfaultS()
-  goFlatten()
-  goHorizonExtraction()
-  '''
-  #goSubset()
-  #goTest()
-  #goReflectionRemove()
-def goReflectionRemove():
-  gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  rr = ReflectionRemove()
-  gr = rr.applyX(p2,p3,gx)
-  plot3(gx,clab="gx")
-  plot3(gr,clab="gr")
-  plot3(sub(gx,gr),clab="gs")
-
-def goTest():
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.makePhiSampling(minPhi,maxPhi)
-  st = fs.makeThetaSampling(minTheta,maxTheta)
-  fsk = FaultSkinnerX()
-  gws = fsk.setGaussWeights(sp,st)
-  print sp.getValue(80)
-  fx = gws[80][10]
-  print len(fx)
-  print len(fx[0])
-  print len(fx[0][0])
-  plot3(fx,cmin=min(fx),cmax=max(fx))
-  
-
-def goSubset():
-  gx  = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  fcs = fs.findCells([fl,fp,ft])
-  #f1,f2,f3=37,15,15
-  #l1,l2,l3=56,35,34
-  f1,f2,f3=37,15,9
-  l1,l2,l3=56,35,28
-
-  n1 = l1-f1+1
-  n2 = l2-f2+1
-  n3 = l3-f3+1
-  sks = readSkins(fskbase)
-  skg = readSkins(fskgood)
-  gxs = copy(n1,n2,n3,f1,f2,f3,gx)
-  fsb = FaultSkinSub(f1,f2,f3,l1,l2,l3)
-  fcss =fsb.getSubCell(fcs)
-  for fc in fcss:
-    if(fc.fl<0.7):
-      fc.setFl(fc.fl-0.08)
-  skss=fsb.getSubSkin(sks)
-  skgs=fsb.getSubSkinNew(sks,skg)
-  fsb.setForNewCells(0.3,[skss[0]],skgs[0])
-  fsb.setForNewCells(0.6,[skss[1],skss[2]],skgs[1])
-  plot3(gxs,cells=fcss,png="subcells2")
-  plot3(gxs,skins=skss,links=True,png="subskins2")
-  plot3(gxs,skins=skgs,links=True,png="subskinsi2")
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   #sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
@@ -158,7 +98,7 @@ def goFakeData():
   print "p3 min =",min(p3)," max =",max(p3)
   gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
   if impedance:
-    gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
+    gmin,gax,gmap = 0.0,1.4,ColorMap.JET
   plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
   #plot3(gx,p2,cmap=bwrNotch(1.0))
   #plot3(gx,p3,cmap=bwrNotch(1.0))
@@ -187,67 +127,9 @@ def goScan():
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    '''
-    rr = ReflectionRemove()
-    gr = rr.applyX(p2,p3,gx)
-    gx = sub(gx,gr)
-    '''
-    ga = abs(gx)
-    ga = FaultScanner.taper(10,0,0,ga)
-    fs = FaultScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,ga)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "fp min =",min(fp)," max =",max(fp)
-    print "ft min =",min(ft)," max =",max(ft)
-    writeImage(flfile,fl)
-    writeImage(fpfile,fp)
-    writeImage(ftfile,ft)
-  else:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-      clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
-      clab="Fault dip (degrees)",png="ft")
-
-def goRescan():
-  print "goRescan ..."
-  gx = readImage(gxfile)
-  fp = readImage(fpfile)
-  if not plotOnly:
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
     gx = FaultScanner.taper(10,0,0,gx)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.rescan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx,fp)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "fp min =",min(fp)," max =",max(fp)
-    print "ft min =",min(ft)," max =",max(ft)
-    #writeImage(flfile,fl)
-    #writeImage(fpfile,fp)
-    #writeImage(ftfile,ft)
-  else:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-      clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
-      clab="Fault dip (degrees)",png="ft")
-
-def goOrientScan():
-  gx = readImage(gxfile)
-  sem = readImage(flfile)
-  if not plotOnly:
-    fs = LocalOrientScanner(3,sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
-    sub(fl,min(fl),fl)
-    div(fl,max(fl),fl)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
     print "ft min =",min(ft)," max =",max(ft)
@@ -258,54 +140,80 @@ def goOrientScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-  '''
-  plot3(gx,sem,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault attribute",cint=0.2,png="sem")
-  plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
-        clab="Enhanced fault attribute",cint=0.2,png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  '''
+  plot3(gx,fl,k3=56,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,k3=56,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),k3=56,cmin=15,cmax=55,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
 
-def goThin():
+def goSemblance():
+  print "go semblance ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    lof = LocalOrientFilterP(16.0,1.0,1.0)
+    ets = lof.applyForTensors(gx)
+    lsf = LocalSemblanceFilter(3,4)
+    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,ets,gx)
+    writeImage(semfile,sem)
+  else:
+    sem = readImage(semfile)
+  sem=sub(1,sem)
+  sem = pow(sem,0.4)
+  sub(sem,min(sem),sem)
+  div(sem,max(sem),sem)
+  plot3(gx,sem,k3=56,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
+
+def goOrientScan():
+  gx  = readImage(gxfile)
+  sem = readImage(semfile)
+  sem = sub(1,sem)
+  sem = pow(sem,0.4)
+  sub(sem,min(sem),sem)
+  div(sem,max(sem),sem)
+  if not plotOnly:
+    fs = LocalOrientScanner(1,sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sem)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    sub(fl,min(fl),fl)
+    div(fl,max(fl),fl)
+    writeImage(flefile,fl)
+    writeImage(fpefile,fp)
+    writeImage(ftefile,ft)
+  else:
+    fl = readImage(flefile)
+    fp = readImage(fpefile)
+    ft = readImage(ftefile)
+  plot3(gx,k3=56,clab = "Amplitude",png="gx")
+  plot3(gx,sem,k3=56,cmin=0.2,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault attribute",png="fa")
+  plot3(gx,fl,k3=56,cmin=0.2,cmax=1,cmap=jetRamp(1.0),
+        clab="Enhanced fault attribute",png="fae")
+  plot3(gx,fp,k3=56,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpe")
+  plot3(gx,convertDips(ft),k3=56,cmin=25,cmax=65,cmap=jetFill(1.0),
+        clab="Fault dip (degrees)",png="fte")
+
+def goThinE():
   print "goThin ..."
   gx = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
+  fl = readImage(flefile)
+  fp = readImage(fpefile)
+  ft = readImage(ftefile)
   flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
-  plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=15,cmax=55,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
+  writeImage(fletfile,flt)
+  writeImage(fpetfile,fpt)
+  writeImage(ftetfile,ftt)
+  plot3(gx,flt,k3=56,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flet")
+  plot3(gx,fpt,k3=56,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpet")
+  plot3(gx,convertDips(ftt),k3=56,cmin=15,cmax=55,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftet")
 
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
-
-def goSkin():
+def goSkinF():
   print "goSkin ..."
   gx = readImage(gxfile)
   if not plotOnly:
@@ -315,7 +223,7 @@ def goSkin():
     fs = FaultSkinner()
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
+    fs.setMaxPlanarDistance(0.1)
     fs.setMinSkinSize(minSkinSize)
     cells = fs.findCells([fl,fp,ft])
     skins = fs.findSkins(cells)
@@ -326,263 +234,123 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     fd = FaultDisplay()
     print "fault skins load finish..."
-    removeAllSkinFiles(fskbase)
-    writeSkins(fskbase,skins)
+    removeAllSkinFiles(fskbaseF)
+    writeSkins(fskbaseF,skins)
+    plot3(gx,cells=cells,png="cellsF")
   else:
-    skins = readSkins(fskbase)
-  plot3(gx,cells=cells,png="cells")
-  plot3(gx,skins=skins)
+    skins = readSkins(fskbaseF)
+  plot3(gx,skins=skins,png="skinsF")
 
-def goSkinTv():
-  print "go skin..."
+def goSkinE():
+  print "goSkin ..."
   gx = readImage(gxfile)
   if not plotOnly:
+    fl = readImage(flefile)
+    fp = readImage(fpefile)
+    ft = readImage(ftefile)
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.1)
+    fs.setMinSkinSize(minSkinSize)
+    cells = fs.findCells([fl,fp,ft])
+    skins = fs.findSkins(cells)
+    for skin in skins:
+      skin.smoothCellNormals(4)
+    print "total number of cells =",len(cells)
+    print "total number of skins =",len(skins)
+    print "number of cells in skins =",FaultSkin.countCells(skins)
+    fd = FaultDisplay()
+    print "fault skins load finish..."
+    removeAllSkinFiles(fskbaseE)
+    writeSkins(fskbaseE,skins)
+    plot3(gx,cells=cells,png="cellsE")
+  else:
+    skins = readSkins(fskbaseE)
+  plot3(gx,skins=skins,png="skinsE")
+  plot3(gx,skins=[skins[1],skins[3],skins[4]],png="skinsCrossE")
+
+def goTv():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(flefile)
+    fp = readImage(fpefile)
+    ft = readImage(ftefile)
+    skins = readSkins(fskbaseE)
+    fcs = FaultSkin.getCells(skins)
+    cells=[]
+    for ic in range(0,len(fcs),4):
+      cells.append(fcs[ic])
+    plot3(gx,cells=cells,png="cellsTv")
+    tv3 = TensorVoting3()
+    tv3.setSigma(30)
+    tv3.setVoteWindow(15,20,20)
+    sm,cm,fp,ft = tv3.applyVote(n1,n2,n3,cells)
+    sm = pow(sm,0.4)
+    cm = pow(cm,0.8)
+    sub(sm,min(sm),sm)
+    div(sm,max(sm),sm)
+    sub(cm,min(cm),cm)
+    div(cm,max(cm),cm)
+    writeImage(cmfile,cm)
+    writeImage(smfile,sm)
+    writeImage(fpvfile,fp)
+    writeImage(ftvfile,ft)
+  else: 
+    sm = readImage(smfile)
+    cm = readImage(cmfile)
+    fp = readImage(fpvfile)
+    ft = readImage(ftvfile)
+  plot3(gx,sm,k3=56,cmin=0.20,cmax=1.0,cmap=jetRamp(1.0),clab="Surfaceness",png="sm")
+  plot3(gx,cm,k3=56,cmin=0.20,cmax=1.0,cmap=jetRamp(1.0),
+        clab="Intersection",png="cm")
+
+def goSkinTv():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(smfile)
+    fc = readImage(cmfile)
+    fp = readImage(fpvfile)
+    ft = readImage(ftvfile)
+    fs = FaultSkinner()
+    fs.setGrowLikelihoods(0.4,upperLikelihood)
+    fs.setMaxDeltaStrike(10)
+    fs.setMaxPlanarDistance(0.1)
+    fs.setMinSkinSize(minSkinSize)
+    cells = fs.findCells([fl,fp,ft])
+    skins = fs.findSkins(cells)
+    fcs = FaultSkin.getCells(skins)
+    cells = []
+    for ic in range(0,len(fcs),4):
+      cells.append(fcs[ic])
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)
     fsx = FaultSkinnerX()
-    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsx.setMinSkinSize(minSkinSize)
-    fsx.setMaxPlanarDistance(0.2)
-    fsk = readSkins(fskbase)
-    print len(fsk)
-    print "fault skins load finish..."
-    fcs = FaultSkin.getCells(fsk)
-    cells = []
-    for ic in range(0,len(fcs),8):
-      cells.append(fcs[ic])
-    print len(cells)
-    print "fault cells load finish..."
     fsx.resetCells(cells)
-    fsx.setGaussWeights(sp,st)
+    fsx.setGrowLikelihoods(0.3,upperLikelihood)
+    fsx.setMinSkinSize(minSkinSize)
+    fsx.setMaxPlanarDistance(0.1)
+    fsx.setGaussWeights(10,2,sp,st)
     skins = fsx.findSkins(n1,n2,n3,cells)
     removeAllSkinFiles(fsktv)
     writeSkins(fsktv,skins)
   else:
     skins = readSkins(fsktv)
+  print len(skins)
+  '''
+  fd = FaultDisplay()
+  cells = FaultSkin.getCells(skins)
+  flt = fillfloat(-0.001,n1,n2,n3)
+  fd.getFlImage(cells,flt)
+  flt = fd.setSlices(56,25,436,flt)
+  plot3(gx,flt,cmin=0.15,cmax=0.8,cmap=jetRamp(1.0),clab="Surfaceness",png="smt")
+  '''
   plot3(gx,skins=skins,png="skinsTv")
+  plot3(gx,skins=[skins[1],skins[3]],png="skinsCrossTv")
 
 
-def goReSkin():
-  print "goReSkin ..."
-  useOldCells = True
-  gx = readImage(gxfile)
-  if not plotOnly:
-    fl = readImage(flfile)
-    sk = readSkins(fskbase)
-    fsx = FaultSkinnerXX()
-    fsx.setParameters(10,10,0.2)
-    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsx.setMinSkinSize(minSkinSize)
-    fsx.setMaxPlanarDistance(0.2)
-    fsx.setSkinning(useOldCells)
-    cells = FaultSkin.getCells(sk)
-    fsx.resetCells(cells)
-    skins = fsx.findSkinsXX(cells,fl)
-    removeAllSkinFiles(fskgood)
-    writeSkins(fskgood,skins)
-  skins = readSkins(fskgood)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  plot3(gx,skins=skins,png="skinsNew")
-  plot3(gx,skins=skins,links=True,png="skinsNewLinks")
-  #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
-  '''
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
-  '''
 
-def goSmooth():
-  print "goSmooth ..."
-  flstop = 0.1
-  fsigma = 8.0
-  fl = readImage(flfile)
-  gx = readImage(gxfile)
-  skins = readSkins(fskgood)
-  flt = zerofloat(n1,n2,n3)
-  fsx = FaultSkinnerX()
-  fsx.getFl(skins,flt)
-  p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
-  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
-  writeImage(gsxfile,gsx)
-  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fli")
-  plot3(gsx,png="gsx")
-
-def goSlip():
-  print "goSlip ..."
-  gx = readImage(gxfile)
-  gsx = readImage(gsxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  skins = readSkins(fskgood)
-  fsl = FaultSlipper(gsx,p2,p3)
-  fsl.setOffset(2.0) # the default is 2.0 samples
-  fsl.setZeroSlope(False) # True only if we want to show the error
-  fsl.computeDipSlips(skins,minThrow,maxThrow)
-  print "  dip slips computed, now reskinning ..."
-  print "  number of skins before =",len(skins),
-  fsk = FaultSkinner() # as in goSkin
-  fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fsk.setMinSkinSize(minSkinSize)
-  fsk.setMinMaxThrow(minThrow,maxThrow)
-  skins = fsk.reskin(skins)
-  print ", after =",len(skins)
-  removeAllSkinFiles(fslbase)
-  writeSkins(fslbase,skins)
-  smark = -999.999
-  s1,s2,s3 = fsl.getDipSlips(skins,smark)
-  writeImage(fs1file,s1)
-  writeImage(fs2file,s2)
-  writeImage(fs3file,s3)
-  plot3(gx,skins=skins,smax=10.0,slices=[85,5,60],png="skinss1")
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="gxs1")
-  s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
-  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
-        clab="Crossline shift (samples)",png="gxs3i")
-  gw = fsl.unfault([s1,s2,s3],gx)
-  plot3(gx)
-  plot3(gw,clab="Amplitude",png="gw")
-
-def goUnfaultS():
-  if not plotOnly:
-    gx = readImage(gxfile)
-    fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,2.0,2.0)
-    et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
-
-    wp = fillfloat(1.0,n1,n2,n3)
-    skins = readSkins(fslbase)
-    fsc = FaultSlipConstraints(skins)
-    sp = fsc.screenPoints(wp)
-
-    uf = UnfaultS(4.0,2.0)
-    uf.setIters(100)
-    uf.setTensors(et)
-    mul(sp[3][0],10,sp[3][0])
-    [t1,t2,t3] = uf.findShifts(sp,wp)
-    uf.convertShifts(40,[t1,t2,t3])
-    uf.applyShifts([t1,t2,t3],gx,fw)
-    writeImage(fwsfile,fw)
-    writeImage(sw1file,t1)
-    writeImage(sw2file,t2)
-    writeImage(sw3file,t3)
-  else :
-    gx = readImage(gxfile)
-    fw = readImage(fwsfile)
-  plot3(gx,png="gxuf")
-  plot3(fw,png="fwuf")
-  skins = readSkins(fslbase)
-  mark = -999.99
-  s1 = fillfloat(mark,n1,n2,n3)
-  FaultSkin.getThrow(mark,skins,s1)
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="gxs1")
-  plot3(gx,t1,cmin=-6.0,cmax=6.0,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
-        clab="Crossline shift (samples)",png="gxs3i")
-
-def goFlatten():
-  fw = readImage(fwsfile)
-  if not plotOnly:
-    sig1,sig2,sig3,pmax=4.0,1.0,1.0,5.0
-    p2,p3,ep = FaultScanner.slopes(sig1,sig2,sig3,pmax,fw)
-    wp = pow(ep,6.0)
-    fl = Flattener3()
-    fl.setSmoothings(6.0,6.0)
-    fl.setIterations(0.01,200)
-    mp = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp)
-    gu = mp.flatten(fw)
-    x1 = mp.x1
-    u1 = mp.u1
-    writeImage(gufile,gu)
-    writeImage(x1file,x1)
-    writeImage(u1file,u1)
-  else:
-    gu = readImage(gufile)
-    x1 = readImage(x1file)
-    u1 = readImage(u1file)
-  plot3(fw)
-  plot3(gu,png="gu")
-  plot3(fw,u1,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
-        clab="Relative geologic time (samples)",png="u1")
-
-def goHorizonExtraction():
-  gx = readImage(gxfile)
-  u1 = readImage(u1file)
-  x1 = readImage(x1file)
-  w1 = readImage(sw1file)
-  w2 = readImage(sw2file)
-  w3 = readImage(sw3file)
-  uf = UnfaultS(4.0,2.0)
-  he = HorizonExtraction(s1,s2,s3,u1,x1)
-  # extract a single horizon 
-  u1i = 0.5*(s1.getFirst()+s1.getLast())
-  hi = he.singleHorizon(u1i) # horizon extracted in unfaulted space
-  uf.applyShiftsR([w1,w2,w3],hi,hi)# convert horizon back to original space
-  stgs = he.applyForTgs(u1i,hi)
-  plot3(gx,htgs=[stgs])
-  # extract a set of horizons
-  ft = s1.getFirst()+5
-  dt = 10.0
-  nt = (round((s1.getLast()-ft)/dt)-1)
-  st = Sampling(nt,dt,ft)
-  hs = he.multipleHorizons(st) # horizon extracted in unfaulted space
-  for hk in hs:
-    uf.applyShiftsR([w1,w2,w3],hk,hk)# convert horizon back to original space
-  mtgs = he.applyForTgs(st,hs)
-  plot3(gx,htgs=mtgs)
-
-def goSlices():
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  gx  = readImage(gxfile)
-  fw = readImage(fwsfile)
-  gx  = gain(gx)
-  fw  = gain(fw)
-  flt = readImage(fltfile)
-  sks = readSkins(fskgood)
-  skl = readSkins(fslbase)
-  fls = like(flt)
-  fss = like(flt)
-  FaultSkin.getLikelihood(sks,fls)
-  FaultSkin.getThrow(skl,fss)
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMinSkinSize(minSkinSize)
-  cls = fs.findCells([fl,fp,ft])
-  plot3(gx,cells=cls,png="cells")
-  plot3(gx,skins=sks,png="skins")
-  plot3(gx,skins=skl,smax=max(fss)-10,png="throw")
-  slt,sls,sfs = mul(100,flt),mul(100,fls),mul(100,fss)
-  gxt,gxs,fws = sub(gx,slt), sub(gx,sls),sub(fw,sfs)
-  gxw = sub(gx,sfs)
-  d1 = 0.002
-  mul(fss,d1*1000,fss)
-  plot3f(gxt,a=flt,amin=0.01,amax=0.8,
-        amap=jetFillExceptMin(1.0),alab="Fault likelihood",aint=0.1,png="flt")
-  plot3f(gxs,a=fls,amin=0.01,amax=0.8,
-        amap=jetFillExceptMin(1.0),alab="Fault likelihood",aint=0.1,png="fls")
-  print max(fss)
-  plot3f(gxw,a=fss,amin=0.01,amax=max(fss)-18,
-        amap=jetFillExceptMin(1.0),alab="Vertical component of throw (ms)",
-        aint=2.0,png="fss")
-  plot3f(fws,a=fss,amin=0.01,amax=max(fss)-18,
-        amap=jetFillExceptMin(1.0),alab="Vertical component of throw (ms)",
-        aint=2.0,png="unfss")
 
 def like(x):
   n3 = len(x)
@@ -653,7 +421,7 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+def plot3(f,g=None,k3=92,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
           links=False,curve=False,trace=False,htgs=None,png=None):
   n3 = len(f)
@@ -712,8 +480,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
-    cmap = ColorMap(0.0,1.0,ColorMap.JET)
+    cmap = ColorMap(0.2,1.0,ColorMap.JET)
     xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
+    #xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(1.0,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
@@ -748,7 +517,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         cmap = ColorMap(-smax,smax,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
       else: # show fault likelihood
-        cmap = ColorMap(0.0,1.0,ColorMap.JET)
+        cmap = ColorMap(0.2,1.0,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
       qg = QuadGroup(xyz,uvw,rgb)
       qg.setStates(None)
@@ -781,8 +550,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(85,5,56)
-  ipg.setSlices(30,30,56)
+  ipg.setSlices(98,5,k3)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
@@ -794,12 +562,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   radius = 0.45*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
   ov.setWorldSphere(BoundingSphere(0.5*n1-10,0.5*n2,0.5*n3-6,radius))
-  ov.setAzimuthAndElevation(-70.0,25.0)
+  ov.setAzimuthAndElevation(-65.0,25.0)
   ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
-  # for subset plots
-  #ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  #ov.setAzimuthAndElevation(-40.0,25.0)
-  #ov.setTranslate(Vector3(0.0241,-0.0400,0.0103))
   ov.setScale(1.2)
   #ov.setScale(1.3) #use only for subset plots
   sf.setVisible(True)

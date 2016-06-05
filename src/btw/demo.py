@@ -26,8 +26,9 @@ pngDir = "../../../png/tbai/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goWarp()
+  #goWarp()
   #goTest()
+  goCheck()
 def goTest():
   g = zerofloat(n1,n2)
   g1 = zerofloat(n1,n2)
@@ -46,27 +47,39 @@ def goTest():
 def goWarp():
   go = readImage(gofile)
   gs = readImage(gsfile)
-  gc = zerofloat(n1,n2,n3)
+  gc = readImage(gcfile)
   smin,smax =  0.0,300.0
   r1min,r1max = -0.5,0.5
   r2min,r2max = -0.5,0.5
-  r3min,r3max = -0.001,0.001
-  dwk = DynamicWarpingK(8,smin,smax,s1,s2,s3)
-  dwk.setStrainLimits(r1min,r1max,r2min,r2max,r3min,r3max)
-  dwk.setSmoothness(4,2)
-  ss = dwk.findShifts(s1,go,s1,gs)
-  gc = dwk.applyShifts(s1,gs,ss)
-  writeImage(gcfile,gc)
+  dwk = DynamicWarpingK(8,smin,smax,s1,s2)
   '''
-  writeImage(gsfile,ss)
+  dwk.setStrainLimits(r1min,r1max,r2min,r2max)
+  dwk.setSmoothness(4,2)
+  ss = dwk.findShiftsX(s1,go,s1,gs)
+  gc = zerofloat(n1,n2,n3)
   gc[0] = dwk.applyShifts(s1,gs[0],ss)
   gc[1] = dwk.applyShifts(s1,gs[1],ss)
-  writeImage(ssfile,ss)
+  m1 = dwk.getBound(s1,ss)
+  go = copy(m1,n2,0,0,go)
+  gs = copy(m1,n2,0,0,gs)
+  gc = copy(m1,n2,0,0,gc)
+  s1 = Sampling(n1)
+  writeImage(gcfile,gc)
+  writeImage(gsfile,ss)
   '''
-  '''
-  gc = readImage(gcfile)
   ss = readImage2(ssfile)
-  '''
+  gc = readImage(gcfile)
+  m1 = dwk.getBound(s1,ss)
+  print m1
+  go = copy(m1,n2,n3,0,0,0,go)
+  gs = copy(m1,n2,n3,0,0,0,gs)
+  gc = copy(m1,n2,n3,0,0,0,gc)
+  ss = copy(m1,n2,0,0,ss)
+  c1 = Sampling(m1)
+  writeImage("ssc",ss)
+  writeImage("goc",go)
+  writeImage("gsc",gs)
+  writeImage("gcc",gc)
   title1 = "Observed: component one"
   title2 = "Simulated: component one"
   title3 = "Simulated: component one (shifted)"
@@ -79,16 +92,39 @@ def goWarp():
   png4 = "obTwo"
   png5 = "smTwo"
   png6 = "smTwoShift"
-  '''
+  plot2(c1,s2,go[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title1,png=png1)
+  plot2(c1,s2,gs[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title2,png=png2)
+  plot2(c1,s2,gc[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title3,png=png3)
+  plot2(c1,s2,go[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title4,png=png4)
+  plot2(c1,s2,gs[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title5,png=png5)
+  plot2(c1,s2,gc[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title6,png=png6)
+  plot2(c1,s2,ss,cmap=ColorMap.JET,
+   clab="Shifts (samples)",cmin=min(ss),cmax=max(ss),png="ss")
+def goCheck():
+  go = readImage("goc")
+  gs = readImage("gsc")
+  gc = readImage("gcc")
+  ss = readImage2("ssc")
+  title1 = "Observed: component one"
+  title2 = "Simulated: component one"
+  title3 = "Simulated: component one (shifted)"
+  title4 = "Observed: component two"
+  title5 = "Simulated: component two"
+  title6 = "Simulated: component two (shifted)"
+  png1 = "obOne"
+  png2 = "smOne"
+  png3 = "smOneShift"
+  png4 = "obTwo"
+  png5 = "smTwo"
+  png6 = "smTwoShift"
   plot2(s1,s2,go[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title1,png=png1)
   plot2(s1,s2,gs[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title2,png=png2)
   plot2(s1,s2,gc[0],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title3,png=png3)
   plot2(s1,s2,go[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title4,png=png4)
   plot2(s1,s2,gs[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title5,png=png5)
   plot2(s1,s2,gc[1],clab="Amplitude",cmin=-0.1,cmax=0.1,title=title6,png=png6)
-  '''
-  #plot2(s1,s2,ss,cmap=ColorMap.JET,
-  # clab="Shifts (samples)",cmin=min(ss),cmax=max(ss),png="ss")
+  plot2(s1,s2,ss,cmap=ColorMap.JET,
+   clab="Shifts (samples)",cmin=min(ss),cmax=max(ss),png="ss")
 
 def like2(x):
   n2 = len(x)
