@@ -193,7 +193,7 @@ public class FaultReconstructor {
     int nc = cells.length;
     for (int ic=0; ic<nc; ic++) {
       FaultCell fc = cells[ic];
-      fls[ic] = fc.getFl();
+      fls[ic] = pow(fc.getFl(),0.1f);
       xs[0][ic] = fc.getI1();
       xs[1][ic] = fc.getI2();
       xs[2][ic] = fc.getI3();

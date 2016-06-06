@@ -95,11 +95,6 @@ def main(args):
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
-  '''
-  gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  plot3(gx,skins=sk)
-  '''
 def goFaultPoints():
   fp = readImage(fptfile)
   rp = RosePlot()
@@ -257,7 +252,8 @@ def goReskin():
     fsk.setMaxPlanarDistance(0.2)
     fsk.setMinSkinSize(minSkinSize)
     cells = fsk.findCells([fl,fp,ft])
-    sks = fsk.findSkins(cells)
+    skins = fsk.findSkins(cells)
+    '''
     print len(sks)
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(sks)
@@ -272,6 +268,7 @@ def goReskin():
     fr = FaultReconstructor(n1,n2,n3,cells)
     skins = fr.reskin(minSkinSize,dp)
     writeSkins(fsktv,skins)
+    '''
     fd = FaultDisplay()
     print "fault skins load finish..."
     fd = FaultDisplay()
