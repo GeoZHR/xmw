@@ -113,7 +113,7 @@ public class FaultReconstructor {
         double[][] a = new double[3][3];
         for (int ik=0; ik<nd; ++ik) {
           int ip = id[ik];
-          float fl = fs[ip];
+          //float fl = fs[ip];
           float x1 = xs[0][ip];
           float x2 = xs[1][ip];
           float x3 = xs[2][ip];
@@ -127,7 +127,8 @@ public class FaultReconstructor {
           int k1 = round(abs(r1));
           int k2 = round(abs(r2));
           int k3 = round(abs(r3));
-          float wsi = ws[k3][k2][k1]*fl;
+          float wsi = ws[k3][k2][k1];
+          //float wsi = ws[k3][k2][k1]*fl;
           if (rs==0) {
             g11 += u1*u1*wsi;
             g12 += u1*u2*wsi;
@@ -193,7 +194,7 @@ public class FaultReconstructor {
     int nc = cells.length;
     for (int ic=0; ic<nc; ic++) {
       FaultCell fc = cells[ic];
-      fls[ic] = pow(fc.getFl(),0.1f);
+      fls[ic] = 1f;
       xs[0][ic] = fc.getI1();
       xs[1][ic] = fc.getI2();
       xs[2][ic] = fc.getI3();

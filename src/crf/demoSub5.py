@@ -62,7 +62,7 @@ sigmaPhi,sigmaTheta = 20,60
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
 upperLikelihood = 0.7
-minSkinSize = 500
+minSkinSize = 1000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -252,13 +252,12 @@ def goReskin():
     fsk.setMaxPlanarDistance(0.2)
     fsk.setMinSkinSize(minSkinSize)
     cells = fsk.findCells([fl,fp,ft])
-    skins = fsk.findSkins(cells)
-    '''
+    sks = fsk.findSkins(cells)
     print len(sks)
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(sks)
     cells = []
-    for ic in range(0,len(fcs),6):
+    for ic in range(0,len(fcs),2):
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
@@ -268,7 +267,6 @@ def goReskin():
     fr = FaultReconstructor(n1,n2,n3,cells)
     skins = fr.reskin(minSkinSize,dp)
     writeSkins(fsktv,skins)
-    '''
     fd = FaultDisplay()
     print "fault skins load finish..."
     fd = FaultDisplay()

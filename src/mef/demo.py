@@ -84,7 +84,7 @@ def goTest():
   plot3(gx,skins=skins)
   fcs = FaultSkin.getCells(skins)
   cells = []
-  for ic in range(0,len(fcs),6):
+  for ic in range(0,len(fcs),2):
     cells.append(fcs[ic])
   fs = FaultScanner(sigmaPhi,sigmaTheta)
   sp = fs.makePhiSampling(minPhi,maxPhi)
