@@ -80,14 +80,17 @@ def main(args):
   goTest()
 def goTest():
   gx = readImage(gxfile)
-  skins = readSkins(fskbaseE)
+  skins = readSkins(fskbaseF)
   plot3(gx,skins=skins)
   fcs = FaultSkin.getCells(skins)
   cells = []
   for ic in range(0,len(fcs),6):
     cells.append(fcs[ic])
+  fs = FaultScanner(sigmaPhi,sigmaTheta)
+  sp = fs.makePhiSampling(minPhi,maxPhi)
+  dp = sp.getDelta()
   fr = FaultReconstructor(n1,n2,n3,cells)
-  sks = fr.reskin(minSkinSize)
+  sks = fr.reskin(minSkinSize,dp)
   plot3(gx,skins=sks)
 
 def goFakeData():

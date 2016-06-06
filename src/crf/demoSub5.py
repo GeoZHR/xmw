@@ -266,8 +266,11 @@ def goReskin():
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    sp = fs.makePhiSampling(minPhi,maxPhi)
+    dp = sp.getDelta()
     fr = FaultReconstructor(n1,n2,n3,cells)
-    skins = fr.reskin(minSkinSize)
+    skins = fr.reskin(minSkinSize,dp)
     writeSkins(fsktv,skins)
     fd = FaultDisplay()
     print "fault skins load finish..."

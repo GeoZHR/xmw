@@ -30,13 +30,13 @@ public class FaultReconstructor {
     _fcs = fcs;
   }
 
-  public FaultSkin[] reskin(int minSkinSize) {
+  public FaultSkin[] reskin(int minSkinSize, float dpi) {
     HashSet<Integer> hsc = new HashSet<Integer>();
     for (int ic=0; ic<_fcs.length; ++ic) hsc.add(ic);
     HashSet<FaultSkin> hsk = new HashSet<FaultSkin>();
     while(hsc.size()>minSkinSize/10) {
       System.out.println("cells remaining:"+hsc.size());
-      FaultCell[] fcs = findStrike(20,hsc);
+      FaultCell[] fcs = findStrike(20,hsc,dpi);
       FaultSkin[] sks = reskin(minSkinSize,fcs);
       int ns = sks.length;
       if (ns<1) {continue;}
@@ -233,7 +233,7 @@ public class FaultReconstructor {
     return copy(_w1+1,_w2+1,_w3+1,_w1,_w2,_w3,fs);
   }
 
-  private FaultCell[] findStrike(int dp, HashSet<Integer> hsc) {
+  private FaultCell[] findStrike(int dp, HashSet<Integer> hsc, float dpi) {
     int maxN = 0;
     int nc = hsc.size();
     int[] dc = new int[nc];
@@ -246,7 +246,7 @@ public class FaultReconstructor {
     float[][] xc = setKdTreeStrike(hsc,dc);
     KdTree kt = new KdTree(xc);
     HashSet<Integer> hst = new HashSet<Integer>();
-    for (int pt=0; pt<=360; ++pt) {
+    for (float pt=0f; pt<=360f; pt+=dpi) {
       float pmi = pt-dp;
       float ppi = pt+dp;
       int nd1=0, nd2=0, nd3=0;
