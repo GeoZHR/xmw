@@ -45,7 +45,7 @@ s3 = Sampling(923,1,0)
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
-pngDir = "../../../png/dgb/rgtc/"
+pngDir = "../../../png/poseidon/"
 seismicDir = "../../../data/seis/poseidon/"
 #pngDir = "../../../png/dgb/subset/"
 #seismicDir = "../../../data/seis/dgb/subset/"
@@ -73,8 +73,12 @@ k33 = [ 18, 73,161,241,271,271,271]
 def main(args):
   #goSlopes()
   #goFlattenC()
+  hx = readImage2(n2,n3,"top")
+  hx = div(hx,0.004)
+  print min(hx)
+  print max(hx)
   gx = readImage(gxfile)
-  plot3(gx)
+  #plot3(gx,surf=hx)
 
 
 def goSlopes():
@@ -208,6 +212,15 @@ def readImage(name):
   ais.readFloats(image)
   ais.close()
   return image
+
+def readImage2(n1,n2,name):
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 
 def writeImage(name,image):
   fileName = seismicDir+name+".dat"

@@ -74,9 +74,22 @@ def main(args):
   #goSemblance()
   #goOrientScan()
   #goThinE()
-  goSkinE()
+  #goSkinE()
   #goTv()
   #goSkinTv()
+  goTest()
+def goTest():
+  gx = readImage(gxfile)
+  skins = readSkins(fskbaseE)
+  plot3(gx,skins=skins)
+  fcs = FaultSkin.getCells(skins)
+  cells = []
+  for ic in range(0,len(fcs),6):
+    cells.append(fcs[ic])
+  fr = FaultReconstructor(n1,n2,n3,cells)
+  sks = fr.reskin(minSkinSize)
+  plot3(gx,skins=sks)
+
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   #sequence = 'OA' # 1 episode of folding, followed by one episode of faulting

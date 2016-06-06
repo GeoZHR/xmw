@@ -83,8 +83,8 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goSkinTv()
-  #goReskin()
+  #goSkinTv()
+  goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -243,34 +243,53 @@ def goThin():
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   '''
+
 def goReskin():
-  print "goReskin ..."
-  useOldCells = True
+  print "go skin..."
   #gx = readImage(gxfile)
   if not plotOnly:
     fl = readImage(flfile)
-    sk = readSkins(fskbase)
-    fsx = FaultSkinnerXX()
-    fsx.setParameters(10,10,0.2)
-    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsx.setMinSkinSize(minSkinSize)
-    fsx.setMaxPlanarDistance(0.2)
-    fsx.setSkinning(useOldCells)
-    cells = FaultSkin.getCells(sk)
-    fsx.resetCells(cells)
-    skins = fsx.findSkinsXX(cells,fl)
-    removeAllSkinFiles(fskgood)
-    writeSkins(fskgood,skins)
-  skins = readSkins(fskgood)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  #plot3(gx,skins=skins,png="skinsNew")
-  #plot3(gx,skins=skins,links=True,png="skinsNewLinks")
-  #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    fsk = FaultSkinner()
+    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsk.setMaxDeltaStrike(10)
+    fsk.setMaxPlanarDistance(0.2)
+    fsk.setMinSkinSize(minSkinSize)
+    cells = fsk.findCells([fl,fp,ft])
+    sks = fsk.findSkins(cells)
+    print len(sks)
+    print "fault skins load finish..."
+    fcs = FaultSkin.getCells(sks)
+    cells = []
+    for ic in range(0,len(fcs),6):
+      cells.append(fcs[ic])
+    print len(cells)
+    print "fault cells load finish..."
+    fr = FaultReconstructor(n1,n2,n3,cells)
+    skins = fr.reskin(minSkinSize)
+    writeSkins(fsktv,skins)
+    fd = FaultDisplay()
+    print "fault skins load finish..."
+    fd = FaultDisplay()
+    fd.getFlt(skins,fl)
+    fd.getFpt(skins,fp)
+    fd.getFtt(skins,ft)
+    writeImage(fltfile,fl)
+    writeImage(fptfile,fp)
+    writeImage(fttfile,ft)
+  else:
+    skins = readSkins(fsktv)
   '''
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+  print len(skins)
+  fd = FaultDisplay()
+  cells = FaultSkin.getCells(skins)
+  flt = fillfloat(-0.001,n1,n2,n3)
+  fd.getFlImage(cells,flt)
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Fault likelihood",png="smt")
+  plot3(gx,skins=skins,png="skinsTv")
   '''
+
 
 def goSkinTv():
   print "go skin..."
