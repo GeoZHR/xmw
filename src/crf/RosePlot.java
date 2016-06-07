@@ -199,6 +199,37 @@ public class RosePlot {
     rose(fps,nbin);
   }
 
+  public float[][] faultPoints(float[][] ob, float[][][] fp) {
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    ArrayList<Float> fpa = new ArrayList<Float>();
+    ArrayList<Float> x1a = new ArrayList<Float>();
+    ArrayList<Float> x2a = new ArrayList<Float>();
+    ArrayList<Float> x3a = new ArrayList<Float>();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=round(ob[i2][i3]); i1<n1; ++i1) {
+      float fpi = fp[i3][i2][i1];
+      if (fpi>=0.0f) {
+        fpa.add(fpi);
+        x1a.add((float)i1);
+        x2a.add((float)i2);
+        x3a.add((float)i3);
+      }
+    }}}
+    int np = fpa.size();
+    float[][] fps = new float[4][np];
+    for (int ip=0; ip<np; ++ip) {
+      fps[0][ip] = x1a.get(ip);
+      fps[1][ip] = x2a.get(ip);
+      fps[2][ip] = x3a.get(ip);
+      fps[3][ip] = fpa.get(ip);
+    }
+    return fps;
+  }
+
+
   public float[][] faultPoints(float[][][] fp) {
     int n3 = fp.length;
     int n2 = fp[0].length;

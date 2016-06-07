@@ -84,13 +84,13 @@ def main(args):
   #goThin()
   #goSkin()
   #goSkinTv()
-  goReskin()
+  #goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
-  #goFaultPoints()
+  goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goRose()
@@ -104,10 +104,10 @@ def main(args):
 def goFaultPoints():
   fp = readImage(fptfile)
   rp = RosePlot()
-  ps = rp.faultPoints(fp)
+  ps = rp.faultPoints(ob,fp)
   print len(ps)
   print len(ps[0])
-  writeImage("fpp",ps)
+  writeImage("fps",ps)
 
 def goSeisResample():
   hp = Helper()
@@ -120,14 +120,16 @@ def goSeisResample():
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
-  gx = readImage(gxfile)
-  fpt = readImage("fpk")
+  #gx = readImage(gxfile)
+  #fpt = readImage("fpt")
+  gx = readImage("gxs")
+  fp = readImage("fps")
   '''
   hpr = Helper()
   hpr.rotate(29,fpt)
   hpr.convert(fpt)
   '''
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goRose():
