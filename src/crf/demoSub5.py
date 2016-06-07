@@ -104,6 +104,7 @@ def main(args):
 def goFaultPoints():
   fp = readImage(fptfile)
   rp = RosePlot()
+  ob = readImage2D(n2,n3,"ob")
   ps = rp.faultPoints(ob,fp)
   print len(ps)
   print len(ps[0])
