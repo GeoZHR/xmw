@@ -209,7 +209,7 @@ public class RosePlot {
     ArrayList<Float> x3a = new ArrayList<Float>();
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
-    for (int i1=round(ob[i2][i3]); i1<n1; ++i1) {
+    for (int i1=round(ob[i3][i2]); i1<n1; ++i1) {
       float fpi = fp[i3][i2][i1];
       if (fpi>=0.0f) {
         fpa.add(fpi);
