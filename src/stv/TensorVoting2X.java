@@ -8,6 +8,7 @@ package stv;
 
 import util.*;
 import edu.mines.jtk.dsp.*;
+import static edu.mines.jtk.dsp.LocalDiffusionKernel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
@@ -107,7 +108,7 @@ public class TensorVoting2X {
   }
 
   public float[][][] smoothEdge(
-    float sigma1, float sigma2, float[][] fx) {
+    float sigma, float sigma1, float sigma2, float[][] fx) {
     int n2 = fx.length;
     int n1 = fx[0].length;
     float pi = (float)Math.PI;
@@ -118,12 +119,15 @@ public class TensorVoting2X {
     float[][] u1 = new float[n2][n1];
     float[][] u2 = new float[n2][n1];
     float[][] gx = new float[n2][n1];
+    float[][] fs = new float[n2][n1];
     LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2);
     lof.applyForNormal(fx,u1,u2);
     EigenTensors2 ets = lof.applyForTensors(fx);
-    ets.setEigenvalues(0.0001f,1.0f);
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.apply(ets,10,fx,gx);
+    ets.setEigenvalues(0.01f,1.0f);
+    LocalDiffusionKernel ldk = new LocalDiffusionKernel(LocalDiffusionKernel.Stencil.D91);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter(0.01,200,ldk);
+    lsf.applySmoothS(fx,fs);
+    lsf.apply(ets,sigma,fs,gx);
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.apply10(gx,g1);
     rgf.apply01(gx,g2);
@@ -200,6 +204,47 @@ public class TensorVoting2X {
     }}
     return new float[][][]{ss,os};
   }
+
+  public float[][][] initialTensorFieldX(
+    float gmin, float gmax,
+    float sigma1, float sigma2, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float pi = (float)Math.PI;
+    float[][] ss = new float[n2][n1];
+    float[][] os = new float[n2][n1];
+    float[][] g1 = new float[n2][n1];
+    float[][] g2 = new float[n2][n1];
+    float[][] u1 = new float[n2][n1];
+    float[][] u2 = new float[n2][n1];
+    float[][] el = new float[n2][n1];
+    LocalOrientFilterP lof = new LocalOrientFilterP(sigma1,sigma2);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2.0);
+    rgf.apply10(fx,g1);
+    rgf.apply01(fx,g2);
+    lof.applyForNormalLinear(fx,u1,u2,el);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g1i = g1[i2][i1];
+      float g2i = g2[i2][i1];
+      float u1i = u1[i2][i1];
+      float u2i = u2[i2][i1];
+      ss[i2][i1] = sqrt(g1i*g1i+g2i*g2i);
+      //ss[i2][i1] = abs(g1i*u1i+g2i*u2i);
+      os[i2][i1] = 0.5f*pi+atan2(u1i,u2i);
+    }}
+    ss = sub(ss,min(ss));
+    ss = div(ss,max(ss));
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float ssi = ss[i2][i1];
+      float osi = os[i2][i1];
+      if (ssi<gmin || ssi>gmax || (osi>0.99f*pi&&osi<1.01f*pi) || (osi>-0.01f*pi&&osi<0.01f*pi))
+        ss[i2][i1] = 0.0f;
+    }}
+    return new float[][][]{ss,os};
+  }
+
 
   private void filterKernals(
     float m, float sigma, float[][] fk) {

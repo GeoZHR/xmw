@@ -78,7 +78,7 @@ pngDir = "../../../png/aii/fake/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
+  goFakeData()
   #goFaults()
   #goImpedance2()
   #goSlip()
@@ -86,7 +86,7 @@ def main(args):
   #goFlatten()
   #goInitial()
   #goImpedance3(0.1,0.0,1.0)
-  goImpedance3(0.5,1.0,1.0)
+  #goImpedance3(0.5,1.0,1.0)
   #goImpedance3(0.9,0.0,1.0)
   #goImpedance3(0.9,0.0,0.001)
   #goImpFlatten(0.1,0.0,1.0)
@@ -290,12 +290,14 @@ def goFakeData():
   lateralViriation = False
   noise = 0.6 # (rms noise)/(rms signal) ratio
   if not plotOnly:
-    gc,gn,rn,pc = FakeData.seismicAndSlopes3d2015A(sequence,
+    gc,gn,rn,pc = FakeData.seismicAndSlopes3d2015B(sequence,
     nplanar,conjugate,conical,impedance,wavelet,lateralViriation,noise)
+    '''
     writeImage(gcfile,gc)
     writeImage(gnfile,gn)
     writeImage(rnfile,rn)
     writeImage(pcfile,pc)
+    '''
   else:
     gc = readImage(gcfile)
     gn = readImage(gnfile)

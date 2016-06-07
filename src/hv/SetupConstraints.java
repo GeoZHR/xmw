@@ -157,7 +157,8 @@ public class SetupConstraints {
     float[][] surf = checkPoints(k1,k2,k3,p2m,p3m,epm);
     se.surfaceUpdateFromSlopes(epm,p2m,p3m,k1,k2,k3,surf);
     updateSlopes(ib2,ib3,surf,p2,p3);
-    //return surf;
+    return surf;
+    /*
     int ci = 0;
     int ai = 0;
     float[][] k = zerofloat(n2m*n3m,4);
@@ -188,6 +189,7 @@ public class SetupConstraints {
     k[2][0] = k[2][ai]; k[2][ai] = t2;
     k[3][0] = k[3][ai]; k[3][ai] = t3;
     return copy(ci,4,0,0,k);
+    */
   } 
 
   // make seismic slopes near the control surface to be 

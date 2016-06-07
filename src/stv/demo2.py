@@ -9,14 +9,15 @@ from utils2d import *
 #setupForSubset("parihaka")
 #setupForSubset("fake")
 #setupForSubset("tccs")
-setupForSubset("nwc")
+#setupForSubset("nwc")
+setupForSubset("dmt")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 f1,f2 = s1.getFirst(),s2.getFirst()
 d1,d2 = s1.getDelta(),s2.getDelta()
 
 pngDir = getPngDir()
-pngDir = None
+#pngDir = None
 
 fxfile = "fx" # for pnz/tccs data
 #fxfile = "fk114" # for paraihaka data
@@ -36,7 +37,8 @@ def main(args):
   #testSteer()
   #goFake()
   #goTccs()
-  goNwc()
+  #goNwc()
+  goDmt()
 
 def goTccs():
   fx = readImage(fxfile)
@@ -121,6 +123,36 @@ def goNwc():
   plot(ss,cmin=0.01,cmax=0.2,png="ss"+str(nd)+str(sig))
   plot(gx,cmin=0.01,cmax=0.6,png="gx")
   plot(se,cmin=0.01,cmax=0.5,png="se")
+def goDmt():
+  fx = readImageL(fxfile)
+  fm = copy(fx)
+  ft = zerofloat(n1,n2)
+  fs = zerofloat(n1,n2)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  lof = LocalOrientFilterP(2,2);
+  lof1 = LocalOrientFilterP(2,6);
+  lof1.applyForNormal(fx,u1,u2)
+  for i2 in range(n2):
+    for i1 in range(45,n1,1):
+      if (u1[i2][i1]>0.96):
+        fm[i2][i1] = fx[i2][i1]*0.1
+  ets = lof.applyForTensors(fx);
+  ets.setEigenvalues(0.01,1.0);
+  ldk = LocalDiffusionKernel(LocalDiffusionKernel.Stencil.D91);
+  lsf = LocalSmoothingFilter(0.01,200,ldk);
+  lsf.applySmoothS(fm,ft);
+  lsf.apply(ets,12,ft,fs);
+  fmin = min(fx)/10
+  fmax = max(fx)/10
+  print fmin
+  print fmax
+  print min(fs)
+  print max(fs)
+  fs = mul(fs,2)
+  writeImage("fs",fs)
+  plot(fx,cmin=fmin,cmax=fmax,png="fx"+"Dmt")
+  plot(fs,cmin=fmin,cmax=fmax,png="fs"+"Dmt")
 
 def goParihaka():
   ft = readImage(fxfile)

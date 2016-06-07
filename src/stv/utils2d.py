@@ -56,6 +56,18 @@ def setupForSubset(name):
     f1,f2 = 0.0,0.0 # = 0.000,0.000,0.000
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
 
+  elif name=="dmt":
+    """ dmt dataset """
+    print "setupForSubset: dmt"
+    pngDir = _pngdir+"dmt/"
+    seismicDir = _datdir+"dmt/"
+    n1,n2 = 458,1184
+    d1,d2 = 1.0, 1.0
+    #d1,d2 = 0.00625,0.00625 
+    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
+    f1,f2 = 0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+
   elif name=="fake":
     """ fake """
     print "setupForSubset: fake"
@@ -103,6 +115,16 @@ def readImage(basename):
   ais.readFloats(image)
   ais.close()
   return image
+def readImageL(basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 def writeImage(basename,image):
   """ 
@@ -110,6 +132,15 @@ def writeImage(basename,image):
   """
   fileName = seismicDir+basename+".dat"
   aos = ArrayOutputStream(fileName)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+def writeImageL(basename,image):
+  """ 
+  Writes an image to a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image

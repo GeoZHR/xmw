@@ -50,15 +50,15 @@ seismicDir = "../../../data/seis/poseidon/"
 #pngDir = "../../../png/dgb/subset/"
 #seismicDir = "../../../data/seis/dgb/subset/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Three sets of control points, each set 
 # (k11 k12 k13 or k21 k22 k23 or k31 k32 k33) 
 # belongs to one seismic horizon
 
-k11 = [ 86, 93, 48, 46, 78, 72] #1st coordinates of the control points
-k12 = [300,300,300, 28, 77, 63] #2nd coordinates of the control points
-k13 = [ 32, 65,242,271, 85, 31] #3rd coordinates of the control points
+k11 = [ 86, 62, 105, 91, 91, 74] #1st coordinates of the control points
+k12 = [366,865,1106,191,763,981] #2nd coordinates of the control points
+k13 = [270,270, 450,230,317,442] #3rd coordinates of the control points
 
 k21 = [182,177,175,177,176,175,183,182,181,177]
 k22 = [275,220,200,153,178,146, 94,300,300, 33]
@@ -71,14 +71,8 @@ k33 = [ 18, 73,161,241,271,271,271]
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
+  goSlopes()
   #goFlattenC()
-  hx = readImage2(n2,n3,"top")
-  hx = div(hx,0.004)
-  print min(hx)
-  print max(hx)
-  gx = readImage(gxfile)
-  #plot3(gx,surf=hx)
 
 
 def goSlopes():
@@ -97,15 +91,12 @@ def goSlopes():
     lsf.findSlopes(gx,p2,p3,ep);
     ep = pow(ep,10.0)
     #control points for extracting the water bottom surface
-    c1=[ 31, 68,56]
-    c2=[226,275,35]
-    c3=[263, 53,35]
-    zm = ZeroMask(c1,c2,c3,p2,p3,ep,gx)
+    mk = Mask()
     zero = 0.00;
     tiny = 0.01;
-    zm.setValue(zero,p2)#set inline slopes for samples above water bottom
-    zm.setValue(zero,p3)#set crossline slopes for samples above water bottom
-    zm.setValue(tiny,ep)#set planarities for samples above water bottom
+    mk.setValue(zero,p2)#set inline slopes for samples above water bottom
+    mk.setValue(zero,p3)#set crossline slopes for samples above water bottom
+    mk.setValue(tiny,ep)#set planarities for samples above water bottom
     writeImage(p2file,p2)
     writeImage(p3file,p3)
     writeImage(epfile,ep)

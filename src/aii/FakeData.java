@@ -341,6 +341,161 @@ public class FakeData {
     return new float[][][][]{q[0],p[0],rn,pc};
   }
 
+  /**
+   * Returns a fake 3D seismic image with slopes.
+   * @param sequence string of 'O' and 'A' for fOlding and fAulting.
+   * @param nplanar number of planar faults.
+   * @param conjugate true, to make one of the faults a conjugate fault.
+   * @param conical true, to include a conical fault.
+   * @param impedance true, for impedance instead of reflectivity.
+   * @param wavelet true, for wavelet; false, for no wavelet.
+   * @param noise rms of noise (relative to signal) added to the image.
+   * @return array of arrays {f,p2,p3} with image f and slopes p2 and p3.
+   */
+  public static float[][][][] seismicAndSlopes3d2015B(
+      String sequence, int nplanar, boolean conjugate, boolean conical,
+      boolean impedance, boolean wavelet, boolean lateralViriation, double noise) {
+    int n1 = 121;
+    int n2 = 152;
+    int n3 = 153;
+    int m1 = n1+50;
+
+    // Number of episodes in deformation sequence of folding and faulting.
+    int ns = sequence.length();
+    int no = 0;
+    int na = 0;
+    for (int js=0; js<ns; ++js) {
+      if (sequence.charAt(js)=='O') {
+        ++no;
+      } else if (sequence.charAt(js)=='A') {
+        ++na;
+      }
+    }
+
+    // Scale factors for folding and faulting.
+    float so = 1.0f/no;
+    float sa = 1.0f/na;
+
+    // Folding transforms
+    Random r = new Random(2);
+    int ng = 31;
+    float[] g2 = mul(n2-1,randfloat(r,ng));
+    float[] g3 = mul(n3-1,randfloat(r,ng));
+    float[] sg = clip(4.0f,8.0f,mul(0.5f*(max(n2,n3)-1),randfloat(r,ng)));
+    float[] hg = mul(neg(sg),randfloat(r,ng));
+    T1 s1 = new Linear1(0.0f,so*2.0f/n1);
+    T2 s2 = new Gaussians2(g2,g3,sg,hg);
+    VerticalShear3X shearX = new VerticalShear3X(s1,s2);
+
+    // Faulting transforms
+    float r1a = 0.0f*n1, r2a = 0.5f*n2, r3a = 0.5f*n3;
+    float r1b = 0.0f*n1, r2b = 0.2f*n2, r3b = 0.3f*n3;
+    float r1c = 0.3f*n1, r2c = 0.8f*n2, r3c = 0.5f*n3;
+    float phia =  10.0f, thetaa = 75.0f; if (conjugate) phia += 180.0f;
+    float phib =  10.0f, thetab = 75.0f;
+    float phic = 190.0f, thetac = 75.0f;
+    float[] c1 = {0.0f}, c2 = {0.0f}, sc = {20.0f}, hc = {sa*8.0f};
+    T2 throwa = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwb = new Linear2(0.0f,sa*0.1f,0.0f,0.0f,0.0f,0.0f);
+    T2 throwc = new Gaussians2(c1,c2,sc,hc);
+    PlanarFault3 faulta = new PlanarFault3(r1a,r2a,r3a,phia,thetaa,throwa);
+    PlanarFault3 faultb = new PlanarFault3(r1b,r2b,r3b,phib,thetab,throwb);
+    PlanarFault3 faultc = new PlanarFault3(r1c,r2c,r3c,phic,thetac,throwc);
+
+    // Reflectivity or impedance.
+    float[][][][] vd = makeVelocityAndDensityX(m1, n2, n3, lateralViriation);
+    addChannelsXX(vd);
+    float[][][] v1 = copy(vd[0]);
+    float[][][] v2 = copy(vd[0]);
+    float[][][] d1 = copy(vd[1]);
+    float[][][] d2 = copy(vd[1]);
+    float[][][][] p = makeReflectivityWithNormals(vd);
+    float[][][][] q = makeReflectivityWithNormals(vd);
+    if (impedance)
+      p = impedanceFromReflectivity(p);
+    float[][][] pc = new float[n3][n2][n1];
+    float[][][] rc = new float[n3][n2][n1];
+    float[][][] rn = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=1; i1<n1; ++i1) {
+      float vi = v1[i3][i2][i1];
+      float di = d1[i3][i2][i1];
+      float vm = v1[i3][i2][i1-1];
+      float dm = d1[i3][i2][i1-1];
+      pc[i3][i2][i1] = vi*di;
+      rc[i3][i2][i1] = 0.5f*(log(vi*di)-log(vm*dm));
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float vi = v1[i3][i2][0];
+      float di = d1[i3][i2][0];
+      pc[i3][i2][0] = vi*di;
+      rc[i3][i2][0] = rc[i3][i2][1];
+    }}
+    float[][][] rct = copy(rc);
+    float[][][] pct = copy(pc);
+    // Apply the deformation sequence.
+    for (int js=0; js<ns; ++js) {
+      if (sequence.charAt(js)=='O') {
+        q = apply(shearX,q);
+        p = combine(32,p,q);
+        rct = apply(shearX,rct);
+        pct = apply(shearX,pct);
+        rc  = combine(32,rc,rct);
+        pc  = combine(32,pc,pct);
+        /*
+        v2 = apply(shearX,v2);
+        v1 = combine(32,v1,v2);
+        d2 = apply(shearX,d2);
+        d1 = combine(32,d1,d2);
+        */
+        resetReflectivityImpedance(lateralViriation,32,p[0],rc,pc);
+      } else if (sequence.charAt(js)=='A') {
+        if (nplanar>0) {
+          p  = apply(faulta,p); 
+          rc = apply(faulta,rc);
+          pc = apply(faulta,pc);
+          //v1 = apply(faulta,v1);
+          //d1 = apply(faulta,d1);
+        }
+        if (nplanar>1) {
+          p  = apply(faultb,p);
+          rc = apply(faultb,rc);
+          pc = apply(faultb,pc);
+          //v1 = apply(faultb,v1);
+          //d1 = apply(faultb,d1);
+        }
+        if (nplanar>2) {
+          p  = apply(faultc,p);
+          rc = apply(faultc,rc);
+          pc = apply(faultc,pc);
+          //v1 = apply(faultc,v1);
+          //d1 = apply(faultc,d1);
+        }
+      }
+    }
+
+    copy(rc,q[0]);
+    copy(p[1],q[1]);
+    copy(p[2],q[2]);
+    copy(p[3],q[3]);
+    rn = addNoise(noise,rc);
+    // Wavelet and noise.
+    if (wavelet) {
+      q = addWavelet(0.15,q);
+      p = addWavelet(0.15,p);
+      p[0] = addNoise(noise,p[0]);
+    }
+    q[0] = mul(1.0f/rms(q[0]),q[0]);
+    p[0] = mul(1.0f/rms(p[0]),p[0]);
+
+    p[0] = copy(n1,n2,n3,p[0]);
+    q[0] = copy(n1,n2,n3,q[0]);
+    return new float[][][][]{q[0],p[0],rn,pc};
+  }
+
+
 
   /**
    * Returns a fake noisy 2D seismic image with noise-free slopes.
@@ -1241,6 +1396,56 @@ public class FakeData {
     }}}
 
   }
+
+  private static void resetReflectivityImpedance(boolean lateralViriation,
+    int dn1, float[][][] p, float[][][] rf, float[][][] ip) 
+  {
+    Random random = new Random(43);
+    int n3 = rf.length;
+    int n2 = rf[0].length;
+    int n1 = rf[0][0].length;
+    float[] r = randfloat(random,n1);
+    float[][][] ds = new float[n3][n2][dn1];
+    float[][][] vs = new float[n3][n2][dn1];
+    float[][][] rs = new float[n3][n2][dn1];
+    float[][][] ps = new float[n3][n2][dn1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<dn1; ++i1) {
+      ds[i3][i2][i1] = 0.2f*r[i1]+2.2f;
+      vs[i3][i2][i1] = (0.5f*r[i1]+3.0f)*1000f;
+    }}}
+    if(lateralViriation) {
+      makeLateralViriation(200f,vs);
+      makeLateralViriation(.07f,ds);
+    }
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=1; i1<dn1; ++i1) {
+      float vi = vs[i3][i2][i1];
+      float di = ds[i3][i2][i1];
+      float vm = vs[i3][i2][i1-1];
+      float dm = ds[i3][i2][i1-1];
+      ps[i3][i2][i1] = vi*di;
+      rs[i3][i2][i1] = 0.5f*(log(vi*di)-log(vm*dm));
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float vi = vs[i3][i2][0];
+      float di = ds[i3][i2][0];
+      ps[i3][i2][0] = vi*di;
+      rs[i3][i2][0] = rs[i3][i2][1];
+    }}
+
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<dn1; ++i1) {
+      rf[i3][i2][i1] = rs[i3][i2][i1];
+      ip[i3][i2][i1] = ps[i3][i2][i1];
+      p[i3][i2][i1]  = ps[i3][i2][i1];
+    }}}
+  }
+
 
 
   private static float[][][][] makeReflectivityWithNormals(
