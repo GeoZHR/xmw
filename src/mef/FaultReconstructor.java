@@ -51,7 +51,7 @@ public class FaultReconstructor {
   private FaultSkin[] reskin(int minSkinSize, FaultCell[] cells) {
     float[][][][] flpt = applyVote(_n1,_n2,_n3,cells);
     FaultSkinner fs = new FaultSkinner();
-    fs.setGrowLikelihoods(0.2f,0.5f);
+    fs.setGrowLikelihoods(0.1f,0.5f);
     fs.setMaxDeltaStrike(10);
     fs.setMaxPlanarDistance(0.2f);
     fs.setMinSkinSize(minSkinSize);

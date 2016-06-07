@@ -14,8 +14,8 @@ f1,f2,f3 = s1.first,s2.first,s3.first
 # Names and descriptions of image files used below.
 sfile = "cfs" # input seismic image 
 ssfile = "cfss" # smoothed seismic image 
-logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,5.0,1.0
-#logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
+#logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,5.0,1.0
+logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
 gfile = "cfg"+logType # simple gridding with null for unknown samples
 pfile = "cfp"+logType # values of nearest known samples
 qfile = "cfq"+logType # output of blended gridder
@@ -56,8 +56,8 @@ maxThrow = 15.0
 # otherwise, must create the specified directory before running this script.
 #pngDir = ".././../png/swt/print/"
 plotOnly = True
-pngDir = None
 pngDir = "../../../png/cfd/"
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -73,8 +73,8 @@ def main(args):
   goFigures()
 
 def goFigures():
-  g = readImage(sfile)
-  q = readImage(qfile)
+  g = readImageL(sfile)
+  q = readImageL(qfile)
   mds=[]
   x12,x13,w1s = getLog242()
   x22,x23,w2s = getLog281()

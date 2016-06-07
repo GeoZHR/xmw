@@ -6,7 +6,7 @@ Version: 2016.01.22
 
 from utils import *
 #setupForSubset("nathan")
-setupForSubset("nathanSub5")
+setupForSubset("nathanSub6")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -62,7 +62,7 @@ sigmaPhi,sigmaTheta = 20,60
 # See the class FaultSkinner for more information.
 lowerLikelihood = 0.3
 upperLikelihood = 0.7
-minSkinSize = 500
+minSkinSize = 1000
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -74,7 +74,7 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub5/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -84,7 +84,7 @@ def main(args):
   #goThin()
   #goSkin()
   #goSkinTv()
-  goReskin()
+  #goReskin()
   #goSmooth()
   #goSlip()
   #goUnfaultS()
@@ -94,11 +94,11 @@ def main(args):
   #getOceanBottom()
   #goSeisResample()
   #goRose()
-  #goStrikeRotation()
+  goStrikeRotation()
   '''
-  fl = readImage(fltfile)
-  plot3(fl,fl,cmin=0.2,cmax=1cmap=jetFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=0.2)
+  fp = readImage(fpfile)
+  fps = copy(500,500,500,0,200,150,fp)
+  writeImage("fps",fps)
   '''
 
 def goFaultPoints():
@@ -121,12 +121,10 @@ def goSeisResample():
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
   gx = readImage(gxfile)
-  fpt = readImage("fpk")
-  '''
+  fpt = readImage(fptfile)
   hpr = Helper()
   hpr.rotate(29,fpt)
   hpr.convert(fpt)
-  '''
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
@@ -229,21 +227,21 @@ def goThin():
     fp = readImage(fpfile)
     ft = readImage(ftfile)
     flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+    '''
     writeImage(fltfile,flt)
     writeImage(fptfile,fpt)
     writeImage(fttfile,ftt)
+    '''
   else:
     flt = readImage(fltfile)
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
-  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-  '''
 
 def goReskin():
   print "go skin..."
@@ -263,7 +261,7 @@ def goReskin():
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(sks)
     cells = []
-    for ic in range(0,len(fcs),2):
+    for ic in range(0,len(fcs),4):
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
@@ -271,7 +269,7 @@ def goReskin():
     sp = fs.makePhiSampling(minPhi,maxPhi)
     dp = sp.getDelta()
     fr = FaultReconstructor(n1,n2,n3,cells)
-    skins = fr.reskin(minSkinSize,dp)
+    skins = fr.reskin(minSkinSize/2,dp)
     writeSkins(fsktv,skins)
     fd = FaultDisplay()
     print "fault skins load finish..."

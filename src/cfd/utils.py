@@ -72,6 +72,18 @@ def readImage(basename):
   ais.close()
   return image
 
+def readImageL(basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+
 def readImage1(n1,basename):
   """ 
   Reads an image from a file with specified basename
@@ -111,7 +123,7 @@ def writeImage(basename,image):
   Writes an image to a file with specified basename
   """
   fileName = seismicDir+basename+".dat"
-  aos = ArrayOutputStream(fileName)
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image
