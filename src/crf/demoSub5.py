@@ -55,7 +55,7 @@ cmfile = "cm"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 75,85
+minTheta,maxTheta = 65,85
 sigmaPhi,sigmaTheta = 20,60
 
 # These parameters control the construction of fault skins.
@@ -72,15 +72,15 @@ maxThrow = 85.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/beg/nathan/sub5/"
 pngDir = None
+pngDir = "../../../png/beg/nathan/sub5/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
@@ -90,16 +90,27 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
-  goFaultPoints()
+  #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
+  #goMask()
   '''
-  fl = readImage(fltfile)
-  plot3(fl,fl,cmin=0.2,cmax=1cmap=jetFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=0.2)
+  gx = readImage(gxfile)
+  writeImage("gx70",gx[70])
+  fp = readImage(fptfile)
+  fps = copy(300,n2,n3,fp)
+  writeImage("fps",fps)
   '''
+def goMask():
+  fp = readImage(fptfile)
+  ob = readImage2D(n2,n3,"ob")
+  hp = Helper()
+  hp.mask(ob,fp)
+  writeImage(fptfile,fp)
+  plot3(fp,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goFaultPoints():
   fp = readImage(fptfile)
@@ -125,30 +136,33 @@ def goStrikeRotation():
   #fpt = readImage("fpt")
   gx = readImage("gxs")
   fp = readImage("fps")
-  '''
   hpr = Helper()
-  hpr.rotate(29,fpt)
-  hpr.convert(fpt)
-  '''
+  hpr.rotateX(299,fp)
+  hpr.convert(fp)
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
-  fp = readImage2D(104068862,4,"fpp")
+  #fp = readImage2D(104068862,4,"fpp")
+  fp = readImage2D(107757761,4,"fps")
   rp.rotateX(299,fp[3])
   rp.convert(fp[3])
   fc = rp.removeSignature(29,fp)
   #rp.rose(fp[3],36)
-  c2,c3=8,2
+  c2,c3=10,2
   for tp  in range(0,480,20):
-  #for tp  in range(0,100,100):
+  #for tp  in range(200,400,200):
     bt = tp+20
+    title1 = str(tp*5)
+    title2 = str(bt*5)
+    title =title1+"~"+title2+" m"
     pp = rp.applyForRosePlotsX(tp,bt,c2,c3,n2,n3,36,fc,ob)
+    pp.addTitle(title)
     pf = PlotFrame(pp)
     wx = 1450
-    wy = round((2*1450.0)/c2)
+    wy = round((c3*1450.0)/c2+50)
     pf.setSize(wx,wy)
     pf.setVisible(True)
     pf.paintToPng(720,6,pngDir+str(tp)+".png")
@@ -202,7 +216,7 @@ def goScan():
   if not plotOnly:
     gx = readImage(gxfile)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
-    sig1,sig2,smooth=4.0,2.0,2.0
+    sig1,sig2,smooth=4.0,2.0,4.0
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)

@@ -23,7 +23,7 @@ fttfile = "ftt" # fault dip thinned
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minTheta,maxTheta = 75,85
-sigmaTheta = 70
+sigmaTheta = 60
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -39,7 +39,7 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goScan()
+  goScan()
   goThin()
   #goDisplay()
 
@@ -55,7 +55,7 @@ def goScan():
   if not plotOnly:
     gx = FaultScanner2.taper(10,0,gx)
     fs = FaultScanner2(sigmaTheta)
-    sig1,sig2,smooth=16.0,2.0,4.0
+    sig1,sig2,smooth=4.0,2.0,8.0
     fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "ft min =",min(ft)," max =",max(ft)
@@ -82,7 +82,10 @@ def goThin():
   else:
     flt = readImage2D(n1,n2,fltfile)
     ftt = readImage2D(n1,n2,fttfile)
-  plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
+  gx = copy(n1,600,0,1300,gx)
+  flt = copy(n1,600,0,1300,flt)
+  c2 = Sampling(600)
+  plot2(s1,c2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -424,6 +427,7 @@ def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
   pv = panel.addPixels(s1,s2,f)
   pv.setInterpolation(PixelsView.Interpolation.LINEAR)
   pv.setColorModel(ColorMap.GRAY)
+  pv.setClips(-2,2)
   if g:
     pv = panel.addPixels(s1,s2,g)
     pv.setInterpolation(PixelsView.Interpolation.NEAREST)
