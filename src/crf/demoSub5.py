@@ -297,7 +297,7 @@ def goReskin():
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(sks)
     cells = []
-    for ic in range(0,len(fcs),4):
+    for ic in range(0,len(fcs),2):
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
