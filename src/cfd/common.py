@@ -22,6 +22,7 @@ from ipfx import *
 from swt import *
 from cfd import *
 from hv import *
+from he import *
 
 #############################################################################
 # Run the function main on the Swing thread

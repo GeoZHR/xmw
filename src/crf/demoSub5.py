@@ -90,15 +90,20 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
-  #goFaultPoints()
+  goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goRose()
-  goStrikeRotation()
+  #goStrikeRotation()
+  #fp = readImage("fpt65")
+  #fps = copy(300,n2,n3,0,0,0,fp)
+  #writeImage("fps65",fps)
   #goMask()
   '''
   gx = readImage(gxfile)
-  writeImage("gx70",gx[70])
+  gs = gx[466]
+  gs = copy(n1,1000,0,520,gs)
+  writeImage("gx466",gs)
   fp = readImage(fptfile)
   fps = copy(300,n2,n3,fp)
   writeImage("fps",fps)
@@ -113,13 +118,14 @@ def goMask():
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goFaultPoints():
-  fp = readImage(fptfile)
+  #fp = readImage(fptfile)
+  fp = readImage("fpt65")
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   ps = rp.faultPoints(ob,fp)
   print len(ps)
   print len(ps[0])
-  writeImage("fps",ps)
+  writeImage("fps65",ps)
 
 def goSeisResample():
   hp = Helper()
@@ -132,14 +138,16 @@ def goSeisResample():
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
+  #gx = readImage(gxfile)
+  #fp = readImage(fptfile)
+  #fp = readImage("fps65")
+  fp = readImage("fpp")
+  gx = readImage("gxs")
   '''
-  gx = readImage(gxfile)
-  fp = readImage(fptfile)
-  '''
-  #gx = readImage("gxs")
   #fp = readImage("fpp")
   gx = readImage("gxs2")
   fp = readImage("fps2")
+  '''
   hpr = Helper()
   hpr.rotateX(299,fp)
   hpr.convert(fp)
@@ -150,7 +158,8 @@ def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   #fp = readImage2D(104068862,4,"fpp")
-  fp = readImage2D(107757761,4,"fps")
+  #fp = readImage2D(107757761,4,"fps")
+  fp = readImage2D(33870403,4,"fps65")
   rp.rotateX(299,fp[3])
   rp.convert(fp[3])
   fc = rp.removeSignature(29,fp)

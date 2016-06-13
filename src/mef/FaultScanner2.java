@@ -443,7 +443,7 @@ public class FaultScanner2 {
     float[][] fs = mul(f,f);
     LocalOrientFilter lof = new LocalOrientFilter(sig1,sig2);
     EigenTensors2 ets = lof.applyForTensors(f);
-    ets.setEigenvalues(0.00001f,1.0f);
+    ets.setEigenvalues(0.0001f,1.0f);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     lsf.apply(ets,smooth,f, sn);
     lsf.apply(ets,smooth,fs,sd);

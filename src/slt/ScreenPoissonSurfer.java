@@ -29,6 +29,7 @@ public class ScreenPoissonSurfer {
    * of the iterative solver used to compute mappings.
    * @param sigma1 half-width for smoothing in 1st dimension, in samples.
    * @param sigma2 half-width for smoothing in 2nd dimension, in samples.
+   * @param sigma3 half-width for smoothing in 3rd dimension, in samples.
    */
   public void setSmoothings(double sigma1, double sigma2, double sigma3) {
     _sigma1 = (float)sigma1;
@@ -45,36 +46,6 @@ public class ScreenPoissonSurfer {
     _small = (float)small;
     _niter = niter;
   }
-
-  public float[][][] getScreenMark(
-    int n1, int n2, int n3, FaultCell[] fcs) {
-    float[][][] mk = new float[n3][n2][n1];
-    for (FaultCell fc:fcs) {
-      if (fc==null){continue;}
-      int i1 = round(fc.getX1());
-      int i2 = round(fc.getX2());
-      int i3 = round(fc.getX3());
-      mk[i3][i2][i1] = fc.getFl();
-    }
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-      int k1m = 0;
-      float mkm = 0.0f;
-      for (int i1=0; i1<n1; ++i1) {
-        float mki = mk[i3][i2][i1];
-        if(mki>mkm) {
-          k1m = i1;
-          mkm = mki; 
-        }
-      }
-      zero(mk[i3][i2]);
-      mk[i3][i2][k1m] = mkm;
-      if(k1m-1>=0) mk[i3][i2][k1m-1] = mkm;
-      if(k1m+1<n1) mk[i3][i2][k1m+1] = mkm;
-    }}
-    return mk;
-  }
-
 
   /**
    * @param st array of thinned salt likelihoods.
@@ -188,6 +159,36 @@ public class ScreenPoissonSurfer {
     }}}});
     return mk;
   }
+
+  public float[][][] getScreenMark(
+    int n1, int n2, int n3, FaultCell[] fcs) {
+    float[][][] mk = new float[n3][n2][n1];
+    for (FaultCell fc:fcs) {
+      if (fc==null){continue;}
+      int i1 = round(fc.getX1());
+      int i2 = round(fc.getX2());
+      int i3 = round(fc.getX3());
+      mk[i3][i2][i1] = fc.getFl();
+    }
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int k1m = 0;
+      float mkm = 0.0f;
+      for (int i1=0; i1<n1; ++i1) {
+        float mki = mk[i3][i2][i1];
+        if(mki>mkm) {
+          k1m = i1;
+          mkm = mki; 
+        }
+      }
+      zero(mk[i3][i2]);
+      mk[i3][i2][k1m] = mkm;
+      if(k1m-1>=0) mk[i3][i2][k1m-1] = mkm;
+      if(k1m+1<n1) mk[i3][i2][k1m+1] = mkm;
+    }}
+    return mk;
+  }
+
 
 
   ///////////////////////////////////////////////////////////////////////////

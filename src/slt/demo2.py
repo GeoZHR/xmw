@@ -23,10 +23,10 @@ pngDir = getPngDir() #"../../../png/slt/2d/sub1/"
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goLinear()  
-  #goSaltLike()
-  #goSaltSurfer()
-  goSaltSurferC()
+  #goLinear()       # compute lilearity
+  #goSaltLike()     # compute salt likelihoods
+  #goSaltSurfer()   # compute salt boundaries
+  goSaltSurferC()   # compute salt boundaries with constraints
   #goTest()
 
 def goTest():

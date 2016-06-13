@@ -10,7 +10,7 @@ s1,s2,s3= getSamplings()
 n1,n2= s1.count,s2.count
 
 # Names and descriptions of image files used below.
-gxfile  = "gx" # input image (maybe after bilateral filtering)
+gxfile  = "gx466" # input image (maybe after bilateral filtering)
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -22,7 +22,7 @@ fttfile = "ftt" # fault dip thinned
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minTheta,maxTheta = 75,85
+minTheta,maxTheta = 65,85
 sigmaTheta = 60
 
 # These parameters control the construction of fault skins.
@@ -55,7 +55,7 @@ def goScan():
   if not plotOnly:
     gx = FaultScanner2.taper(10,0,gx)
     fs = FaultScanner2(sigmaTheta)
-    sig1,sig2,smooth=4.0,2.0,8.0
+    sig1,sig2,smooth=4.0,4.0,4.0
     fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "ft min =",min(ft)," max =",max(ft)
@@ -82,9 +82,9 @@ def goThin():
   else:
     flt = readImage2D(n1,n2,fltfile)
     ftt = readImage2D(n1,n2,fttfile)
-  gx = copy(n1,600,0,1300,gx)
-  flt = copy(n1,600,0,1300,flt)
-  c2 = Sampling(600)
+  gx = copy(n1,300,0,550,gx)
+  flt = copy(n1,300,0,550,flt)
+  c2 = Sampling(300)
   plot2(s1,c2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
 
 def goStat():

@@ -14,11 +14,16 @@ f1,f2,f3 = s1.first,s2.first,s3.first
 # Names and descriptions of image files used below.
 sfile = "cfs" # input seismic image 
 ssfile = "cfss" # smoothed seismic image 
-#logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,5.0,1.0
-logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
+logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,5.0,1.0
+#logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
 gfile = "cfg"+logType # simple gridding with null for unknown samples
 pfile = "cfp"+logType # values of nearest known samples
 qfile = "cfq"+logType # output of blended gridder
+q1file = "cfq1"+logType # output of blended gridder
+q2file = "cfq2"+logType # output of blended gridder
+q3file = "cfq3"+logType # output of blended gridder
+q4file = "cfq4"+logType # output of blended gridder
+q5file = "cfq5"+logType # output of blended gridder
 tfile = "cft"+logType # times to nearest known samples
 p2file = "p2"
 p3file = "p3"
@@ -70,7 +75,143 @@ def main(args):
   #gridNearest()
   #gridBlendedP()
   #gridBlendedQ()
-  goFigures()
+  #goFigures()
+  #goHorizon()
+  '''
+  go1stCo2()
+  go2ndCo2()
+  go3rdCo2()
+  go4thCo2()
+  go5thCo2()
+  '''
+def go1stCo2():
+  gx = readImageL(sfile)
+  q = readImageL(qfile)
+  surf = readImage2(n2,n3,"surf")
+  c1,c2,c3 = 820,120,130
+  qc = copy(q)
+  for k3 in range(-15,15,1):
+    for k2 in range(-15,15,1):
+      ds = sqrt(k2*k2+k3*k3)
+      if (ds<=15):
+        for k1 in range(-10,0,1):
+          i1 = round(surf[c2+k2][c3+k3])+10
+          qc[c3+k3][c2+k2][i1+k1] = q[c3+k3][c2+k2][i1+k1]-0.38
+  writeImage(q1file,qc)
+  #plot3(gx,q,cmin=vmin,cmax=vmax)
+  #plot3(gx,qc,cmin=vmin,cmax=vmax)
+
+def go2ndCo2():
+  gx = readImageL(sfile)
+  q0 = readImageL(qfile)
+  q1 = readImageL(q1file)
+  surf = readImage2(n2,n3,"surf")
+  c1,c2,c3 = 820,120,130
+  qc = copy(q1)
+  for k3 in range(-25,25,1):
+    for k2 in range(-25,25,1):
+      ds = sqrt(k2*k2+k3*k3)
+      if (ds<=25):
+        for k1 in range(-20,-10):
+          i1 = round(surf[c2+k2][c3+k3])+10
+          qc[c3+k3][c2+k2][i1+k1] = q1[c3+k3][c2+k2][i1+k1]-0.38
+  writeImage(q2file,qc)
+  #plot3(gx,q,cmin=vmin,cmax=vmax)
+  #plot3(gx,qc,cmin=vmin,cmax=vmax)
+
+def go3rdCo2():
+  gx = readImageL(sfile)
+  q0 = readImageL(qfile)
+  q2 = readImageL(q2file)
+  surf = readImage2(n2,n3,"surf")
+  c1,c2,c3 = 820,120,130
+  qc = copy(q2)
+  for k3 in range(-35,35,1):
+    for k2 in range(-35,35,1):
+      ds = sqrt(k2*k2+k3*k3)
+      if (ds<=35):
+        for k1 in range(-30,-20):
+          i1 = round(surf[c2+k2][c3+k3])+10
+          qc[c3+k3][c2+k2][i1+k1] = q2[c3+k3][c2+k2][i1+k1]-0.38
+  writeImage(q3file,qc)
+  #plot3(gx,q,cmin=vmin,cmax=vmax)
+  #plot3(gx,qc,cmin=vmin,cmax=vmax)
+
+def go4thCo2():
+  gx = readImageL(sfile)
+  q0 = readImageL(qfile)
+  q3 = readImageL(q3file)
+  surf = readImage2(n2,n3,"surf")
+  c1,c2,c3 = 820,120,130
+  o1,o2,o3 = 776, 93, 99
+  qc = copy(q3)
+  for k3 in range(-45,45,1):
+    for k2 in range(-45,45,1):
+      ds = sqrt(k2*k2+k3*k3)
+      if (ds<=45):
+        for k1 in range(-30,-20):
+          i1 = round(surf[c2+k2][c3+k3])+10
+          qc[c3+k3][c2+k2][i1+k1] = q0[c3+k3][c2+k2][i1+k1]-0.38
+  for k3 in range(-15,15,1):
+    for k2 in range(-15,15,1):
+      ds = sqrt(k2*k2+k3*k3)
+      if (ds<=15):
+        d1 = round(surf[o2][o3]-o1)
+        for k1 in range(-20, 0):
+          i1 = round(surf[o2+k2][o3+k3])-d1+10
+          qc[o3+k3][o2+k2][i1+k1] = q0[o3+k3][o2+k2][i1+k1]-0.38
+  writeImage(q4file,qc)
+  #plot3(gx,q,cmin=vmin,cmax=vmax)
+  #plot3(gx,qc,cmin=vmin,cmax=vmax)
+
+def go5thCo2():
+  gx = readImageL(sfile)
+  q0 = readImageL(qfile)
+  q4 = readImageL(q4file)
+  surf = readImage2(n2,n3,"surf")
+  c1,c2,c3 = 820,120,130
+  o1,o2,o3 = 770, 93, 99
+  qc = copy(q4)
+  for k3 in range(-55,55,1):
+    for k2 in range(-55,55,1):
+      ds = sqrt(k2*k2+k3*k3)
+      if (ds<=55):
+        for k1 in range(-30,-20):
+          i1 = round(surf[c2+k2][c3+k3])+10
+          qc[c3+k3][c2+k2][i1+k1] = q0[c3+k3][c2+k2][i1+k1]-0.38
+  for k3 in range(-25,25,1):
+    for k2 in range(-25,25,1):
+      ds = sqrt(k2*k2+k3*k3)
+      if (ds<=25):
+        d1 = round(surf[o2][o3]-o1)
+        for k1 in range(-30, 0):
+          i1 = round(surf[o2+k2][o3+k3])-d1+10
+          qc[o3+k3][o2+k2][i1+k1] = q0[o3+k3][o2+k2][i1+k1]-0.38
+  writeImage(q5file,qc)
+  #plot3(gx,q,cmin=vmin,cmax=vmax)
+  plot3(gx,qc,cmin=vmin,cmax=vmax)
+  plot3(gx,sub(q0,qc),cmin=0.0,cmax=0.2,surf=surf)
+
+def goHorizon():
+  k13 = [110]#, 32, 87]
+  k12 = [120]#,148,151]
+  k11 = [820]#,826,822]
+  q = readImageL(qfile)
+  gx = readImageL(sfile)
+  p2 = readImageL(p2file)
+  p3 = readImageL(p3file)
+  ep = readImageL(epfile)
+  wp = pow(ep,4)
+  se = SurfaceExtractorC()
+  se.setWeights(0.0)
+  se.setSmoothings(6.0,6.0)
+  se.setCG(0.01,200)
+  surf = se.surfaceInitialization(n2,n3,n1-1,k11,k12,k13)
+  se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
+  plot3(gx,surf=surf)
+  plot3(gx,q,cmin=vmin,cmax=vmax,surf=surf)
+  writeImage("surf",surf)
+
 
 def goFigures():
   g = readImageL(sfile)
@@ -103,23 +244,25 @@ def goSeisAndWells():
 
 def goSlopes():
   print "goSlopes ..."
-  gx = readImage(sfile)
-  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
+  #gx = readImageL(sfile)
+  gx = readImageL(qfile)
+  sigma1,sigma2,sigma3,pmax = 2.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  zm = ZeroMask(0.3,5,1,1,gx)
+  zm = ZeroMask(0.1,5,1,1,gx)
   zero,tiny=0.0,0.01
   zm.setValue(zero,p2)
   zm.setValue(zero,p3)
   zm.setValue(tiny,ep)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
+  writeImage(epfile,ep)
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
   plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Inline slope (sample/sample)",png="p2")
   plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
         clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+  plot3(gx,ep,cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
 
 def goScan():
@@ -751,7 +894,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     tg  = TriangleGroup(True,xyz)
     sf.world.addChild(tg)
   #ipg.setSlices(924,202,26)
-  ipg.setSlices(834,202,26)
+  #ipg.setSlices(834,202,26)
+  ipg.setSlices(834,120,110)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
     sf.setSize(837,700)

@@ -11,12 +11,12 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
-gxfile  = "gx" # input image (maybe after bilateral filtering)
-slfile  = "sl" # eigenvalue-derived planarity
+gxfile  = "gx" # input image 
+slfile  = "sl" # salt likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
-sffile  = "sf" # eigenvalue-derived planarity
-mkfile  = "mk" # eigenvalue-derived planarity
-sfcfile  = "sfc" # eigenvalue-derived planarity
+sffile  = "sf" # salt indicator function
+mkfile  = "mk" # mask file
+sfcfile  = "sfc" # salt indicator function with constraints
 
 pngDir = None
 pngDir = "../../../png/slt/3d/"
@@ -25,8 +25,10 @@ pngDir = getPngDir()
 plotOnly = True
 
 def main(args):
-  #goSaltLike()
-  goSaltSurfer()
+  #goSaltLike()  # compute salt likelihoods
+  goSaltSurfer() # compute salt surfaces
+
+
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -283,6 +285,18 @@ def goSkin():
 
 
 #############################################################################
+def readImage(name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 # graphics
 
 def jetFill(alpha):
