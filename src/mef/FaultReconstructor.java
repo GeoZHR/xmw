@@ -36,7 +36,7 @@ public class FaultReconstructor {
     HashSet<FaultSkin> hsk = new HashSet<FaultSkin>();
     while(hsc.size()>minSkinSize/10) {
       System.out.println("cells remaining:"+hsc.size());
-      FaultCell[] fcs = findStrike(30,hsc,dpi);
+      FaultCell[] fcs = findStrike(20,hsc,dpi);
       FaultSkin[] sks = reskin(minSkinSize,fcs);
       int ns = sks.length;
       if (ns<1) {continue;}
