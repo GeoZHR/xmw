@@ -72,8 +72,8 @@ maxThrow = 85.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/beg/nathan/sub5/"
 pngDir = None
+pngDir = "../../../png/beg/nathan/sub5/"
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -90,11 +90,11 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
-  goFaultPoints()
+  #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goRose()
-  #goStrikeRotation()
+  goStrikeRotation()
   #fp = readImage("fpt65")
   #fps = copy(300,n2,n3,0,0,0,fp)
   #writeImage("fps65",fps)
@@ -140,17 +140,17 @@ def goSeisResample():
 def goStrikeRotation():
   #gx = readImage(gxfile)
   #fp = readImage(fptfile)
-  #fp = readImage("fps65")
-  fp = readImage("fpp")
+  fp = readImage("fps65x")
+  #fp = readImage("fpp")
   gx = readImage("gxs")
   '''
   #fp = readImage("fpp")
   gx = readImage("gxs2")
   fp = readImage("fps2")
-  '''
   hpr = Helper()
   hpr.rotateX(299,fp)
   hpr.convert(fp)
+  '''
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
@@ -159,27 +159,32 @@ def goRose():
   ob = readImage2D(n2,n3,"ob")
   #fp = readImage2D(104068862,4,"fpp")
   #fp = readImage2D(107757761,4,"fps")
-  fp = readImage2D(33870403,4,"fps65")
+  fp = readImage2D(93863314,4,"fps65")
   rp.rotateX(299,fp[3])
   rp.convert(fp[3])
   fc = rp.removeSignature(29,fp)
   #rp.rose(fp[3],36)
   #c2,c3=10,2
-  c2,c3=15,3
-  #c2,c3=20,4
-  for tp  in range(0,480,20):
+  #c2,c3=15,3
+  c2,c3=20,4
+  #npm = rp.findMaxSamples(0,480,20,c2,c3,n2,n3,fp,ob)
+  npm = 83270.0
+  for tp  in range(20,480,20):
   #for tp  in range(200,400,200):
     bt = tp+20
     title1 = str(tp*5)
     title2 = str(bt*5)
     title =title1+"~"+title2+" m"
-    pp = rp.applyForRosePlotsX(tp,bt,c2,c3,n2,n3,36,fc,ob)
+    #pp = rp.applyForRosePlotsX(npm,tp,bt,c2,c3,n2,n3,36,fc,ob)
+    pp = rp.applyForRosePlotsN(tp,bt,c2,c3,n2,n3,36,fc,ob)
     #pp = rp.applyForRosePlotsX(99,99,c2,c3,n2,n3,36,fc,ob)
     pp.addTitle(title)
     pf = PlotFrame(pp)
     #wx,wy = 1450,round((c3*1450)/c2)+50
-    wx,wy = 1700,round((c3*1750)/c2)+50
-    #wx,wy = 2100,round((c3*2100)/c2)+100
+    #wx,wy = 1700,round((c3*1750)/c2)+50
+    wx,wy = 2100,round((c3*2100)/c2)+100
+    wx = round(wx*1.5)
+    wy = round(wy*1.3)
     pf.setSize(wx,wy)
     pf.setVisible(True)
     pf.paintToPng(720,6,pngDir+str(tp)+".png")
