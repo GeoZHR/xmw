@@ -71,9 +71,7 @@ k33 = [ 18, 73,161,241,271,271,271]
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  gx = readImage(gxfile)
-  plot3(gx)
-  #goSlopes()
+  goSlopes()
   #goFlattenC()
 
 
@@ -91,14 +89,11 @@ def goSlopes():
     ep = zerofloat(n1,n2,n3)
     lsf = LocalSlopeFinder(sig1,sig2,sig3,pmax)
     lsf.findSlopes(gx,p2,p3,ep);
-    ep = pow(ep,10.0)
-    #control points for extracting the water bottom surface
-    mk = Mask()
-    zero = 0.00;
-    tiny = 0.01;
-    mk.setValue(zero,p2)#set inline slopes for samples above water bottom
-    mk.setValue(zero,p3)#set crossline slopes for samples above water bottom
-    mk.setValue(tiny,ep)#set planarities for samples above water bottom
+    zm = ZeroMask(0.1,1,1,1,gx)
+    zero,tiny=0.0,0.01
+    zm.setValue(zero,p2)
+    zm.setValue(zero,p3)
+    zm.setValue(tiny,ep)
     writeImage(p2file,p2)
     writeImage(p3file,p3)
     writeImage(epfile,ep)
