@@ -50,29 +50,29 @@ pngDir = "../../../png/poseidon/sub/"
 seismicDir = "../../../data/seis/poseidon/sub/"
 #pngDir = "../../../png/dgb/subset/"
 #seismicDir = "../../../data/seis/dgb/subset/"
-pngDir = None
-plotOnly = True
+#pngDir = None
+plotOnly = False
 
 # Three sets of control points, each set 
 # (k11 k12 k13 or k21 k22 k23 or k31 k32 k33) 
 # belongs to one seismic horizon
 
 #1st coordinates of the control points
-k1 = [13, 52, 24,  8, 46, 22,  51, 51, 51, 34, 12,  8,
-        51,  4,  21, 36, 38, 11,  5, 55, 52,  8,  4, 29, 48] 
+k1 = [ 13, 51,  24,  8, 46, 22,  50, 51, 50, 34, 12,  8, 45, 50,
+       51,  4,  21, 36, 38, 11,   5, 55, 52,  8,  4, 29, 48, 17] 
 #2nd coordinates of the control points
-k2 = [609,691,691,162,366,865,1009,191,763,981,557,171,
-      1278,196,1004,371,259,481,266,367,559,335,284, 36, 80]
+k2 = [609,691, 691,162,366,865,1009,191,763,981,557,171,904,645,
+     1278,196,1004,371,259,481, 266,367,559,335,284, 36, 80,881]
 #3rd coordinates of the control points
-k3 = [442,290,165,507,270,270, 396,230,317,442,620,455,
-       286,760, 575,862,861,394,662,178,262,389,746,646,292] 
+k3 = [442,290, 165,507,270,270, 396,230,317,442,620,455,398,310,
+      286,760, 575,862,861,394, 662,178,262,389,746,646,292,593] 
 
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goSingleHorizon()
+  goSlopes()
+  goSingleHorizon()
   #goHorizons()
   goHorizonVolume()
   #goMaskTop()
@@ -112,6 +112,7 @@ def goSlopes():
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
+  '''
   plot3(gx)
   plot3(gx,p2, cmin=-1,cmax=1,cmap=jetRamp(1.0),
       clab="Inline slope (sample/sample)",png="p2")
@@ -119,6 +120,7 @@ def goSlopes():
       clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,pow(ep,4.0),cmin=0,cmax=1,cmap=jetRamp(1.0),
       clab="Planarity")
+  '''
 
 def goSingleHorizon():
   gx = readImage(gxfile)
@@ -126,22 +128,25 @@ def goSingleHorizon():
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
-    ep = pow(ep,0)
+    ep = pow(ep,10)
     lmt = n1-1.0
     se = SurfaceExtractorM()
-    se.setWeights(0.0)
-    se.setExternalIterations(10)
+    se.setWeights(0.5)
+    se.setExternalIterations(12)
     sf = se.surfaceInitialization(n2,n3,lmt,k1,k2,k3)
     se.surfaceUpdateFromSlopes(ep,p2,p3,None,k1,k2,k3,sf)
     writeImage("top",sf)
   else:
     sf = readImage2(n2,n3,"top")
+  '''
   he = HorizonExtraction(s1,s2,s3,gx,gx)
   hx = zerofloat(n1,n2,n3)
   he.horizonToImage(1,sf,hx)
   plot3(gx)
   plot3(gx,surf=sf)
   plot3(gx,hx,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
+  '''
+
 
 def goHorizons():
   gx = readImage(gxfile)
@@ -178,38 +183,39 @@ def goHorizons():
   plot3(gx)
   plot3(gx,hx,cmin=0,cmax=max(hx),cmap=jetFillExceptMin(1.0))
   he = HorizonExtraction(s1,s2,s3,gx,gx)
-  '''
   k2 = 180
   for k3 in range(400,500,10):
     hls  = he.horizonCurves(k2,k3,hv)
     plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
-  '''
-  k2,k3=576,555
-  hls  = he.horizonCurves(k2,k3,hv)
-  plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
-
 def goHorizonVolume():
   gx = readImage(gxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  ep = readImage(epfile)
-  ep = pow(ep,0)
-  sf = readImage2(n2,n3,"top")
-  k1 = zerofloat(90)
-  hs = zerofloat(n2,n3,90)
-  k2,k3 = 576,555
-  lmt = n1-1.0
-  hv = HorizonVolume()
-  hv.setWeights(0.0)
-  hv.setExternalIterations(10)
-  hv.applyForInitial(k2,k3,lmt,sf,k1,hs)
-  hv.horizonUpdateFromSlopes(ep,p2,p3,k1,k2,k3,sf,hs)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    ep = pow(ep,10)
+    sf = readImage2(n2,n3,"top")
+    k1 = zerofloat(90)
+    hs = zerofloat(n2,n3,90)
+    k2,k3 = 576,555
+    lmt = n1-1.0
+    hv = HorizonVolume()
+    hv.setWeights(0.5)
+    hv.setExternalIterations(10)
+    hv.applyForInitial(k2,k3,lmt,sf,k1,hs)
+    hv.horizonUpdateFromSlopes(ep,p2,p3,k1,k2,k3,sf,hs)
+  else:
+    hs = readImageX(n2,n3,90,"hs")
+  '''
+  k2 = 800
   plot3(gx)
   he = HorizonExtraction(s1,s2,s3,gx,gx)
-  k2 = 180
   for k3 in range(400,500,10):
     hls  = he.horizonCurves(k2,k3,hs)
     plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
+  for k in range(0,1,1):
+    plot3(gx,surf=hs[k])
+  '''
 
 
 def goMaskTop():
@@ -475,23 +481,29 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       tg = TriangleGroup(True,xyz,rgb)
       sf.world.addChild(tg)
   if surf:
+    '''
     tgs = Triangle()
     xyz = tgs.trianglesForSurface(surf,0,n1-1)
     tg  = TriangleGroup(True,xyz)
     sf.world.addChild(tg)
+    '''
+    sd = SurfaceDisplay()
+    ts = sd.horizonWithAmplitude([-1.0,1.0],surf,f)
+    tg = TriangleGroup(True,ts[0],ts[1])
+    sf.world.addChild(tg)
   #ipg.setSlices(290,300,268)
   #ipg.setSlices(290,300,271)
-  ipg.setSlices(290,300,111)
+  ipg.setSlices(290,1009,768)
   if cbar:
     sf.setSize(937,700)
   else:
-    sf.setSize(800,700)
+    sf.setSize(1000,900)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   ov = sf.getOrbitView()
   zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
+  ov.setScale(1.4)
   #ov.setAzimuthAndElevation(220,25)
   ov.setAzimuthAndElevation(220,45)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
