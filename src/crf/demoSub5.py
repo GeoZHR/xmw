@@ -93,12 +93,17 @@ def main(args):
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
-  #goRose()
-  goStrikeRotation()
+  goRose()
+  #goStrikeRotation()
+  #fpt = readImage(fptfile)
+  #fps = copy(400,n2,n3,0,0,0,fpt)
+  #writeImage("fps",fps)
   #fp = readImage("fpt65")
   #fps = copy(300,n2,n3,0,0,0,fp)
   #writeImage("fps65",fps)
   #goMask()
+  #gx = readImage(gxfile)
+  #plot3(gx)
   '''
   gx = readImage(gxfile)
   gs = gx[466]
@@ -118,14 +123,13 @@ def goMask():
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goFaultPoints():
-  #fp = readImage(fptfile)
-  fp = readImage("fpt65")
+  fp = readImage(fptfile)
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
   ps = rp.faultPoints(ob,fp)
   print len(ps)
   print len(ps[0])
-  writeImage("fps65",ps)
+  writeImage("fpp",ps)
 
 def goSeisResample():
   hp = Helper()
@@ -138,38 +142,34 @@ def goSeisResample():
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
 def goStrikeRotation():
-  #gx = readImage(gxfile)
-  #fp = readImage(fptfile)
-  fp = readImage("fps65x")
-  #fp = readImage("fpp")
   gx = readImage("gxs")
-  '''
-  #fp = readImage("fpp")
-  gx = readImage("gxs2")
-  fp = readImage("fps2")
+  fp = readImage("fps")
+  #fpp = readImage2D(95894555,4,"fpp")
   hpr = Helper()
+  #fp = fillfloat(-0.01,n1,n2,n3)
+  #hpr.setStrikes(fpp,fp)
+
   hpr.rotateX(299,fp)
   hpr.convert(fp)
-  '''
+  #writeImage("fps",fp)
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
 
 def goRose():
   rp = RosePlot()
   ob = readImage2D(n2,n3,"ob")
-  #fp = readImage2D(104068862,4,"fpp")
-  #fp = readImage2D(107757761,4,"fps")
-  fp = readImage2D(93863314,4,"fps65")
+  fp = readImage2D(95894555,4,"fpp")
   rp.rotateX(299,fp[3])
   rp.convert(fp[3])
-  fc = rp.removeSignature(29,fp)
+  fc = fp
+  #fc = rp.removeSignature(29,fp)
   #rp.rose(fp[3],36)
   #c2,c3=10,2
   #c2,c3=15,3
   c2,c3=20,4
   #npm = rp.findMaxSamples(0,480,20,c2,c3,n2,n3,fp,ob)
-  npm = 83270.0
-  for tp  in range(20,480,20):
+  npm = 83950
+  for tp  in range(0,20,20):
   #for tp  in range(200,400,200):
     bt = tp+20
     title1 = str(tp*5)
@@ -177,7 +177,7 @@ def goRose():
     title =title1+"~"+title2+" m"
     #pp = rp.applyForRosePlotsX(npm,tp,bt,c2,c3,n2,n3,36,fc,ob)
     pp = rp.applyForRosePlotsN(tp,bt,c2,c3,n2,n3,36,fc,ob)
-    #pp = rp.applyForRosePlotsX(99,99,c2,c3,n2,n3,36,fc,ob)
+    #pp = rp.applyForRosePlotsN(99,99,c2,c3,n2,n3,18,fc,ob)
     pp.addTitle(title)
     pf = PlotFrame(pp)
     #wx,wy = 1450,round((c3*1450)/c2)+50

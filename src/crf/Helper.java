@@ -134,4 +134,17 @@ public class Helper {
     }}}
   }
 
+  public void setStrikes(float[][] ps, float[][][] fp) {
+    int np = ps[0].length;
+    for (int ip=0; ip<np; ++ip) {
+      int k1 = (int)ps[0][ip];
+      int k2 = (int)ps[1][ip];
+      int k3 = (int)ps[2][ip];
+      if (k1==99) {
+        fp[k3][k2][k1] = ps[3][ip];
+      }
+    }
+
+  }
+
 }

@@ -32,6 +32,7 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from util import *
 from dwc import *
 
 #############################################################################
@@ -51,8 +52,8 @@ nrms = 0.0
 strainMax = 1.0
 
 def main(args):
-  #goFigures()
-  goWarpc()
+  goFigures()
+  #goWarpc()
 def goWarpc():
   ml = 0.2
   f,g=makeTraces()
@@ -88,6 +89,7 @@ def goFigures():
     d = dw.accumulateForward(e)
     dw.setErrors(max(d),d)
     u = dw.backtrackReverse(d,e)
+    u = smooth(u)
     #plotfg(f,g,png="fg")
     uname = "shiftsEstimated"+str(nrms)
     writeToFile(uname,u)
@@ -126,7 +128,7 @@ def makeTraces():
 
 def smooth(u):
   v = copy(u)
-  rgf = RecursiveGaussianFilter(4)
+  rgf = RecursiveGaussianFilterP(10)
   rgf.apply0(u,v)
   return v
 
@@ -293,8 +295,8 @@ def plotc(c,s=None,u=None,cmin=0.0,cmax=0.0,perc=None,png=None):
   n,nlag = len(c[0]),len(c)
   s1 = Sampling(n,1.0,0.0)
   slag = Sampling(nlag,1.0,-(nlag-1)/2)
-  #panel = PlotPanel(1,1,PlotPanel.Orientation.X1RIGHT_X2UP)
-  panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
+  panel = PlotPanel(1,1,PlotPanel.Orientation.X1RIGHT_X2UP)
+  #panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
   panel.setHLimits(0,0,n-1)
   panel.setVLimits(0,slag.first,slag.last)
   cv = panel.addPixels(0,0,s1,slag,c)

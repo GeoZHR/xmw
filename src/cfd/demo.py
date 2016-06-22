@@ -61,8 +61,8 @@ maxThrow = 15.0
 # otherwise, must create the specified directory before running this script.
 #pngDir = ".././../png/swt/print/"
 plotOnly = True
-pngDir = "../../../png/cfd/"
 pngDir = None
+pngDir = "../../../png/cfd/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -84,6 +84,15 @@ def main(args):
   go4thCo2()
   go5thCo2()
   '''
+  goCo2Plot()
+def goCo2Plot():
+  gx = readImageL(sfile)
+  q0 = readImageL(qfile)
+  qc = readImageL(q5file)
+  #plot3(gx,q,cmin=vmin,cmax=vmax)
+  plot3(gx,q0,cmin=vmin,cmax=vmax,png="co2Initial")
+  plot3(gx,qc,cmin=vmin,cmax=vmax,png="co2Final")
+
 def go1stCo2():
   gx = readImageL(sfile)
   q = readImageL(qfile)
@@ -908,7 +917,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   zscale = 0.9*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.1)
-  ov.setAzimuthAndElevation(125,25)
+  ov.setAzimuthAndElevation(125,15)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,0.05,0.08))
   sf.setVisible(True)

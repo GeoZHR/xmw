@@ -310,7 +310,7 @@ public class Flattener3 {
       _wp = wp;
       _p2 = p2;
       _p3 = p3;
-      _sc = 0.0005f;
+      _sc = 0.0001f;
       //testSpd();
     }
     public void apply(Vec vx, Vec vy) {

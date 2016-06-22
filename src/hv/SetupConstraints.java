@@ -150,14 +150,16 @@ public class SetupConstraints {
     sub(k2,ib2,k2);
     sub(k3,ib3,k3);
     SurfaceExtractorC se = new SurfaceExtractorC();
-    se.setCG(0.01f,200);
+    se.setCG(0.01f,100);
     se.setExternalIterations(10);
     se.setSmoothings(_sigma1,_sigma2);
     se.setWeights(_scale);
-    float[][] surf = checkPoints(k1,k2,k3,p2m,p3m,epm);
+    //float[][] surf = checkPoints(k1,k2,k3,p2m,p3m,epm);
+    float lmt = n1-1.f;
+    float[][] surf = se.surfaceInitialization(n2,n3,lmt,k1,k2,k3);
     se.surfaceUpdateFromSlopes(epm,p2m,p3m,k1,k2,k3,surf);
-    updateSlopes(ib2,ib3,surf,p2,p3);
     return surf;
+    //updateSlopes(ib2,ib3,surf,p2,p3);
     /*
     int ci = 0;
     int ai = 0;

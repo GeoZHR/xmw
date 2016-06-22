@@ -501,7 +501,7 @@ public class RosePlot {
   private float[] applyHistogram(int nbins, float[] phi) {
     int np = phi.length;
     float ps = 1f/(float)np;
-    float dp = 360f/(float)nbins;
+    float dp = 180f/(float)nbins;
     float[] bins = new float[nbins];
     for (int ip=0; ip<np; ++ip) {
       int ib = (int)(phi[ip]/dp);
@@ -684,7 +684,7 @@ public class RosePlot {
 
   private float addBinsN(int i3, int i2, PlotPanel pp, float[] bins) {
     int nb = bins.length;
-    float dp = (float)(2*DBL_PI/nb);
+    float dp = (float)(DBL_PI/nb);
     float rmax = max(bins);
     float rc = round(rmax*120f)/100f;
     mul(bins,1.0f/rc,bins);
@@ -717,6 +717,7 @@ public class RosePlot {
         pvr.setLineWidth(3f);
       }
       // add black bounds
+      /*
       xi = rp2[0][1];
       yi = rp2[1][1];
       xs = new float[]{-xi,xi};
@@ -744,6 +745,7 @@ public class RosePlot {
       pvr = pp.addPoints(i3,i2,mul(rp3[0],-1),mul(rp3[1],-1));
       pvr.setLineColor(Color.BLACK);
       pvr.setLineWidth(2.f);
+      */
     }
     return rc;
   }

@@ -41,6 +41,28 @@ public class HorizonExtraction {
     else {_x1=horizonVolumeFromRgt(s1,u1);}
   }
 
+  public void horizonToImage(float hv, float[][] hz, float[][][] hx) {
+    int n3 = hx.length;
+    int n2 = hx[0].length;
+    int n1 = hx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float x1 = hz[i3][i2];
+      int k1 = round(x1);
+      hx[i3][i2][k1] = hv;
+      /*
+      int kp = min(k1+1,n1-1);
+      int km = max(k1-1,   0);
+      if(abs(x1-km)<abs(x1-kp)) {
+        hx[i3][i2][km] = 1;
+      } else {
+        hx[i3][i2][kp] = 1;
+      }
+      */
+    }}}
+  }
+
   public float[][][] trigSurfaces(
     float color, float[][][] surfs, FaultSkin[] sks, float[][][] f) 
   {
@@ -299,6 +321,62 @@ public class HorizonExtraction {
     }
     return sfs;
   }
+
+  public float[][][] horizonCurves(
+    int k2, int k3, float[][][] sfs) 
+  {
+    int n3 = _u1.length;
+    int n2 = _u1[0].length;
+    int n1 = _u1[0][0].length;
+    int n1s = sfs.length;
+    float[][][] xbs = new float[n1s*200][2][];
+    float[][] surfs = new float[n1s*200][max(n2,n3)*3];
+    float rgtMin = 1;
+    float rgtMax = n1s-5;
+    //float rgtMin = 10;
+    //float rgtMax = n1;
+    ColorMap cp = new ColorMap(rgtMin,rgtMax,ColorMap.JET);
+    int k = 0;
+    for (int i1s=0; i1s<n1s; ++i1s) {
+      int p = 0;
+      for (int i3=0; i3<n3; ++i3) {
+        float x3 = i3;
+        float x2 = k2;
+        float x1 = sfs[i1s][i3][k2];
+        if(x1>=n1) {continue;}
+        surfs[k][p++] = x3;
+        surfs[k][p++] = x2;
+        surfs[k][p++] = x1;
+      }
+      float[] vs = fillfloat(i1s,p);
+      xbs[k][0] = copy(p,surfs[k]);
+      xbs[k][1] = cp.getRgbFloats(vs);
+      if(p>6){k ++;}
+      p = 0;
+      for (int i2=0; i2<n2; ++i2) {
+        float x3 = k3;
+        float x2 = i2;
+        float x1 = sfs[i1s][k3][i2];
+        if(x1>=n1) {continue;}
+        surfs[k][p++] = x3;
+        surfs[k][p++] = x2;
+        surfs[k][p++] = x1;
+      }
+      vs = fillfloat(i1s,p);
+      xbs[k][0] = copy(p,surfs[k]);
+      xbs[k][1] = cp.getRgbFloats(vs);
+      if(p>6){k ++;}
+      p = 0;
+    }
+    float[][][] hzs = new float[k][2][];
+    for (int i=0; i<k; ++i) {
+      int np = xbs[i][0].length;
+      hzs[i][0] = copy(np,0,xbs[i][0]); 
+      hzs[i][1] = copy(np,0,xbs[i][1]); 
+    }
+    return hzs;
+  }
+
 
 
   public float[][] horizonLine2(int k2, float u1i, FaultSkin[] sks) {

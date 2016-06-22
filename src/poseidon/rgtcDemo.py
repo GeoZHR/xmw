@@ -20,7 +20,7 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from hv import *
+from he import *
 from poseidon import *
 from util import *
 
@@ -33,11 +33,12 @@ gufile  = "gu" # flattened image
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
 epfile  = "ep" # eigenvalue-derived planarity
+p2mfile  = "p2m" # inline slopes
+p3mfile  = "p3m" # crossline slopes
+epmfile  = "epm" # eigenvalue-derived planarity
 
-#s1 = Sampling(301,1.40,0.004)
-#s2 = Sampling(351,1700,2.000)
-#s3 = Sampling(300,1201,1.000)
-s1 = Sampling(241,1,0)
+#s1 = Sampling(241,1,0)
+s1 = Sampling(120,1,0) #copy(120,n2,n3,40,0,0,gx)
 s2 = Sampling(1399,1,0)
 s3 = Sampling(923,1,0)
 
@@ -45,34 +46,40 @@ s3 = Sampling(923,1,0)
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
-pngDir = "../../../png/poseidon/"
-seismicDir = "../../../data/seis/poseidon/"
+pngDir = "../../../png/poseidon/sub/"
+seismicDir = "../../../data/seis/poseidon/sub/"
 #pngDir = "../../../png/dgb/subset/"
 #seismicDir = "../../../data/seis/dgb/subset/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Three sets of control points, each set 
 # (k11 k12 k13 or k21 k22 k23 or k31 k32 k33) 
 # belongs to one seismic horizon
 
-k11 = [ 86, 62, 105, 91, 91, 74] #1st coordinates of the control points
-k12 = [366,865,1106,191,763,981] #2nd coordinates of the control points
-k13 = [270,270, 450,230,317,442] #3rd coordinates of the control points
+#1st coordinates of the control points
+k1 = [13, 52, 24,  8, 46, 22,  51, 51, 51, 34, 12,  8,
+        51,  4,  21, 36, 38, 11,  5, 55, 52,  8,  4, 29, 48] 
+#2nd coordinates of the control points
+k2 = [609,691,691,162,366,865,1009,191,763,981,557,171,
+      1278,196,1004,371,259,481,266,367,559,335,284, 36, 80]
+#3rd coordinates of the control points
+k3 = [442,290,165,507,270,270, 396,230,317,442,620,455,
+       286,760, 575,862,861,394,662,178,262,389,746,646,292] 
 
-k21 = [182,177,175,177,176,175,183,182,181,177]
-k22 = [275,220,200,153,178,146, 94,300,300, 33]
-k23 = [268,268,268,268,271,271,271,202, 94,289]
-
-k31 = [244,244,257,256,254,254,245]
-k32 = [300,300,300,300,244,132, 24]
-k33 = [ 18, 73,161,241,271,271,271]
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  #goSlopes()
+  #goSingleHorizon()
+  #goHorizons()
+  goHorizonVolume()
+  #goMaskTop()
+  #goFlatten()
   #goFlattenC()
+  #gx = readImage(gxfile)
+  #plot3(gx)
 
 
 def goSlopes():
@@ -82,14 +89,14 @@ def goSlopes():
     sig1 = 2.0 #half-width in vertical direction
     sig2 = 2.0 #half-width in one literal direction
     sig3 = 2.0 #half-width in another literal direction
-    pmax = 5.0 #maximum slope returned by this slope finder
+    pmax = 4.0 #maximum slope returned by this slope finder
     gx = readImage(gxfile)
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
     lsf = LocalSlopeFinder(sig1,sig2,sig3,pmax)
     lsf.findSlopes(gx,p2,p3,ep);
-    zm = ZeroMask(0.1,1,1,1,gx)
+    zm = ZeroMask(0.1,4,1,1,gx)
     zero,tiny=0.0,0.01
     zm.setValue(zero,p2)
     zm.setValue(zero,p3)
@@ -112,6 +119,167 @@ def goSlopes():
       clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,pow(ep,4.0),cmin=0,cmax=1,cmap=jetRamp(1.0),
       clab="Planarity")
+
+def goSingleHorizon():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    ep = pow(ep,0)
+    lmt = n1-1.0
+    se = SurfaceExtractorM()
+    se.setWeights(0.0)
+    se.setExternalIterations(10)
+    sf = se.surfaceInitialization(n2,n3,lmt,k1,k2,k3)
+    se.surfaceUpdateFromSlopes(ep,p2,p3,None,k1,k2,k3,sf)
+    writeImage("top",sf)
+  else:
+    sf = readImage2(n2,n3,"top")
+  he = HorizonExtraction(s1,s2,s3,gx,gx)
+  hx = zerofloat(n1,n2,n3)
+  he.horizonToImage(1,sf,hx)
+  plot3(gx)
+  plot3(gx,surf=sf)
+  plot3(gx,hx,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
+
+def goHorizons():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    ep = pow(ep,0)
+    sv = 1
+    he = HorizonExtraction(s1,s2,s3,gx,gx)
+    hx = zerofloat(n1,n2,n3)
+    hv = zerofloat(n2,n3,90)
+    sf = readImage2(n2,n3,"top")
+    hv[sv-1] = sf
+    he.horizonToImage(sv,sf,hx)
+    k2,k3 = [576],[555]
+    se = SurfaceExtractorM()
+    se.setExternalIterations(5)
+    d1 = 1
+    lmt = n1-1.0
+    for k1 in range(89):
+      sv = sv+1
+      sft = copy(sf)
+      sf = add(d1,sf)
+      k1 = [round(sf[k3[0]][k2[0]])]
+      se.surfaceUpdateFromSlopes(ep,p2,p3,sft,k1,k2,k3,sf)
+      hv[sv-1] = sf
+      he.horizonToImage(sv,sf,hx)
+    writeImage("hv",hv)
+    writeImage("hx",hx)
+  else:
+    hx = readImage("hx")
+    hv = readImageX(n2,n3,90,"hv")
+  plot3(gx)
+  plot3(gx,hx,cmin=0,cmax=max(hx),cmap=jetFillExceptMin(1.0))
+  he = HorizonExtraction(s1,s2,s3,gx,gx)
+  '''
+  k2 = 180
+  for k3 in range(400,500,10):
+    hls  = he.horizonCurves(k2,k3,hv)
+    plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
+  '''
+  k2,k3=576,555
+  hls  = he.horizonCurves(k2,k3,hv)
+  plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
+
+def goHorizonVolume():
+  gx = readImage(gxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  ep = readImage(epfile)
+  ep = pow(ep,0)
+  sf = readImage2(n2,n3,"top")
+  k1 = zerofloat(90)
+  hs = zerofloat(n2,n3,90)
+  k2,k3 = 576,555
+  lmt = n1-1.0
+  hv = HorizonVolume()
+  hv.setWeights(0.0)
+  hv.setExternalIterations(10)
+  hv.applyForInitial(k2,k3,lmt,sf,k1,hs)
+  hv.horizonUpdateFromSlopes(ep,p2,p3,k1,k2,k3,sf,hs)
+  plot3(gx)
+  he = HorizonExtraction(s1,s2,s3,gx,gx)
+  k2 = 180
+  for k3 in range(400,500,10):
+    hls  = he.horizonCurves(k2,k3,hs)
+    plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
+
+
+def goMaskTop():
+  tp = readImage2(n2,n3,"top")
+  gx = readImage(gxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  ep = fillfloat(1.0,n1,n2,n3)#readImage(epfile)
+  zero,tiny=0.0,0.01
+  zm = ZeroMask(0.1,4,1,1,gx)
+  zero,tiny=0.0,0.01
+  zm.setValue(zero,p2)
+  zm.setValue(zero,p3)
+  zm.setValue(zero,ep)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      k1 = round(tp[i3][i2])-1
+      for i1 in range(k1):
+        p2[i3][i2][i1] = zero
+        p3[i3][i2][i1] = zero
+        ep[i3][i2][i1] = zero
+  writeImage(p2mfile,p2)
+  writeImage(p3mfile,p3)
+  writeImage(epmfile,ep)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+      clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=jetRamp(1.0),
+      clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,ep,cmin=0,cmax=1,cmap=jetRamp(1.0),
+      clab="Planarity")
+
+def goFlatten():
+  print "goFlatten ..."
+  if not plotOnly:
+    gx = readImage(gxfile)
+    p2 = readImage(p2mfile)
+    p3 = readImage(p3mfile)
+    ep = readImage(epmfile)
+    fl = Flattener3()
+    fl.setWeight1(0.0)
+    fl.setIterations(0.01,100)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+    gu = fm.flatten(gx) # flattened image
+    gr = fm.u1 # rgt volume
+    gh = fm.x1 # horizon volume
+    writeImage(gufile,gu)
+    writeImage(gtfile,gr)
+    writeImage(ghfile,gh)
+  else:
+    gx = readImage(gxfile)
+    gu = readImage(gufile)
+    gr = readImage(gtfile)
+    gh = readImage(ghfile)
+  '''
+  plot3(gx,png="seismic")
+  plot3(gu,png="flattened")
+  plot3(gx,gr,cmin=min(gr)+20,cmax=max(gr)-10,cmap=jetRamp(1.0),
+        clab="Relative geologic time",png="rgt")
+  '''
+  f1 = min(gr)+50
+  d1 = 0.5*s1.getDelta()
+  n1 = round((max(gr)-f1)/d1)-1
+  st = Sampling(n1,d1,f1)
+  hfr = HorizonExtraction(s1,s2,s3,None,gr)
+  k2 = 120
+  for k3 in range(360,500,20):
+    hls  = hfr.horizonCurves(st,k2,k3)
+    #plot3X(gx,k2=k2,k3=k3,png="seismic"+str(k3)+"new")
+    plot3X(gx,k2=k2,k3=k3,curve=True,hs=hls,png="horizonLines"+str(k3)+"new")
+
 
 def goFlattenC():
   print "Flatten with control points..."
@@ -201,10 +369,18 @@ def readImage(name):
   ais.close()
   return image
 
+def readImageX(n1,n2,n3,name):
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 def readImage2(n1,n2,name):
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2)
-  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais = ArrayInputStream(fileName)
   ais.readFloats(image)
   ais.close()
   return image
@@ -343,13 +519,13 @@ def plot3X(f,g=None,k1=300,k2=100,k3=100,cmin=None,cmax=None,cmap=None,clab=None
       ipg.setClips(cmin,cmax)
     else:
       #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-2.0,1.5) # use for subset plots
+      ipg.setClips(-1.0,1.0) # use for subset plots
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2.0,1.5)
+    ipg.setClips1(-1.0,1.0)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -380,23 +556,22 @@ def plot3X(f,g=None,k1=300,k2=100,k3=100,cmin=None,cmax=None,cmap=None,clab=None
   if cbar:
     sf.setSize(937,700)
   else:
-    sf.setSize(800,700)
-    sf.setSize(1400,900)
+    sf.setSize(1400,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   ov = sf.getOrbitView()
-  zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.4*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(2.5)
-  ov.setAzimuthAndElevation(230,10)
-  ov.setWorldSphere(BoundingSphere(BoundingBox(f3-60,f2+40,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.1,0.05))
+  ov.setScale(2.0)
+  #ov.setAzimuthAndElevation(220,25)
+  ov.setAzimuthAndElevation(310,15)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.2,0.05,-0.15))
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
-      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
+      cbar.paintToPng(137,1,pngDir+png+"cbar.png")
 #############################################################################
 # Run the function main on the Swing thread
 import sys
