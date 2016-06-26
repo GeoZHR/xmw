@@ -27,8 +27,8 @@ def setupForSubset(name):
     """ big subset of pnz """
     print "setupForSubset: pnz"
     seismicDir = _datdir+"pnz/"
-    n1,n2,n3 = 751,1001,1001
     n1,n2,n3 = 136,1001,1001
+    n1,n2,n3 = 751,1001,1001
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000

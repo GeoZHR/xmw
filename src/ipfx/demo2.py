@@ -432,7 +432,7 @@ def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
   pv.setColorModel(ColorMap.GRAY)
   if g:
     pv = panel.addPixels(s1,s2,g)
-    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    pv.setInterpolation(PixelsView.Interpolation.LINEAR)
     pv.setColorModel(cmap)
   if cmin and cmax:
     pv.setClips(cmin,cmax)

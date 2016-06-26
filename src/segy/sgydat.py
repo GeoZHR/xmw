@@ -11,6 +11,7 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
+  goF3d()
   #goHongliu()
   #goF3dUnc()
   #goJake()
@@ -24,7 +25,7 @@ def main(args):
   #goHan()
   #goNwc()
   #goShengwen()
-  goPoseidon()
+  #goPoseidon()
 def goPoseidon():
   firstLook = False # fast, does not read all trace headers
   secondLook = True # slow, must read all trace headers
@@ -1242,9 +1243,9 @@ def goF3d():
   secondLook = False # slow, must read all trace headers
   writeImage = True # reads all traces, writes an image
   showImage = True # displays the image
-  basedir = "/data/seis/f3d/"
-  sgyfile = basedir+"odt/seis/f3d.sgy"
-  datfile = basedir+"seta/g.dat"
+  basedir = "../../../data/seis/f3d/"
+  sgyfile = basedir+"f3draw.sgy"
+  datfile = basedir+"f3draw.dat"
   #i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
   i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,750
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
@@ -1259,8 +1260,9 @@ def goF3d():
     plot23(si)
     plotXY(si)
   if writeImage:
-    scale = 0.0001
-    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+    scale = 1
+    #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
   if showImage:
     x = readImage(datfile,n1,n2,n3)
@@ -1460,12 +1462,17 @@ def readImage(datfile,n1,n2,n3=1):
     x = zerofloat(n1,n2)
   else:
     x = zerofloat(n1,n2,n3)
-  ais = ArrayInputStream(datfile,ByteOrder.LITTLE_ENDIAN)
+  ais = ArrayInputStream(datfile)
   ais.readFloats(x)
   ais.close()
   return x
 
 def writeImage(datfile,x):
+  aos = ArrayOutputStream(datfile)
+  aos.writeFloats(x)
+  aos.close()
+
+def writeImageX(datfile,x):
   aos = ArrayOutputStream(datfile)
   aos.writeFloats(x)
   aos.close()

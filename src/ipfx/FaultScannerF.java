@@ -465,16 +465,14 @@ public class FaultScannerF {
     sw.start();
     int cs = 3;
     float tm = 0.5f;
-    //float ta = (float)(0.5f*_sigmaTheta*_sigmaTheta);
-    float ta = 8f;
     final FastExplicitDiffusion fed = new FastExplicitDiffusion();
+    fed.setCycles(cs,tm);
     //final LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(1);
     ref.apply(snd[0],snd[0]);
     ref.apply(snd[1],snd[1]);
     //lsf.applySmoothS(snd[0],snd[0]);
     //lsf.applySmoothS(snd[1],snd[1]);
-    fed.setParameters(ta,cs,tm);
     for (int ip=0; ip<np; ++ip) {
       final float phi = (float)phiSampling.getValue(ip);
       if (ip>0) {
@@ -492,8 +490,9 @@ public class FaultScannerF {
         float[][][] w1 = fillfloat(ws[0],n1,n2,n3);
         float[][][] w2 = fillfloat(ws[1],n1,n2,n3);
         EigenTensors3 ets = new EigenTensors3(u1,u2,w1,w2,au,av,aw,true);
-        final float[][][] sn = fed.apply(ets,snd[0]);
-        final float[][][] sd = fed.apply(ets,snd[1]);
+        float sig = (float)_sigmaTheta;
+        final float[][][] sn = fed.applyLinearDiffusion(sig,ets,snd[0]);
+        final float[][][] sd = fed.applyLinearDiffusion(sig,ets,snd[1]);
         loop(n3,new LoopInt() {
         public void compute(int i3) {
           for (int i2=0; i2<n2; ++i2) {
