@@ -18,6 +18,9 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+import vec.*;
+import util.*;
+
 /**
  * Dynamic programming for finding shortest path.
  *
@@ -656,6 +659,34 @@ public class DynamicProgramming {
     return t;
   }
 
+  public float[][] getError(float[][][] e, float[][] u) {
+    int n3 = e.length;
+    int n2 = e[0].length;
+    int n1 = e[0][0].length;
+    float[][] eu = new float[n3][n2];
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3)
+    for (int i2=0; i2<n2; ++i2)
+        eu[i3][i2]=si.interpolate(n1,1,0,e[i3][i2],u[i3][i2]);
+    return eu;
+  }
+
+  public float[][] smooth(float sig1, float sig2, float[][] w, float[][] u) {
+    int n2 = w.length;
+    int n1 = w[0].length;
+    float[][] b = new float[n2][n1];
+    float[][] r = new float[n2][n1];
+    VecArrayFloat2 vb = new VecArrayFloat2(b);
+    VecArrayFloat2 vr = new VecArrayFloat2(r);
+    Smoother2 smoother2 = new Smoother2(sig1,sig2);
+    A2 a2 = new A2(smoother2,w);
+    CgSolver cs = new CgSolver(0.001,200);
+    mul(w,u,b);
+    smoother2.applyTranspose(b);
+    cs.solve(a2,vb,vr);
+    return r;
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // private
 
@@ -673,6 +704,94 @@ public class DynamicProgramming {
   private int[] _cs = null;
   private int[] _lmins = null;
   private int[] _lmaxs = null;
+
+  // Conjugate-gradient operators.
+  private static class A2 implements CgSolver.A {
+    A2(Smoother2 s2, float[][] wp) 
+    {
+      _s2 = s2;
+      _wp = wp;
+      float n2 = wp.length;
+      float n1 = wp[0].length;
+      _sc = sum(wp)/(n1*n2);
+    }
+    public void apply(Vec vx, Vec vy) {
+      VecArrayFloat2 v2x = (VecArrayFloat2)vx;
+      VecArrayFloat2 v2y = (VecArrayFloat2)vy;
+      float[][] x = v2x.getArray();
+      float[][] y = v2y.getArray();
+      float[][] z = copy(x);
+      v2y.zero();
+      _s2.apply(z);
+      addAndScale(-_sc,z,y);
+      applyLhs(_wp,z,y);
+      _s2.applyTranspose(y);
+      addAndScale( _sc,x,y);
+    }
+    private float _sc;
+    private Smoother2 _s2;
+    private float[][] _wp;
+  }
+
+  private static void applyLhs(float[][] wp, float[][] x, float[][] y) {
+    int n2 = wp.length;
+    int n1 = wp[0].length;
+    for (int i2=0; i2<n2; ++i2)
+    for (int i1=0; i1<n1; ++i1)
+      y[i2][i1] += wp[i2][i1]*x[i2][i1];
+  }
+
+  private static void addAndScale(float sc, float[][] x, float[][] y) {
+    int n2 = x.length;
+    int n1 = x[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      y[i2][i1] += sc*x[i2][i1];
+    }}
+  }
+
+  // Smoother used as a preconditioner. After smoothing, enforces zero-shift
+  // boundary conditions at top and bottom.
+  private static class Smoother2 {
+    public Smoother2(float sigma1, float sigma2) {
+      _sigma1 = sigma1;
+      _sigma2 = sigma2;
+    }
+    public void apply(float[][] x) {
+      smooth2(_sigma2,x);
+      smooth1(_sigma1,x);
+    }
+    public void applyTranspose(float[][] x) {
+      smooth1(_sigma1,x);
+      smooth2(_sigma2,x);
+    }
+    private float _sigma1,_sigma2;
+  }
+
+  // Smoothing for dimension 2.
+  private static void smooth1(float sigma, float[][] x) {
+    if (sigma<1.0f)
+      return;
+    RecursiveExponentialFilter.Edges edges =
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.setEdges(edges);
+    ref.apply1(x,x);
+  }
+
+  // Smoothing for dimension 2.
+  private static void smooth2(float sigma, float[][] x) {
+    if (sigma<1.0f)
+      return;
+    RecursiveExponentialFilter.Edges edges =
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.setEdges(edges);
+    ref.apply2(x,x);
+  }
+
+
+
 
 
   private void updateSmoothingFilters() {
@@ -1303,4 +1422,5 @@ public class DynamicProgramming {
       }
     }
   }
+
 }

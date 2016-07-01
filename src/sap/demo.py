@@ -9,7 +9,9 @@ Version: 2016.06.01
 from utils import * 
 #setupForSubset("semblance")
 #setupForSubset("channel")
-setupForSubset("surface")
+#setupForSubset("surface")
+setupForSubset("env")
+setupForSubset("semblance3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
@@ -26,18 +28,14 @@ p2file = "p2" # seismic slopes
 p3file = "p3" # seismic slopes
 pngDir = getPngDir()
 pngDir = None
+plotOnly = False
 
 def main(args):
   #goABsemblance()
   #goChannel()
   #goSurface()
-  #goSlopes()
-  goHorizon()
-  '''
-  sl = readImage3D(slfile)
-  sls = copy(100,280,120,140,205,0,sl)
-  writeImage("sls",sls)
-  '''
+  goSemblance3d() 
+  #goEnv3d() 
 
 def goABsemblance():
   strainMax = 0.35
@@ -92,6 +90,87 @@ def goChannel():
   plot2(s1,gx,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
   plot2(s1,gx,us=us,ss=ss,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
   #plot2(s1,dtran(d),u,vint=200,hint=200,cmap=ColorMap.GRAY)
+def goEnv3d():
+  fx = readImageL("env")
+  if not plotOnly:
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    fx = pow(fx,0.5)
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    hp = Helper()
+    gx = hp.transpose13(fx) 
+    dw = DynamicProgramming()
+    dw.setStrainMax(0.4,0.4)
+    u = zerofloat(n2,n1)
+    dw.setErrorSmoothing(3)
+    dw.findSurface(sub(1,gx),u)
+    eu = dw.getError(gx,u)
+    eu = pow(eu,3)
+    su = dw.smooth(8,8,eu,u)
+    u = smooth2(4,8,u)
+    writeImageL("su",su)
+    writeImageL("u",u)
+    writeImageL("gx",gx)
+  else:
+    su = readImage2L(n2,n1,"su")
+    u  = readImage2L(n2,n1,"u")
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    fx = pow(fx,0.5)
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    hp = Helper()
+    gx = hp.transpose13(fx) 
+    vs = sub(n3-1,su)
+    vs = mul(vs,0.05)
+    vs = add(vs,1.5)
+    writeImageL("velPik",vs)
+  plot3(fx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET)
+  plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=u)
+  plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=su)
+  #plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=vs)
+
+def goSemblance3d():
+  fx = readImageL("semb")
+  if not plotOnly:
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    fx = pow(fx,0.5)
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    hp = Helper()
+    gx = hp.transpose(fx) 
+    print min(gx)
+    print max(gx)
+    dw = DynamicProgramming()
+    dw.setStrainMax(0.5,0.5)
+    u = zerofloat(n1,n3)
+    dw.setErrorSmoothing(2)
+    dw.findSurface(sub(1,gx),u)
+    eu = dw.getError(gx,u)
+    su = dw.smooth(8,8,eu,u)
+    u = smooth2(4,8,u)
+    writeImageL("su",su)
+    writeImageL("u",u)
+  else:
+    su = readImage2L(n1,n3,"su")
+    u  = readImage2L(n1,n3,"u")
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    fx = pow(fx,0.5)
+    fx = sub(fx,min(fx))
+    fx = div(fx,max(fx))
+    hp = Helper()
+    gx = hp.transpose(fx) 
+    os = sub(n2-1,su)
+    os = mul(os,0.01)
+    os = add(os,1.4)
+    writeImageL("offsetPik",os)
+    print len(os)
+    print len(os[0])
+  plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=u)
+  plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=su)
 
 def goSurface():
   #gx = readImage3D(gxfile)
@@ -111,9 +190,12 @@ def goSurface():
   u = zerofloat(n2,n3)
   dw.setErrorSmoothing(2)
   gx = mul(-1,gx)
-  dw.findSurface(copy(gx),u)
+  fx = copy(gx)
+  dw.findSurface(fx,u)
   u = smooth2(2,u)
   plot3(gx)
+  fx = pow(fx,0.4)
+  plot3(fx,fx,cmin=0.0,cmax=0.2)
   plot3(gx,surf=u,png="saltSl")
 def goSlopes():
   gx = readImage3D(gxfile)
@@ -154,10 +236,12 @@ def smooth(sig,u):
   rgf.apply0(u,v)
   return v
 
-def smooth2(sig,u):
+def smooth2(sig1,sig2,u):
   v = copy(u)
-  rgf = RecursiveGaussianFilterP(sig)
-  rgf.apply00(u,v)
+  rgf1 = RecursiveGaussianFilterP(sig1)
+  rgf2 = RecursiveGaussianFilterP(sig2)
+  rgf1.apply0X(u,v)
+  rgf2.applyX0(v,v)
   return v
 
 
@@ -521,40 +605,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     #ss.add(ps)
     #pg.setStates(ss)
     sf.world.addChild(pg)
-  if cells:
-    ss = StateSet()
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    ss.add(lms)
-    ms = MaterialState()
-    ms.setSpecular(Color.GRAY)
-    ms.setShininess(100.0)
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    ms.setEmissiveBack(Color(0.0,0.0,0.5))
-    ss.add(ms)
-    cmap = ColorMap(0.0,1.0,ColorMap.JET)
-    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
-    qg = QuadGroup(xyz,uvw,rgb)
-    qg.setStates(ss)
-    sf.world.addChild(qg)
-  if fbs:
-    mc = MarchingCubes(s1,s2,s3,fbs)
-    ct = mc.getContour(0.0)
-    tg = TriangleGroup(ct.i,ct.x,ct.u)
-    states = StateSet()
-    cs = ColorState()
-    cs.setColor(Color.MAGENTA)
-    states.add(cs)
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    states.add(lms)
-    ms = MaterialState()
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    ms.setSpecular(Color.WHITE)
-    ms.setShininess(100.0)
-    states.add(ms)
-    tg.setStates(states);
-    sf.world.addChild(tg)
   if surf:
     tg = TriangleGroup(True, s3, s2, surf)
     states = StateSet()
@@ -571,49 +621,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     states.add(ms)
     tg.setStates(states);
     sf.world.addChild(tg)
-  if skins:
-    sg = Group()
-    ss = StateSet()
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    ss.add(lms)
-    ms = MaterialState()
-    ms.setSpecular(Color.GRAY)
-    ms.setShininess(100.0)
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    if not smax:
-      ms.setEmissiveBack(Color(0.0,0.0,0.5))
-    ss.add(ms)
-    sg.setStates(ss)
-    size = 2.0
-    if links:
-      size = 0.5 
-    for skin in skins:
-      if smax>0.0: # show fault throws
-        cmap = ColorMap(0.0,smax,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
-      else: # show fault likelihood
-        cmap = ColorMap(0.0,1.0,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
-      qg = QuadGroup(xyz,uvw,rgb)
-      qg.setStates(None)
-      sg.addChild(qg)
-      if curve or trace:
-        cell = skin.getCellNearestCentroid()
-        if curve:
-          xyz = cell.getFaultCurveXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-        if trace:
-          xyz = cell.getFaultTraceXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-      if links:
-        xyz = skin.getCellLinksXyz()
-        lg = LineGroup(xyz)
-        sg.addChild(lg)
-    sf.world.addChild(sg)
-  ipg.setSlices(232,63,126)
+  ipg.setSlices(232,63,0)
   if cbar:
     sf.setSize(987,700)
   else:
@@ -622,12 +630,12 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.3*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,0.05,-0.08))
-  ov.setAzimuthAndElevation(-15,36.0)
+  ov.setAzimuthAndElevation(25,45.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

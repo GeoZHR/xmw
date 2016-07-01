@@ -491,8 +491,8 @@ public class FaultScannerF {
         float[][][] w2 = fillfloat(ws[1],n1,n2,n3);
         EigenTensors3 ets = new EigenTensors3(u1,u2,w1,w2,au,av,aw,true);
         float sig = (float)_sigmaTheta;
-        final float[][][] sn = fed.applyLinearDiffusion(sig,ets,snd[0]);
-        final float[][][] sd = fed.applyLinearDiffusion(sig,ets,snd[1]);
+        final float[][][] sn = fed.apply(sig,ets,snd[0]);
+        final float[][][] sd = fed.apply(sig,ets,snd[1]);
         loop(n3,new LoopInt() {
         public void compute(int i3) {
           for (int i2=0; i2<n2; ++i2) {

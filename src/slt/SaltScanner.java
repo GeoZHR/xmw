@@ -297,13 +297,13 @@ public class SaltScanner {
   public float[][] smooth2(float sigma, EigenTensors2 et, float[][] fx) {
     FastExplicitDiffusion fed = new FastExplicitDiffusion();
     fed.setCycles(5,0.5f);
-    return fed.applyLinearDiffusion(sigma,et,fx);
+    return fed.apply(sigma,et,fx);
   }
 
   public float[][][] smooth2(float sigma, EigenTensors3 et, float[][][] fx) {
     FastExplicitDiffusion fed = new FastExplicitDiffusion();
     fed.setCycles(5,0.5f);
-    return fed.applyLinearDiffusion(sigma,et,fx);
+    return fed.apply(sigma,et,fx);
   }
 
 

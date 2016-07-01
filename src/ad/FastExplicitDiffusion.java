@@ -32,7 +32,7 @@ public class FastExplicitDiffusion {
     _d = d;
   }
 
-  public float[][] applyLinearDiffusion(
+  public float[][] apply(
     float sigma, EigenTensors2 et, float[][] fx) 
   {
     float t = sigma*sigma*0.5f;
@@ -48,7 +48,7 @@ public class FastExplicitDiffusion {
     return gx;
   }
 
-  public float[][] applyNonlinearDiffusion(
+  public float[][] apply(
     float sigma, float lambda, EigenTensors2 et, float[][] fx) 
   {
     int n2 = fx.length;
@@ -70,7 +70,7 @@ public class FastExplicitDiffusion {
     return gx;
   }
 
-  public float[][][] applyLinearDiffusion(
+  public float[][][] apply(
     float sigma, EigenTensors3 et,float[][][] fx) 
   {
     float[][][] gx = copy(fx);
@@ -78,15 +78,64 @@ public class FastExplicitDiffusion {
     FedStep fs = new FedStep(t,_m,_d);
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
-    trace("nc="+nc);
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    int ik = 0;
+    int nk = _m*nc;
     for (int m=0; m<_m; ++m) {
     for (int ic=0; ic<nc; ++ic) {
+      if (ik>0) {
+        double timeUsed = sw.time();
+        double timeLeft = ((double)nk/(double)ik-1.0)*timeUsed;
+        int timeLeftSec = 1+(int)timeLeft;
+        trace("Linear diffusion: done in "+timeLeftSec+" seconds");
+      }
       applyLaplacian(et,-ts[ic],copy(gx),gx);
+      ik++;
     }}
+    sw.stop();
+    trace("Linear diffusion: done");
     return gx;
   }
 
-  public float[][][] applyNonlinearDiffusion(
+  public float[][][] apply(
+    float sigma, EigenTensors3 et,float[][][] wp, float[][][] fx) 
+  {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float wpi = wp[i3][i2][i1];
+      et.setEigenvalues(i1,i2,i3,0.0001f,wpi,1f);
+    }}}
+    float[][][] gx = copy(fx);
+    float t = sigma*sigma*0.5f;
+    FedStep fs = new FedStep(t,_m,_d);
+    float[] ts = fs.getSteps(true);
+    int nc = ts.length;
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    int ik = 0;
+    int nk = _m*nc;
+    for (int m=0; m<_m; ++m) {
+    for (int ic=0; ic<nc; ++ic) {
+      if (ik>0) {
+        double timeUsed = sw.time();
+        double timeLeft = ((double)nk/(double)ik-1.0)*timeUsed;
+        int timeLeftSec = 1+(int)timeLeft;
+        trace("Linear diffusion: done in "+timeLeftSec+" seconds");
+      }
+      applyLaplacian(et,-ts[ic],copy(gx),gx);
+      ik++;
+    }}
+    sw.stop();
+    trace("Linear diffusion: done");
+    return gx;
+  }
+
+  public float[][][] apply(
     float sigma, float lambda, EigenTensors3 et, float[][][] fx)
   {
     int n3 = fx.length;
@@ -100,42 +149,25 @@ public class FastExplicitDiffusion {
     FedStep fs = new FedStep(t,_m,_d);
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
-    trace("nc="+nc);
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    int ik = 0;
+    int nk = _m*nc;
     for (int m=0; m<_m; ++m) {
-      setNonlinearDiffusion(lambda,p2,p3,fx,et);
+    setNonlinearDiffusion(lambda,p2,p3,gx,et);
     for (int ic=0; ic<nc; ++ic) {
+      if (ik>0) {
+        double timeUsed = sw.time();
+        double timeLeft = ((double)nk/(double)ik-1.0)*timeUsed;
+        int timeLeftSec = 1+(int)timeLeft;
+        trace("Nonlinear diffusion: done in "+timeLeftSec+" seconds");
+      }
       applyLaplacian(et,-ts[ic],copy(gx),gx);
-    }}
-    return gx;
-  }
-
-
-  public float[][][] apply(float sigma, float lambda, 
-      EigenTensors3 et, float[][][] fx) 
-  {
-    int n3 = fx.length;
-    int n2 = fx[0].length;
-    int n1 = fx[0][0].length;
-    float[][][] p2 = new float[n3][n2][n1];
-    float[][][] p3 = new float[n3][n2][n1];
-    slopesFromTensors(et,p2,p3);
-    float[][][] gx = copy(fx);
-    float[][][] au = fillfloat(0.0001f,n1,n2,n3);
-    float[][][] av = fillfloat(1.0000f,n1,n2,n3);
-    float[][][] aw = fillfloat(1.0000f,n1,n2,n3);
-    float t = sigma*sigma*0.5f;
-    FedStep fs = new FedStep(t,_m,_d);
-    float[] ts = fs.getSteps(true);
-    int nc = ts.length;
-    trace("nc="+nc);
-    for (int m=0; m<_m; ++m) {
-      trace("m="+m);
-      applyForWeights(lambda,p2,p3,fx,av);
-    for (int ic=0; ic<nc; ++ic) {
-      et.setEigenvalues(au,av,aw);
-      applyLaplacian(et,-ts[ic],copy(gx),gx);
-    }}
-    return gx;
+      ik++;
+   }}
+   sw.stop();
+   trace("Nonlinear diffusion: done");
+   return gx;
   }
 
   private void slopesFromTensors(EigenTensors2 et, float[][] p2) {
@@ -148,6 +180,7 @@ public class FastExplicitDiffusion {
       float[] u = et.getEigenvectorU(i1,i2);
       float u1i = u[0];
       float u2i = u[1];
+      if (u1i<0f) {u1i=-u1i; u2i=-u2i;}
       if (-u2i<p2min*u1i) u2i = -p2min*u1i;
       if (-u2i>p2max*u1i) u2i = -p2max*u1i;
       if (u1i==0.0f) {
@@ -168,6 +201,7 @@ public class FastExplicitDiffusion {
     float p3min = -5f;
     float p2max =  5f;
     float p3max =  5f;
+    // Compute slopes from normal vectors.
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
@@ -175,6 +209,7 @@ public class FastExplicitDiffusion {
       float u1i = u[0];
       float u2i = u[1];
       float u3i = u[2];
+      if (u1i<0f){u1i=-u1i;u2i=-u2i;u3i=-u3i;}
       if (-u2i<p2min*u1i) u2i = -p2min*u1i;
       if (-u2i>p2max*u1i) u2i = -p2max*u1i;
       if (-u3i<p3min*u1i) u3i = -p3min*u1i;
@@ -211,8 +246,8 @@ public class FastExplicitDiffusion {
       if(gi==0f) { sx[i2][i1] = 1f;
       } else {sx[i2][i1] = 1f-exp(-3.315f/gl);}
     }}
-    et.setEigenvalues(1.0f,0.02f); //smooth in seismic normal direction
-    FedStep fs = new FedStep(6,_m,_d);
+    et.setEigenvalues(1.0f,0.05f); //smooth in seismic normal direction
+    FedStep fs = new FedStep(4,_m,_d);
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
     for (int m=0; m<_m; ++m) {
@@ -245,11 +280,15 @@ public class FastExplicitDiffusion {
           si = s2*s4;
           mi *= mi;
           mi *= mi;
-          et.setEigenvalues(i1,i2, 0.001f,si);
-          et.setEigenvalues(i1,i2m,0.001f,mi);
-          et.setEigenvalues(i1,i2p,0.001f,pi);
+          int k2  = min(i2+1,n2-1);
+          int k2m = min(i2m+1,n2-1);
+          int k2p = min(i2p+1,n2-1);
+          et.setEigenvalues(i1,k2, 0.001f,si);
+          et.setEigenvalues(i1,k2m,0.001f,mi);
+          et.setEigenvalues(i1,k2p,0.001f,pi);
         } else {
-          et.setEigenvalues(i1,i2, 0.001f,1.0f);
+          int k2 = min(i2+1,n2-1);
+          et.setEigenvalues(i1,k2, 0.001f,1.0f);
         }
       }
     }
@@ -257,12 +296,14 @@ public class FastExplicitDiffusion {
 
   // for plots only
   public void applyForWeightsP(
-    float lambda, EigenTensors2 et, float[][] p, float[][] f, float[][] w) 
+    float lambda, EigenTensors2 et, float[][] f, float[][] w) 
   {
     int n2 = f.length;
     int n1 = f[0].length;
     float[][] g = new float[n2][n1];
     float[][] s = new float[n2][n1];
+    float[][] p = new float[n2][n1];
+    slopesFromTensors(et,p);
     applyForDirectionalDerivative(p,f,g);
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
@@ -276,8 +317,8 @@ public class FastExplicitDiffusion {
       } else {s[i2][i1] = 1f-exp(-3.315f/gl);}
       w[i2][i1] = 1f; // reset w
     }}
-    et.setEigenvalues(1.0f,0.02f);
-    FedStep fs = new FedStep(6,_m,_d);
+    et.setEigenvalues(1.0f,0.05f);
+    FedStep fs = new FedStep(4,_m,_d);
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
     for (int m=0; m<_m; ++m) {
@@ -309,7 +350,8 @@ public class FastExplicitDiffusion {
           float s2 = si*si;
           float s4 = s2*s2;
           si = s2*s4;
-          w[i2][i1]  = si;
+          int p2 = min(i2+1,n2-1);
+          w[p2][i1]  = si;
         }
       }
     }
@@ -357,85 +399,6 @@ public class FastExplicitDiffusion {
         et.setEigenvalues(i1,i2,i3,0.0001f,av,1.0f);
       }}
     }});
-  }
-
-
-  private void applyForWeights(
-    float lambda, float[][][] p2, float[][][] p3, float[][][] fx, float[][][] wx) 
-  {
-    final int n3 = fx.length;
-    final int n2 = fx[0].length;
-    final int n1 = fx[0][0].length;
-    final float[][][] g2 = new float[n3][n2][n1];
-    final float[][][] g3 = new float[n3][n2][n1];
-    //final float[][][] sx = new float[n3][n2][n1];
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      applyForDirectionalDerivative(p2[i3],fx[i3],g2[i3]);
-    }});
-    Parallel.loop(n2,new Parallel.LoopInt() {
-    public void compute(int i2) {
-      float[][] p32 = new float[n3][n1];
-      float[][] fx2 = new float[n3][n1];
-      float[][] g32 = new float[n3][n1];
-      for (int i3=0; i3<n3; ++i3) {
-        p32[i3] = p3[i3][i2];
-        fx2[i3] = fx[i3][i2];
-      }
-      applyForDirectionalDerivative(p32,fx2,g32);
-      for (int i3=0; i3<n3; ++i3)
-        g3[i3][i2] = g32[i3];
-    }});
-    final float ls = lambda*lambda;
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float g2i = g2[i3][i2][i1];
-        float g3i = g3[i3][i2][i1];
-        float gsi = g2i*g2i+g3i*g3i;
-        float gli = gsi/ls;
-        gli *= gli;
-        gli *= gli;
-        if(gsi==0f) { wx[i3][i2][i1] = 1f;
-        } else {wx[i3][i2][i1] = 1f-exp(-3.315f/gli);}
-        //wx[i3][i2][i1] = 1f; // reset w
-      }}
-    }});
-    /*
-    RecursiveGaussianFilterP rgf =  new RecursiveGaussianFilterP(1.0);
-    rgf.apply000(sx,sx);
-    float[] sm = new float[n1];
-    float[] tm = new float[n1];
-    float[] sp = new float[n1];
-    float[] tp = new float[n1];
-    for (int i2=0; i2<n2; ++i2) {
-      int i2m = max(i2-1,0);
-      int i2p = min(i2+1,n2-1);
-      float dx2 = 0.5f*(i2p-i2m);
-      for (int i1=0; i1<n1; ++i1) {
-        tm[i1] = i1-p[i2][i1]*dx2;
-        tp[i1] = i1+p[i2][i1]*dx2;
-      }
-      _si.interpolate(n1,1.0,0.0,s[i2m],n1,tm,sm);
-      _si.interpolate(n1,1.0,0.0,s[i2p],n1,tp,sp);
-      for (int i1=0; i1<n1; ++i1) {
-        float si = s[i2][i1];
-        float mi = sm[i1];
-        float pi = sp[i1];
-        if(si<=mi&&si<=pi&&si<1f) {
-          float s2 = si*si;
-          float s4 = s2*s2;
-          si = s2*s4;
-          mi *= mi;
-          mi *= mi;
-          w[i2][i1]  = si;
-          w[i2m][i1] = mi;
-          w[i2p][i1] = pi;
-        }
-      }
-    }
-    */
   }
 
   private void applyForDirectionalDerivative(
@@ -554,7 +517,6 @@ public class FastExplicitDiffusion {
     System.out.println(s);
   }
 
-  private float _t = 10f; //stop time
   private int _m = 5; //number of cycles
   private float _d = 0.5f; //stability limit
   private SincInterpolator _si = new SincInterpolator();
