@@ -13,9 +13,9 @@ from edu.mines.jtk.mosaic import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from ad import *
 from util import *
 from nst import *
+from ad import *
 
 pngDir = None
 pngDir = "../../../png/ad/fed2/"
@@ -28,8 +28,9 @@ f1,f2 = 0,0
 d1,d2 = 1,1
 n1,n2 = 251,357
 n1,n2 = 400,801
-n1,n2 = 200,200
 n1,n2 = 222,440
+n1,n2 = 200,200
+n1,n2 = 401,401
 d1,d2 = 0.004,0.025
 f1,f2 = 0.004+d1*240,0.000
 s1 = Sampling(n1,d1,f1)
@@ -38,31 +39,68 @@ s2 = Sampling(n2,d2,f2)
 def main(args):
   #goGaussian()
   #goLinearDiffusion()
-  goNonlinearDiffusion()
+  #goNonlinearDiffusion()
   #goHilbert()
-  ##goGaussianD()
-
-def goHilbert():
+  #goGaussianD()
+  #goFaultSmooth()
+  goSlope()
+def goSlope():
+  gx,px=FakeData.seismicAndSlopes2d2014A(0.0)
+  gx = copy(n1,n2,0,0,gx)
+  px = copy(n1,n2,0,0,px)
+  sig1,sig2=20,1
+  lof = LocalOrientFilterR(sig1,sig2)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  lof.applyForNormalLinear(gx,u1,u2,el)
+  ps = mul(-1,div(u2,u1))
+  pmin = min(px)
+  pmax = max(px)
+  clip(pmin,pmax,ps)
+  plot(gx)
+  plot(gx,px,cmin=-1,cmax=1,cmap=jetFill(1.0),cint=1.0)
+  plot(gx,ps,cmin=-1,cmax=1,cmap=jetFill(1.0),cint=1.0)
+  plot(gx,abs(sub(ps,px)),cmin=0.001,cmax=0.2,cmap=jetFill(1.0),cint=0.2)
+def goFaultSmooth():
   fx = readImage(fxfile)
   fx = gain(fx)
-  fx = zerofloat(n1,n2)
-  for i2 in range(50,150,1):
-    fx[i2][i2] = 20
-  '''
-  fx[n2/2][n1/2] = 20
-  '''
-  rgf = RecursiveGaussianFilterP(1.0)
-  #rgf.apply00(fx,fx)
+  sig1,sig2=3,1
+  lof = LocalOrientFilterP(sig1,sig2)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  lof.applyForNormalLinear(fx,u1,u2,el)
+  el = sub(1,el)
+  los = LocalOrientFilterS(sig1,sig2)
+  ets = los.applyForTensors(pow(el,0.5))
+  ets.setEigenvalues(0.0001,1.0)
+  sig = 32
+  cycle,limit=3,0.5
+  fed = FastExplicitDiffusion()
+  fed.setCycles(cycle,limit)
+  es = fed.apply(sig,ets,el)
+  plot(fx)
+  es = sub(es,min(es))
+  es = div(es,max(es))
+  plot(fx,el,cmin=0.1,cmax=0.2,cmap=jetRamp(1.0),cint=0.2,png="wsn")
+  plot(fx,es,cmin=0.3,cmax=0.6,cmap=jetRamp(1.0),cint=0.2,png="wsn")
+
+def goHilbert():
+  gx,px=FakeData.seismicAndSlopes2d2014A(0.0)
+  gx = copy(n1,n2,0,0,gx)
+  rgf = RecursiveGaussianFilter(1.0)
   f1 = zerofloat(n1,n2)
   f2 = zerofloat(n1,n2)
-  h1 = zerofloat(n1,n2)
   g1 = zerofloat(n1,n2)
   g2 = zerofloat(n1,n2)
   ht = HilbertTransform(100,1)
-  ht.apply(fx,f1,f2)
-  plot(f2,cmin=-1,cmax=1,cint=1.0)
-  plot(f1,cmin=-1,cmax=1,cint=1.0)
-  plot(fx,cmin=-1,cmax=1,cint=1.0)
+  ht.applyInFrequency(gx,f1,f2)
+  rgf.apply10(gx,g1)
+  rgf.apply01(gx,g2)
+  plot(gx,cmin=-1,cmax=1,cint=1.0,label="gx")
+  plot(g2,cmin=-1,cmax=1,cint=1.0,label="g2")
+  plot(f2,cmin=-1,cmax=1,cint=1.0,label="f2")
 
 def goGaussianD():
   fx = readImage(fxfile)
@@ -97,7 +135,8 @@ def goLinearDiffusion():
   fx = readImage(fxfile)
   fx = gain(fx)
   sig1,sig2=4,2
-  lof = LocalOrientFilterP(sig1,sig2)
+  #lof = LocalOrientFilterP(sig1,sig2)
+  lof = LocalOrientFilter(sig1,sig2)
   ets = lof.applyForTensors(fx)
   sig = 8
   cycle,limit=3,0.5
@@ -147,6 +186,8 @@ def gain(x):
 
 gray = ColorMap.GRAY
 jet = ColorMap.JET
+def jetFill(alpha):
+  return ColorMap.setAlpha(ColorMap.JET,alpha)
 def jetFillExceptMin(alpha):
   a = fillfloat(alpha,256)
   a[0] = 0.0
@@ -180,7 +221,8 @@ def plot(f,g=None,cmap=None,cmin=None,cmax=None,cint=None,label=None,png=None):
   cb = panel.addColorBar();
   if cint:
     cb.setInterval(cint)
-  #cb.setLabel(label)
+  if label:
+    cb.setLabel(label)
   panel.setColorBarWidthMinimum(70)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);

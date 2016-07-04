@@ -15,6 +15,7 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from ad import *
+from nst import *
 from util import *
 
 pngDir = None
@@ -34,11 +35,11 @@ s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
-  #goLinearDiffusion()
+  goLinearDiffusion()
   #goStratigraphyOrientedDiffusion()
   #goNonlinearDiffusion()
   #goSemblance()
-  goSemblanceHale()
+  #goSemblanceHale()
   #goCovariance()
   #goFastCovariance()
   #goVariance()

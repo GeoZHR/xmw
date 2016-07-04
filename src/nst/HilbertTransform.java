@@ -95,6 +95,81 @@ public class HilbertTransform {
 
   }
 
+  public void applyInFrequency(
+    float[][] x, float[][] f1, float[][] f2) 
+  {
+    Fft fft = new Fft(x);
+    fft.setCenter(true);
+    fft.setPadding(0);
+    Sampling sk1 = fft.getFrequencySampling1();
+    Sampling sk2 = fft.getFrequencySampling2();
+    int nk1 = sk1.getCount();
+    int nk2 = sk2.getCount();
+    float[][] xff = fft.applyForward(x);
+    float[][] xf1 = new float[nk2][nk1*2];
+    float[][] xf2 = new float[nk2][nk1*2];
+    for (int kk2=0; kk2<nk2; ++kk2) {
+    for (int kk1=0,kr1=0,ki1=kr1+1; kk1<nk1; ++kk1,kr1+=2,ki1+=2) {
+      float fk1 = (float)sk1.getValue(kk1);
+      float fk2 = (float)sk2.getValue(kk2);
+      float fks = sqrt(fk1*fk1+fk2*fk2);
+      float fkd = 0f;
+      if(fks>0f) {fkd = 1f/fks;}
+      float fri = xff[kk2][kr1];
+      float fii = xff[kk2][ki1];
+      fri *= fkd;
+      fii *= fkd;
+      xf1[kk2][kr1] =  fii*fk1;
+      xf1[kk2][ki1] = -fri*fk1;
+      xf2[kk2][kr1] =  fii*fk2;
+      xf2[kk2][ki1] = -fri*fk2;
+    }}
+    copy(fft.applyInverse(xf1),f1);
+    copy(fft.applyInverse(xf2),f2);
+  }
+
+  public void applyInFrequency(
+    float[][][] x, float[][][] f1, float[][][] f2, float[][][] f3) 
+  {
+    Fft fft = new Fft(x);
+    fft.setCenter(true);
+    fft.setPadding(10);
+    Sampling sk1 = fft.getFrequencySampling1();
+    Sampling sk2 = fft.getFrequencySampling2();
+    Sampling sk3 = fft.getFrequencySampling3();
+    int nk1 = sk1.getCount();
+    int nk2 = sk2.getCount();
+    int nk3 = sk3.getCount();
+    float[][][] xff = fft.applyForward(x);
+    float[][][] xf1 = new float[nk3][nk2][nk1*2];
+    float[][][] xf2 = new float[nk3][nk2][nk1*2];
+    float[][][] xf3 = new float[nk3][nk2][nk1*2];
+    for (int kk3=0; kk3<nk3; ++kk3) {
+    for (int kk2=0; kk2<nk2; ++kk2) {
+    for (int kk1=0,kr1=0,ki1=kr1+1; kk1<nk1; ++kk1,kr1+=2,ki1+=2) {
+      float fk1 = (float)sk1.getValue(kk1);
+      float fk2 = (float)sk2.getValue(kk2);
+      float fk3 = (float)sk3.getValue(kk3);
+      float fks = sqrt(fk1*fk1+fk2*fk2+fk3*fk3);
+      float fkd = 1f;
+      if(fks>0f) {fkd = 1f/fks;}
+      float fri = xff[kk3][kk2][kr1];
+      float fii = xff[kk3][kk2][ki1];
+      fri *= fkd;
+      fii *= fkd;
+      xf1[kk3][kk2][kr1] =  fii*fk1;
+      xf1[kk3][kk2][ki1] = -fri*fk1;
+      xf2[kk3][kk2][kr1] =  fii*fk2;
+      xf2[kk3][kk2][ki1] = -fri*fk2;
+      xf3[kk3][kk2][kr1] =  fii*fk3;
+      xf3[kk3][kk2][ki1] = -fri*fk3;
+    }}}
+    copy(fft.applyInverse(xf1),f1);
+    copy(fft.applyInverse(xf2),f2);
+    copy(fft.applyInverse(xf3),f3);
+  }
+
+
   private static void trace(String s) {
     System.out.println(s);
   }
