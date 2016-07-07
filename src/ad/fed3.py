@@ -35,8 +35,9 @@ s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
-  goLinearDiffusion()
+  #goLinearDiffusion()
   #goStratigraphyOrientedDiffusion()
+  goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
   #goSemblanceHale()
@@ -68,6 +69,30 @@ def goStratigraphyOrientedDiffusion():
     sig1,sig2=4,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
+    ets.setEigenvalues(0.0001,0.001,1.0)
+    sig = 5
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,ets,fx)
+    writeImage(gxsfile,gx)
+  else:
+    gx = readImage(gxsfile)
+  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
+  plot3(gx)
+  plot3(fx)
+
+def goStratigraphyOrientedDiffusionX():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=4,2
+    p2 = zerofloat(n1,n2,n3)
+    p3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lsf = LocalSlopeFinder(8,4)
+    lsf.findSlopes(fx,p2,p3,ep)
+    lof = StratigraphicOrientFilter(sig1,sig2)
+    ets = lof.applyForTensors(p2,p3,fx)
     ets.setEigenvalues(0.0001,0.001,1.0)
     sig = 5
     cycle,limit=3,0.5

@@ -49,7 +49,7 @@ def goSlope():
   gx = copy(n1,n2,0,0,gx)
   px = copy(n1,n2,0,0,px)
   sig1,sig2=20,1
-  lof = LocalOrientFilterR(sig1,sig2)
+  lof = LocalOrientFilter(sig1,sig2)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   el = zerofloat(n1,n2)

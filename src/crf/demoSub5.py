@@ -74,7 +74,7 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub5/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -93,7 +93,7 @@ def main(args):
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
-  goRose()
+  #goRose()
   #goStrikeRotation()
   #fpt = readImage(fptfile)
   #fps = copy(400,n2,n3,0,0,0,fpt)
@@ -102,17 +102,72 @@ def main(args):
   #fps = copy(300,n2,n3,0,0,0,fp)
   #writeImage("fps65",fps)
   #goMask()
-  #gx = readImage(gxfile)
   #plot3(gx)
-  '''
+  #goHorizon()
+  goFaultDensity()
+def goFaultDensity():
   gx = readImage(gxfile)
-  gs = gx[466]
-  gs = copy(n1,1000,0,520,gs)
-  writeImage("gx466",gs)
-  fp = readImage(fptfile)
-  fps = copy(300,n2,n3,fp)
-  writeImage("fps",fps)
-  '''
+  if not plotOnly:
+    fp = readImage("fpt")
+    sf = readImage2D(n2,n3,"hz")
+    ob = readImage2D(n2,n3,"ob")
+    hp = Helper()
+    sf = add(150,sf)
+    fd = hp.faultDensity(ob,sf,fp)
+    writeImage("fd",fd)
+  else:
+    sf = readImage2D(n2,n3,"hz")
+    rgf = RecursiveGaussianFilterP(2)
+    rgf.apply00(sf,sf)
+    sf = add(150,sf)
+    fd = readImage2D(n2,n3,"fd")
+    rgf = RecursiveGaussianFilterP(20)
+    rgf.apply00(fd,fd)
+  plot3(gx,horizon=sf,fd=fd)
+def goHorizon():
+  k1 = [ 199, 148, 212, 266, 169, 175, 147, 218, 193, 127, 203,  95,
+         136, 150, 125, 133,  81, 239,  72, 118,  89, 201, 160,  46,
+          91, 110,  80,  66, 134, 190, 171, 202, 248, 180, 222, 214,
+         163, 189, 295, 236, 217, 237, 243, 195, 187, 160, 144, 229,
+         205, 253, 192, 175, 194, 282, 213, 237, 135, 192, 229, 200,
+         211, 253, 180, 284, 133, 172, 173, 277, 252, 146]
+  k2 = [1577,1499,1499,1499,1681,1430,1430,1266,1266,1232,1856,1856,
+        1926,2295,2796,2169,2826,2156,2948,1971,1145,1062,1000,2488,
+        2336,3407,2389,2668, 774,1744, 612, 608,1001, 603,1619,1565,
+        1509, 483, 539, 559, 611, 611, 619, 654, 365, 459, 439, 271,
+         286, 325, 337, 382, 457, 353, 904, 475,1478,1840,1728,1567,
+        1692, 426, 258, 465, 531, 564, 206,  92,  65, 576]
+  k3 = [ 352, 521, 441, 762,  41, 261, 359, 163, 482, 792, 648, 262,
+          60,  44,  44, 320, 320, 658, 658, 658, 613, 673, 634, 661,
+         457, 548, 325, 325, 345, 325, 114, 327,  84,  84, 704, 575,
+         575, 367, 367, 280, 280, 294, 318, 318, 377, 372, 416, 416,
+         338, 338, 328, 328, 328, 100, 106, 106, 460, 547, 638,  23,
+         723, 640, 671, 671, 671, 747, 747, 490, 742, 742]
+  gx = readImage("gxhz")
+  if not plotOnly:
+    p2 = readImage("p2")
+    p3 = readImage("p3")
+    ep = readImage("ep")
+    ep = pow(ep,4)
+    se = SurfaceExtractorC()
+    se.setWeights(0.0)
+    se.setCG(0.01,100)
+    sf = se.surfaceInitialization(n2,n3,n1-1,k1,k2,k3)
+    se.surfaceUpdateFromSlopes(ep,p2,p3,k1,k2,k3,sf)
+    writeImage("hz",sf)
+  else:
+    sf = readImage2D(n2,n3,"hz")
+
+  sf = add(100,sf)
+  rgf = RecursiveGaussianFilterP(2.0)
+  rgf.apply00(sf,sf)
+  hp = Helper()
+  hv = zerofloat(n1,n2,n3)
+  hp.horizonToImage(sf,hv)
+  #plot3(gx)
+  plot3(gx,horizon=sf)
+  plot3(gx,hv,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
+
 def goMask():
   fp = readImage(fptfile)
   ob = readImage2D(n2,n3,"ob")
@@ -643,7 +698,7 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          horizon=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
+          horizon=None,fd=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
           links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -652,7 +707,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YIN_ZDOWN)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)
@@ -708,9 +763,26 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
-  if horizon:
-    tg = TriangleGroup(True,s3,s2,horizon)
-    tg.setColor(Color.CYAN)
+  if horizon and not fd:
+    tg = TriangleGroup(True, s3, s2, horizon)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if horizon and fd:
+    hp = Helper()
+    ts = hp.horizonWithFaultDensity(n1-2,[0.0,0.15],horizon,fd)
+    tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if skins:
     sg = Group()

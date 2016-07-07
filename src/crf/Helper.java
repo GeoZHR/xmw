@@ -2,6 +2,7 @@ package crf;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 import ipfx.*;
@@ -146,5 +147,131 @@ public class Helper {
     }
 
   }
+
+  public void horizonToImage(float[][] hz, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int i1 = round(hz[i3][i2]);
+      i1 = min(i1,n1-1);
+      int im = max(i1-1,0);
+      int ip = min(i1+1,n1-1);
+      fx[i3][i2][i1] = 1f;
+      fx[i3][i2][im] = 1f;
+      fx[i3][i2][ip] = 1f;
+    }}
+  }
+
+  public float[][] faultDensity(float[][] ob, float[][] sf, float[][][] fp) {
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    float[][] fd = new float[n3][n2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int nc = 0;
+      int b1 = round(ob[i3][i2]);
+      int e1 = round(sf[i3][i2]);
+      for (int i1=b1; i1<=e1; ++i1) {
+        float fpi = fp[i3][i2][i1];
+        if (fpi>0f) {nc++;}
+      }
+      fd[i3][i2] = (float)nc/(float)(e1-b1);
+    }}
+    return fd;
+  }
+
+  public float[][] horizonWithFaultDensity(
+    int nz, float[] mfs, float[][] hz, float[][] fd) 
+  {
+    int nx = fd.length;
+    int ny = fd[0].length;
+    Sampling sx = new Sampling(nx);
+    Sampling sy = new Sampling(ny);
+    return buildTrigs(nz-2,sx,sy,hz,-1,mfs,fd); 
+  }
+
+  public float[][] buildTrigs(
+    int nz, Sampling sx, Sampling sy, float[][] z,  
+    float color, float[] mfs, float[][] f) 
+  {
+    int i = 0;
+    int k = 0;
+    int c = 0;
+    int nx = sx.getCount();
+    int ny = sy.getCount();
+    float[] zas = new float[nx*ny*6];
+    float[] zfs = new float[nx*ny*6];
+    float[] xyz = new float[nx*ny*6*3];
+    for (int ix=0;ix<nx-1; ++ix) {
+      float x0 = (float)sx.getValue(ix  );
+      float x1 = (float)sx.getValue(ix+1);
+      for (int iy=0; iy<ny-1; ++iy) {
+        float y0 = (float)sy.getValue(iy  );
+        float y1 = (float)sy.getValue(iy+1);
+        float z1 = z[ix  ][iy  ];
+        float z2 = z[ix  ][iy+1];
+        float z3 = z[ix+1][iy  ];
+        float z4 = z[ix+1][iy  ];
+        float z5 = z[ix  ][iy+1];
+        float z6 = z[ix+1][iy+1];
+        if(Float.isNaN(z1)){continue;}
+        if(Float.isNaN(z2)){continue;}
+        if(Float.isNaN(z3)){continue;}
+        if(Float.isNaN(z4)){continue;}
+        if(Float.isNaN(z5)){continue;}
+        if(Float.isNaN(z6)){continue;}
+        if(z1<0||z2<0||z3<0){continue;}
+        if(z4<0||z5<0||z6<0){continue;}
+        if(z1>nz||z2>nz||z3>nz){continue;}
+        if(z4>nz||z5>nz||z6>nz){continue;}
+        zas[k++] = z1;  zas[k++] = z2;  zas[k++] =z3;
+        zas[k++] = z4;  zas[k++] = z5;  zas[k++] =z6;
+        if(f!=null) {
+          zfs[c++] = f[ix  ][iy  ];
+          zfs[c++] = f[ix  ][iy+1];
+          zfs[c++] = f[ix+1][iy  ];
+          zfs[c++] = f[ix+1][iy  ];
+          zfs[c++] = f[ix  ][iy+1];
+          zfs[c++] = f[ix+1][iy+1];
+        }
+        xyz[i++] = x0;  xyz[i++] = y0;  xyz[i++] = z[ix  ][iy  ];
+        xyz[i++] = x0;  xyz[i++] = y1;  xyz[i++] = z[ix  ][iy+1];
+        xyz[i++] = x1;  xyz[i++] = y0;  xyz[i++] = z[ix+1][iy  ];
+        xyz[i++] = x1;  xyz[i++] = y0;  xyz[i++] = z[ix+1][iy  ];
+        xyz[i++] = x0;  xyz[i++] = y1;  xyz[i++] = z[ix  ][iy+1];
+        xyz[i++] = x1;  xyz[i++] = y1;  xyz[i++] = z[ix+1][iy+1];
+      }
+    }
+    float[] rgb;
+    zas = copy(k,0,zas);
+    xyz = copy(i,0,xyz);
+    float zmin = Float.MAX_VALUE;
+    float zmax = -Float.MAX_VALUE;
+    for (int ix=0; ix<nx; ++ix) {
+    for (int iy=0; iy<ny; ++iy) {
+      float zi = z[ix][iy];
+      if (Float.isNaN(zi)) {continue;}
+      if (zi<zmin) {zmin=zi;}
+      if (zi>zmax) {zmax=zi;}
+    }}
+    if(color>0.0f) {
+      zero(zas);
+      add(zas,color,zas);
+      ColorMap cp = new ColorMap(0.0f,1.0f,ColorMap.JET);
+      rgb = cp.getRgbFloats(zas);
+    } else if (f==null) {
+      ColorMap cp = new ColorMap(-zmax,-zmin,ColorMap.JET);
+      rgb = cp.getRgbFloats(mul(zas,-1f));
+    } else {
+      //ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.GRAY);
+      ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.JET);
+      rgb = cp.getRgbFloats(zfs);
+    }
+    return new float[][]{xyz,rgb};
+  }
+
+
 
 }
