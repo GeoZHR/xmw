@@ -8,12 +8,9 @@ import vec.*;
 import util.*;
 
 /**
- * Extract a single seismic horizon surface with control points
- * the constraints derived from control points are incorporated in a 
- * preconditioner in the conjugate gradient method used to solve the 
- * linear system for horizon extracting.
- * @author Xinming Wu and Dave Hale
- * @version 2014.03.12
+ * Testing code for seismic carbonate interpretation
+ * @author Xinming Wu
+ * @version 2016.05.12
  */
 
 public class HorizonVolume {
@@ -37,6 +34,7 @@ public class HorizonVolume {
     _exniter = exniter;
   }
 
+
   // Interpolate an initial surface passing through control points
   public float[][][] applyForInitial(int n2, int n3, float lmt, 
     float[] k1, int k2, int k3) 
@@ -49,6 +47,7 @@ public class HorizonVolume {
     return hv;
   }
 
+  
   public void applyForInitial(int k2, int k3, 
     float lmt, float[][] hz, float[] k1, float[][][] hv)
   {
@@ -67,7 +66,49 @@ public class HorizonVolume {
     }}}
   }
 
-  // Updates the surface using the seismic normal vectors and control points.
+  
+  public float[][][] applyForHorizonVolume(
+    float[] k1, int k2, int k3, 
+    float[][][] ep, float[][][] p, float[][][] q) 
+  {
+    int ns = k1.length;
+    int n3 = ep.length;
+    int n2 = ep[0].length;
+    int n1 = ep[0][0].length;
+    float[][][] hv = new float[ns][][];
+    //initial horizon volume with horizontal surfaces
+    for (int is=0; is<ns; ++is)
+      hv[is] = fillfloat(k1[is],n2,n3); 
+    float lmt = (float)n1-1.f;
+    float[][][] b  = new float[ns][n3][n2]; 
+    float[][][] pi = new float[ns][n3][n2]; 
+    float[][][] qi = new float[ns][n3][n2]; 
+    float[][][] wi = new float[ns][n3][n2]; 
+    checkControlPoints(k2, k3, hv); 
+    float[][][] ks = updateConstraints(k1,k2,k3,p,q,ep,hv);
+    float[][][] hvt = copy(hv);
+    for (int n=1; n<=_exniter; n++){
+      System.out.println(" Iteration "+n+"......");
+      VecArrayFloat3 vb    = new VecArrayFloat3(b);
+      VecArrayFloat3 vhv = new VecArrayFloat3(hv);
+      updateSlopesAndWeights(p,q,ep,hv,pi,qi,wi);
+      A3 a3 = new A3(wi,_weight);
+      M3 m3 = new M3(_sigma1,_sigma2,wi,ks[1],ks[2]);
+      CgSolver cs = new CgSolver(_small,_niter);
+      vb.zero();
+      makeRhs(wi,pi,qi,b);
+      cs.solve(a3,m3,vb,vhv);
+      hv = vhv.getArray();
+      horizonCorrection(lmt,hv);
+      float ad = sum(abs(sub(hvt,hv)))/(n3*n2*ns); 
+      System.out.println(" Average adjustments per sample = "+ad);
+      if (ad<0.02f) break;
+      hvt = copy(hv);
+    }
+    return hv;
+  }
+
+  // Updates surfaces using the seismic normal vectors and control points.
   public void horizonUpdateFromSlopes(
      float[][][] ep, float[][][] p ,float[][][] q,
      float[] k1, int k2, int k3, float[][] hz, float[][][] hv)
@@ -269,6 +310,7 @@ public class HorizonVolume {
           float dsi = d2*d2+d3*d3;
           float cfi = cConf[ic][i3][i2];
           float k1i = hvs[ic][i3s][i2s];
+          if(k1i<0) {continue;}
           float wpi = w[i3][i2][round(k1i)];
           if(dsi==0.0f) {
             cot[ic]++;

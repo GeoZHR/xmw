@@ -103,8 +103,8 @@ def main(args):
   #writeImage("fps65",fps)
   #goMask()
   #plot3(gx)
-  goHorizon()
-  #goFaultDensity()
+  #goHorizon()
+  goFaultDensity()
 def goFaultDensity():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -782,6 +782,18 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     hp = Helper()
     ts = hp.horizonWithFaultDensity(n1-2,[0.0,0.15],horizon,fd)
     tg = TriangleGroup(True,ts[0],ts[1])
+    states = StateSet()
+    cs = ColorState()
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
     sf.world.addChild(tg)
   if skins:
     sg = Group()

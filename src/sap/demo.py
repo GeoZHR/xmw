@@ -11,7 +11,7 @@ from utils import *
 #setupForSubset("channel")
 #setupForSubset("surface")
 setupForSubset("env")
-setupForSubset("semblance3d")
+#setupForSubset("semblance3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
@@ -34,8 +34,9 @@ def main(args):
   #goABsemblance()
   #goChannel()
   #goSurface()
-  goSemblance3d() 
+  #goSemblance3d() 
   #goEnv3d() 
+  goSlices()
 
 def goABsemblance():
   strainMax = 0.35
@@ -90,6 +91,16 @@ def goChannel():
   plot2(s1,gx,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
   plot2(s1,gx,us=us,ss=ss,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
   #plot2(s1,dtran(d),u,vint=200,hint=200,cmap=ColorMap.GRAY)
+def goSlices():
+  fx = readImage2L(n1,n2,"sliceNew")
+  hx = readImage2L(n1,n2,"sliceNewx")
+  gx = readImage2L(n1,n2,"sliceOld")
+  fx = gain(fx)
+  hx = gain(hx)
+  gx = gain(gx)
+  plot2(s1,fx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="new")
+  plot2(s1,hx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="newx")
+  plot2(s1,gx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="old")
 def goEnv3d():
   fx = readImageL("env")
   if not plotOnly:
@@ -107,11 +118,19 @@ def goEnv3d():
     dw.findSurface(sub(1,gx),u)
     eu = dw.getError(gx,u)
     eu = pow(eu,3)
+    u = smooth2(2,4,u)
     su = dw.smooth(8,8,eu,u)
-    u = smooth2(4,8,u)
     writeImageL("su",su)
     writeImageL("u",u)
     writeImageL("gx",gx)
+    vs = zerofloat(n1,n2)
+    for i2 in range(n2):
+      for i1 in range(n1):
+        vs[i2][i1] = su[i1][i2]
+    vs = sub(n3-1,vs)
+    vs = mul(vs,0.05)
+    vs = add(vs,1.5)
+    writeImageL("velPik",vs)
   else:
     su = readImage2L(n2,n1,"su")
     u  = readImage2L(n2,n1,"u")
@@ -144,7 +163,7 @@ def goSemblance3d():
     print min(gx)
     print max(gx)
     dw = DynamicProgramming()
-    dw.setStrainMax(0.5,0.5)
+    dw.setStrainMax(0.2,0.2)
     u = zerofloat(n1,n3)
     dw.setErrorSmoothing(2)
     dw.findSurface(sub(1,gx),u)
@@ -153,6 +172,10 @@ def goSemblance3d():
     u = smooth2(4,8,u)
     writeImageL("su",su)
     writeImageL("u",u)
+    os = sub(n2-1,su)
+    os = mul(os,0.01)
+    os = add(os,1.4)
+    writeImageL("offsetPik",os)
   else:
     su = readImage2L(n1,n3,"su")
     u  = readImage2L(n1,n3,"u")
@@ -163,7 +186,8 @@ def goSemblance3d():
     fx = div(fx,max(fx))
     hp = Helper()
     gx = hp.transpose(fx) 
-    os = sub(n2-1,su)
+    #os = sub(n2-1,su)
+    os = su
     os = mul(os,0.01)
     os = add(os,1.4)
     writeImageL("offsetPik",os)
@@ -229,6 +253,13 @@ def goHorizon():
   plot3(gx)
   plot3(gx,surf=u,png="saltSl")
 
+def gain(x):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(100.0)
+  ref.apply1(g,g)
+  y = zerofloat(n1,n2)
+  div(x,sqrt(g),y)
+  return y
 
 def smooth(sig,u):
   v = copy(u)
@@ -348,13 +379,15 @@ def hueFillExceptMin(alpha):
 
 backgroundColor = Color.WHITE
 def plot2(s1,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
-          cmin=0.0,cmax=0.0,cmap=ColorMap.JET,perc=None,png=None):
+          cmin=0.0,cmax=0.0,cmap=ColorMap.JET,title=None,perc=None,png=None):
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
           #PlotPanel.AxesPlacement.NONE)
   panel.setHLimits(0,s2.first,s2.last)
   panel.setVLimits(0,s1.first,s1.last)
   panel.setVInterval(0,vint)
   panel.setHInterval(0,hint)
+  if title:
+    panel.addTitle(title)
   cv = panel.addPixels(0,0,s1,s2,c)
   cv.setInterpolation(PixelsView.Interpolation.LINEAR)
   cv.setColorModel(cmap)
@@ -389,9 +422,10 @@ def plot2(s1,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
   frame = PlotFrame(panel)
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   frame.setBackground(backgroundColor)
-  frame.setFontSizeForPrint(8,240)
-  frame.setSize(470,1000)
-  #frame.setSize(n2,n1)
+  #frame.setFontSizeForPrint(8,240)
+  #frame.setSize(470,1000)
+  frame.setFontSize(6)
+  frame.setSize(n2,n1)
   frame.setVisible(True)
   if png and pngDir:
     png += "n"+str(int(10*nrms))
