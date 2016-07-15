@@ -5,7 +5,7 @@ Version: 2015.02.09
 """
 
 from utils import *
-setupForSubset("f3dSub")
+setupForSubset("ch")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -65,13 +65,11 @@ def main(args):
   goRef()
 def goRef():
   gx = readImage(gxfile)
-  rx = readImage(rxfile)
   ref = Reflectivity()
   ref.setParams(65,1.0)
-  re = ref.apply3D(0.0006,gx)
-  re = mul(-1,re)
-  plot3X(re,cmin=-0.25,cmax=0.25,clab="Reflectivity")
-  plot3X(rx,cmin=-0.01,cmax=0.01,clab="Reflectivity")
+  re = ref.apply3D(0.005,gx)
+  plot3(gx)
+  plot3(re,cmin=-0.25,cmax=0.25)
 
 def goSkin():
   print "goSkin ..."
@@ -465,16 +463,15 @@ def plot2(s1,s2,x,cmap=ColorMap.GRAY,clab=None,cmin=0,cmax=0,
   if pngDir and png:
     sp.paintToPng(300,3.333,pngDir+png+".png")
 
-
-def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          slices=None, samples=None,png=None):
+def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
   s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
-  l1,l2,l3 = s1.last,s2.last,s3.last
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
-  d1,d2,d3=s1.getDelta(),s2.getDelta(),s3.getDelta()
+  l1,l2,l3 = s1.last,s2.last,s3.last
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -484,54 +481,52 @@ def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-2.0,1.5) # use for subset plots
+      ipg.setClips(-1.5,1.2)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2.0,1.5)
+    ipg.setClips1(-1.5,1.2)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
-      cmap = jetFill(1.0)
+      cmap = jetFill(0.8)
     ipg.setColorModel2(cmap)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
   if cbar:
-    cbar.setWidthMinimum(140)
-  #ipg.setSlices(109,138,31)
-  ipg.setSlices(1212,30,141) # for logs only
-  if samples:
-    fx,x1,x2,x3 = samples
-    #vmin,vmax,vmap= min(fx),max(fx),ColorMap.JET
-    vmin,vmax,vmap= 3400,6100,ColorMap.JET
-    pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
-    sf.world.addChild(pg)
+    cbar.setWidthMinimum(120)
+  ipg.setSlices(153,760,450)
+  #ipg.setSlices(85,5,102)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
-    sf.setSize(907,700)
+    sf.setSize(837,700)
   else:
-    sf.setSize(750,700)
-  vc = sf.getViewCanvas()
-  vc.setBackground(Color.WHITE)
-  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
-  ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
-  ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(3.6)
-  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.06,0.005,0.015))
-  ov.setAzimuthAndElevation(50,36.0)
+    sf.setSize(700,700)
+  view = sf.getOrbitView()
+  #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
+  view.setAxesScale(1.0,1.0,zscale)
+  view.setScale(1.72)
+  #view.setAzimuth(75.0)
+  #view.setAzimuth(-75.0)
+  view.setAzimuth(225.0)
+  view.setElevation(45)
+  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  view.setTranslate(Vector3(0.05,-0.1,0.06))
+  sf.viewCanvas.setBackground(sf.getBackground())
+  sf.setSize(850,700)
+
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+def plot3X(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
           links=False,curve=False,trace=False,htgs=None,
           uncs=None,samples=None,png=None):

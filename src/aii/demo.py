@@ -71,20 +71,20 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = False
+plotOnly = True
 pngDir = None
 pngDir = "../../../png/aii/fake/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goFakeData()
+  #goFakeData()
   #goFaults()
   #goImpedance2()
   #goSlip()
   #goUnfaultS()
   #goFlatten()
-  #goInitial()
+  goInitial()
   #goImpedance3(0.1,0.0,1.0)
   #goImpedance3(0.5,1.0,1.0)
   #goImpedance3(0.9,0.0,1.0)
@@ -290,7 +290,7 @@ def goFakeData():
   lateralViriation = False
   noise = 0.6 # (rms noise)/(rms signal) ratio
   if not plotOnly:
-    gc,gn,rn,pc = FakeData.seismicAndSlopes3d2015B(sequence,
+    gc,gn,rn,pc = FakeData.seismicAndSlopes3d2015A(sequence,
     nplanar,conjugate,conical,impedance,wavelet,lateralViriation,noise)
     '''
     writeImage(gcfile,gc)
@@ -516,7 +516,7 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
     rgb = cmap.getRgbFloats(f)
   pg = PointGroup(xyz,rgb)
   ps = PointState()
-  ps.setSize(4)
+  ps.setSize(6)
   ps.setSmooth(False)
   ss = StateSet()
   ss.add(ps)

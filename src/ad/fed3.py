@@ -36,8 +36,9 @@ plotOnly = False
 
 def main(args):
   #goLinearDiffusion()
+  goLocalSmoothingFilter()
   #goStratigraphyOrientedDiffusion()
-  goStratigraphyOrientedDiffusionX()
+  #goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
   #goSemblanceHale()
@@ -59,6 +60,19 @@ def goLinearDiffusion():
     writeImage(gxlfile,gx)
   else:
     gx = readImage(gxlfile)
+  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
+  plot3(gx)
+  plot3(fx)
+def goLocalSmoothingFilter():
+  fx = readImage(fxfile)
+  sig1,sig2=4,2
+  lof = LocalOrientFilter(sig1,sig2)
+  ets = lof.applyForTensors(fx)
+  ets.setEigenvalues(0.0001,1.0,1.0)
+  sig = 12.5
+  gx = zerofloat(n1,n2,n3)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,sig,fx,gx)
   plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
   plot3(gx)
   plot3(fx)
