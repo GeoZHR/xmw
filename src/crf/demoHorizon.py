@@ -95,16 +95,8 @@ def main(args):
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
-  #fpt = readImage(fptfile)
-  #fps = copy(400,n2,n3,0,0,0,fpt)
-  #writeImage("fps",fps)
-  #fp = readImage("fpt65")
-  #fps = copy(300,n2,n3,0,0,0,fp)
-  #writeImage("fps65",fps)
-  #goMask()
-  #plot3(gx)
-  #goHorizon()
-  goFaultDensity()
+  goHorizon()
+  #goFaultDensity()
 def goFaultDensity():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -157,7 +149,7 @@ def goHorizon():
     writeImage("hz",sf)
   else:
     sf = readImage2D(n2,n3,"hz")
-  sf = add(100,sf)
+  #sf = add(100,sf)
   rgf = RecursiveGaussianFilterP(2.0)
   rgf.apply00(sf,sf)
   hp = Helper()
