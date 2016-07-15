@@ -16,14 +16,80 @@ import vec.*;
 import util.*;
 
 /**
- * Fast explicit diffusion filter. 
+ * Covariance-based semblance. 
  * <em>EXPERIMENTAL</em>
  *
  * @author Xinming Wu, Colorado School of Mines
- * @version 2015.12.05
+ * @version 2016.07.15
  */
 
 public class Covariance {
+
+  // Computes fault semblance numerators and denominators.
+  public float[][][] covarianceEigen(
+    final int m1, final float[][] p, final float[][] f) 
+  {
+    final int d1 = (m1-1)/2;
+    final int n2 = f.length;
+    final int n1 = f[0].length;
+    System.out.println("d1="+d1);
+    final float[][] em = new float[n2][n1];
+    final float[][] es = new float[n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    loop(n2,new LoopInt() {
+    public void compute(int i2) {
+      System.out.println("i2="+i2);
+      float[] xm = new float[n1];
+      float[] xp = new float[n1];
+      int i2m = max(i2-1,0);
+      int i2p = min(i2+1,n2-1);
+      float[][] h = new float[3][n1];
+      float[] fm  = f[i2m];
+      float[] fp  = f[i2p];
+      float[] f0  = f[i2 ];
+      float[] pm  = p[i2m];
+      float[] pp  = p[i2p];
+      float[] em2 = em[i2];
+      float[] es2 = es[i2];
+      for (int i1=0; i1<n1; ++i1) {
+        xm[i1] = i1-pm[i1];
+        xp[i1] = i1+pp[i1];
+      }
+      h[0] = f0;
+      si.interpolate(n1,1.0,0.0,fm,n1,xm,h[1]);
+      si.interpolate(n1,1.0,0.0,fp,n1,xp,h[2]);
+      if (            i2==0   ) h[1] = h[0];
+      if (            i2==n2-1) h[2] = h[0];
+      double[][] cm = new double[3][3];
+      for (int i1=d1; i1<n1-d1; ++i1) {
+        for (int k2=0; k2<3; ++k2) {
+          float[] h2 = h[k2];
+          double[] cm2 = cm[k2];
+        for (int k1=0; k1<3; ++k1) {
+          float cmi = 0.0f;
+          float[] h1 = h[k1];
+          for (int i=i1-d1; i<=i1+d1; ++i)
+            cmi += h1[i]*h2[i];
+          cm2[k1] = cmi;
+        }}
+        DMatrix dm = new DMatrix(cm);
+        DMatrixEvd ed = new DMatrixEvd(dm);
+        double[] es = ed.getRealEigenvalues();
+        em2[i1] = (float)max(es);
+        es2[i1] = (float)sum(es);
+      }
+    }});
+    // pad the top and bottom boundaries
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<d1; ++i1) {
+      em[i2][i1] = em[i2][d1];
+      es[i2][i1] = es[i2][d1];
+      em[i2][n1-1-i1] = em[i2][n1-d1-1];
+      es[i2][n1-1-i1] = es[i2][n1-d1-1];
+    }}
+    return new float[][][]{em,es};
+  }
 
 
   // Computes fault semblance numerators and denominators.
