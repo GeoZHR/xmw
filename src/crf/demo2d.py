@@ -39,9 +39,21 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goScan()
-  goThin()
+  #goScan()
+  #goThin()
   #goDisplay()
+  goCovariance()
+
+def goCovariance():
+  gx = readImage2D(n1,n2,gxfile)
+  p2 = zerofloat(n1,n2)
+  lsf = LocalSlopeFinder()
+  lsf.applyForSlopes(gx,p2)
+  cv = Covariance()
+  em,es = cv.covarianceEigen(8,p2,gx)
+  se = div(em,es)
+  plot2(s1,s2,gx,g=se,cmin=0.20,cmax=1,cmap=jetRamp(1.0),
+      label="Fault likelihood",png="fl")
 
 def goDisplay():
   gx = readImage2D(n1,n2,gxfile)
