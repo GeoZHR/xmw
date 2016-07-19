@@ -23,7 +23,7 @@ from hv   import *
 from uff  import *
 from ipfx import *
 #from mef import *
-#from util import *
+from util import *
 
 #############################################################################
 # Run the function main on the Swing thread

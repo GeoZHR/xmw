@@ -74,7 +74,7 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub5/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -95,8 +95,58 @@ def main(args):
   #goSeisResample()
   #goRose()
   #goStrikeRotation()
-  goHorizon()
+  #goHorizon()
   #goFaultDensity()
+  #goCfault()
+  goOrientScan()
+def goCfault():
+  gx = readImage("gxSub")
+  '''
+  lof = LocalOrientFilterP(8,2)
+  eu = zerofloat(n1,n2,n3)
+  ev = zerofloat(n1,n2,n3)
+  ew = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lof.applyForEigenvaluePlanar(gx,eu,ev,ew,ep)
+  ca = mul(ev,sub(ev,ew))
+  cb = mul(add(eu,ev),add(ev,ew))
+  cf = div(ca,cb)
+  cf = mul(2,cf)
+  writeImage("cfSub",cf)
+  writeImage("epSub",ep)
+  '''
+  ep = readImage("epSub")
+  cf = readImage("cfSub")
+  plot3(gx,sub(1,ep),cmin=0,cmax=0.6,cmap=jetRamp(1.0),
+        clab="Planarity")
+  plot3(gx,cf,cmin=0,cmax=0.6,cmap=jetRamp(1.0),
+        clab="Cfault")
+def goOrientScan():
+  gx = readImage(gxfile)
+  cf = readImage("cfSub")
+  if not plotOnly:
+    fs = LocalOrientScanner(3,sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,cf)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage("flSub",fl)
+    writeImage("fpSub",fp)
+    writeImage("ftSub",ft)
+  else:
+    fl = readImage("flSub")
+    fp = readImage("fpSub")
+    ft = readImage("ftSub")
+  sub(fl,min(fl),fl)
+  div(fl,max(fl),fl)
+  plot3(gx,cf,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),
+        clab="Fault attribute",cint=0.2,png="cf")
+  plot3(gx,fl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),
+        clab="Enhanced fault attribute",cint=0.2,png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fp")
+
+
 def goFaultDensity():
   gx = readImage(gxfile)
   if not plotOnly:

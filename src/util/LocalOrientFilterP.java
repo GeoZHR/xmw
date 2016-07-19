@@ -359,6 +359,27 @@ public class LocalOrientFilterP {
   }
 
   /**
+   * Applies this filter to estimate eigenvalues.
+   * @param x input array for 3-D image.
+   * @param eu maximum eigenvalue.
+   * @param ev second maximum eigenvalue.
+   * @param ew minimum eigenvalue.
+   * @param ep planarity.
+   */
+  public void applyForEigenvaluePlanar(float[][][] x, 
+    float[][][] eu, float[][][] ev, float[][][] ew, float[][][] ep) 
+  {
+    apply(x,
+      null,null,
+      null,null,null,
+      null,null,null,
+      null,null,null,
+      eu,ev,ew,
+      ep,null);
+  }
+
+
+  /**
    * Applies this filter to estimate normal vectors and planarities.
    * Normal vectors are 1st eigenvectors corresponding to largest eigenvalues.
    * @param x input array for 3-D image.

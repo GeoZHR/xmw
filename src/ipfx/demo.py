@@ -56,17 +56,17 @@ maxThrow =  15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 pngDir = "../../../png/ipfx/"
-plotOnly = True
+pngDir = None
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
   #goSlopes()
-  goScan()
-  goThin()
+  #goScan()
+  #goThin()
   #goSkin()
   #goReSkin()
   '''
@@ -77,7 +77,27 @@ def main(args):
   goHorizonExtraction()
   '''
   #goSubset()
+  goCfault()
 
+def goCfault():
+  gx = readImage(gxfile)
+  lof = LocalOrientFilterP(8,2)
+  eu = zerofloat(n1,n2,n3)
+  ev = zerofloat(n1,n2,n3)
+  ew = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  #lof.apply(gx,th,ph,u1,u2,u3,v1,v2,v3,w1,w2,w3,eu,ev,ew,ep,el)
+  lof.applyForEigenvaluePlanar(gx,eu,ev,ew,ep)
+  ca = mul(ev,sub(ev,ew))
+  cb = mul(add(eu,ev),add(ev,ew))
+  cf = div(ca,cb)
+  cf = mul(2,cf)
+  plot3(gx,sub(1,ep),cmin=0,cmax=0.2,cmap=jetRamp(1.0),
+        clab="Planarity")
+  plot3(gx,cf,cmin=0,cmax=0.2,cmap=jetRamp(1.0),
+        clab="Cfault")
+
+  
 def goSubset():
   gx  = readImage(gxfile)
   fl = readImage(flfile)

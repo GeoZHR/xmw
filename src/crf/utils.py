@@ -72,10 +72,11 @@ def setupForSubset(name):
   elif name=="nathanSub5":
     print "setupForSubset: nathanSub5"
     seismicDir = _datdir+"nathan/sub5/"
-    n1,n2,n3 = 601,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
+    #n1,n2,n3 = 601,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
     #n1,n2,n3 = 300,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
     #n1,n2,n3 = 400,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
-    #n1,n2,n3 = 355,3675,825  #fx = copy(355,3675,550,150,0,0,fx)
+    #n1,n2,n3 = 355,3675,825  #fx = copy(355,3675,550,150,0,0,fx) horizon extraction
+    n1,n2,n3 = 601,1400,825  #fx = copy(n1,3675,550,0,1100,60,fx) middle faults
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
