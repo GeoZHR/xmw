@@ -106,8 +106,8 @@ public class GetPoints {
     //return fillfloat(1f,n1,n2,n3);
   }
 
-  public float[][] getWeights(Sampling s1, Sampling s2, float[] x1, float[] x2) 
-  {
+  public float[][] getWeights(
+    Sampling s1, Sampling s2, float[] x1, float[] x2) {
     int n2 = s2.getCount();
     int n1 = s1.getCount();
     float fnull = 0.0f;
@@ -119,19 +119,24 @@ public class GetPoints {
     for (int ip=0; ip<np; ++ip) {
       int i1 = s1.indexOfNearest(x1[ip]);
       int i2 = s2.indexOfNearest(x2[ip]);
-      g[i2][i1] = 1.0f;
+      g[i2][i1] = 1f;
     }
     ClosestPointTransform cpt = new ClosestPointTransform();
     cpt.apply(fnull,g,ds,k1,k2);
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
-      if(ds[i2][i1]<=1.0f) {
+      ds[i2][i1] = 1f;
+      /*
+      if(ds[i2][i1]<0.1f) {
         ds[i2][i1] = 0.1f;
       } 
+      */
     }}
-    System.out.println("pow="+log(6.67f)/log(max(ds)));
-    return div(1,pow(ds,log(10f)/log(max(ds))));
-    //return div(1,pow(ds,0.5f));
+
+    System.out.println("pow="+log(10f)/log(max(ds)));
+    //return div(1,pow(ds,log(10)/log(max(ds))));
+    //return div(1,pow(ds,2.5f));
+    return ds;
   }
 
 }

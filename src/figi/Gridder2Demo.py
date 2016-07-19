@@ -21,8 +21,8 @@ def main(args):
   #demoSplinesGridder("Saddle")
   #demoTensorGuided("NotreDame")
   #demoLamont()
-  #demoNotreDame()
-  demoSaddle()
+  demoNotreDame()
+  #demoSaddle()
   #demoSinSin()
  
 def demoTeapot():
@@ -122,9 +122,9 @@ def demoSinSin():
     name = gridderNames[gridder]
     print name
     g = gridder.grid(sx,sy)
-    plot2(f,x,y,g,sx,sy,title=name)
+    #plot2(f,x,y,g,sx,sy,title=name)
     #plot2(f,x,y,g,sx,sy)
-    #plot3(f,x,y,g,sx,sy)
+    plot3(f,x,y,g,sx,sy)
 
 def demoLamont():
   setupFor("Lamont")
@@ -262,7 +262,7 @@ def makeBlendedGridder(f,x,y,smooth=0.5,tmax=FLT_MAX,tmx=False):
 def makeFastImageGuidedGridder(f,x,y,sx,sy):
   figi = FastImageGuidedInterp(f,x,y,None)
   figi.setSmoothings(10.0,10.0)
-  figi.setIters(400)
+  figi.setIters(200)
   return figi
 
 def makeSibsonGridder(f,x,y,smooth=False):

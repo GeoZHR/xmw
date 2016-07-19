@@ -47,12 +47,13 @@ def main(args):
 def goCovariance():
   gx = readImage2D(n1,n2,gxfile)
   p2 = zerofloat(n1,n2)
-  lsf = LocalSlopeFinder()
-  lsf.applyForSlopes(gx,p2)
+  lsf = LocalSlopeFinder(8,2,5)
+  lsf.findSlopes(gx,p2)
   cv = Covariance()
-  em,es = cv.covarianceEigen(8,p2,gx)
-  se = div(em,es)
-  plot2(s1,s2,gx,g=se,cmin=0.20,cmax=1,cmap=jetRamp(1.0),
+  em,es = cv.covarianceEigen(5,p2,gx)
+  se = sub(1,div(em,es))
+  plot2(s1,s2,gx)
+  plot2(s1,s2,gx,g=se,cmin=0.10,cmax=0.4,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
 
 def goDisplay():

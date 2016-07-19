@@ -39,7 +39,6 @@ public class Covariance {
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     loop(n2,new LoopInt() {
     public void compute(int i2) {
-      System.out.println("i2="+i2);
       float[] xm = new float[n1];
       float[] xp = new float[n1];
       int i2m = max(i2-1,0);
@@ -61,19 +60,19 @@ public class Covariance {
       si.interpolate(n1,1.0,0.0,fp,n1,xp,h[2]);
       if (            i2==0   ) h[1] = h[0];
       if (            i2==n2-1) h[2] = h[0];
-      double[][] cm = new double[3][3];
+      double[][] c = new double[2][2];
       for (int i1=d1; i1<n1-d1; ++i1) {
-        for (int k2=0; k2<3; ++k2) {
+        for (int k2=0; k2<2; ++k2) {
           float[] h2 = h[k2];
-          double[] cm2 = cm[k2];
-        for (int k1=0; k1<3; ++k1) {
-          float cmi = 0.0f;
+          double[] c2 = c[k2];
+        for (int k1=0; k1<2; ++k1) {
+          float ci = 0.0f;
           float[] h1 = h[k1];
           for (int i=i1-d1; i<=i1+d1; ++i)
-            cmi += h1[i]*h2[i];
-          cm2[k1] = cmi;
+            ci += h1[i]*h2[i];
+          c2[k1] = ci;
         }}
-        DMatrix dm = new DMatrix(cm);
+        DMatrix dm = new DMatrix(c);
         DMatrixEvd ed = new DMatrixEvd(dm);
         double[] es = ed.getRealEigenvalues();
         em2[i1] = (float)max(es);

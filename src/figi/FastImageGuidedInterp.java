@@ -58,6 +58,9 @@ public class FastImageGuidedInterp {
    * @return array of the interpolated image.
    */
   public float[][] grid(Sampling s1, Sampling s2) {
+    int n1 = s1.getCount();
+    int n2 = s2.getCount();
+    float[][] r = new float[n2][n1];
     GetPoints gp = new GetPoints();
     float[][] wp = gp.getWeights(s1,s2,_x1,_x2);
     int np = _x1.length;
@@ -65,10 +68,7 @@ public class FastImageGuidedInterp {
       _x1[ip] = (float)s1.indexOfNearest(_x1[ip]);
       _x2[ip] = (float)s2.indexOfNearest(_x2[ip]);
     }
-    int n1 = s1.getCount();
-    int n2 = s2.getCount();
     float[][] b = new float[n2][n1];
-    float[][] r = new float[n2][n1];
     setInitial(r);
     VecArrayFloat2 vb = new VecArrayFloat2(b);
     VecArrayFloat2 vr = new VecArrayFloat2(r);
@@ -133,10 +133,10 @@ public class FastImageGuidedInterp {
   private Tensors3 _d3;
   private Tensors2 _d2;
 
-  private float[] _x1 = null; // 1st coordinates of the known points
-  private float[] _x2 = null; // 2nd coordinates of the known points
-  private float[] _x3 = null; // 3rd coordinates of the known points
-  private float[] _fx = null; // known values at the known points
+  private static float[] _x1 = null; // 1st coordinates of the known points
+  private static float[] _x2 = null; // 2nd coordinates of the known points
+  private static float[] _x3 = null; // 3rd coordinates of the known points
+  private static float[] _fx = null; // known values at the known points
   private float _sigma1 = 6.0f; // half-width of smoother in 1st dimension
   private float _sigma2 = 6.0f; // half-width of smoother in 2nd dimension
   private float _small = 0.010f; // stop CG iterations if residuals are small
@@ -154,15 +154,12 @@ public class FastImageGuidedInterp {
       float[][] x = v2x.getArray();
       float[][] y = v2y.getArray();
       float[][] z = copy(x);
-      float[][] y1 = copy(x);
       float[][] y2 = copy(x);
       VecArrayFloat2 v2yy = new VecArrayFloat2(y2);
       v2y.zero();
-      v2yy.zero();
       applyLhs(_et,_wp,z,y);
-      //applyLhs(_et,_wp,z,y1);
-      //applyLhs(_et,_wp,y1,y);
-      //v2y.add(1.f,v2yy,1f);
+      applyLhs(_et,_wp,y,y2);
+      v2y.add(1.f,v2yy,50f);
     }
 
     private float[][] _wp=null;
@@ -264,10 +261,22 @@ public class FastImageGuidedInterp {
     }
   }
 
+
+  private void makeRhs(float[][] r) {
+    int np = _x1.length;
+    for (int ip=0; ip<np; ++ip) {
+      int i1 = (int)_x1[ip];
+      int i2 = (int)_x2[ip];
+      r[i2][i1] = _fx[ip];
+    }
+
+  }
+
   private static void applyLhs(
     final Tensors2 d, final float[][] wp, 
     final float[][] x, final float[][] y)
   {
+    zero(y);
     int n2 = x.length;
     int n1 = x[0].length;
     float[] ds = fillfloat(1.0f,3);
@@ -300,6 +309,7 @@ public class FastImageGuidedInterp {
         y[i2-1][i1-1] -= ya;
       }
     }
+
   }
 
   private static void applyLhs(

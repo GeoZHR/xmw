@@ -134,4 +134,14 @@ public class Smoother2 {
     new RecursiveExponentialFilter(sigma).apply1(x,x);
   }
 
+  private void smooth1(float sigma, float[][] x) {
+    new RecursiveExponentialFilter(sigma).apply1(x,x);
+  }
+
+  private void smooth2(float sigma, float[][] x) {
+    new RecursiveExponentialFilter(sigma).apply2(x,x);
+  }
+
+
+
 }
