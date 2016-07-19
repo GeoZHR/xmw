@@ -24,6 +24,21 @@ public class FaultSlipConstraints {
     _sks = sks;
   }
 
+  public void setValuesOnFaults(float v, FaultSkin[] skins, float[][][] x) {
+    for (FaultSkin skin:skins) {
+      for (FaultCell cell:skin) {
+        int i1 = cell.getI1();
+        int m2 = cell.getM2();
+        int m3 = cell.getM3();
+        int p2 = cell.getP2();
+        int p3 = cell.getP3();
+        x[m3][m2][i1] = v;
+        x[p3][p2][i1] = v;
+      }
+    }
+  }
+
+
   public void setValuesNearFaults(float v, float[][][] fl) {
     int n3 = fl.length;
     int n2 = fl[0].length;

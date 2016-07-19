@@ -91,8 +91,8 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  #goInterp()
-  goInterpO()
+  goInterp()
+  #goInterpO()
   #goFigures()
   #goImpedance()
   #goTest()
@@ -292,11 +292,6 @@ def goInterp():
   if not plotOnly:
     gx = readImage(gxfile)
 
-    '''
-    lof = LocalOrientFilter(4.0,1.0,1.0)
-    et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
-    '''
     ws = fillfloat(1.0,n1,n2,n3)
     mk = fillfloat(0.0,n1,n2,n3)
     skins = readSkins(fslbase)
@@ -310,10 +305,11 @@ def goInterp():
     [x1,x2,x3] = gp.getCoordinates(p)
     figi = FastImageGuidedInterp(fx,x1,x2,x3)
     figi.setTensors(et)
-    figi.setIters(400)
+    figi.setIters(600)
     figi.setSmoothings(10.0,10.0)
-    fq = figi.apply(sp,wp)
-    writeImage(fqfile,fq)
+    wp = fillfloat(1,n1,n2,n3)
+    fq = figi.apply(None,wp)
+    #writeImage(fqfile,fq)
   else:
     gx = readImage(gxfile)
     fq = readImage(fqfile)

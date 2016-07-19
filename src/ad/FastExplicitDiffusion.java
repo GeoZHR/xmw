@@ -48,6 +48,7 @@ public class FastExplicitDiffusion {
     return gx;
   }
 
+
   public float[][] apply(
     float sigma, float lambda, EigenTensors2 et, float[][] fx) 
   {

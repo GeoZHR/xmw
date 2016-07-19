@@ -154,12 +154,13 @@ public class FastImageGuidedInterp {
       float[][] x = v2x.getArray();
       float[][] y = v2y.getArray();
       float[][] z = copy(x);
-      float[][] y2 = copy(x);
-      VecArrayFloat2 v2yy = new VecArrayFloat2(y2);
+      float[][] t = copy(x);
+      VecArrayFloat2 v2t = new VecArrayFloat2(t);
       v2y.zero();
+      v2t.zero();
       applyLhs(_et,_wp,z,y);
-      applyLhs(_et,_wp,y,y2);
-      v2y.add(1.f,v2yy,50f);
+      applyLhs(_et,_wp,y,t);
+      v2y.add(1.f,v2t,50f);
     }
 
     private float[][] _wp=null;
@@ -198,10 +199,15 @@ public class FastImageGuidedInterp {
       VecArrayFloat3 v3x = (VecArrayFloat3)vx;
       VecArrayFloat3 v3y = (VecArrayFloat3)vy;
       float[][][] x = v3x.getArray();
-      float[][][] z = copy(x);
-      v3y.zero();
       float[][][] y = v3y.getArray();
+      float[][][] z = copy(x);
+      float[][][] t = copy(x);
+      VecArrayFloat3 v3t = new VecArrayFloat3(t);
+      v3y.zero();
+      v3t.zero();
       applyLhs(_et,_wp,z,y);
+      applyLhs(_et,_wp,y,t);
+      v3y.add(1.f,v3t,50f);
       if(_sp!=null) {
         screenLhs(_sp[0],_sp[1],_sp[3][0],z,y);
       }
