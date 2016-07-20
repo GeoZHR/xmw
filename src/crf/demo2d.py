@@ -10,7 +10,7 @@ s1,s2,s3= getSamplings()
 n1,n2= s1.count,s2.count
 
 # Names and descriptions of image files used below.
-gxfile  = "gx466" # input image (maybe after bilateral filtering)
+gxfile  = "gx" # input image (maybe after bilateral filtering)
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -23,7 +23,7 @@ fttfile = "ftt" # fault dip thinned
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minTheta,maxTheta = 65,85
-sigmaTheta = 60
+sigmaTheta = 20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -39,13 +39,14 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goScan()
-  #goThin()
+  goScan()
+  goThin()
   #goDisplay()
-  goCovariance()
+  #goCovariance()
 
 def goCovariance():
   gx = readImage2D(n1,n2,gxfile)
+  gx = slog(gx)
   p2 = zerofloat(n1,n2)
   lsf = LocalSlopeFinder(8,2,5)
   lsf.findSlopes(gx,p2)
@@ -55,7 +56,8 @@ def goCovariance():
   plot2(s1,s2,gx)
   plot2(s1,s2,gx,g=se,cmin=0.10,cmax=0.4,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
-
+def slog(f):
+  return mul(sgn(f),log(add(1.0,abs(f))))
 def goDisplay():
   gx = readImage2D(n1,n2,gxfile)
   fl = readImage2D(n1,n2,flfile3d)
@@ -68,7 +70,7 @@ def goScan():
   if not plotOnly:
     gx = FaultScanner2.taper(10,0,gx)
     fs = FaultScanner2(sigmaTheta)
-    sig1,sig2,smooth=4.0,4.0,4.0
+    sig1,sig2,smooth=16.0,1.0,6.0
     fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "ft min =",min(ft)," max =",max(ft)
@@ -77,10 +79,12 @@ def goScan():
   else:
     fl = readImage2D(n1,n2,flfile)
     ft = readImage2D(n1,n2,ftfile)
+  '''
   plot2(s1,s2,gx,g=fl,cmin=0.20,cmax=1,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
   plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
       label="Fault dip (degrees)",png="ft")
+  '''
 
 def goThin():
   print "goThin ..."
@@ -95,10 +99,10 @@ def goThin():
   else:
     flt = readImage2D(n1,n2,fltfile)
     ftt = readImage2D(n1,n2,fttfile)
-  gx = copy(n1,300,0,550,gx)
-  flt = copy(n1,300,0,550,flt)
-  c2 = Sampling(300)
-  plot2(s1,c2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
+  #gx = copy(n1,300,0,550,gx)
+  #flt = copy(n1,300,0,550,flt)
+  #c2 = Sampling(300)
+  plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
 
 def goStat():
   def plotStat(s,f,slabel=None):

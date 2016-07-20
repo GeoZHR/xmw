@@ -10,6 +10,24 @@ import util.*;
 
 public class Helper {
 
+  public void padValues(float[][] tp, float[][] bt, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int b1 = round(tp[i3][i2])+5;
+      int e1 = round(bt[i3][i2])+10;
+      e1 = min(e1,n1-1);
+      for (int i1=0; i1<=b1; ++i1) {
+        gx[i3][i2][i1] = 2f;
+      }
+      for (int i1=e1; i1<n1; ++i1) {
+        gx[i3][i2][i1] = 2f;
+      }
+    }}
+  }
+
   public void setWeights(FaultSkin[] skins, float[][][] wp) {
     int n3 = wp.length;
     int n2 = wp[0].length;

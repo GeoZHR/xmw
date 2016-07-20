@@ -72,16 +72,29 @@ def setupForSubset(name):
   elif name=="nathanSub5":
     print "setupForSubset: nathanSub5"
     seismicDir = _datdir+"nathan/sub5/"
-    #n1,n2,n3 = 601,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
+    n1,n2,n3 = 601,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
     #n1,n2,n3 = 300,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
     #n1,n2,n3 = 400,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
     #n1,n2,n3 = 355,3675,825  #fx = copy(355,3675,550,150,0,0,fx) horizon extraction
-    n1,n2,n3 = 601,1400,825  #fx = copy(n1,3675,550,0,1100,60,fx) middle faults
+    #n1,n2,n3 = 601,1400,825  #fx = copy(n1,3675,550,0,1100,60,fx) middle faults
+    #n1,n2,n3 = 500,3675,825  #fx = copy(500,n2,n3,0,0,0,fx) gxfault
+    #n1,n2,n3 = 500,500,500  #fx = copy(n1,500,500,0,1500,150,gxfault) gxsmall
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     #f1,f2,f3 = 0.000,5400,10744
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="nathanSub8":
+    print "setupForSubset: nathanSub8"
+    seismicDir = _datdir+"nathan/sub8/"
+    #n1,n2,n3 = 500,3675,825  #fx = copy(500,n2,n3,0,0,0,fx) gxfault
+    n1,n2,n3 = 300,200,200  #fx = copy(n1,500,500,0,1500,150,gxfault) gxsmall
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 0.000,5400,10744
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+
   elif name=="nathanSub6":
     print "setupForSubset: nathanSub6"
     seismicDir = _datdir+"nathan/sub6/"
@@ -95,7 +108,7 @@ def setupForSubset(name):
     print "setupForSubset: nathanSub2d"
     seismicDir = _datdir+"nathan/sub2d/"
     n1,n2,n3 = 601,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
-    n1,n2,n3 = 601,1000,825  #fx = copy(n1,3675,550,0,1100,60,fx)
+    n1,n2,n3 = 601,1800,825  #fx = copy(n1,3675,550,0,1100,60,fx)
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)

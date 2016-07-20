@@ -6,11 +6,11 @@ Version: 2016.01.22
 
 from utils import *
 #setupForSubset("nathan")
-setupForSubset("nathanSub5")
+setupForSubset("nathanSub8")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile  = "gx" # input image (maybe after bilateral filtering)
+gxfile  = "gxSmall" # input image (maybe after bilateral filtering)
 fxfile  = "fx" # input image (maybe after bilateral filtering)
 gwfile  = "gw" # input image (maybe after bilateral filtering)
 hxfile  = "horizon"
@@ -72,16 +72,15 @@ maxThrow = 85.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/beg/nathan/sub5/"
+pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  #goScan()
-  #goThin()
+  goScan()
+  goThin()
   #goSkin()
   #goSkinTv()
   #goReskin()
@@ -93,207 +92,18 @@ def main(args):
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
-  #goRose()
-  #goStrikeRotation()
   #goHorizon()
-  #goFaultDensity()
-  #goCfault()
-  #goOrientScan()
+  #goPadding()
+def goPadding():
   gx = readImage(gxfile)
-  ob = readImage2D(n2,n3,"ob")
-  for i3 in range(n3):
-    for i2 in range(n2):
-      for i1 in range(round(ob[i3][i2])+5):
-        gx[i3][i2][i1] = 2
-  gc = copy(n1,1800,0,900,gx[461])
-  writeImage("gx461",gc)
-  plot3(gx,horizon=ob)
-def goCfault():
-  gx = readImage("gxSub")
-  lof = LocalOrientFilterP(8,2)
-  eu = zerofloat(n1,n2,n3)
-  ev = zerofloat(n1,n2,n3)
-  ew = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lof.applyForEigenvaluePlanar(gx,eu,ev,ew,ep)
-  ca = mul(ev,sub(ev,ew))
-  cb = mul(add(eu,ev),add(ev,ew))
-  cf = div(ca,cb)
-  cf = mul(2,cf)
-  writeImage("cfSub",cf)
-  writeImage("epSub",ep)
-  '''
-  ep = readImage("epSub")
-  cf = readImage("cfSub")
-  plot3(gx,sub(1,ep),cmin=0,cmax=0.6,cmap=jetRamp(1.0),
-        clab="Planarity")
-  plot3(gx,cf,cmin=0,cmax=0.6,cmap=jetRamp(1.0),
-        clab="Cfault")
-def goOrientScan():
-  gx = readImage("gxSub")
-  cf = readImage("cfSub")
-  if not plotOnly:
-    fs = LocalOrientScanner(3,sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,cf)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "fp min =",min(fp)," max =",max(fp)
-    print "ft min =",min(ft)," max =",max(ft)
-    writeImage("flSub",fl)
-    writeImage("fpSub",fp)
-    writeImage("ftSub",ft)
-  else:
-    fl = readImage("flSub")
-    fp = readImage("fpSub")
-    ft = readImage("ftSub")
-  #sub(fl,min(fl),fl)
-  #div(fl,max(fl),fl)
-  plot3(gx,cf,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),
-        clab="Fault attribute",cint=0.2,png="cf")
-  plot3(gx,fl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),
-        clab="Enhanced fault attribute",cint=0.2,png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  '''
-
-
-def goFaultDensity():
-  gx = readImage(gxfile)
-  if not plotOnly:
-    fp = readImage("fpt")
-    sf = readImage2D(n2,n3,"hz")
-    ob = readImage2D(n2,n3,"ob")
-    hp = Helper()
-    sf = add(150,sf)
-    fd = hp.faultDensity(ob,sf,fp)
-    writeImage("fd",fd)
-  else:
-    sf = readImage2D(n2,n3,"hz")
-    rgf = RecursiveGaussianFilterP(2)
-    rgf.apply00(sf,sf)
-    sf = add(150,sf)
-    fd = readImage2D(n2,n3,"fd")
-    rgf = RecursiveGaussianFilterP(20)
-    rgf.apply00(fd,fd)
-  plot3(gx,horizon=sf,fd=fd)
-def goHorizon():
-  k1 = [ 199, 148, 212, 266, 169, 175, 147, 218, 193, 127, 203,  95,
-         136, 150, 125, 133,  81, 239,  72, 118,  89, 201, 160,  46,
-          91, 110,  80,  66, 134, 190, 171, 202, 248, 180, 222, 214,
-         163, 189, 295, 236, 217, 237, 243, 195, 187, 160, 144, 229,
-         205, 253, 192, 175, 194, 282, 213, 237, 135, 192, 229, 200,
-         211, 253, 180, 284, 133, 172, 173, 277, 252, 146]
-  k2 = [1577,1499,1499,1499,1681,1430,1430,1266,1266,1232,1856,1856,
-        1926,2295,2796,2169,2826,2156,2948,1971,1145,1062,1000,2488,
-        2336,3407,2389,2668, 774,1744, 612, 608,1001, 603,1619,1565,
-        1509, 483, 539, 559, 611, 611, 619, 654, 365, 459, 439, 271,
-         286, 325, 337, 382, 457, 353, 904, 475,1478,1840,1728,1567,
-        1692, 426, 258, 465, 531, 564, 206,  92,  65, 576]
-  k3 = [ 352, 521, 441, 762,  41, 261, 359, 163, 482, 792, 648, 262,
-          60,  44,  44, 320, 320, 658, 658, 658, 613, 673, 634, 661,
-         457, 548, 325, 325, 345, 325, 114, 327,  84,  84, 704, 575,
-         575, 367, 367, 280, 280, 294, 318, 318, 377, 372, 416, 416,
-         338, 338, 328, 328, 328, 100, 106, 106, 460, 547, 638,  23,
-         723, 640, 671, 671, 671, 747, 747, 490, 742, 742]
-  gx = readImage("gxhz")
-  if not plotOnly:
-    p2 = readImage("p2")
-    p3 = readImage("p3")
-    ep = readImage("ep")
-    ep = pow(ep,4)
-    se = SurfaceExtractorC()
-    se.setWeights(0.0)
-    se.setCG(0.01,100)
-    sf = se.surfaceInitialization(n2,n3,n1-1,k1,k2,k3)
-    se.surfaceUpdateFromSlopes(ep,p2,p3,k1,k2,k3,sf)
-    writeImage("hz",sf)
-  else:
-    sf = readImage2D(n2,n3,"hz")
-  #sf = add(100,sf)
-  rgf = RecursiveGaussianFilterP(2.0)
-  rgf.apply00(sf,sf)
+  tp = readImage2D(n2,n3,"ob")
+  bt = readImage2D(n2,n3,"hz")
+  bt = add(bt,150)
   hp = Helper()
-  hv = zerofloat(n1,n2,n3)
-  hp.horizonToImage(sf,hv)
-  #plot3(gx)
-  plot3(gx,horizon=sf)
-  plot3(gx,hv,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
-
-def goMask():
-  fp = readImage(fptfile)
-  ob = readImage2D(n2,n3,"ob")
-  hp = Helper()
-  hp.mask(ob,fp)
-  writeImage(fptfile,fp)
-  plot3(fp,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=20,png="fpt")
-
-def goFaultPoints():
-  fp = readImage(fptfile)
-  rp = RosePlot()
-  ob = readImage2D(n2,n3,"ob")
-  ps = rp.faultPoints(ob,fp)
-  print len(ps)
-  print len(ps[0])
-  writeImage("fpp",ps)
-
-def goSeisResample():
-  hp = Helper()
-  d3 = 12.5
-  gx = readImage(gxfile)
-  c3 = Sampling(n3,18.75,0.0)
-  gi = zerofloat(n1,n2,round(n3*1.5))
-  hp.resample(s1,s2,c3,d3,gx,gi)
-  writeImage("gi",gi)
-  #plot3(gx)
-  #plot3(gx,cmin=-10000,cmax=10000)
-def goStrikeRotation():
-  gx = readImage("gxs")
-  fp = readImage("fps")
-  #fpp = readImage2D(95894555,4,"fpp")
-  hpr = Helper()
-  #fp = fillfloat(-0.01,n1,n2,n3)
-  #hpr.setStrikes(fpp,fp)
-
-  hpr.rotateX(299,fp)
-  hpr.convert(fp)
-  #writeImage("fps",fp)
-  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=20,png="fpt")
-
-def goRose():
-  rp = RosePlot()
-  ob = readImage2D(n2,n3,"ob")
-  fp = readImage2D(95894555,4,"fpp")
-  rp.rotateX(299,fp[3])
-  rp.convert(fp[3])
-  fc = fp
-  #fc = rp.removeSignature(29,fp)
-  #rp.rose(fp[3],36)
-  #c2,c3=10,2
-  #c2,c3=15,3
-  c2,c3=20,4
-  #npm = rp.findMaxSamples(0,480,20,c2,c3,n2,n3,fp,ob)
-  npm = 83950
-  for tp  in range(0,20,20):
-  #for tp  in range(200,400,200):
-    bt = tp+20
-    title1 = str(tp*5)
-    title2 = str(bt*5)
-    title =title1+"~"+title2+" m"
-    #pp = rp.applyForRosePlotsX(npm,tp,bt,c2,c3,n2,n3,36,fc,ob)
-    pp = rp.applyForRosePlotsN(tp,bt,c2,c3,n2,n3,36,fc,ob)
-    #pp = rp.applyForRosePlotsN(99,99,c2,c3,n2,n3,18,fc,ob)
-    pp.addTitle(title)
-    pf = PlotFrame(pp)
-    #wx,wy = 1450,round((c3*1450)/c2)+50
-    #wx,wy = 1700,round((c3*1750)/c2)+50
-    wx,wy = 2100,round((c3*2100)/c2)+100
-    wx = round(wx*1.5)
-    wy = round(wy*1.3)
-    pf.setSize(wx,wy)
-    pf.setVisible(True)
-    pf.paintToPng(720,6,pngDir+str(tp)+".png")
-
+  hp.padValues(tp,bt,gx)
+  plot3(gx)
+  gs = copy(300,200,200,100,1600,350,gx)
+  writeImage("gxSmall",gs)
 def getOceanBottom():
   hp = Helper()
   gx = readImage(gxfile)
@@ -301,49 +111,13 @@ def getOceanBottom():
   writeImage("ob",ob)
   #ob = readImage2D(n2,n3,"ob")
   #plot3(gx,horizon=ob)
-def goDisplay():
-  '''
-  gx = readImage(gxfile)
-  fx = gain(gx)
-  writeImage(fxfile,fx)
-  '''
-  fx = readImage(gxfile)
-  fx = copy(n1,3675,550,0,1100,60,fx)
-  #fx = slog(fx)
-  fx = gain(fx)
-  writeImage("fx",fx)
-  #fx = div(fx,600000)
-  fxmin = min(fx)
-  fxmax = max(fx)
-  print fxmin
-  print fxmax
-  #plot3(fx,cmin=-5,cmax=5)
-def goSlopes():
-  print "goSlopes ..."
-  gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
-  print "p2  min =",min(p2)," max =",max(p2)
-  print "p3  min =",min(p3)," max =",max(p3)
-  print "ep min =",min(ep)," max =",max(ep)
-  '''
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
-  '''
 
 def goScan():
   print "goScan ..."
   if not plotOnly:
     gx = readImage(gxfile)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
-    sig1,sig2,smooth=4.0,2.0,4.0
+    sig1,sig2,smooth=16.0,1.0,6.0
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)
@@ -356,14 +130,12 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-  '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
-  '''
 
 def goThin():
   print "goThin ..."
@@ -380,14 +152,12 @@ def goThin():
     flt = readImage(fltfile)
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
-  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-  '''
 
 def goReskin():
   print "go skin..."
@@ -584,101 +354,6 @@ def goSmooth():
   plot3(gsx,png="gsx")
   '''
 
-def goSlip():
-  print "goSlip ..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    gsx = readImage(gsxfile)
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
-    skins = readSkins(fskgood)
-    fsl = FaultSlipper(gsx,p2,p3)
-    fsl.setOffset(3.0) # the default is 2.0 samples
-    fsl.setZeroSlope(False) # True only if we want to show the error
-    fsl.computeDipSlips(skins,minThrow,maxThrow)
-    print "  dip slips computed, now reskinning ..."
-    print "  number of skins before =",len(skins),
-    fsk = FaultSkinner() # as in goSkin
-    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsk.setMinSkinSize(minSkinSize)
-    fsk.setMinMaxThrow(minThrow,maxThrow)
-    #skins = fsk.reskin(skins)
-    print ", after =",len(skins)
-    removeAllSkinFiles(fslbase)
-    writeSkins(fslbase,skins)
-    '''
-    smark = -999.999
-    s1,s2,s3 = fsl.getDipSlips(skins,smark)
-    s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
-    gw = fsl.unfault([s1,s2,s3],gx)
-    writeImage(gwfile,gw)
-    writeImage(fs1file,s1)
-    writeImage(fs2file,s2)
-    writeImage(fs3file,s3)
-    '''
-  else:
-    gw = readImage(gwfile)
-    #s1 = readImage(fs1file)
-    #skins = readSkins(fslbase)
-  '''
-  plot3(gx,skins=skins,smax=10.0,png="skinss1")
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="gxs1")
-  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
-        clab="Crossline shift (samples)",png="gxs3i")
-  plot3(gx)
-  plot3(gw,png="gw")
-  '''
-
-def goUnfaultS():
-  gx = readImage(gxfile)
-  if not plotOnly:
-    fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,4.0,4.0)
-    et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
-
-    wp = fillfloat(1.0,n1,n2,n3)
-    skins = readSkins(fslbase)
-    fsc = FaultSlipConstraints(skins)
-    sp = fsc.screenPoints(wp)
-    mul(sp[3][0],10,sp[3][0])
-
-    uf = UnfaultS(8.0,8.0)
-    uf.setIters(100)
-    uf.setTensors(et)
-    [t1,t2,t3] = uf.findShifts(sp,wp)
-    #uf.convertShifts(40,[t1,t2,t3])
-    uf.applyShifts([t1,t2,t3],gx,fw)
-    writeImage(fwsfile,fw)
-    writeImage(sw1file,t1)
-    writeImage(sw2file,t2)
-    writeImage(sw3file,t3)
-  else :
-    fw = readImage(fwsfile)
-    gw = readImage(gwfile)
-  plot3(gx,png="gxuf")
-  plot3(fw,png="fwuf")
-  plot3(gw,png="fwuf")
-  '''
-  skins = readSkins(fslbase)
-  mark = -999.99
-  s1 = fillfloat(mark,n1,n2,n3)
-  FaultSkin.getThrow(mark,skins,s1)
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="gxs1")
-  plot3(gx,t1,cmin=-6.0,cmax=6.0,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
-        clab="Crossline shift (samples)",png="gxs3i")
-  '''
-
 def like(x):
   n3 = len(x)
   n2 = len(x[0])
@@ -833,18 +508,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     hp = Helper()
     ts = hp.horizonWithFaultDensity(n1-2,[0.0,0.15],horizon,fd)
     tg = TriangleGroup(True,ts[0],ts[1])
-    states = StateSet()
-    cs = ColorState()
-    states.add(cs)
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    states.add(lms)
-    ms = MaterialState()
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    ms.setSpecular(Color.WHITE)
-    ms.setShininess(100.0)
-    states.add(ms)
-    tg.setStates(states);
     sf.world.addChild(tg)
   if skins:
     sg = Group()
