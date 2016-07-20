@@ -262,7 +262,7 @@ def makeBlendedGridder(f,x,y,smooth=0.5,tmax=FLT_MAX,tmx=False):
 def makeFastImageGuidedGridder(f,x,y,sx,sy):
   figi = FastImageGuidedInterp(f,x,y,None)
   figi.setSmoothings(10.0,10.0)
-  figi.setIters(200)
+  figi.setIters(100)
   return figi
 
 def makeSibsonGridder(f,x,y,smooth=False):

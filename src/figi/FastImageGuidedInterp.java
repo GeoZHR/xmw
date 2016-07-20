@@ -137,8 +137,8 @@ public class FastImageGuidedInterp {
   private static float[] _x2 = null; // 2nd coordinates of the known points
   private static float[] _x3 = null; // 3rd coordinates of the known points
   private static float[] _fx = null; // known values at the known points
-  private float _sigma1 = 6.0f; // half-width of smoother in 1st dimension
-  private float _sigma2 = 6.0f; // half-width of smoother in 2nd dimension
+  private float _sigma1 = 10.0f; // half-width of smoother in 1st dimension
+  private float _sigma2 = 10.0f; // half-width of smoother in 2nd dimension
   private float _small = 0.010f; // stop CG iterations if residuals are small
   private int _niter = 800; // maximum number of inner CG iterations
 
@@ -160,7 +160,7 @@ public class FastImageGuidedInterp {
       v2t.zero();
       applyLhs(_et,_wp,z,y);
       applyLhs(_et,_wp,y,t);
-      v2y.add(1.f,v2t,50f);
+      v2y.add(1.f,v2t,100f);
     }
 
     private float[][] _wp=null;
