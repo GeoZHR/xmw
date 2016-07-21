@@ -10,17 +10,7 @@ setupForSubset("nathanSub8")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile  = "gxSmall" # input image (maybe after bilateral filtering)
-fxfile  = "fx" # input image (maybe after bilateral filtering)
-gwfile  = "gw" # input image (maybe after bilateral filtering)
-hxfile  = "horizon"
-gsxfile = "gsx" # image after lsf with fault likelihoods
-epfile  = "ep" # eigenvalue-derived planarity
-wpfile  = "wp" # eigenvalue-derived planarity
-p2file  = "p2" # inline slopes
-p3file  = "p3" # crossline slopes
-p2kfile = "p2k" # inline slopes (known)
-p3kfile = "p3k" # crossline slopes (known)
+gxfile  = "gxp" # input image (maybe after bilateral filtering)
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -37,18 +27,6 @@ fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
-fwsfile = "fws" # unfaulted image
-sw1file = "sw1" # 1st component of unfaulting shifts
-sw2file = "sw2" # 2nd component of unfaulting shifts
-sw3file = "sw3" # 3rd component of unfaulting shifts
-gufile = "gu" # flattened image
-gtfile = "gt" # flattened image
-ghfile = "gh" # flattened image
-grfile = "gr" # flattened image
-x1file = "x1" # horizon volume
-u1file = "u1" # first component of normal
-u2file = "u2" # second component of normal
-u3file = "u3" # third component of normal
 smfile = "sm"
 cmfile = "cm"
 
@@ -102,8 +80,7 @@ def goPadding():
   hp = Helper()
   hp.padValues(tp,bt,gx)
   plot3(gx)
-  gs = copy(300,200,200,100,1600,350,gx)
-  writeImage("gxSmall",gs)
+  writeImage("gxp",gx)
 def getOceanBottom():
   hp = Helper()
   gx = readImage(gxfile)
@@ -117,7 +94,7 @@ def goScan():
   if not plotOnly:
     gx = readImage(gxfile)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
-    sig1,sig2,smooth=16.0,1.0,6.0
+    sig1,sig2,smooth=16.0,1.0,4.0
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sig1,sig2,smooth,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "fp min =",min(fp)," max =",max(fp)

@@ -1,0 +1,161 @@
+sfdd:	fomels@BEGPC132	Thu Jul 29 08:44:04 2004
+
+	=
+	n2=48
+	o1=-4.19095e-09
+	d2=0.0335
+	#j1=1
+	#max1=3.996
+	#min3=7.705
+	rect2=1
+	n3=250
+	o2=0.132
+	d3=0.0335
+	label1="sec"
+	#j2=1
+	#max2=3.346
+	#min4=0
+	CDPtype=2
+	rect3=1
+	data_format="xdr_float"
+	o3=7.705
+	label2="offset(km)"
+	n4=1
+	#j3=1
+	#max3=16.0465
+	d4=1
+	sum3=0
+	label3="midpoint(km)"
+	#j4=1
+	#max4=0
+	o4=0
+	absval=0
+	t0=0
+	esize=4
+	label4=""
+	in="stdin"
+	scaleup=0
+	nin=985
+	t1=0.06
+	#f1=0
+	CLASSDATA="/r5/jon/bei-old/classdata"
+	#o2=.331
+	tridiag=0
+	#f2=0
+	axis=3
+	#min1=0
+	#f3=20
+	diff1=0
+	n1=1000
+	d1=0.004
+	#min2=0.264
+	#f4=0
+	rho=0.8
+	rect1=2
+	diff2=0
+	agc=0
+	data_format="xdr_float"
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sfdd	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:11:58 2016
+
+	data_format="native_float"
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sftransp	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:11:58 2016
+
+	d2=0.0335
+	n2=250
+	o2=7.705
+	d3=0.0335
+	n3=48
+	data_format="native_float"
+	label2="midpoint(km)"
+	o3=0.132
+	label3="offset(km)"
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sftransp	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:11:59 2016
+
+	d3=1
+	n3=1
+	data_format="native_float"
+	o3=0
+	d4=0.0335
+	n4=48
+	label3=""
+	o4=0.132
+	label4="offset(km)"
+	esize=4
+	in="/home/xinwu/Home/research/data/scratch/xmw/src/ssr/bei.rsf@"
+1.8-svn	sfhalfint	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:11:59 2016
+
+	data_format="native_float"
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sfpreconstkirch	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:12:00 2016
+
+	data_format="native_float"
+	esize=4
+	in="/home/xinwu/Home/research/data/scratch/xmw/src/ssr/bei-mig.rsf@"
+1.8-svn	sftransp	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:12:41 2016
+
+	d3=0.0335
+	n3=48
+	data_format="native_float"
+	o3=0.132
+	d4=1
+	n4=1
+	label3="offset(km)"
+	o4=0
+	label4=""
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sftransp	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:12:41 2016
+
+	d2=0.0335
+	n2=48
+	o2=0.132
+	d3=0.0335
+	n3=250
+	data_format="native_float"
+	label2="offset(km)"
+	o3=7.705
+	label3="midpoint(km)"
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sfwindow	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:12:41 2016
+
+	d2=0.0335
+	n2=48
+	o1=-4.19095e-09
+	d3=0.0335
+	n3=250
+	o2=0.132
+	label1="sec"
+	data_format="native_float"
+	o3=7.705
+	label2="offset(km)"
+	label3="midpoint(km)"
+	esize=4
+	in="/home/xinwu/Home/research/data/scratch/xmw/src/ssr/bei-cip.rsf@"
+	d1=0.004
+	n1=876
+1.8-svn	sfpad	xmw/src/ssr:	xinwu@begws65.beg.utexas.edu	Wed Jul 20 16:12:41 2016
+
+	n3=521
+	data_format="native_float"
+	esize=4
+	in="/home/xinwu/Home/research/data/scratch/xmw/src/ssr/bei-pad.rsf@"
