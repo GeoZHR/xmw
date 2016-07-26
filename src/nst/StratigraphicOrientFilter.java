@@ -465,10 +465,8 @@ public class StratigraphicOrientFilter {
     float[][][] u1 = new float[n3][n2][n1];
     float[][][] u2 = new float[n3][n2][n1];
     float[][][] u3 = new float[n3][n2][n1];
-    float[][][] w1 = new float[n3][n2][n1];
-    float[][][] w2 = new float[n3][n2][n1];
     EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
-    d.setEigenvalues(0.001f,1.00f,1.00f);
+    d.setEigenvalues(0.1f,1.00f,1.00f);
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=0; i1<n1; ++i1) {
@@ -496,9 +494,22 @@ public class StratigraphicOrientFilter {
     float[][][] g23 = mul(g2,g3);
     float[][][] g33 = mul(g3,g3);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.apply(d,10,g22,g22);
-    lsf.apply(d,10,g23,g23);
-    lsf.apply(d,10,g33,g33);
+    RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(2);
+    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(4);
+    rgf1.apply0XX(g22,g22);
+    rgf1.apply0XX(g23,g23);
+    rgf1.apply0XX(g33,g33);
+
+    rgf2.applyX0X(g22,g22);
+    rgf2.applyX0X(g23,g23);
+    rgf2.applyX0X(g33,g33);
+
+    rgf2.applyXX0(g22,g22);
+    rgf2.applyXX0(g23,g23);
+    rgf2.applyXX0(g33,g33);
+    //lsf.apply(d,20,g22,g22);
+    //lsf.apply(d,20,g23,g23);
+    //lsf.apply(d,20,g33,g33);
     float[][] a = new float[2][2];
     float[][] z = new float[2][2];
     float[] e = new float[2];
@@ -513,23 +524,21 @@ public class StratigraphicOrientFilter {
           a[1][0] = g23[i3][i2][i1];
           a[1][1] = g33[i3][i2][i1];
           Eigen.solveSymmetric22(a,z,e);
-          float v2i = z[0][0];
-          float v3i = z[0][1];
-          float w3i =  v2i;
-          float w2i = -v3i;
+          float w2i = z[1][0];
+          float w3i = z[1][1];
           float w1i = (-u2i*w2i-u3i*w3i)/u1i; 
           float wsi = 1f/sqrt(w1i*w1i+w2i*w2i+w3i*w3i);
           w1i *= wsi;
           w2i *= wsi;
-          w1[i3][i2][i1] = w1i;
-          w2[i3][i2][i1] = w2i;
+          w3i *= wsi;
+          d.setEigenvalues(i1,i2,i3,1f,1f,1f);
+          d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
+          d.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
+
         }
       }
     }
-    float[][][] eu = fillfloat(1f,n1,n2,n3);
-    float[][][] ev = fillfloat(1f,n1,n2,n3);
-    float[][][] ew = fillfloat(1f,n1,n2,n3);
-    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,compressed);
+    return d;
   }
 
   /**
@@ -745,9 +754,9 @@ public class StratigraphicOrientFilter {
         int i2m = max(i2-1,0);
         int i2p = min(i2+1,n2-1);
         float[] fxm0 = fx[i3m][i2 ];
+        float[] fxp0 = fx[i3p][i2 ];
         float[] fx0m = fx[i3 ][i2m];
         float[] fx0p = fx[i3 ][i2p];
-        float[] fxp0 = fx[i3p][i2 ];
         float[] p20m = p2[i3 ][i2m];
         float[] p20p = p2[i3 ][i2p];
         float[] p3m0 = p3[i3m][i2 ];

@@ -40,7 +40,7 @@ public class FastExplicitDiffusion {
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
     float[][] gx = copy(fx);
-    et.setEigenvalues(0.001f,1.0f);
+    //et.setEigenvalues(0.001f,1.0f);
     for (int m=0; m<_m; ++m) {
     for (int ic=0; ic<nc; ++ic) {
       applyLaplacian(et,-ts[ic],copy(gx),gx);

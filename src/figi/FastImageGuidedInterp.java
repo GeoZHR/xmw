@@ -61,8 +61,7 @@ public class FastImageGuidedInterp {
     int n1 = s1.getCount();
     int n2 = s2.getCount();
     float[][] r = new float[n2][n1];
-    GetPoints gp = new GetPoints();
-    float[][] wp = gp.getWeights(s1,s2,_x1,_x2);
+    float[][] wp = fillfloat(1f,n1,n2);
     int np = _x1.length;
     for (int ip=0; ip<np; ++ip) {
       _x1[ip] = (float)s1.indexOfNearest(_x1[ip]);

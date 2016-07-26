@@ -7,6 +7,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 
 package mef;
 
+import java.util.*;
 import edu.mines.jtk.dsp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
@@ -197,6 +198,7 @@ public class FaultScanner2 {
         if ((fm[i1]<f00 && fp[i1]<f00) ||
             (fp[i1]<f00 && fm[i1]<f00)){
           ff[i2][i1] = f00;
+          ff[i2m][i1] = fm[i1];
           tt[i2][i1] = t00;
         } else {
           tt[i2][i1] = NO_DIP;
@@ -205,6 +207,33 @@ public class FaultScanner2 {
     }
     return new float[][][]{ff,tt};
   }
+
+  public float[][] faultPick(int np, float[][] fl) {
+    int n2 = fl.length;
+    int n1 = fl[0].length;
+    float[][] flt = copy(fl);
+    float[][] fls = new float[1000][];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fli = fl[i2][i1];
+      ArrayList<Float> fla = new ArrayList<Float>();
+      ArrayList<Float> p1s = new ArrayList<Float>();
+      ArrayList<Float> p2s = new ArrayList<Float>();
+      ArrayList<Integer> k1s = new ArrayList<Integer>();
+      ArrayList<Integer> k2s = new ArrayList<Integer>();
+      if (fli==0f) {continue;}
+      k1s.add(i1);
+      k2s.add(i2);
+      flt[i2][i1] = 0f;
+      while (k1s.size()>1) {
+
+      }
+    }}
+
+
+    return null;
+  }
+
 
   /**
    * Applies structure-oriented smoothing limited by fault likelihoods.
@@ -375,6 +404,7 @@ public class FaultScanner2 {
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     int nt = thetaSampling.getCount();
+    /*
     for (int it=0; it<nt; ++it) {
       System.out.println(it+"/"+(nt-1)+" done...");
       float ti = (float)thetaSampling.getValue(it);
@@ -401,6 +431,7 @@ public class FaultScanner2 {
         }
       }}
     }
+    */
 
     for (int it=0; it<nt; ++it) {
       System.out.println(it+"/"+(nt-1)+" done...");
