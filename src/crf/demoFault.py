@@ -38,9 +38,9 @@ sigmaPhi,sigmaTheta = 20,60
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.3
+lowerLikelihood = 0.6
 upperLikelihood = 0.7
-minSkinSize = 500
+minSkinSize = 200
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -52,15 +52,15 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goScan()
-  goThin()
+  #goScan()
+  #goThin()
   #goSkin()
-  #goSkinTv()
+  goSkinTv()
   #goReskin()
   #goSmooth()
   #goSlip()
@@ -188,7 +188,7 @@ def goReskin():
 
 def goSkinTv():
   print "go skin..."
-  #gx = readImage(gxfile)
+  gx = readImage(gxfile)
   if not plotOnly:
     fl = readImage(flfile)
     fp = readImage(fpfile)
@@ -204,7 +204,7 @@ def goSkinTv():
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(sks)
     cells = []
-    for ic in range(0,len(fcs),6):
+    for ic in range(0,len(fcs),4):
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
@@ -213,7 +213,7 @@ def goSkinTv():
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)
     fsx = FaultSkinnerX()
-    fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsx.setGrowLikelihoods(0.3,upperLikelihood)
     fsx.setMinSkinSize(minSkinSize)
     fsx.setMaxPlanarDistance(0.2)
 
@@ -228,12 +228,25 @@ def goSkinTv():
     fd.getFlt(skins,fl)
     fd.getFpt(skins,fp)
     fd.getFtt(skins,ft)
-    writeImage(fltfile,fl)
-    writeImage(fptfile,fp)
-    writeImage(fttfile,ft)
+    writeImage("fltv",fl)
+    writeImage("fptv",fp)
+    writeImage("fttv",ft)
   else:
+    fl = zerofloat(n1,n2,n3)
     skins = readSkins(fsktv)
+    fsx = FaultSkinnerX()
+    fsx.getFl(2000,skins,fl)
+
+    #fl = readImage("fltv")
+    #fp = readImage("fptv")
+    #ft = readImage("fttv")
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
   '''
+  plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
   print len(skins)
   fd = FaultDisplay()
   cells = FaultSkin.getCells(skins)
@@ -264,19 +277,27 @@ def goSkin():
     print "number of cells in skins =",FaultSkin.countCells(skins)
     fd = FaultDisplay()
     print "fault skins load finish..."
-    fpt = fillfloat(-0.001,n1,n2,n3)
-    fd = FaultDisplay()
-    fd.getFpt(skins,gx,fpt)
-    writeImage("fpk",fpt)
+    fd.getFlt(skins,fl)
+    fd.getFpt(skins,fp)
+    fd.getFtt(skins,ft)
+    writeImage("flk",fl)
+    writeImage("fpk",fp)
+    writeImage("ftk",ft)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
   else:
-    skins = readSkins(fskbase)
+    #skins = readSkins(fskbase)
+    fl  = readImage("flk")
+  flt = readImage(fltfile)
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
   '''
-  fd = FaultDisplay()
-  sk = fd.getLargeFaults(20000,skins)
-  print len(sk)
-  plot3(gx,skins=sk)
+  plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
   '''
 
 def goFaultImages():

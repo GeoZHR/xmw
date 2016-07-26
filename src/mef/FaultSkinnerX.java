@@ -85,8 +85,9 @@ public class FaultSkinnerX {
     }
   }
 
-  public void getFl(FaultSkin[] sks, float[][][] fl) {
+  public void getFl(int minSize, FaultSkin[] sks, float[][][] fl) {
     for (FaultSkin sk:sks) {
+      if(sk.size()<minSize) {continue;}
       for (FaultCell fc:sk) {
         int i1i = fc.i1;
         int i2i = fc.i2;
