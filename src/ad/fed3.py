@@ -36,8 +36,8 @@ plotOnly = False
 
 def main(args):
   #goLinearDiffusion()
-  goLocalSmoothingFilter()
-  #goStratigraphyOrientedDiffusion()
+  #goLocalSmoothingFilter()
+  goStratigraphyOrientedDiffusion()
   #goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
@@ -81,10 +81,10 @@ def goStratigraphyOrientedDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
     sig1,sig2=4,2
-    lof = LocalOrientFilter(sig1,sig2)
+    lof = LocalOrientFilterP(sig1,sig2)
     ets = lof.applyForTensors(fx)
     ets.setEigenvalues(0.0001,0.001,1.0)
-    sig = 5
+    sig = 10
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
@@ -108,7 +108,7 @@ def goStratigraphyOrientedDiffusionX():
     lof = StratigraphicOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(p2,p3,fx)
     ets.setEigenvalues(0.0001,0.001,1.0)
-    sig = 5
+    sig = 10
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
