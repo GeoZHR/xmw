@@ -37,7 +37,7 @@ plotOnly = False
 def main(args):
   #goLinearDiffusion()
   #goLocalSmoothingFilter()
-  goStratigraphyOrientedDiffusion()
+  #goStratigraphyOrientedDiffusion()
   #goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
@@ -45,6 +45,7 @@ def main(args):
   #goCovariance()
   #goFastCovariance()
   #goVariance()
+  goShapeSemblance()
 def goLinearDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -140,6 +141,40 @@ def goNonlinearDiffusion():
   plot3(gx)
   plot3(fx)
 
+def goShapeSemblance():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=2,6
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
+    lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
+    sm = Semblance()
+    '''
+    sd = mul(fx,fx)
+    sn = sm.smoothVW(2,et,fx)
+    sd = sm.smoothVW(2,et,sd)
+    sn = mul(sn,sn)
+    writeImage("sn",sn)
+    writeImage("sd",sd)
+    '''
+    sn = readImage("sn")
+    sd = readImage("sd")
+    wp = sub(1,ep)
+    plot3(ep,cmin=0.2,cmax=1.0)
+    wp = fillfloat(1,n1,n2,n3)
+    et.setEigenvalues(0.2,0.0001,1.0000)
+    ss = sm.shapeSemblance(et,wp,sn,sd)
+    writeImage("ss",ss)
+  else:
+    ss = readImage("ss")
+  plot3(fx)
+  plot3(ss,cmin=0.2,cmax=1.0)
+
+
 def goSemblance():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -164,11 +199,10 @@ def goSemblance():
 def goSemblanceHale():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=2,8
+    sig1,sig2=2,6
     lof = LocalOrientFilter(sig1,sig2)
     et = lof.applyForTensors(fx)
-    '''
-    lsf = LocalSemblanceFilter(2,4)
+    lsf = LocalSemblanceFilter(2,2)
     sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,et,fx)
     '''
     et.setEigenvalues(0.0001,1.0,1.0)
@@ -183,16 +217,19 @@ def goSemblanceHale():
     fss = goDiffusion(4,et,fss)
 
     sem = div(fxs,fss)
+    '''
     writeImage("semHale",sem)
   else:
     sig1,sig2=2,6
     sem = readImage("semHale")
+    '''
     lof = LocalOrientFilter(sig1,sig2)
     et = lof.applyForTensors(fx)
     et.setEigenvalues(0.0001,0.001,1.0)
     ses = goNonlinearDiffusionX(4,et,sem)
+    '''
   plot3(fx)
-  plot3(sem,cmin=0.0,cmax=1.0)
+  plot3(sem,cmin=0.2,cmax=1.0)
 
 def goCovariance():
   fx = readImage(fxfile)
@@ -372,7 +409,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
-  ipg.setSlices(153,760,450)
+  #ipg.setSlices(153,760,450)
+  ipg.setSlices(124,760,450)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:

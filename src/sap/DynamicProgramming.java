@@ -790,10 +790,6 @@ public class DynamicProgramming {
     ref.apply2(x,x);
   }
 
-
-
-
-
   private void updateSmoothingFilters() {
     _ref1 = (_usmooth1<=0.0) ? null :
       new RecursiveExponentialFilter(_usmooth1*_bstrain1);
