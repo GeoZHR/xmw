@@ -55,10 +55,13 @@ public class Semblance {
       _et = et;
       _wp = wp;
       _sd = sd;
-      //float n3 = wp.length;
-      //float n2 = wp[0].length;
-      //float n1 = wp[0][0].length;
-      _sc = 1.0f;//sum(wp)/(n1*n2*n3);
+      /*
+      float n3 = wp.length;
+      float n2 = wp[0].length;
+      float n1 = wp[0][0].length;
+      _sc = sum(wp)/(n1*n2*n3);
+      */
+      _sc = 0.5f;
       testSpd();
     }
     public void apply(Vec vx, Vec vy) {
