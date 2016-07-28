@@ -14,7 +14,7 @@ f1,f2,f3 = s1.first,s2.first,s3.first
 # Names and descriptions of image files used below.
 sfile = "cfs" # input seismic image 
 ssfile = "cfss" # smoothed seismic image 
-logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,5.0,1.0
+logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,4.5,1.0
 #logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
 gfile = "cfg"+logType # simple gridding with null for unknown samples
 pfile = "cfp"+logType # values of nearest known samples
@@ -88,10 +88,22 @@ def main(args):
 def goCo2Plot():
   gx = readImageL(sfile)
   q0 = readImageL(qfile)
-  qc = readImageL(q5file)
+  q1 = readImageL(q1file)
+  q2 = readImageL(q2file)
+  q3 = readImageL(q3file)
+  q4 = readImageL(q4file)
+  q5 = readImageL(q5file)
   #plot3(gx,q,cmin=vmin,cmax=vmax)
-  plot3(gx,q0,cmin=vmin,cmax=vmax,png="co2Initial")
-  plot3(gx,qc,cmin=vmin,cmax=vmax,png="co2Final")
+  #plot3(gx,q0,cmin=vmin,cmax=vmax,png="co2Initial")
+  '''
+  plot3(gx,q1,cmin=vmin,cmax=vmax,png="co2First")
+  plot3(gx,q2,cmin=vmin,cmax=vmax,png="co2Second")
+  plot3(gx,q3,cmin=vmin,cmax=vmax,png="co2Third")
+  plot3(gx,q4,cmin=vmin,cmax=vmax,png="co2Forth")
+  plot3(gx,q5,cmin=vmin,cmax=vmax,png="co2Fifth")
+  '''
+  plot3(gx,sub(q0,q5),cmin=0.3,cmax=0.4,cint=0.1,clab=logLabel,png="co2Plumes2")
+  #plot3(gx,sub(q0,q5),cmin=0.3,cmax=0.4,cint=0.1,clab=logLabel,png="co2Plumes5")
 
 def go1stCo2():
   gx = readImageL(sfile)
@@ -217,9 +229,11 @@ def goHorizon():
   se.setCG(0.01,200)
   surf = se.surfaceInitialization(n2,n3,n1-1,k11,k12,k13)
   se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
-  plot3(gx,surf=surf)
-  plot3(gx,q,cmin=vmin,cmax=vmax,surf=surf)
   writeImage("surf",surf)
+  surf = mul(surf,d1)
+  surf = add(surf,f1)
+  plot3(gx,surf=surf,png="surf")
+  plot3(gx,q,cmin=vmin,cmax=vmax,surf=surf)
 
 
 def goFigures():
@@ -240,7 +254,7 @@ def goFigures():
   plot3(g,q,cmin=vmin,cmax=vmax,sps=spc,wmin=vmin,wmax=vmax,
         clab=logLabel,cint=cit,png="interp"+logType)
 def goSeisAndWells():
-  gx = readImage(sfile)
+  gx = readImageL(sfile)
   x12,x13,w1s = getLog242()
   x22,x23,w2s = getLog281()
   mds=[]
@@ -248,8 +262,8 @@ def goSeisAndWells():
   mds.append(SynSeis.getModel(x22,x23,w2s[0],w2s[1],w2s[2]))
   swt = SeismicWellTie()
   sps = swt.getSamples(s1,mds)
-  plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
-  plot3(gx,sps=sps[0],wmin=2.4,wmax=5.0,clab="Velocity (km/s)",png="seisVel")
+  #plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
+  plot3(gx,sps=sps[0],wmin=2.4,wmax=5.0,clab="Velocity (km/s)",cint=cit,png="seisVel")
 
 def goSlopes():
   print "goSlopes ..."
@@ -899,12 +913,14 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       sf.world.addChild(tg)
   if surf:
     tgs = Triangle()
-    xyz = tgs.trianglesForSurface(surf,0,n1-1)
-    tg  = TriangleGroup(True,xyz)
+    #xyz = tgs.trianglesForSurface(surf,0,n1-1)
+    tg  = TriangleGroup(True,s3,s2,surf)
+    tg.setColor(Color.CYAN)
     sf.world.addChild(tg)
   #ipg.setSlices(924,202,26)
-  #ipg.setSlices(834,202,26)
+  #ipg.setSlices(834,168,66)
   ipg.setSlices(834,120,110)
+  ipg.setSlices(758,168,66)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
     sf.setSize(837,700)
@@ -990,7 +1006,7 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
     rgb = cmap.getRgbFloats(f)
   pg = PointGroup(xyz,rgb)
   ps = PointState()
-  ps.setSize(4)
+  ps.setSize(6)
   ps.setSmooth(False)
   ss = StateSet()
   ss.add(ps)
