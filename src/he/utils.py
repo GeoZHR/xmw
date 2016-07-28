@@ -12,10 +12,46 @@ _datdir = "../../../data/seis/he/"
 
 #############################################################################
 # Setup
-
-seismicDir = _datdir
-n1,n2,n3 = 101,102,103
-s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
+# Setup
+def setupForSubset(name):
+  """
+  Setup for a specified directory includes:
+    seismic directory
+    samplings s1,s2,s3
+  Example: setupForSubset("hongliu")
+  """
+  global seismicDir
+  global welllogDir
+  global s1,s2,s3
+  global n1,n2,n3
+  global sz,sl,sc
+  global nz,nl,nc
+  if name=="fake":
+    print "setupForSubset: fake"
+    seismicDir = _datdir+"fake/"
+    n1,n2,n3 = 101,102,103
+    s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
+  elif name=="nwc":
+    print "setupForSubset: nwc"
+    seismicDir = _datdir+"nwc/"
+    n1,n2,n3 = 350,601,401  #fx=gx(:,0:2:end,:)
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 0.000,5400,10744
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="f3d":
+    print "setupForSubset: f3d"
+    seismicDir = _datdir+"f3d/"
+    n1,n2,n3 = 155,951,550 
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 0.000,5400,10744
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  else:
+    print "unrecognized subset:",name
+    System.exit
 
 def getSamplings():
   return s1,s2,s3
@@ -37,6 +73,24 @@ def readImage(name):
   ais.readFloats(image)
   ais.close()
   return image
+
+def readImage2(name):
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+  
+def readSlice3(name):
+  fileName = seismicDir+name+".dat"
+  n1,n2 = s1.count,s2.count
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 
 def writeImage(name,image):
   """ 

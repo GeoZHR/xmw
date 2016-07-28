@@ -1,28 +1,10 @@
-import sys
-
-from java.awt import *
-from java.io import *
-from java.lang import *
-from javax.swing import *
-
-from edu.mines.jtk.awt import *
-from edu.mines.jtk.dsp import *
-from edu.mines.jtk.io import *
-from edu.mines.jtk.mosaic import *
-from edu.mines.jtk.ogl.Gl import *
-from edu.mines.jtk.sgl import *
-from edu.mines.jtk.util import *
-from edu.mines.jtk.util.ArrayMath import *
-
-from he import *
-from util import *
+from utils import *
 
 #pngDir = None
-pngDir = "../../../png/"
-seismicDir = "../../../data/seis/he/"
-s1 = Sampling(155,1.0,0)
-s2 = Sampling(951,1.0,0)
-s3 = Sampling(550,1.0,0)
+setupForSubset("f3d")
+s1,s2,s3 = getSamplings()
+n1,n2,n3 = s1.count,s2.count,s3.count
+
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 #k1,k2,k3 = 88,60,160; azimuth=285; elevation=11 # for 3D view of all horizons
@@ -33,39 +15,52 @@ k1f,k2f,k3f = 48,406,114
 k1f,k2f,k3f = 48,406,0
 gmin,gmax,gint,glab = -2.0,2.0,0.5,"Amplitude"
 background = Color.WHITE
+
+pngDir = "../../../png/he/"
+pngDir = None
+gxfile = "f3dm"
+p2file = "f3dmp2"
+p3file = "f3dmp3"
+epfile = "f3dmep"
+ssfile = "surfs"
+srfile = "surfsr"
+smfile = "surfm"
+mrfile = "surfmr"
+
 def main(args):
   #slopes()
   #oneControlPoint()
-  multipleControlPoints()
+  goSurfaceRefine()
+  #multipleControlPoints()
 def slopes():
-  f = readImage("f3dm")
-  p2 = copy(f)
-  p3 = copy(f)
-  ep = copy(f)
+  gx = readImage(gxfile)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
   #good to use sigma2>sigma1 for extracting sequence boundaries
-  sigma1,sigma2=2.0,1.0
-  lsf = LocalSlopeFinder(sigma1,sigma2,20) 
-  lsf.findSlopes(f,p2,p3,ep);
-  writeImage("f3dmp2",p2)
-  writeImage("f3dmp3",p3)
-  writeImage("f3dmep",ep)
+  sigma1,sigma2=4.0,2.0
+  lsf = LocalSlopeFinder(sigma1,sigma2,sigma2,5) 
+  lsf.findSlopes(gx,p2,p3,ep);
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
   for g in [p2,p3,ep]:
     world = World()
-    addImage2ToWorld(world,f,g)
+    addImage2ToWorld(world,gx,g)
     makeFrame(world)
 
 def oneControlPoint():
   k11 = [100.0]
   k12 = [335.0]
   k13 = [433.0]
-  f  = readImage("f3dm")
-  p2 = readImage("f3dmp2")
-  p3 = readImage("f3dmp3")
-  ep = readImage("f3dmep")
+  gx  = readImage(gxfile)
+  p2  = readImage(p2file)
+  p3  = readImage(p3file)
+  ep  = readImage(epfile)
   ep = pow(ep,6.0) 
-  horizonExtraction(f,p2,p3,ep,k11,k12,k13,"surf1")
+  horizonExtraction(gx,p2,p3,ep,k11,k12,k13,ssfile)
   pg = setPointGroup(k11,k12,k13,9.0)
-  displayHorizon(pg,"surf1")
+  displayHorizon(pg,ssfile)
   
 def multipleControlPoints():
   k11 = [100, 43, 35, 91, 39, 38, 82, 76, 47, 76, 
@@ -74,14 +69,39 @@ def multipleControlPoints():
           635,519,875,821,950,370,556,365,768,940]
   k13 = [433,200,495,  0,353,  9, 95,165,286,120, 
           22,547, 26,150,168,280,500,380,200,530]
-  f = readImage("f3dm")
-  p2 = readImage("f3dmp2")
-  p3 = readImage("f3dmp3")
-  ep = readImage("f3dmep")
-  wp = pow(ep,20.0) 
-  horizonExtraction(f,p2,p3,wp,k11,k12,k13,"surfm")
-  pg = setPointGroup(k11,k12,k13,12.0)
-  displayHorizon(pg,"surfm")
+  gx  = readImage(gxfile)
+  p2  = readImage(p2file)
+  p3  = readImage(p3file)
+  ep  = readImage(epfile)
+  wp = pow(ep,10.0) 
+  horizonExtraction(gx,p2,p3,wp,k11,k12,k13,smfile)
+  pg = setPointGroup(k11,k12,k13,10.0)
+  displayHorizon(pg,smfile)
+
+
+def goSurfaceRefine():
+  k11 = [100.0]
+  k12 = [335.0]
+  k13 = [433.0]
+  d1 = .2
+  c1 = 30
+  m1 = c1*2+1
+  gx = readImage(gxfile)
+  sf = readImage2(ssfile)
+  srd = SurfaceRefinerDp()
+  srd.setStrainMax(0.2,0.2)
+  srd.setErrorSmoothing(3)
+  ems = srd.getErrorMatrix(m1,d1,gx,sf)
+  sfr = zerofloat(n2,n3)
+  srd.findSurface(ems,sfr)
+  sfr = mul(sfr,d1)
+  sfr = sub(sfr,c1*d1)
+  sfr = add(sf,sfr)
+  writeImage(srfile,sfr) 
+  pg1 = setPointGroup(k11,k12,k13,9.0)
+  pg2 = setPointGroup(k11,k12,k13,9.0)
+  displayHorizon(pg1,ssfile)
+  displayHorizon(pg2,srfile)
 
 def horizonExtraction(f,p2,p3,wp,k11,k12,k13,filename):
   lmt = n1-1
@@ -195,41 +215,6 @@ def gain(x):
   return y
 
 #############################################################################
-# read/write files
-def readImage2(name):
-  fileName = seismicDir+name+".dat"
-  image = zerofloat(n2,n3)
-  ais = ArrayInputStream(fileName)
-  ais.readFloats(image)
-  ais.close()
-  return image
-  
-def readImage(name):
-  fileName = seismicDir+name+".dat"
-  n1,n2,n3 = s1.count,s2.count,s3.count
-  #n1,n2,n3 = 120,480,430
-  image = zerofloat(n1,n2,n3)
-  ais = ArrayInputStream(fileName)
-  ais.readFloats(image)
-  ais.close()
-  return image
-
-def writeImage(name,image):
-  fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)
-  aos.writeFloats(image)
-  aos.close()
-  return image
-
-def readSlice3(name):
-  fileName = seismicDir+name+".dat"
-  n1,n2 = s1.count,s2.count
-  image = zerofloat(n1,n2)
-  ais = ArrayInputStream(fileName)
-  ais.readFloats(image)
-  ais.close()
-  return image
-
 def slice12(k3,f):
   n1,n2,n3 = len(f[0][0]),len(f[0]),len(f)
   s = zerofloat(n1,n2)

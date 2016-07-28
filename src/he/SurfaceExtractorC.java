@@ -210,10 +210,8 @@ public class SurfaceExtractorC {
       v2y.zero();
       v2yy.zero();
       applyLhs(_wp,x,y);
-      //apply71(_wp,x,y);
       if (_w>0.0f) {
         applyLhs(_wp,y,yy);
-        //apply71(_wp,y,yy);
         v2y.add(1.f,v2yy,_w);
       }
     }
@@ -458,75 +456,23 @@ public class SurfaceExtractorC {
       for (int i1=1; i1<n1; ++i1) {
         float wpi = (wp!=null)?wp[i2][i1]:1.000f;
         if(wpi<0.05f) {wpi=0.05f;}
-        float wps = wpi*wpi;
-        float d11 = wps;
-        float d22 = wps;
+        float wps = wpi*wpi*0.25f;
         float xa = 0.0f;
         float xb = 0.0f;
         xa += x[i2  ][i1  ];
         xb -= x[i2  ][i1-1];
         xb += x[i2-1][i1  ];
         xa -= x[i2-1][i1-1];
-        float x1 = 0.5f*(xa+xb);
-        float x2 = 0.5f*(xa-xb);
-        float y1 = d11*x1;
-        float y2 = d22*x2;
-        float ya = 0.5f*(y1+y2);
-        float yb = 0.5f*(y1-y2);
+        float x1 = (xa+xb);
+        float x2 = (xa-xb);
+        float y1 = wps*x1;
+        float y2 = wps*x2;
+        float ya = (y1+y2);
+        float yb = (y1-y2);
         y[i2  ][i1  ] += ya;
         y[i2  ][i1-1] -= yb;
         y[i2-1][i1  ] += yb;
         y[i2-1][i1-1] -= ya;
-      }
-    }
-  }
-
-  private static final float[] C71 = {
-    0.0f, 0.830893f, -0.227266f, 0.042877f
-  };
-
-
-  private static void apply71(
-    float[][] s, float[][] x, float[][] y) 
-  {
-    final float c1 =  C71[1], c2 = C71[2], c3 = C71[3];
-    int n1 = x[0].length;
-    int n2 = x.length;
-    int i2m3,i2m2=0,i2m1=0,i2p0=0,i2p1=0,i2p2=1,i2p3=2;
-    for (int i2=0; i2<n2; ++i2) {
-      i2m3 = i2m2; i2m2 = i2m1; i2m1 = i2p0;
-      i2p0 = i2p1; i2p1 = i2p2; i2p2 = i2p3; ++i2p3;
-      if (i2p1>=n2) i2p1 = n2-1;
-      if (i2p2>=n2) i2p2 = n2-1;
-      if (i2p3>=n2) i2p3 = n2-1;
-      float[] xm3 = x[i2m3], xm2 = x[i2m2], xm1 = x[i2m1];
-      float[] xp3 = x[i2p3], xp2 = x[i2p2], xp1 = x[i2p1];
-      float[] xp0 = x[i2p0];
-      float[] ym3 = y[i2m3], ym2 = y[i2m2], ym1 = y[i2m1];
-      float[] yp3 = y[i2p3], yp2 = y[i2p2], yp1 = y[i2p1];
-      float[] yp0 = y[i2p0];
-      int m3,m2=0,m1=0,p0=0,p1=0,p2=1,p3=2;
-      for (int i1=0; i1<n1; ++i1) {
-        m3 = m2; m2 = m1; m1 = p0;
-        p0 = p1; p1 = p2; p2 = p3; ++p3;
-        if (p1>=n1) p1 = n1-1;
-        if (p2>=n1) p2 = n1-1;
-        if (p3>=n1) p3 = n1-1;
-        float csi = s[i2][i1]*s[i2][i1];
-        float x1 = c1*(xp0[p1]-xp0[m1]) +
-                   c2*(xp0[p2]-xp0[m2]) +
-                   c3*(xp0[p3]-xp0[m3]);
-        float x2 = c1*(xp1[p0]-xm1[p0]) +
-                   c2*(xp2[p0]-xm2[p0]) +
-                   c3*(xp3[p0]-xm3[p0]);
-        float y1 = csi*x1;
-        float y2 = csi*x2;
-        float c1y1 = c1*y1; yp0[p1] += c1y1; yp0[m1] -= c1y1;
-        float c2y1 = c2*y1; yp0[p2] += c2y1; yp0[m2] -= c2y1;
-        float c3y1 = c3*y1; yp0[p3] += c3y1; yp0[m3] -= c3y1;
-        float c1y2 = c1*y2; yp1[p0] += c1y2; ym1[p0] -= c1y2;
-        float c2y2 = c2*y2; yp2[p0] += c2y2; ym2[p0] -= c2y2;
-        float c3y2 = c3*y2; yp3[p0] += c3y2; ym3[p0] -= c3y2;
       }
     }
   }
@@ -557,44 +503,6 @@ public class SurfaceExtractorC {
         y[i2-1][i1-1] -= ya;
       }
     }
-  }
-
-  private static void makeRhs71(float[][] wp, float[][] q2, float[][] q3, float[][] y) {
-    zero(y);
-    int n1 = y[0].length;
-    int n2 = y.length;
-    final float c1 =  C71[1], c2 = C71[2], c3 = C71[3];
-    int i2m3,i2m2=0,i2m1=0,i2p0=0,i2p1=0,i2p2=1,i2p3=2;
-    for (int i2=0; i2<n2; ++i2) {
-      i2m3 = i2m2; i2m2 = i2m1; i2m1 = i2p0;
-      i2p0 = i2p1; i2p1 = i2p2; i2p2 = i2p3; ++i2p3;
-      if (i2p1>=n2) i2p1 = n2-1;
-      if (i2p2>=n2) i2p2 = n2-1;
-      if (i2p3>=n2) i2p3 = n2-1;
-      float[] ym3 = y[i2m3], ym2 = y[i2m2], ym1 = y[i2m1];
-      float[] yp3 = y[i2p3], yp2 = y[i2p2], yp1 = y[i2p1];
-      float[] yp0 = y[i2p0];
-      int m3,m2=0,m1=0,p0=0,p1=0,p2=1,p3=2;
-      for (int i1=0; i1<n1; ++i1) {
-        m3 = m2; m2 = m1; m1 = p0;
-        p0 = p1; p1 = p2; p2 = p3; ++p3;
-        if (p1>=n1) p1 = n1-1;
-        if (p2>=n1) p2 = n1-1;
-        if (p3>=n1) p3 = n1-1;
-        float wpi = wp[i2][i1];
-        float q2i = q2[i2][i1];
-        float q3i = q3[i2][i1];
-        float y1 = wpi*q2i;
-        float y2 = wpi*q3i;
-        float c1y1 = c1*y1; yp0[p1] += c1y1; yp0[m1] -= c1y1;
-        float c2y1 = c2*y1; yp0[p2] += c2y1; yp0[m2] -= c2y1;
-        float c3y1 = c3*y1; yp0[p3] += c3y1; yp0[m3] -= c3y1;
-        float c1y2 = c1*y2; yp1[p0] += c1y2; ym1[p0] -= c1y2;
-        float c2y2 = c2*y2; yp2[p0] += c2y2; ym2[p0] -= c2y2;
-        float c3y2 = c3*y2; yp3[p0] += c3y2; ym3[p0] -= c3y2;
-      }
-    }
-
   }
 
  

@@ -4,7 +4,8 @@ Author: Dave Hale, Colorado School of Mines
 Version: 2014.07.17
 """
 
-from fakeutils import *
+from utils import *
+setupForSubset("fake")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 gray = ColorMap.GRAY
@@ -16,39 +17,9 @@ k1,k2,k3 = 100,101,102; azimuth=240; elevation=25 # for 3D view of strips
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
-p2kfile = "p2k" # inline slopes (known)
-p3kfile = "p3k" # crossline slopes (known)
-flfile  = "fl" # fault likelihood
-fpfile  = "fp" # fault strike (phi)
-ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
-fptfile = "fpt" # fault strike thinned
-fttfile = "ftt" # fault dip thinned
-fs1file = "fs1" # fault slip (1st component)
-fs2file = "fs2" # fault slip (2nd component)
-fs3file = "fs3" # fault slip (3rd component)
-fskbase = "fsk" # fault skin (basename only)
-
-# These parameters control the scan over fault strikes and dips.
-# See the class FaultScanner for more information.
-minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
-
-# These parameters control the construction of fault skins.
-# See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.5
-minSkinSize = 3000
-
-# These parameters control the computation of fault dip slips.
-# See the class FaultSlipper for more information.
-minThrow = 0.01
-maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -93,7 +64,11 @@ def goSlopes():
   gx = readImage(gxfile)
   pmax=5
   sigma1,sigma2=8,2
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma2,pmax,gx)
+  ep = zerofloat(n1,n2,n3)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(sigma1,sigma2,sigma2,pmax)
+  lsf.findSlopes(gx,p2,p3,ep)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
@@ -111,13 +86,13 @@ def goHorizon():
   k11 = [57.0,51.0,53.0]
   k12 = [46.0,46.0,46.0]
   k13 = [69.0,55.0,36.0]
+
+  k11 = [65.0,61.0,67.0,68.0,53.0]
+  k12 = [31.0,46.0,68.0,69.0,95.0]
+  k13 = [46.0,46.0,46.0,86.0,69.0]
   k11 = [65.0,61.0,67.0,61.0,53.0]
   k12 = [31.0,46.0,68.0,89.0,95.0]
   k13 = [46.0,46.0,46.0,49.0,69.0]
-  k11 = [65.0]
-  k12 = [31.0]
-  k13 = [46.0]
-
   '''
   k11 = [83.0,77.0,85.0,80.0,70.0,90]
   k12 = [27.0,39.0,75.0,62.0,94.0,90]
@@ -149,19 +124,14 @@ def horizonExtraction(f,p2,p3,wp,k11,k12,k13,filename):
   se.setSmoothings(6.0,6.0)
   surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
   se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
-  '''
-  sr = SurfaceRefine()
-  sr.setExternalIterations(10,100)
-  sr.setWeights(0.5,0.5)
-  scale = fillfloat(1.0,n2,n3)
-  amp = se.updateWeights(surf,f)
-  avg = -1.0*sum(amp)/abs(sum(amp))
-  sr.surfaceRefine(scale,mul(f,avg),surf,0.01)
-  sc = SetupConstraints()
-  sc.setForExtension(4.0,4.0,0.0)
-  surf = sc.extend(k11,k12,k13,n2,n3,p2,p3,wp,f)
-  '''
 
+  gx = readImage(gxfile)
+  sr = SurfaceRefiner()
+  wp = mul(10,wp)
+  gs = div(gx,max(abs(gx)))
+  sr.surfaceUpdateFromAmplitudes(wp,gs,p2,p3,k11,k12,k13,surf)
+  wp = mul(0.1,wp)
+  sr.surfaceUpdateFromAmplitudes(wp,gs,p2,p3,k11,k12,k13,surf)
   writeImage(filename,surf) 
 
 def setPointGroup(k1,k2,k3,size):
