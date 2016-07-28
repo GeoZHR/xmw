@@ -47,9 +47,9 @@ def main(args):
   #goContour()
   
   #goExForce()
-  #goSnakeReal()
+  goSnakeReal()
   #goExForceF3d()
-  goChannel()
+  #goChannel()
 def goChannel():
   fx = readImage(fxfile)
   fx = div(fx,10000)

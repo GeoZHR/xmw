@@ -206,14 +206,12 @@ public class SurfaceExtractorC {
       float[][] y = v2y.getArray();
       int n1 = y[0].length; int n2 = y.length;
       float[][] yy = new float[n2][n1];
-      float[][] yt = new float[n2][n1];
       VecArrayFloat2 v2yy = new VecArrayFloat2(yy);
       v2y.zero();
       v2yy.zero();
       applyLhs(_wp,x,y);
       if (_w>0.0f) {
-        applyLhs(_wp,x,yt);
-        applyLhs(_wp,yt,yy);
+        applyLhs(_wp,y,yy);
         v2y.add(1.f,v2yy,_w);
       }
     }
@@ -221,7 +219,7 @@ public class SurfaceExtractorC {
     private float _w;
   }
 
-   // Preconditioner; includes smoothers and (optional) constraints.
+  // Preconditioner; includes smoothers and (optional) constraints.
   private static class M2 implements CgSolver.A {
     M2(float sigma1, float sigma2, float[][] wp, float[] k2, float[] k3) {
       _sigma1 = sigma1;
@@ -458,21 +456,19 @@ public class SurfaceExtractorC {
       for (int i1=1; i1<n1; ++i1) {
         float wpi = (wp!=null)?wp[i2][i1]:1.000f;
         if(wpi<0.05f) {wpi=0.05f;}
-        float wps = wpi*wpi;
-        float d11 = wps;
-        float d22 = wps;
+        float wps = wpi*wpi*0.25f;
         float xa = 0.0f;
         float xb = 0.0f;
         xa += x[i2  ][i1  ];
         xb -= x[i2  ][i1-1];
         xb += x[i2-1][i1  ];
         xa -= x[i2-1][i1-1];
-        float x1 = 0.5f*(xa+xb);
-        float x2 = 0.5f*(xa-xb);
-        float y1 = d11*x1;
-        float y2 = d22*x2;
-        float ya = 0.5f*(y1+y2);
-        float yb = 0.5f*(y1-y2);
+        float x1 = (xa+xb);
+        float x2 = (xa-xb);
+        float y1 = wps*x1;
+        float y2 = wps*x2;
+        float ya = (y1+y2);
+        float yb = (y1-y2);
         y[i2  ][i1  ] += ya;
         y[i2  ][i1-1] -= yb;
         y[i2-1][i1  ] += yb;
@@ -480,6 +476,7 @@ public class SurfaceExtractorC {
       }
     }
   }
+
   
   //private static void makeRhs
   private static void makeRhs(float[][] wp, float[][] p2, float[][] p3, float[][] y) {
@@ -507,6 +504,7 @@ public class SurfaceExtractorC {
       }
     }
   }
+
  
   // use 3 points to fit a parabolic curve and find its peak
   private float parabolicPeak(float z, float um, float ui, float up) {

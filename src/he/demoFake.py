@@ -4,7 +4,8 @@ Author: Dave Hale, Colorado School of Mines
 Version: 2014.07.17
 """
 
-from fakeutils import *
+from utils import *
+setupForSubset("fake")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 gray = ColorMap.GRAY
@@ -16,62 +17,21 @@ k1,k2,k3 = 100,101,102; azimuth=240; elevation=25 # for 3D view of strips
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
-p2kfile = "p2k" # inline slopes (known)
-p3kfile = "p3k" # crossline slopes (known)
-flfile  = "fl" # fault likelihood
-fpfile  = "fp" # fault strike (phi)
-ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
-fptfile = "fpt" # fault strike thinned
-fttfile = "ftt" # fault dip thinned
-fs1file = "fs1" # fault slip (1st component)
-fs2file = "fs2" # fault slip (2nd component)
-fs3file = "fs3" # fault slip (3rd component)
-fskbase = "fsk" # fault skin (basename only)
-
-# These parameters control the scan over fault strikes and dips.
-# See the class FaultScanner for more information.
-minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
-
-# These parameters control the construction of fault skins.
-# See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.5
-minSkinSize = 3000
-
-# These parameters control the computation of fault dip slips.
-# See the class FaultSlipper for more information.
-minThrow = 0.01
-maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-#pngDir = None
-pngDir = "../../../png/ipf/"
+pngDir = None
+#pngDir = "../../../png/ipf/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  #goWeights()
-  goSlopes(4.0,2.0,5.0)
+  goSlopes()
   goHorizon()
-
-def goWeights():
-  goSlopes(16.0,1.0,5.0)
-  goScan()
-  goThin()
-  goSmooth()
-  goSkin()
-  goSlip()
-  goCleanFl()
-
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
@@ -99,10 +59,16 @@ def goFakeData():
   #plot3(gx,p2,cmap=bwrNotch(1.0))
   #plot3(gx,p3,cmap=bwrNotch(1.0))
 
-def goSlopes(sigma1,sigma2,pmax):
+def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma2,pmax,gx)
+  pmax=5
+  sigma1,sigma2=8,2
+  ep = zerofloat(n1,n2,n3)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(sigma1,sigma2,sigma2,pmax)
+  lsf.findSlopes(gx,p2,p3,ep)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
@@ -116,134 +82,14 @@ def goSlopes(sigma1,sigma2,pmax):
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
 
-def goScan():
-  print "goScan ..."
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gx = readImage(gxfile)
-  gx = FaultScanner.taper(10,0,0,gx)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
-  print "fl min =",min(fl)," max =",max(fl)
-  print "fp min =",min(fp)," max =",max(fp)
-  print "ft min =",min(ft)," max =",max(ft)
-  writeImage(flfile,fl)
-  writeImage(fpfile,fp)
-  writeImage(ftfile,ft)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
-
-def goThin():
-  print "goThin ..."
-  gx = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
-
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
-
-def goSmooth():
-  print "goSmooth ..."
-  flstop = 0.1
-  fsigma = 8.0
-  gx = readImage(gxfile)
-  flt = readImage(fltfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
-  writeImage(gsxfile,gsx)
-  plot3(gx,clab="Amplitude")
-  plot3(gsx,clab="Amplitude",png="gsx")
-
-def goSkin():
-  print "goSkin ..."
-  gx = readImage(gxfile)
-  gsx = readImage(gsxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMinSkinSize(minSkinSize)
-  cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  print "total number of cells =",len(cells)
-  print "total number of skins =",len(skins)
-  print "number of cells in skins =",FaultSkin.countCells(skins)
-  removeAllSkinFiles(fskbase)
-  writeSkins(fskbase,skins)
-  plot3(gx,cells=cells,png="cells")
-  plot3(gx,skins=skins,png="skins")
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
-
-def goCleanFl():
-  ep  = readImage(flfile)
-  skins = readSkins(fskbase)
-  flt = fillfloat(1.0,n1,n2,n3)
-  for skin in skins:
-    for cell in skin:
-      i1 = round(cell.getX1())
-      i2 = round(cell.getX2())
-      i3 = round(cell.getX3())
-      if i1>=n1:
-        i1 = n1-1
-      flt[i3  ][i2  ][i1] = 1.0-ep[i3  ][i2  ][i1]
-      flt[i3+1][i2  ][i1] = 1.0-ep[i3+1][i2  ][i1] 
-      flt[i3+2][i2  ][i1] = 1.0-ep[i3+2][i2  ][i1] 
-      flt[i3-1][i2  ][i1] = 1.0-ep[i3-1][i2  ][i1] 
-      flt[i3-2][i2  ][i1] = 1.0-ep[i3-2][i2  ][i1] 
-      flt[i3  ][i2+1][i1] = 1.0-ep[i3  ][i2+1][i1] 
-      flt[i3  ][i2+2][i1] = 1.0-ep[i3  ][i2+2][i1] 
-      flt[i3  ][i2-1][i1] = 1.0-ep[i3  ][i2-1][i1] 
-      flt[i3  ][i2-2][i1] = 1.0-ep[i3  ][i2-2][i1] 
-      flt[i3+1][i2+1][i1] = 1.0-ep[i3+1][i2+1][i1] 
-      flt[i3+2][i2+2][i1] = 1.0-ep[i3+2][i2+2][i1] 
-      flt[i3-1][i2-1][i1] = 1.0-ep[i3-1][i2-1][i1] 
-      flt[i3-2][i2-2][i1] = 1.0-ep[i3-2][i2-2][i1] 
-  writeImage("fltClean",flt)
-  plot3(flt)
-
 def goHorizon():
   k11 = [57.0,51.0,53.0]
   k12 = [46.0,46.0,46.0]
   k13 = [69.0,55.0,36.0]
+
+  k11 = [65.0,61.0,67.0,68.0,53.0]
+  k12 = [31.0,46.0,68.0,69.0,95.0]
+  k13 = [46.0,46.0,46.0,86.0,69.0]
   k11 = [65.0,61.0,67.0,61.0,53.0]
   k12 = [31.0,46.0,68.0,89.0,95.0]
   k13 = [46.0,46.0,46.0,49.0,69.0]
@@ -265,9 +111,6 @@ def goHorizon():
   p2 = readImage(p2file)
   p3 = readImage(p3file)
   ep = readImage(epfile)
-  fltc = readImage("fltClean")
-  ep = pow(ep,1.0) 
-  mul(fltc,ep,ep)
   ep = pow(ep,6.0) 
   horizonExtraction(gx,p2,p3,ep,k11,k12,k13,"surf1")
   pg = setPointGroup(k11,k12,k13,2.0)
@@ -278,22 +121,17 @@ def horizonExtraction(f,p2,p3,wp,k11,k12,k13,filename):
   k11=se.refineConstraints(k11,k12,k13,f)
   se.setCG(0.01,200)
   se.setWeights(0.0)
-  se.setSmoothings(4.0,4.0)
+  se.setSmoothings(6.0,6.0)
   surf = se.surfaceInitialization(n2,n3,lmt,k11,k12,k13)
   se.surfaceUpdateFromSlopes(wp,p2,p3,k11,k12,k13,surf)
-  '''
-  sr = SurfaceRefine()
-  sr.setExternalIterations(10,100)
-  sr.setWeights(0.5,0.5)
-  scale = fillfloat(1.0,n2,n3)
-  amp = se.updateWeights(surf,f)
-  avg = -1.0*sum(amp)/abs(sum(amp))
-  sr.surfaceRefine(scale,mul(f,avg),surf,0.01)
-  sc = SetupConstraints()
-  sc.setForExtension(4.0,4.0,0.0)
-  surf = sc.extend(k11,k12,k13,n2,n3,p2,p3,wp,f)
-  '''
 
+  gx = readImage(gxfile)
+  sr = SurfaceRefiner()
+  wp = mul(10,wp)
+  gs = div(gx,max(abs(gx)))
+  sr.surfaceUpdateFromAmplitudes(wp,gs,p2,p3,k11,k12,k13,surf)
+  wp = mul(0.1,wp)
+  sr.surfaceUpdateFromAmplitudes(wp,gs,p2,p3,k11,k12,k13,surf)
   writeImage(filename,surf) 
 
 def setPointGroup(k1,k2,k3,size):
