@@ -155,7 +155,6 @@ def goChannel():
   '''
 
 
-
 def goSlices():
   gu = readImage(gufile)
   gu = gain(gu)
