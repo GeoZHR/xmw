@@ -475,12 +475,12 @@ public class StratigraphicOrientFilter {
     computeOrientGradient(u1,u2,u3,v1,v2,v3,w1,w2,w3,fx,gu,gv,gw);
     computeGradientProducts(gu,gv,gw,guu,guv,guw,gvv,gvw,gww);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.apply(d,20,guu,guu);
-    lsf.apply(d,20,guv,guv);
-    lsf.apply(d,20,guw,guw);
-    lsf.apply(d,20,gvv,gvv);
-    lsf.apply(d,20,gvw,gvw);
-    lsf.apply(d,20,gww,gww);
+    lsf.apply(d,10,guu,guu);
+    lsf.apply(d,10,guv,guv);
+    lsf.apply(d,10,guw,guw);
+    lsf.apply(d,10,gvv,gvv);
+    lsf.apply(d,10,gvw,gvw);
+    lsf.apply(d,10,gww,gww);
 
     float[][][] x1 = new float[n3][n2][n1];
     float[][][] x2 = new float[n3][n2][n1];
@@ -519,28 +519,6 @@ public class StratigraphicOrientFilter {
       float z2i = z2[i3][i2][i1];
       float z3i = z3[i3][i2][i1];
 
-      if (u3i<0f) {
-        u1i = -u1i;
-        u2i = -u2i;
-        u3i = -u3i;
-      }
-      if (w3i<0f) {
-        w1i = -w1i;
-        w2i = -w2i;
-        w3i = -w3i;
-      }
-      if (x3i<0f) {
-        x1i = -x1i;
-        x2i = -x2i;
-        x3i = -x3i;
-      }
-      if (z3i<0f) {
-        z1i = -z1i;
-        z2i = -z2i;
-        z3i = -z3i;
-      }
-
-
       float a1i = u1i*x1i+u2i*x2i+u3i*x3i;
       float a2i = v1i*x1i+v2i*x2i+v3i*x3i;
       float a3i = w1i*x1i+w2i*x2i+w3i*x3i;
@@ -562,14 +540,8 @@ public class StratigraphicOrientFilter {
       a2[i3][i2][i1] = a2i;
       c1[i3][i2][i1] = c1i;
       c2[i3][i2][i1] = c2i;
-      u1[i3][i2][i1] = u1i;
-      u2[i3][i2][i1] = u2i;
-      u3[i3][i2][i1] = u3i;
-      w1[i3][i2][i1] = w1i;
-      w2[i3][i2][i1] = w2i;
-      w3[i3][i2][i1] = w3i;
     }}}
-    return new EigenTensors3(u1,u2,w1,w2,au,av,aw,true);
+    return new EigenTensors3(a1,a2,c1,c2,au,av,aw,true);
   }
 
   /**
@@ -1065,6 +1037,7 @@ public class StratigraphicOrientFilter {
             float w1i = (float)z[2][0];
             float w2i = (float)z[2][1];
             float w3i = (float)z[2][2];
+            /*
             if (u1i<0.0f) {
               u1i = -u1i;
               u2i = -u2i;
@@ -1080,6 +1053,7 @@ public class StratigraphicOrientFilter {
               w2i = -w2i;
               w3i = -w3i;
             }
+            */
             float eui = (float)e[0];
             float evi = (float)e[1];
             float ewi = (float)e[2];
