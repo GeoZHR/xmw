@@ -154,7 +154,8 @@ public class SurfaceExtractorC {
         double x2i = (double)i2;
         double x3i = (double)i3;
         double x1i = (double)surf[i3][i2];
-	      wi[i3][i2] = wsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,w,x1i,x2i,x3i);
+	      wi[i3][i2] = 
+          wsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,w,x1i,x2i,x3i);
       }
     }
     return wi;
@@ -175,10 +176,13 @@ public class SurfaceExtractorC {
         double x2i = (double)i2;
         double x3i = (double)i3;
         double x1i = (double)surf[i3][i2];
-	      float wi = wsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,ep,x1i,x2i,x3i);
+	      float wi = 
+          wsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,ep,x1i,x2i,x3i);
         wi1[i3][i2] = (wi>0.0005f)?wi:0.0005f;
-        pi1[i3][i2] = psi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0, p,x1i,x2i,x3i);
-	      qi1[i3][i2] = qsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0, q,x1i,x2i,x3i);
+        pi1[i3][i2] = 
+          psi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0, p,x1i,x2i,x3i);
+	      qi1[i3][i2] = 
+          qsi.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0, q,x1i,x2i,x3i);
       }
     }
   }
@@ -356,7 +360,6 @@ public class SurfaceExtractorC {
     }
   }
 
-
   private static void constraintForce
     (float[] k2, float[] k3, float[][] fp, float[][] fi, float[] cf)
   {
@@ -489,14 +492,11 @@ public class SurfaceExtractorC {
         if(wpi<0.05f) {wpi=0.05f;}
         float p2i = p2[i2][i1];
         float p3i = p3[i2][i1];
-        float b11 = wpi;
-        float b22 = wpi;
-        float x1 = wpi*p2i;
-        float x2 = wpi*p3i;
-        float y1 = b11*x1;
-        float y2 = b22*x2;
-        float ya = 0.5f*(y1+y2);
-        float yb = 0.5f*(y1-y2);
+        float wps = wpi*wpi*0.5f;
+        float y1 = wps*p2i;
+        float y2 = wps*p3i;
+        float ya = (y1+y2);
+        float yb = (y1-y2);
         y[i2  ][i1  ] += ya;
         y[i2  ][i1-1] -= yb;
         y[i2-1][i1  ] += yb;

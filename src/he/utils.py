@@ -34,7 +34,7 @@ def setupForSubset(name):
   elif name=="nwc":
     print "setupForSubset: nwc"
     seismicDir = _datdir+"nwc/"
-    n1,n2,n3 = 350,601,401  #fx=gx(:,0:2:end,:)
+    n1,n2,n3 = 651,601,401  #fx=gx(:,0:2:end,:)
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
@@ -108,11 +108,11 @@ def writeImage(name,image):
 # read/write fault skins
 
 def skinName(basename,index):
-  return basename+("%03i"%(index))
+  return basename+("%05i"%(index))
 def skinIndex(basename,fileName):
   assert fileName.startswith(basename)
   i = len(basename)
-  return int(fileName[i:i+3])
+  return int(fileName[i:i+5])
 
 def listAllSkinFiles(basename):
   """ Lists all skins with specified basename, sorted by index. """

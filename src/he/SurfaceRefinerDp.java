@@ -5,6 +5,7 @@ import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 import vec.*;
+import mef.*;
 import util.*;
 
 /**
@@ -187,7 +188,7 @@ public class SurfaceRefinerDp {
     int n3 = gx.length;
     int n2 = gx[0].length;
     int n1 = gx[0][0].length;
-    float[][][] em = new float[n3][n2][n1];
+    float[][][] em = new float[n3][n2][m1];
     int c1 = (m1-1)/2;
     SincInterpolator si = new SincInterpolator();
     for (int i3=0; i3<n3; ++i3) {
@@ -197,6 +198,35 @@ public class SurfaceRefinerDp {
       em[i3][i2][k1+c1] = si.interpolate(n1,1,0,n2,1,0,n3,1,0,gx,x1,i2,i3);
     }}}
     return em;
+  }
+
+
+  public float[][][][] getErrorMatrix(
+    int m1, float d1, FaultSkin[] sks, float[][][] gx, float[][] sf) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    final float[][][] fl = new float[n3][n2][n1];
+    for (FaultSkin ski:sks) {
+    for (FaultCell fci:ski) {
+      int i1 = fci.getI1();
+      int i2 = fci.getI2();
+      int i3 = fci.getI3();
+      fl[i3][i2][i1] = 1f;
+    }}
+    float[][][] em = new float[n3][n2][m1];
+    float[][][] fm = new float[n3][n2][m1];
+    int c1 = (m1-1)/2;
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int k1=-c1; k1<=c1; ++k1) {
+      float x1 = k1*d1+sf[i3][i2];
+      em[i3][i2][k1+c1] = si.interpolate(n1,1,0,n2,1,0,n3,1,0,gx,x1,i2,i3);
+      fm[i3][i2][k1+c1] = fl[i3][i2][round(x1)];
+    }}}
+
+    return new float[][][][] {fm,em};
   }
 
 
@@ -225,9 +255,9 @@ public class SurfaceRefinerDp {
    * @param u output array of shifts u.
    */
   public void findSurface(float[][][] e, float[][] u) {
-    final int nl = e[0][0].length;
-    final int n1 = e[0].length;
     final int n2 = e.length;
+    final int n1 = e[0].length;
+    final int nl = e[0][0].length;
     final float[][] uf = u;
     for (int is=0; is<_esmooth; ++is)
       smoothErrors(e,e);
@@ -241,6 +271,25 @@ public class SurfaceRefinerDp {
     }});
     smoothShifts(u,u);
   }
+
+  public void findSurface(float[][][] fl, float[][][] e, float[][] u) {
+    final int n2 = e.length;
+    final int n1 = e[0].length;
+    final int nl = e[0][0].length;
+    final float[][] uf = u;
+    for (int is=0; is<_esmooth; ++is)
+      smoothErrors(fl,e,e);
+    final Parallel.Unsafe<float[][]> du = new Parallel.Unsafe<float[][]>();
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[][] d = du.get();
+      if (d==null) du.set(d=new float[n1][nl]);
+      accumulateForward(e[i2],d);
+      backtrackReverse(d,e[i2],uf[i2]);
+    }});
+    smoothShifts(u,u);
+  }
+
 
 
   /**
@@ -288,6 +337,14 @@ public class SurfaceRefinerDp {
     smoothErrors2(_bstrain2,es,es);
     normalizeErrors(es);
   }
+
+  public void smoothErrors(float[][][] fl, float[][][] e, float[][][] es) {
+    smoothErrors1(_bstrain1,fl,e,es);
+    normalizeErrors(es);
+    smoothErrors2(_bstrain2,fl,es,es);
+    normalizeErrors(es);
+  }
+
 
   /**
    * Smooths (and normalizes) alignment errors in only the 1st dimension.
@@ -427,6 +484,11 @@ public class SurfaceRefinerDp {
     accumulate( 1,_bstrain1,e,d);
   }
 
+  public void accumulateForward(float[][] fl, float[][] e, float[][] d) {
+    accumulate( 1,_bstrain1,fl,e,d);
+  }
+
+
   /**
    * Accumulates alignment errors in reverse direction.
    * @param e input array of alignment errors.
@@ -538,6 +600,13 @@ public class SurfaceRefinerDp {
   public void backtrackReverse(float[][] d, float[][] e, float[] u) {
     backtrack(-1,_bstrain1,d,e,u);
   }
+
+  public void backtrackReverse(
+    float[][] fl, float[][] d, float[][] e, float[] u) 
+  {
+    backtrack(-1,_bstrain1,fl, d,e,u);
+  }
+
 
   /**
    * Computes shifts by backtracking in reverse direction in 1st dimension.
@@ -707,6 +776,10 @@ public class SurfaceRefinerDp {
   private int[] _cs = null;
   private int[] _lmins = null;
   private int[] _lmaxs = null;
+  private int[][] _lmins1 = null;
+  private int[][] _lmins2 = null;
+  private int[][] _lmaxs1 = null;
+  private int[][] _lmaxs2 = null;
 
   // Conjugate-gradient operators.
   private static class A2 implements CgSolver.A {
@@ -836,6 +909,38 @@ public class SurfaceRefinerDp {
       }
     }
   }
+
+  private void accumulate(
+    int dir, int b, float[][] fl, float[][] e, float[][] d) 
+  {
+    int nl = e[0].length;
+    int ni = e.length;
+    int nlm1 = nl-1;
+    int nim1 = ni-1;
+    int ib = (dir>0)?0:nim1;
+    int ie = (dir>0)?ni:-1;
+    int is = (dir>0)?1:-1;
+    for (int il=0; il<nl; ++il)
+      d[ib][il] = 0.0f;
+    for (int ii=ib; ii!=ie; ii+=is) {
+      int ji = max(0,min(nim1,ii-is));
+      int jb = max(0,min(nim1,ii-is*b));
+      for (int il=0; il<nl; ++il) {
+        int ilm1 = il-1; if (ilm1==-1) ilm1 = 0;
+        int ilp1 = il+1; if (ilp1==nl) ilp1 = nlm1;
+        float dm = d[jb][ilm1];
+        float di = d[ji][il  ];
+        float dp = d[jb][ilp1];
+        for (int kb=ji; kb!=jb; kb-=is) {
+          dm += e[kb][ilm1];
+          dp += e[kb][ilp1];
+          if(fl[kb][ilm1]==1f||fl[kb][ilp1]==1f) {break;}
+        }
+        d[ii][il] = min3(dm,di,dp)+e[ii][il];
+      }
+    }
+  }
+
 
     /**
    * Non-linear accumulation of alignment errors.
@@ -997,6 +1102,62 @@ public class SurfaceRefinerDp {
       }
     }
   }
+
+  private void backtrack(
+    int dir, int b, float[][] fl, float[][] d, float[][] e, float[] u) 
+  {
+    float ob = 1.0f/b;
+    int nl = d[0].length;
+    int ni = d.length;
+    int nlm1 = nl-1;
+    int nim1 = ni-1;
+    int ib = (dir>0)?0:nim1;
+    int ie = (dir>0)?nim1:0;
+    int is = (dir>0)?1:-1;
+    int ii = ib;
+    int il = 0;
+    float dl = d[ii][il];
+    for (int jl=1; jl<nl; ++jl) {
+      if (d[ii][jl]<dl) {
+        dl = d[ii][jl];
+        il = jl;
+      }
+    }
+    u[ii] = il;
+    while (ii!=ie) {
+      int ji = max(0,min(nim1,ii+is));
+      int jb = max(0,min(nim1,ii+is*b));
+      int ilm1 = il-1; if (ilm1==-1) ilm1 = 0;
+      int ilp1 = il+1; if (ilp1==nl) ilp1 = nlm1;
+      float dm = d[jb][ilm1];
+      float di = d[ji][il  ];
+      float dp = d[jb][ilp1];
+      for (int kb=ji; kb!=jb; kb+=is) {
+        dm += e[kb][ilm1];
+        dp += e[kb][ilp1];
+        if(fl[kb][ilm1]==1f||fl[kb][ilp1]==1f) {break;}
+      }
+      dl = min3(dm,di,dp);
+      if (dl!=di) {
+        if (dl==dm) {
+          il = ilm1;
+        } else {
+          il = ilp1;
+        }
+      }
+      ii += is;
+      u[ii] = il;
+      if (il==ilm1 || il==ilp1) {
+        float du = (u[ii]-u[ii-is])*ob;
+        u[ii] = u[ii-is]+du;
+        for (int kb=ji; kb!=jb; kb+=is) {
+          ii += is;
+          u[ii] = u[ii-is]+du;
+        }
+      }
+    }
+  }
+
 
   private void backtrackX(
     int dir, int b, float[][] d, float[][] e, float[] u) 
@@ -1180,6 +1341,19 @@ public class SurfaceRefinerDp {
         es[i1][il] = ef[i1][il]+er[i1][il]-e[i1][il];
   }
 
+  private void smoothErrors1(int b, float[][] fl, float[][] e, float[][] es) {
+    int nl = e[0].length;
+    int n1 = e.length;
+    float[][] ef = new float[n1][nl];
+    float[][] er = new float[n1][nl];
+    accumulate( 1,b,fl,e,ef);
+    accumulate(-1,b,fl,e,er);
+    for (int i1=0; i1<n1; ++i1)
+      for (int il=0; il<nl; ++il)
+        es[i1][il] = ef[i1][il]+er[i1][il]-e[i1][il];
+  }
+
+
   /**
    * Smooths alignment errors in 1st dimension.
    * Does not normalize errors after smoothing.
@@ -1197,6 +1371,20 @@ public class SurfaceRefinerDp {
       smoothErrors1(bf,ef[i2],esf[i2]);
     }});
   }
+
+  private void smoothErrors1(
+    int b, float[][][] fl, float[][][] e, float[][][] es) {
+    final int n2 = e.length;
+    final int bf = b;
+    final float[][][] ef = e;
+    final float[][][] esf = es;
+    final float[][][] flf = fl;
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      smoothErrors1(bf,flf[i2],ef[i2],esf[i2]);
+    }});
+  }
+
 
   /**
    * Smooths alignment errors in 2nd dimension.
@@ -1239,6 +1427,47 @@ public class SurfaceRefinerDp {
       }
     }});
   }
+
+  private void smoothErrors2(
+    int b, float[][][] fl, float[][][] e, float[][][] es) 
+  {
+    final int nl = e[0][0].length;
+    final int n1 = e[0].length;
+    final int n2 = e.length;
+    final int bf = b;
+    final float[][][]  ef = e;
+    final float[][][] esf = es;
+    final float[][][] flf = fl;
+    final Parallel.Unsafe<float[][][]> eeu = 
+      new Parallel.Unsafe<float[][][]>();
+    Parallel.loop(n1,new Parallel.LoopInt() {
+    public void compute(int i1) {
+      float[][][] ee = eeu.get();
+      if (ee==null) eeu.set(ee=new float[5][n2][nl]);
+      float[][]  e1 = ee[0];
+      float[][] es1 = ee[1];
+      float[][] ef1 = ee[2];
+      float[][] er1 = ee[3];
+      float[][] fl1 = ee[4];
+      for (int i2=0; i2<n2; ++i2) {
+         e1[i2] =  ef[i2][i1];
+        es1[i2] = esf[i2][i1];
+        fl1[i2] = flf[i2][i1];
+        for (int il=0; il<nl; ++il) {
+          ef1[i2][il] = 0.0f;
+          er1[i2][il] = 0.0f;
+        }
+      }
+      accumulate( 1,bf,fl1,e1,ef1);
+      accumulate(-1,bf,fl1,e1,er1);
+      for (int i2=0; i2<n2; ++i2) {
+        for (int il=0; il<nl; ++il) {
+          es1[i2][il] = ef1[i2][il]+er1[i2][il]-e1[i2][il];
+        }
+      }
+    }});
+  }
+
 
   private float min3(float a, float b, float c) {
     return b<=a?(b<=c?b:c):(a<=c?a:c); // if equal, choose b

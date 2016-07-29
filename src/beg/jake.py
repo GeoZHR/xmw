@@ -116,7 +116,7 @@ def main(args):
   #goSkinBig()
   #goFlatten()
   #goResults()
-  fw = readImage("gu")
+  fw = readImage("gx")
   plot3(fw)
   '''
   fk1 = zerofloat(n2-910,n3)
