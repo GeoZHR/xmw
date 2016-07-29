@@ -440,15 +440,6 @@ public class StratigraphicOrientFilter {
       null,el);
   }
 
-  /**
-   * Applies this filter to estimate compressed 3-D structure tensors.
-   * @param x input array for 3-D image.
-   * @return structure tensors.
-   */
-  public EigenTensors3 applyForTensors(
-    float[][][] p2, float[][][] p3, float[][][] x) {
-    return applyForTensors(p2,p3,x,true);
-  }
 
   /**
    * Applies this filter to estimate 3-D structure tensors.
@@ -457,42 +448,31 @@ public class StratigraphicOrientFilter {
    * @return structure tensors.
    */
   public EigenTensors3 applyForTensors(
-    float[][][] p2, float[][][] p3, float[][][] x, boolean compressed) 
+    float[][][] u1, float[][][] u2, float[][][] u3,
+    float[][][] v1, float[][][] v2, float[][][] v3,
+    float[][][] w1, float[][][] w2, float[][][] w3,
+    float[][][] ep, float[][][] el,
+    float[][][] x) 
   {
     int n3 = x.length;
     int n2 = x[0].length;
     int n1 = x[0][0].length;
-    float[][][] u1 = new float[n3][n2][n1];
-    float[][][] u2 = new float[n3][n2][n1];
-    float[][][] u3 = new float[n3][n2][n1];
-    EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float p2i = p2[i3][i2][i1];
-          float p3i = p3[i3][i2][i1];
-          float u1i = 1.0f/sqrt(1.0f+p2i*p2i+p3i*p3i);
-          float u2i = -p2i*u1i;
-          float u3i = -p3i*u1i;
-          float usi = 1.0f/sqrt(u1i*u1i+u2i*u2i);
-          float w1i = -u2i*usi;
-          float w2i =  u1i*usi;
-          float w3i = 0.0f;
-          d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
-          d.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
-          u1[i3][i2][i1] = u1i;
-          u2[i3][i2][i1] = u2i;
-          u3[i3][i2][i1] = u3i;
-        }
-      }
-    }
-    d.setEigenvalues(0.2f,1.00f,1.00f);
-    float[][][] g2 = new float[n3][n2][n1];
-    float[][][] g3 = new float[n3][n2][n1];
-    computeStructureOrientedGradientX(x,p2,p3,g2,g3);
-    float[][][] g22 = mul(g2,g2);
-    float[][][] g23 = mul(g2,g3);
-    float[][][] g33 = mul(g3,g3);
+    float[][][] au = fillfloat(0.5f,n1,n2,n3);
+    float[][][] av = fillfloat(1.0f,n1,n2,n3);
+    float[][][] aw = fillfloat(1.0f,n1,n2,n3);
+    EigenTensors3 d = new EigenTensors3(u1,u2,w1,w2,au,av,aw,true);
+    
+    float[][][] gu = new float[n3][n2][n1];
+    float[][][] gv = new float[n3][n2][n1];
+    float[][][] gw = new float[n3][n2][n1];
+    float[][][] guu = new float[n3][n2][n1];
+    float[][][] guv = new float[n3][n2][n1];
+    float[][][] guw = new float[n3][n2][n1];
+    float[][][] gvv = new float[n3][n2][n1];
+    float[][][] gvw = new float[n3][n2][n1];
+    float[][][] gww = new float[n3][n2][n1];
+    computeOrientGradient(u1,u2,u3,v1,v2,v3,w1,w2,w3,x,gu,gv,gw);
+    computeGradientProducts(gu,gv,gw,guu,guv,guw,gvv,gvw,gww);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     /*
     RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(2);
@@ -509,38 +489,52 @@ public class StratigraphicOrientFilter {
     rgf2.applyXX0(g23,g23);
     rgf2.applyXX0(g33,g33);
     */
-    lsf.apply(d,20,g22,g22);
-    lsf.apply(d,20,g23,g23);
-    lsf.apply(d,20,g33,g33);
-    float[][] a = new float[2][2];
-    float[][] z = new float[2][2];
-    float[] e = new float[2];
-    EigenTensors3 et = new EigenTensors3(n1,n2,n3,true);
+    lsf.apply(d,20,guu,guu);
+    lsf.apply(d,20,guv,guv);
+    lsf.apply(d,20,guw,guw);
+    lsf.apply(d,20,gvv,gvv);
+    lsf.apply(d,20,gvw,gvw);
+    lsf.apply(d,20,gww,gww);
+
+    float[][][] x1 = new float[n3][n2][n1];
+    float[][][] x2 = new float[n3][n2][n1];
+    float[][][] x3 = new float[n3][n2][n1];
+    float[][][] y1 = new float[n3][n2][n1];
+    float[][][] y2 = new float[n3][n2][n1];
+    float[][][] y3 = new float[n3][n2][n1];
+    float[][][] z1 = new float[n3][n2][n1];
+    float[][][] z2 = new float[n3][n2][n1];
+    float[][][] z3 = new float[n3][n2][n1];
+    float[][][] a1 = new float[n3][n2][n1];
+    float[][][] a2 = new float[n3][n2][n1];
+    float[][][] c1 = new float[n3][n2][n1];
+    float[][][] c2 = new float[n3][n2][n1];
+    solveEigenproblems(guu,guv,guw,gvv,gvw,gww,
+      null,null,x1,x2,x3,y1,y2,y3,z1,z2,z3,au,av,aw,ep,el);
     for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          float u1i = u1[i3][i2][i1];
-          float u2i = u2[i3][i2][i1];
-          float u3i = u3[i3][i2][i1];
-          a[0][0] = g22[i3][i2][i1];
-          a[0][1] = g23[i3][i2][i1];
-          a[1][0] = g23[i3][i2][i1];
-          a[1][1] = g33[i3][i2][i1];
-          Eigen.solveSymmetric22(a,z,e);
-          float w2i = z[1][0];
-          float w3i = z[1][1];
-          float w1i = (-u2i*w2i-u3i*w3i)/u1i; 
-          float wsi = 1f/sqrt(w1i*w1i+w2i*w2i+w3i*w3i);
-          w1i *= wsi;
-          w2i *= wsi;
-          w3i *= wsi;
-          et.setEigenvalues(i1,i2,i3,1f,1f,1f);
-          et.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
-          et.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
-        }
-      }
-    }
-    return et;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float u1i = u1[i3][i2][i1];
+      float u2i = u2[i3][i2][i1];
+      float u3i = u3[i3][i2][i1];
+      float v1i = v1[i3][i2][i1];
+      float v2i = v2[i3][i2][i1];
+      float v3i = v3[i3][i2][i1];
+      float x1i = x1[i3][i2][i1];
+      float x2i = x2[i3][i2][i1];
+      float x3i = x3[i3][i2][i1];
+      float z1i = z1[i3][i2][i1];
+      float z2i = z2[i3][i2][i1];
+      float z3i = z3[i3][i2][i1];
+
+      a1[i3][i2][i1] = u1i*x1i+u2i*x2i+u3i*x3i;
+      a2[i3][i2][i1] = v1i*x1i+v2i*x2i+v3i*x3i;
+      c1[i3][i2][i1] = u1i*z1i+u2i*z2i+u3i*z3i;
+      c2[i3][i2][i1] = v1i*z1i+v2i*z2i+v3i*z3i;
+
+
+    }}}
+    return new EigenTensors3(a1,a2,c1,c2,au,av,aw,true);
   }
 
   /**
@@ -730,6 +724,135 @@ public class StratigraphicOrientFilter {
   private RecursiveGaussianFilter _rgfSmoother1;
   private RecursiveGaussianFilter _rgfSmoother2;
   private RecursiveGaussianFilter _rgfSmoother3;
+
+  private void computeOrientGradient(
+    final float[][][] u1, final float[][][] u2, final float[][][] u3, 
+    final float[][][] v1, final float[][][] v2, final float[][][] v3, 
+    final float[][][] w1, final float[][][] w2, final float[][][] w3, 
+    final float[][][] fx, final float[][][] gu, final float[][][] gv, 
+    float[][][] gw) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float u1i = u1[i3][i2][i1];
+        float u2i = u2[i3][i2][i1];
+        float u3i = u3[i3][i2][i1];
+
+        float v1i = v1[i3][i2][i1];
+        float v2i = v2[i3][i2][i1];
+        float v3i = v3[i3][i2][i1];
+
+        float w1i = w1[i3][i2][i1];
+        float w2i = w2[i3][i2][i1];
+        float w3i = w3[i3][i2][i1];
+
+        float u1p = i1+u1i;
+        float u2p = i2+u2i;
+        float u3p = i3+u3i;
+
+        float u1m = i1-u1i;
+        float u2m = i2-u2i;
+        float u3m = i3-u3i;
+
+        float v1p = i1+v1i;
+        float v2p = i2+v2i;
+        float v3p = i3+v3i;
+
+        float v1m = i1-v1i;
+        float v2m = i2-v2i;
+        float v3m = i3-v3i;
+
+        float w1p = i1+w1i;
+        float w2p = i2+w2i;
+        float w3p = i3+w3i;
+
+        float w1m = i1-w1i;
+        float w2m = i2-w2i;
+        float w3m = i3-w3i;
+        float fup = 
+          si.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,fx,u1p,u2p,u3p);
+        float fum = 
+          si.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,fx,u1m,u2m,u3m);
+        float fvp = 
+          si.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,fx,v1p,v2p,v3p);
+        float fvm = 
+          si.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,fx,v1m,v2m,v3m);
+        float fwp = 
+          si.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,fx,w1p,w2p,w3p);
+        float fwm = 
+          si.interpolate(n1,1.0,0.0,n2,1.0,0.0,n3,1.0,0.0,fx,w1m,w2m,w3m);
+        gu[i3][i2][i1] = fup-fum;
+        gv[i3][i2][i1] = fvp-fvm;
+        gw[i3][i2][i1] = fwp-fwm;
+      }}
+    }});
+  }
+
+  private void computeStructureOrientedGradientX(
+    final EigenTensors3 et, 
+    final float[][][] fx, 
+    final float[][][] g2, final float[][][] g3)
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      float[] xm0 = new float[n1];
+      float[] x0m = new float[n1];
+      float[] x0p = new float[n1];
+      float[] xp0 = new float[n1];
+      float[] gm0 = new float[n1];
+      float[] g0m = new float[n1];
+      float[] g0p = new float[n1];
+      float[] gp0 = new float[n1];
+      int i3m = max(i3-1,0);
+      int i3p = min(i3+1,n3-1);
+      for (int i2=0; i2<n2; ++i2) {
+        int i2m = max(i2-1,0);
+        int i2p = min(i2+1,n2-1);
+        float[] fxm0 = fx[i3m][i2 ];
+        float[] fxp0 = fx[i3p][i2 ];
+        float[] fx0m = fx[i3 ][i2m];
+        float[] fx0p = fx[i3 ][i2p];
+        float[] p20m = p2[i3 ][i2m];
+        float[] p20p = p2[i3 ][i2p];
+        float[] p3m0 = p3[i3m][i2 ];
+        float[] p3p0 = p3[i3p][i2 ];
+        float[] g232 = g2[i3 ][i2 ];
+        float[] g332 = g3[i3 ][i2 ];
+        for (int i1=0; i1<n1; ++i1) {
+          x0m[i1] = i1-p20m[i1];
+          x0p[i1] = i1+p20p[i1];
+          xm0[i1] = i1-p3m0[i1];
+          xp0[i1] = i1+p3p0[i1];
+        }
+        si.interpolate(n1,1.0,0.0,fx0m,n1,x0m,g0m);
+        si.interpolate(n1,1.0,0.0,fx0p,n1,x0p,g0p);
+        si.interpolate(n1,1.0,0.0,fxm0,n1,xm0,gm0);
+        si.interpolate(n1,1.0,0.0,fxp0,n1,xp0,gp0);
+        float[] f00 = fx[i3][i2];
+        if (i2==0   ) g0m = fx[i3][i2];
+        if (i2==n2-1) g0p = f00;
+        if (i3==0   ) gm0 = f00;
+        if (i3==n3-1) gp0 = f00;
+        for (int i1=0; i1<n1; ++i1) {
+          g232[i1] = g0p[i1]-g0m[i1];
+          g332[i1] = gp0[i1]-gm0[i1];
+        }
+      }
+    }});
+  }
+
 
   private void computeStructureOrientedGradientX(
     final float[][][] fx, final float[][][] p2, final float[][][] p3, 

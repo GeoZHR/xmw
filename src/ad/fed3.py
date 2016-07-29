@@ -21,8 +21,8 @@ from util import *
 pngDir = None
 pngDir = "../../../png/ad/fed/3d/"
 
-#seismicDir = "../../../data/seis/ad/fed/3d/"
-seismicDir = "../../../data/seis/beg/jake/subs/"
+seismicDir = "../../../data/seis/ad/fed/3d/"
+#seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
 gxlfile = "gxl"
 gxnfile = "gxn"
@@ -30,7 +30,7 @@ gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 240,880,500
-n1,n2,n3 = 426,800,830
+#n1,n2,n3 = 426,800,830
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
@@ -39,8 +39,8 @@ plotOnly = False
 def main(args):
   #goLinearDiffusion()
   #goLocalSmoothingFilter()
-  goStratigraphyOrientedDiffusion()
-  #goStratigraphyOrientedDiffusionX()
+  #goStratigraphyOrientedDiffusion()
+  goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
   #goSemblanceHale()
@@ -103,13 +103,21 @@ def goStratigraphyOrientedDiffusionX():
   fx = readImage(fxfile)
   if not plotOnly:
     sig1,sig2=4,2
-    p2 = zerofloat(n1,n2,n3)
-    p3 = zerofloat(n1,n2,n3)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    v1 = zerofloat(n1,n2,n3)
+    v2 = zerofloat(n1,n2,n3)
+    v3 = zerofloat(n1,n2,n3)
+    w1 = zerofloat(n1,n2,n3)
+    w2 = zerofloat(n1,n2,n3)
+    w3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    lsf = LocalSlopeFinder(4,2)
-    lsf.findSlopes(fx,p2,p3,ep)
+    el = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilterP(sig1,sig2)
+    lof.apply(x,None,None,u1,u2,u3,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
     lof = StratigraphicOrientFilter(sig1,sig2)
-    ets = lof.applyForTensors(p2,p3,fx)
+    ets = lof.applyForTensors(u1,u2,u3,v1,v2,v3,w1,w2,w3,ep,el,x)
     ets.setEigenvalues(0.0001,0.0001,1.0)
     sig = 10
     cycle,limit=3,0.5
@@ -117,6 +125,8 @@ def goStratigraphyOrientedDiffusionX():
     fed.setCycles(cycle,limit)
     gx = fed.apply(sig,ets,fx)
     writeImage(gxsfile,gx)
+    writeImage("epx",ep)
+    writeImage("elx",el)
   else:
     gx = readImage(gxsfile)
   plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
