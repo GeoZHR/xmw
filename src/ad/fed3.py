@@ -15,13 +15,14 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from ad import *
-from nst import *
+from sso import *
 from util import *
 
 pngDir = None
 pngDir = "../../../png/ad/fed/3d/"
 
-seismicDir = "../../../data/seis/ad/fed/3d/"
+#seismicDir = "../../../data/seis/ad/fed/3d/"
+seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
 gxlfile = "gxl"
 gxnfile = "gxn"
@@ -29,6 +30,7 @@ gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 240,880,500
+n1,n2,n3 = 426,800,830
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
@@ -37,7 +39,7 @@ plotOnly = False
 def main(args):
   #goLinearDiffusion()
   #goLocalSmoothingFilter()
-  #goStratigraphyOrientedDiffusion()
+  goStratigraphyOrientedDiffusion()
   #goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
@@ -45,7 +47,7 @@ def main(args):
   #goCovariance()
   #goFastCovariance()
   #goVariance()
-  goShapeSemblance()
+  #goShapeSemblance()
 def goLinearDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -84,7 +86,7 @@ def goStratigraphyOrientedDiffusion():
     sig1,sig2=4,2
     lof = LocalOrientFilterP(sig1,sig2)
     ets = lof.applyForTensors(fx)
-    ets.setEigenvalues(0.0001,0.001,1.0)
+    ets.setEigenvalues(0.0001,0.0001,1.0)
     sig = 10
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
@@ -93,9 +95,9 @@ def goStratigraphyOrientedDiffusion():
     writeImage(gxsfile,gx)
   else:
     gx = readImage(gxsfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx)
-  plot3(fx)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  plot3(gx,cmin=-0.8,cmax=0.8)
+  plot3(fx,cmin=-0.8,cmax=0.8)
 
 def goStratigraphyOrientedDiffusionX():
   fx = readImage(fxfile)
@@ -104,11 +106,11 @@ def goStratigraphyOrientedDiffusionX():
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    lsf = LocalSlopeFinder(8,4)
+    lsf = LocalSlopeFinder(4,2)
     lsf.findSlopes(fx,p2,p3,ep)
     lof = StratigraphicOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(p2,p3,fx)
-    ets.setEigenvalues(0.0001,0.001,1.0)
+    ets.setEigenvalues(0.0001,0.0001,1.0)
     sig = 10
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
@@ -117,9 +119,9 @@ def goStratigraphyOrientedDiffusionX():
     writeImage(gxsfile,gx)
   else:
     gx = readImage(gxsfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx)
-  plot3(fx)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  plot3(gx,cmin=-0.8,cmax=0.8)
+  plot3(fx,cmin=-0.8,cmax=0.8)
 
 def goNonlinearDiffusion():
   fx = readImage(fxfile)

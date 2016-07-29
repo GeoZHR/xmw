@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ****************************************************************************/
-package nst;
+package sso;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Parallel;

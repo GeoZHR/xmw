@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ****************************************************************************/
-package nst;
+package sso;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Parallel;
@@ -466,7 +466,6 @@ public class StratigraphicOrientFilter {
     float[][][] u2 = new float[n3][n2][n1];
     float[][][] u3 = new float[n3][n2][n1];
     EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
-    d.setEigenvalues(0.1f,1.00f,1.00f);
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=0; i1<n1; ++i1) {
@@ -487,13 +486,15 @@ public class StratigraphicOrientFilter {
         }
       }
     }
+    d.setEigenvalues(0.2f,1.00f,1.00f);
     float[][][] g2 = new float[n3][n2][n1];
     float[][][] g3 = new float[n3][n2][n1];
-    computStructureOrientedGradientX(x,p2,p3,g2,g3);
+    computeStructureOrientedGradientX(x,p2,p3,g2,g3);
     float[][][] g22 = mul(g2,g2);
     float[][][] g23 = mul(g2,g3);
     float[][][] g33 = mul(g3,g3);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    /*
     RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(2);
     RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(4);
     rgf1.apply0XX(g22,g22);
@@ -507,12 +508,14 @@ public class StratigraphicOrientFilter {
     rgf2.applyXX0(g22,g22);
     rgf2.applyXX0(g23,g23);
     rgf2.applyXX0(g33,g33);
-    //lsf.apply(d,20,g22,g22);
-    //lsf.apply(d,20,g23,g23);
-    //lsf.apply(d,20,g33,g33);
+    */
+    lsf.apply(d,20,g22,g22);
+    lsf.apply(d,20,g23,g23);
+    lsf.apply(d,20,g33,g33);
     float[][] a = new float[2][2];
     float[][] z = new float[2][2];
     float[] e = new float[2];
+    EigenTensors3 et = new EigenTensors3(n1,n2,n3,true);
     for (int i3=0; i3<n3; ++i3) {
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=0; i1<n1; ++i1) {
@@ -531,14 +534,13 @@ public class StratigraphicOrientFilter {
           w1i *= wsi;
           w2i *= wsi;
           w3i *= wsi;
-          d.setEigenvalues(i1,i2,i3,1f,1f,1f);
-          d.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
-          d.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
-
+          et.setEigenvalues(i1,i2,i3,1f,1f,1f);
+          et.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
+          et.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
         }
       }
     }
-    return d;
+    return et;
   }
 
   /**
@@ -729,7 +731,7 @@ public class StratigraphicOrientFilter {
   private RecursiveGaussianFilter _rgfSmoother2;
   private RecursiveGaussianFilter _rgfSmoother3;
 
-  private void computStructureOrientedGradientX(
+  private void computeStructureOrientedGradientX(
     final float[][][] fx, final float[][][] p2, final float[][][] p3, 
     final float[][][] g2, final float[][][] g3)
   {
