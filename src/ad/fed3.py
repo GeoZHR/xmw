@@ -40,6 +40,8 @@ def main(args):
   #goLinearDiffusion()
   #goLocalSmoothingFilter()
   #goStratigraphyOrientedDiffusion()
+  #goNormalPlanar()
+  #goTest()
   goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
@@ -48,6 +50,20 @@ def main(args):
   #goFastCovariance()
   #goVariance()
   #goShapeSemblance()
+def goNormalPlanar():
+  fx = readImage(fxfile)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  el = zerofloat(n1,n2,n3)
+  sig1,sig2=2,6
+  lof = LocalOrientFilter(sig1,sig2)
+  lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
+  lof.applyForInlineLinear(fx,u1,u2,u3,el)
+  plot3(ep,cmin=0.1,cmax=0.6)
+  plot3(el,cmin=0.1,cmax=0.6)
+
 def goLinearDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -99,6 +115,32 @@ def goStratigraphyOrientedDiffusion():
   plot3(gx,cmin=-0.8,cmax=0.8)
   plot3(fx,cmin=-0.8,cmax=0.8)
 
+def goTest():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=4,2
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    v1 = zerofloat(n1,n2,n3)
+    v2 = zerofloat(n1,n2,n3)
+    v3 = zerofloat(n1,n2,n3)
+    w1 = zerofloat(n1,n2,n3)
+    w2 = zerofloat(n1,n2,n3)
+    w3 = zerofloat(n1,n2,n3)
+    gu = zerofloat(n1,n2,n3)
+    gv = zerofloat(n1,n2,n3)
+    gw = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(sig1,sig2)
+    lof.apply(fx,None,None,u1,u2,u3,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
+    sof = StratigraphicOrientFilter(sig1,sig2)
+    sof.computeOrientGradient(u1,u2,u3,v1,v2,v3,w1,w2,w3,fx,gu,gv,gw)
+  plot3(fx,cmin=-1.0,cmax=1.0)
+  plot3(gu,cmin=-1.0,cmax=1.0)
+  plot3(gv,cmin=-1.0,cmax=1.0)
+  plot3(gw,cmin=-1.0,cmax=1.0)
+
+
 def goStratigraphyOrientedDiffusionX():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -114,11 +156,15 @@ def goStratigraphyOrientedDiffusionX():
     w3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
     el = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(sig1,sig2)
-    lof.apply(x,None,None,u1,u2,u3,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
-    lof = StratigraphicOrientFilter(sig1,sig2)
-    ets = lof.applyForTensors(u1,u2,u3,v1,v2,v3,w1,w2,w3,ep,el,x)
-    ets.setEigenvalues(0.0001,0.0001,1.0)
+    au = fillfloat(0.001,n1,n2,n3)
+    av = fillfloat(1.000,n1,n2,n3)
+    aw = fillfloat(1.000,n1,n2,n3)
+    lof = LocalOrientFilter(sig1,sig2)
+    #ets = lof.applyForTensors(fx)
+    lof.apply(fx,None,None,u1,u2,u3,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
+    sof = StratigraphicOrientFilter(sig1,sig2)
+    ets = sof.applyForTensors(u1,u2,u3,v1,v2,v3,w1,w2,w3,ep,el,fx)
+    ets.setEigenvalues(0.0001,1.0000,1.0000)
     sig = 10
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
@@ -128,10 +174,15 @@ def goStratigraphyOrientedDiffusionX():
     writeImage("epx",ep)
     writeImage("elx",el)
   else:
+    fx = readImage(fxfile)
     gx = readImage(gxsfile)
+    ep = readImage("epx")
+    el = readImage("elx")
   plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
-  plot3(gx,cmin=-0.8,cmax=0.8)
-  plot3(fx,cmin=-0.8,cmax=0.8)
+  plot3(gx,cmin=-1.0,cmax=1.0)
+  plot3(fx,cmin=-1.0,cmax=1.0)
+  plot3(ep,cmin=0.1,cmax=0.9)
+  plot3(el,cmin=0.1,cmax=0.9)
 
 def goNonlinearDiffusion():
   fx = readImage(fxfile)
