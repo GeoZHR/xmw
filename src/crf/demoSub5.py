@@ -72,8 +72,8 @@ maxThrow = 85.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = None
 pngDir = "../../../png/beg/nathan/sub5/"
+pngDir = None
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -89,7 +89,7 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  #goFaultImages()
+  goFaultImages()
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
@@ -103,7 +103,7 @@ def main(args):
   #writeImage("fps65",fps)
   #goMask()
   #plot3(gx)
-  goHorizon()
+  #goHorizon()
   #goFaultDensity()
 def goFaultDensity():
   gx = readImage(gxfile)
@@ -501,16 +501,16 @@ def goFaultImages():
   else:
     #flt = readImage(fltfile)
     #fpt = readImage(fptfile)
-    fpt = readImage("fpk")
+    fpt = readImage("fpt")
     #ftt = readImage(fttfile)
   '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
+  '''
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
-  '''
 def goSmooth():
   print "goSmooth ..."
   flstop = 0.1

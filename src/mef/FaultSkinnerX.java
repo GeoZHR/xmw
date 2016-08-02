@@ -85,6 +85,35 @@ public class FaultSkinnerX {
     }
   }
 
+  public void getFlpt(int minSize, FaultSkin[] sks, 
+    float[][][] fl, float[][][] fp, float[][][] ft) {
+    for (FaultSkin sk:sks) {
+      if(sk.size()<minSize) {continue;}
+      for (FaultCell fc:sk) {
+        int i1i = fc.i1;
+        int i2i = fc.i2;
+        int i3i = fc.i3;
+        fl[i3i][i2i][i1i] = fc.fl;
+        fp[i3i][i2i][i1i] = fc.fp;
+        ft[i3i][i2i][i1i] = fc.ft;
+      }
+    }
+  }
+
+
+  public void getFp(int minSize, FaultSkin[] sks, float[][][] fp) {
+    for (FaultSkin sk:sks) {
+      if(sk.size()<minSize) {continue;}
+      for (FaultCell fc:sk) {
+        int i1i = fc.i1;
+        int i2i = fc.i2;
+        int i3i = fc.i3;
+        fp[i3i][i2i][i1i] = fc.fp;
+      }
+    }
+  }
+
+
   public void getFl(int minSize, FaultSkin[] sks, float[][][] fl) {
     for (FaultSkin sk:sks) {
       if(sk.size()<minSize) {continue;}
