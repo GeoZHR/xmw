@@ -73,13 +73,13 @@ k3 = [442,290, 165,507,270,270, 396,230,317,442,620,455,398,310,
 def main(args):
   #goSlopes()
   #goSingleHorizon()
-  goHorizons()
+  #goHorizons()
   #goHorizonVolume()
   #goMaskTop()
   #goFlatten()
   #goFlattenC()
-  #gx = readImage(gxfile)
-  #plot3(gx)
+  gx = readImage(gxfile)
+  plot3(gx)
 
 
 def goSlopes():

@@ -14,8 +14,8 @@ f1,f2,f3 = s1.first,s2.first,s3.first
 # Names and descriptions of image files used below.
 sfile = "cfs" # input seismic image 
 ssfile = "cfss" # smoothed seismic image 
-logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,4.5,1.0
-#logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
+#logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax,cit = 2.4,4.5,1.0
+logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax,cit = 2.2,2.8,0.2
 gfile = "cfg"+logType # simple gridding with null for unknown samples
 pfile = "cfp"+logType # values of nearest known samples
 qfile = "cfq"+logType # output of blended gridder
@@ -75,7 +75,7 @@ def main(args):
   #gridNearest()
   #gridBlendedP()
   #gridBlendedQ()
-  #goFigures()
+  goFigures()
   #goHorizon()
   '''
   go1stCo2()
@@ -84,7 +84,7 @@ def main(args):
   go4thCo2()
   go5thCo2()
   '''
-  goCo2Plot()
+  #goCo2Plot()
 def goCo2Plot():
   gx = readImageL(sfile)
   q0 = readImageL(qfile)
@@ -918,9 +918,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     tg.setColor(Color.CYAN)
     sf.world.addChild(tg)
   #ipg.setSlices(924,202,26)
-  #ipg.setSlices(834,168,66)
-  ipg.setSlices(834,120,110)
-  ipg.setSlices(758,168,66)
+  ipg.setSlices(834,168,66)
+  #ipg.setSlices(834,120,110)
+  #ipg.setSlices(758,168,66)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
     sf.setSize(837,700)

@@ -18,50 +18,162 @@ from ad import *
 from sso import *
 from util import *
 
+pngDir = "../../../png/sso/3d/"
 pngDir = None
-pngDir = "../../../png/ad/fed/3d/"
 
-seismicDir = "../../../data/seis/ad/fed/3d/"
+seismicDir = "../../../data/seis/sso/3d/real/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
+ellfile = "ell"
+elsfile = "els"
+eplfile = "epl"
+epsfile = "eps"
+etlfile = "etl"
+etsfile = "ets"
 gxlfile = "gxl"
-gxnfile = "gxn"
 gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 240,880,500
-#n1,n2,n3 = 426,800,830
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
-  #goLinearDiffusion()
-  #goLocalSmoothingFilter()
-  #goStratigraphyOrientedDiffusion()
-  #goNormalPlanar()
-  goStratigraphyOrientedDiffusionX()
-  #goNonlinearDiffusion()
-  #goSemblance()
-  #goSemblanceHale()
-  #goCovariance()
-  #goFastCovariance()
-  #goVariance()
-  #goShapeSemblance()
-def goNormalPlanar():
+  #goLof()
+  goSof()
+  #goSmoothL()
+  #goSmoothS()
+def goLof():
   fx = readImage(fxfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  el = zerofloat(n1,n2,n3)
-  sig1,sig2=4,2
-  lof = LocalOrientFilter(sig1,sig2)
-  lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
-  lof.applyForInlineLinear(fx,u1,u2,u3,el)
+  if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    w1 = zerofloat(n1,n2,n3)
+    w2 = zerofloat(n1,n2,n3)
+    w3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    el = zerofloat(n1,n2,n3)
+    au = zerofloat(n1,n2,n3)
+    av = zerofloat(n1,n2,n3)
+    aw = zerofloat(n1,n2,n3)
+    sig1,sig2=8,2
+    lof = LocalOrientFilter(sig1,sig2)
+    lof.apply(fx,None,None,u1,u2,u3,None,None,None,w1,w2,w3,au,av,aw,ep,el)
+    tv = TensorView()
+    ets = tv.tensorsFromNormal(u1,u2,u3,w1,w2,w3,au,av,aw)
+    writeImage(eplfile,ep)
+    writeImage(ellfile,el)
+    writeTensors(etlfile,ets)
+  else:
+    el = readImage(ellfile)
+    ep = readImage(eplfile)
   plot3(ep,cmin=0.4,cmax=1.0)
-  plot3(el,cmin=0.0,cmax=0.9)
+  plot3(el,cmin=0.0,cmax=0.8)
+
+def goSof():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    ep = zerofloat(n1,n2,n3)
+    el = zerofloat(n1,n2,n3)
+    sig1,sig2=8,2
+    lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
+    sof = StratigraphicOrientFilter(sig1,sig2)
+    #et = sof.applyForTensors(et,fx,ep,el)
+    et = sof.applyForPlanar(et,fx,ep,el)
+
+    '''
+    writeImage(epsfile,ep)
+    writeImage(elsfile,el)
+    writeTensors(etsfile,et)
+    '''
+  else:
+    el = readImage(elsfile)
+    ep = readImage(epsfile)
+    #et = readTensors(etsfile)
+  plot3(fx)
+  plot3(ep,cmin=0.4,cmax=1.0)
+
+def goSmoothL():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    ep = readImage(eplfile)
+    et = readTensors(etlfile)
+    '''
+    eu = zerofloat(n1,n2,n3)
+    ev = zerofloat(n1,n2,n3)
+    ew = zerofloat(n1,n2,n3)
+    et.getEigenvalues(eu,ev,ew)
+    eu = clip(0.005,1.0,eu)
+    ev = clip(0.005,1.0,ev)
+    ew = clip(0.005,1.0,ew)
+    et.setEigenvalues(eu,ev,ew)
+    et.invertStructure(1.0,4.0,4.0)
+    et.getEigenvalues(eu,ev,ew)
+    eu = mul(eu,0.01)
+    et.setEigenvalues(eu,ev,ew)
+    sig = 50
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,et,fx)
+    '''
+    eu = fillfloat(0.0001,n1,n2,n3)
+    ev = pow(ep,30)
+    ew = fillfloat(1.0000,n1,n2,n3)
+    et.setEigenvalues(eu,ev,ew)
+    gx = zerofloat(n1,n2,n3)
+    lsf = LocalSmoothingFilter()
+    lsf.apply(et,50,fx,gx)
+    writeImage(gxlfile,gx)
+  else:
+    gx = readImage(gxlfile)
+  plot3(fx)
+  plot3(gx)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+
+def goSmoothS():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    ep = readImage(epsfile)
+    et = readTensors(etsfile)
+    '''
+    eu = zerofloat(n1,n2,n3)
+    ev = zerofloat(n1,n2,n3)
+    ew = zerofloat(n1,n2,n3)
+    et.getEigenvalues(eu,ev,ew)
+    eu = clip(0.005,1.0,eu)
+    ev = clip(0.005,1.0,ev)
+    ew = clip(0.005,1.0,ew)
+    et.setEigenvalues(eu,ev,ew)
+    et.invertStructure(1.0,4.0,4.0)
+    et.getEigenvalues(eu,ev,ew)
+    eu = mul(eu,0.01)
+    et.setEigenvalues(eu,ev,ew)
+    '''
+    eu = fillfloat(0.0001,n1,n2,n3)
+    ev = pow(ep,30)
+    ew = fillfloat(1.0000,n1,n2,n3)
+    et.setEigenvalues(eu,ev,ew)
+    gx = zerofloat(n1,n2,n3)
+    lsf = LocalSmoothingFilter()
+    lsf.apply(et,50,fx,gx)
+    '''
+    sig = 10
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,et,fx)
+    '''
+    writeImage(gxsfile,gx)
+  else:
+    gx = readImage(gxsfile)
+  plot3(fx)
+  plot3(gx)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
 def goLinearDiffusion():
   fx = readImage(fxfile)
@@ -98,7 +210,7 @@ def goLocalSmoothingFilter():
 def goStratigraphyOrientedDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=4,2
+    sig1,sig2=8,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     ets.setEigenvalues(0.0001,0.0001,1.0000)
@@ -353,6 +465,26 @@ def writeImage(basename,image):
   aos.close()
   return image
 
+from org.python.util import PythonObjectInputStream
+def readTensors(name):
+  """
+  Reads tensors from file with specified basename; e.g., "tpet".
+  """
+  fis = FileInputStream(seismicDir+name+".dat")
+  ois = PythonObjectInputStream(fis)
+  tensors = ois.readObject()
+  fis.close()
+  return tensors
+def writeTensors(name,tensors):
+  """
+  Writes tensors to file with specified basename; e.g., "tpet".
+  """
+  fos = FileOutputStream(seismicDir+name+".dat")
+  oos = ObjectOutputStream(fos)
+  oos.writeObject(tensors)
+  fos.close()
+
+
 #############################################################################
 # graphics
 
@@ -391,8 +523,8 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          png=None):
+def plot3(f,g=None,et=None,ep=None,k1=120,
+    cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -425,16 +557,22 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
+  if et:
+    node = TensorEllipsoids(s1,s2,s3,et,ep)
+    states = StateSet.forTwoSidedShinySurface(Color.YELLOW);
+    node.setStates(states)
+    sf.world.addChild(node)
   if cbar:
     cbar.setWidthMinimum(120)
   #ipg.setSlices(153,760,450)
-  ipg.setSlices(124,760,450)
+  ipg.setSlices(k1,760,450)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
     sf.setSize(837,700)
   else:
     sf.setSize(700,700)
+
   view = sf.getOrbitView()
   #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
   zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)

@@ -24,31 +24,25 @@ pngDir = "../../../png/ad/fed/3d/"
 seismicDir = "../../../data/seis/ad/fed/3d/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
+ellfile = "ell"
+elsfile = "els"
+eplfile = "epl"
+epsfile = "eps"
+etlfile = "etl"
+etsfile = "ets"
 gxlfile = "gxl"
-gxnfile = "gxn"
 gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 240,880,500
-#n1,n2,n3 = 426,800,830
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
 
 def main(args):
-  #goLinearDiffusion()
-  #goLocalSmoothingFilter()
-  #goStratigraphyOrientedDiffusion()
-  #goNormalPlanar()
-  goStratigraphyOrientedDiffusionX()
-  #goNonlinearDiffusion()
-  #goSemblance()
-  #goSemblanceHale()
-  #goCovariance()
-  #goFastCovariance()
-  #goVariance()
-  #goShapeSemblance()
+  goLof()
+  goSof()
 def goNormalPlanar():
   fx = readImage(fxfile)
   u1 = zerofloat(n1,n2,n3)
@@ -56,7 +50,7 @@ def goNormalPlanar():
   u3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
   el = zerofloat(n1,n2,n3)
-  sig1,sig2=4,2
+  sig1,sig2=8,2
   lof = LocalOrientFilter(sig1,sig2)
   lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
   lof.applyForInlineLinear(fx,u1,u2,u3,el)
@@ -98,7 +92,7 @@ def goLocalSmoothingFilter():
 def goStratigraphyOrientedDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=4,2
+    sig1,sig2=8,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     ets.setEigenvalues(0.0001,0.0001,1.0000)
@@ -353,6 +347,25 @@ def writeImage(basename,image):
   aos.close()
   return image
 
+def readTensors(name):
+  """
+  Reads tensors from file with specified basename; e.g., "tpet".
+  """
+  fis = FileInputStream(seismicDir+name+".dat")
+  ois = PythonObjectInputStream(fis)
+  tensors = ois.readObject()
+  fis.close()
+  return tensors
+def writeTensors(name,tensors):
+  """
+  Writes tensors to file with specified basename; e.g., "tpet".
+  """
+  fos = FileOutputStream(seismicDir+name+".dat")
+  oos = ObjectOutputStream(fos)
+  oos.writeObject(tensors)
+  fos.close()
+
+
 #############################################################################
 # graphics
 
@@ -391,7 +404,7 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+def plot3(f,g=None,k1=120,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -428,7 +441,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     cbar.setWidthMinimum(120)
   #ipg.setSlices(153,760,450)
-  ipg.setSlices(124,760,450)
+  ipg.setSlices(k1,760,450)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:

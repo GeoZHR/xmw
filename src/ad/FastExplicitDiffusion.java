@@ -39,15 +39,14 @@ public class FastExplicitDiffusion {
     FedStep fs = new FedStep(t,_m,_d);
     float[] ts = fs.getSteps(true);
     int nc = ts.length;
-    float[][] gx = copy(fx);
     //et.setEigenvalues(0.001f,1.0f);
+    float[][] gx = copy(fx);
     for (int m=0; m<_m; ++m) {
     for (int ic=0; ic<nc; ++ic) {
       applyLaplacian(et,-ts[ic],copy(gx),gx);
     }}
     return gx;
   }
-
 
   public float[][] apply(
     float sigma, float lambda, EigenTensors2 et, float[][] fx) 
@@ -459,6 +458,7 @@ public class FastExplicitDiffusion {
       }
     }
   }
+
 
   private void applyLaplacian(final Tensors3 d, final float s, 
     final float[][][] x, final float[][][] y) 

@@ -26,6 +26,7 @@ seismicDir = "../../../data/seis/ad/fed/"
 fxfile = "tp73"
 fxfile = "clyde200"
 fxfile = "f3d75s"
+fxfile = "poseidon"
 f1,f2 = 0,0
 d1,d2 = 1,1
 n1,n2 = 251,357
@@ -33,6 +34,7 @@ n1,n2 = 400,801
 n1,n2 = 200,200
 n1,n2 = 421,421
 n1,n2 = 222,440 # f3d75s
+n1,n2 = 120,923 # f3d75s
 d1,d2 = 0.004,0.025
 f1,f2 = 0.004+d1*240,0.000
 s1 = Sampling(n1,d1,f1)
@@ -40,8 +42,8 @@ s2 = Sampling(n2,d2,f2)
 
 def main(args):
   #goGaussian()
-  goLinearDiffusion()
-  #goLinearDiffusionX()
+  #goLinearDiffusion()
+  goLinearDiffusionX()
   #goNonlinearDiffusion()
   #goHilbert()
   #goGaussianD()
@@ -167,17 +169,17 @@ def goLinearDiffusionX():
   fx = gain(fx)
   addNoise(0.2,fx)
   sig1,sig2=8,2
-  e1 = zerofloat(n1,n2)
-  e2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   #lof = LocalOrientFilterP(sig1,sig2)
   lof = LocalOrientFilter(sig1,sig2)
-  lof.applyForNormalLinear(fx,u1,u2,e1)
   ets = lof.applyForTensors(fx)
   sof = StratigraphicOrientFilter(sig1,sig2)
-  et = sof.applyForTensors(ets,fx,e2)
-  et.setEigenvalues(0.0001,1.0)
+  ets = sof.applyForTensors(ets,fx,el)
+  ets = sof.applyForTensors(ets,fx,el)
+  #sof.applyForNormalLinear(ets,fx,u1,u2,el)
+  ets.setEigenvalues(0.0001,1.0)
   '''
   sig = 10
   cycle,limit=3,0.5
@@ -189,28 +191,42 @@ def goLinearDiffusionX():
   lsf = LocalSmoothingFilter()
   lsf.apply(ets,30,fx,gx)
 
+  p2 = mul(-1,div(u2,u1))
   plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2)
   plot(gx,cmin=-1,cmax=1,cint=1.0)
   plot(fx,cmin=-1,cmax=1,cint=1.0)
-  #plot(e1,cmin=0.0,cmax=1.0,cint=0.2)
-  #plot(e2,cmin=0.0,cmax=1.0,cint=0.2)
+  plot(gx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(1.0),cint=0.1)
+  plot(el,cmin=0,cmax=1,cint=0.2,png="el")
 
 def goLinearDiffusion():
   fx = readImage(fxfile)
   fx = gain(fx)
+  addNoise(0.2,fx)
   sig1,sig2=8,2
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
   #lof = LocalOrientFilterP(sig1,sig2)
   lof = LocalOrientFilter(sig1,sig2)
+  lof.applyForNormalLinear(fx,u1,u2,el)
   ets = lof.applyForTensors(fx)
   ets.setEigenvalues(0.001,1.0)
+  '''
   sig = 10
   cycle,limit=3,0.5
   fed = FastExplicitDiffusion()
   fed.setCycles(cycle,limit)
   gx = fed.apply(sig,ets,fx)
+  '''
+  gx = zerofloat(n1,n2)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,30,fx,gx)
+  p2 = mul(-1,div(u2,u1))
   plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,png="fgl")
   plot(gx,cmin=-1,cmax=1,cint=1.0,png="gxl")
   plot(fx,cmin=-1,cmax=1,cint=1.0,png="fx")
+  plot(gx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(1.0),cint=0.1)
+  plot(el,cmin=0,cmax=1,cint=0.2,png="el")
 
 def goNonlinearDiffusion():
   fx = readImage(fxfile)
@@ -250,7 +266,7 @@ def addNoise(nrms, fx):
   r = Random(1);
   gx = mul(2.0,sub(randfloat(r,n1,n2),0.5));
   rgf = RecursiveGaussianFilter(2.0);
-  rgf.apply10(gx,gx)
+  rgf.apply2X(gx,gx)
   gx = mul(gx,nrms*rms(fx)/rms(gx));
   return add(fx,gx,fx);
 def rms(fx):
@@ -306,7 +322,8 @@ def plot(f,g=None,cmap=None,cmin=None,cmax=None,cint=None,label=None,png=None):
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
-  frame.setSize(1020,700) #for f3d
+  #frame.setSize(1020,700) #for f3d
+  frame.setSize(1020,500) #for poseidon
   frame.setFontSize(30)
   if pngDir and png:
     frame.paintToPng(300,3.333,pngDir+png+".png")
