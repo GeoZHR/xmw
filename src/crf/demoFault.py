@@ -10,7 +10,8 @@ setupForSubset("nathanSub8")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile  = "gx" # input image (maybe after bilateral filtering)
+gxfile  = "fxSub5" # input image (maybe after bilateral filtering)
+#gxfile  = "gx" # input image (maybe after bilateral filtering)
 gxpfile  = "gxp" # input image (maybe after bilateral filtering)
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
@@ -61,19 +62,42 @@ def main(args):
   #goSkin()
   #goSkinTv()
   #goFaultImages()
-  goSufaces()
+  goSurfaces()
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goPadding()
 def goSurfaces():
-  nl1 = 1646796
-  nu1 = 1330218
-  nm1 =  888165
-  sl = readImage2D(3,nl1,"L1.dat")
-  su = readImage2D(3,nl1,"U1.dat")
-  sm = readImage2D(3,nl1,"M1.dat")
+  fn = "sm1"
+  gx = readImage(gxfile)
+  if not plotOnly:
+    nl1 = 1646796
+    nu1 = 1330218
+    nm1 =  888165
+    sp = readImage2D(nl1,3,"hzs/L1")
+    #sp = readImage2D(nu1,3,"hzs/U1")
+    #sp = readImage2D(nm1,3,"hzs/M1")
+    print min(sp[0])
+    print max(sp[0])
+    print min(sp[2])
+    print max(sp[2])
+    hp = Helper()
+    ndfs = zerofloat(3,2)
+    sf = hp.surfaceResample(s2,s3,1.5,sp,ndfs)
+    sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
+    sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
+    writeImage(fn,sf)
+    writeImage(fn+"ndfs",ndfs)
+  else:
+    ndfs = readImage2D(3,2,fn+"ndfs")
+    ny = round(ndfs[0][0])
+    nx = round(ndfs[1][0])
+    sf = readImage2D(ny,nx,fn)
+    sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
+    sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
+  plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
+
 def goPadding():
   gx = readImage(gxfile)
   tp = readImage2D(n2,n3,"ob")
@@ -329,27 +353,6 @@ def goFaultImages():
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
-def goSmooth():
-  print "goSmooth ..."
-  flstop = 0.1
-  fsigma = 8.0
-  fl = readImage(flfile)
-  gx = readImage(gxfile)
-  skins = readSkins(fskgood)
-  flt = zerofloat(n1,n2,n3)
-  fsx = FaultSkinnerX()
-  fsx.getFl(skins,flt)
-  p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
-  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
-  writeImage(gsxfile,gsx)
-  '''
-  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fli")
-  plot3(gsx,png="gsx")
-  '''
 
 def like(x):
   n3 = len(x)
@@ -419,13 +422,12 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          horizon=None,fd=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,png=None):
+def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
+          sx=None,sy=None,horizon=None,fd=None,cells=None,skins=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  #s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
@@ -456,19 +458,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
-  if xyz:
-    pg = PointGroup(0.2,xyz)
-    ss = StateSet()
-    cs = ColorState()
-    cs.setColor(Color.YELLOW)
-    ss.add(cs)
-    pg.setStates(ss)
-    #ss = StateSet()
-    #ps = PointState()
-    #ps.setSize(5.0)
-    #ss.add(ps)
-    #pg.setStates(ss)
-    sf.world.addChild(pg)
   if cells:
     ss = StateSet()
     lms = LightModelState()
@@ -486,20 +475,12 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg.setStates(ss)
     sf.world.addChild(qg)
   if horizon and not fd:
-    tg = TriangleGroup(True, s3, s2, horizon)
-    states = StateSet()
-    cs = ColorState()
-    cs.setColor(Color.CYAN)
-    states.add(cs)
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    states.add(lms)
-    ms = MaterialState()
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    ms.setSpecular(Color.WHITE)
-    ms.setShininess(100.0)
-    states.add(ms)
-    tg.setStates(states);
+    hp = Helper()
+    print "fvalues"
+    print min(f)
+    print max(f)
+    ts = hp.horizonWithAmplitude(s1,s2,s3,s1,sy,sx,[cmin,cmax],horizon,f)
+    tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if horizon and fd:
     hp = Helper()
@@ -517,55 +498,10 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setSpecular(Color.GRAY)
     ms.setShininess(100.0)
     ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    if not smax:
-      ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     sg.setStates(ss)
     size = 2.0
-    if links:
-      size = 0.65 
-      ls = LineState()
-      ls.setWidth(1.5)
-      ls.setSmooth(True)
-      ss.add(ls)
-    ct = 0
-    for skin in skins:
-      if smax>0.0: # show fault throws
-        cmap = ColorMap(-smax,smax,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
-      else: # show fault likelihood
-        cmap = ColorMap(0.2,0.8,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
-      qg = QuadGroup(xyz,uvw,rgb)
-      qg.setStates(None)
-      sg.addChild(qg)
-      if curve or trace:
-        cell = skin.getCellNearestCentroid()
-        if curve:
-          xyz = cell.getFaultCurveXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-        if trace:
-          xyz = cell.getFaultTraceXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-      if links:
-        if ct==0:
-          r,g,b=0,0,0
-        if ct==1:
-          r,g,b=0,0,1
-        if ct==2:
-          r,g,b=0,1,1
-        if ct==3:
-          #r,g,b=0.627451,0.12549,0.941176
-          r,g,b=1,1,1
-        r,g,b=0,0,1
-        xyz = skin.getCellLinksXyz()
-        #rgb = skin.getCellLinksRgb(r,g,b,xyz)
-        #lg = LineGroup(xyz,rgb)
-        lg = LineGroup(xyz)
-        sg.addChild(lg)
-        #ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(150,5,56)
   #ipg.setSlices(85,5,43)

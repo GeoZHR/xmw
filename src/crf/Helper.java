@@ -2,6 +2,7 @@ package crf;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.interp.*;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -54,7 +55,7 @@ public class Helper {
   }
 
   public float[][] surfaceResample(
-    Sampling s2, Sampling s3, float d3, float[][] fxs) 
+    Sampling s2, Sampling s3, float d3, float[][] fxs, float[][] ndfs) 
   {
     int np = fxs[0].length;
     float l2 = (float)s2.getLast();
@@ -65,17 +66,40 @@ public class Helper {
     float[] x3 = new float[np];
     float[] fx = new float[np];
     for (int ip=0; ip<np; ++ip) {
+      fx[ip] = fxs[0][ip];
+      x2[ip] = fxs[1][ip];
+      x3[ip] = 1.5f*(fxs[2][ip]-2012-60)+2012+60;
     }
     float x2min = max(f2,min(x2));
+    float x2max = min(l2,max(x2));
     float x3min = max(f3,min(x3));
-    float x2max = minmax(x2);
-    float x3max = max(x3);
-    int b2 = round(x2min);
-    RadialInterpolator2.Biharmonic bs = new RadialInterpolator2.Biharmonic();
-    RadialInterpolator2 ri = new RadialInterpolator2(bs,fxs[0],x2,x3);
-
-
-    return null;
+    float x3max = min(l3,max(x3));
+    System.out.println("x2min="+x2min);
+    System.out.println("x2max="+x2max);
+    System.out.println("x3min="+x3min);
+    System.out.println("x3max="+x3max);
+    System.out.println("l3="+l3);
+    final int b2 = round(x2min)+1;
+    final int e2 = round(x2max)-1;
+    final int b3 = round(x3min);
+    final int e3 = round(x3max);
+    final int n2 = e2-b2+1;
+    final int n3 = e3-b3+1;
+    final float[][] sf = new float[n3][n2];
+    //RadialInterpolator2.Biharmonic bs = new RadialInterpolator2.Biharmonic();
+    //final RadialInterpolator2 ri = new RadialInterpolator2(bs,fx,x2,x3);
+    final SibsonInterpolator2 si = new SibsonInterpolator2(fx,x2,x3);
+    //Parallel.loop(n3,new Parallel.LoopInt() {
+    //public void compute(int i3) {
+      for (int i3=0; i3<n3; ++i3) {
+    System.out.println("i3="+i3);
+      for (int i2=0; i2<n2; ++i2) {
+        sf[i3][i2] = si.interpolate(i2+b2,i3+b3);
+      }}
+    //}});
+    ndfs[0] = new float[]{n2,1,b2};
+    ndfs[1] = new float[]{n3,1,b3};
+    return sf;
   }
 
   public void resample(
@@ -235,6 +259,30 @@ public class Helper {
     return buildTrigs(nz-2,sx,sy,hz,-1,mfs,fd); 
   }
 
+  public float[][] horizonWithAmplitude(
+    Sampling fsz, Sampling fsy, Sampling fsx, 
+    Sampling ssz, Sampling ssy, Sampling ssx, 
+    float[] mfs, float[][] hz, float[][][] fx) 
+  {
+    
+    int ny = ssy.getCount();
+    int nx = ssx.getCount();
+    int lz = (int)fsz.getLast()-1;
+    System.out.println("lz="+lz);
+    SincInterpolator si = new SincInterpolator();
+    float[][] fz = new float[nx][ny];
+    for (int ix=0; ix<nx; ++ix) {
+    for (int iy=0; iy<ny; ++iy) {
+      float xi = (float)ssx.getValue(ix); 
+      float yi = (float)ssy.getValue(iy); 
+      fz[ix][iy] = si.interpolate(fsz,fsy,fsx,fx,hz[ix][iy],yi,xi);
+    }}
+    System.out.println("minFz="+min(fz));
+    System.out.println("maxFz="+max(fz));
+    return buildTrigs(lz,ssx,ssy,hz,-1,mfs,fz); 
+  }
+
+
   public float[][] buildTrigs(
     int nz, Sampling sx, Sampling sy, float[][] z,  
     float color, float[] mfs, float[][] f) 
@@ -265,8 +313,8 @@ public class Helper {
         if(Float.isNaN(z4)){continue;}
         if(Float.isNaN(z5)){continue;}
         if(Float.isNaN(z6)){continue;}
-        if(z1<0||z2<0||z3<0){continue;}
-        if(z4<0||z5<0||z6<0){continue;}
+        if(z1<2||z2<2||z3<2){continue;}
+        if(z4<2||z5<2||z6<2){continue;}
         if(z1>nz||z2>nz||z3>nz){continue;}
         if(z4>nz||z5>nz||z6>nz){continue;}
         zas[k++] = z1;  zas[k++] = z2;  zas[k++] =z3;
@@ -308,8 +356,8 @@ public class Helper {
       ColorMap cp = new ColorMap(-zmax,-zmin,ColorMap.JET);
       rgb = cp.getRgbFloats(mul(zas,-1f));
     } else {
-      //ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.GRAY);
-      ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.JET);
+      ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.GRAY);
+      //ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.JET);
       rgb = cp.getRgbFloats(zfs);
     }
     return new float[][]{xyz,rgb};
