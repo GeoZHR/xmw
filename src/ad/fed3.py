@@ -41,12 +41,9 @@ def main(args):
   #goLocalSmoothingFilter()
   #goStratigraphyOrientedDiffusion()
   #goNormalPlanar()
-<<<<<<< HEAD
-  goStratigraphyOrientedDiffusionX()
-=======
+  #goStratigraphyOrientedDiffusionX()
   #goTest()
   #goStratigraphyOrientedDiffusionX()
->>>>>>> 4f68abf23bc2711bba99ddcbdbc09a7c67b30a29
   #goNonlinearDiffusion()
   #goSemblance()
   #goSemblanceHale()
