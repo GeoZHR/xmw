@@ -88,11 +88,10 @@ def setupForSubset(name):
     print "setupForSubset: nathanSub8"
     seismicDir = _datdir+"nathan/sub8/"
     n1,n2,n3 = 500,3675,825  #fx = copy(500,n2,n3,0,0,0,fx) gxfault
-    #n1,n2,n3 = 300,200,200  #fx = copy(n1,500,500,0,1500,150,gxfault) gxsmall
-    d1,d2,d3 = 1.0,1.0,1.0 
-    f1,f2,f3 = 0.0,0.0,0.0
-    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    #f1,f2,f3 = 0.000,5400,10744
+    #d1,d2,d3 = 0.002,0.0125,0.0125 
+    #f1,f2,f3 = 0.0,1100*d2,60*d3 # (s,km,km)
+    d1,d2,d3 = 1,1,1 # (sample,inline,crossline)
+    f1,f2,f3 = 0,2220+1100,2012+60 # (sample,inline,crossline)
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
   elif name=="nathanSub6":

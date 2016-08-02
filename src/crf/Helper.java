@@ -53,6 +53,31 @@ public class Helper {
     }}}
   }
 
+  public float[][] surfaceResample(
+    Sampling s2, Sampling s3, float d3, float[][] fxs) 
+  {
+    int np = fxs[0].length;
+    float l2 = (float)s2.getLast();
+    float f2 = (float)s2.getFirst();
+    float l3 = (float)s3.getLast();
+    float f3 = (float)s3.getFirst();
+    float[] x2 = new float[np];
+    float[] x3 = new float[np];
+    float[] fx = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+    }
+    float x2min = max(f2,min(x2));
+    float x3min = max(f3,min(x3));
+    float x2max = minmax(x2);
+    float x3max = max(x3);
+    int b2 = round(x2min);
+    RadialInterpolator2.Biharmonic bs = new RadialInterpolator2.Biharmonic();
+    RadialInterpolator2 ri = new RadialInterpolator2(bs,fxs[0],x2,x3);
+
+
+    return null;
+  }
+
   public void resample(
     final Sampling s1, final Sampling s2, final Sampling s3, 
     final float d3i, final float[][][] fx, final float[][][] fi) 

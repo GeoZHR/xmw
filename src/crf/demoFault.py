@@ -10,7 +10,8 @@ setupForSubset("nathanSub8")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile  = "gxp" # input image (maybe after bilateral filtering)
+gxfile  = "gx" # input image (maybe after bilateral filtering)
+gxpfile  = "gxp" # input image (maybe after bilateral filtering)
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -20,15 +21,13 @@ ftvfile  = "ftv" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
 fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
-fs1file = "fs1" # fault slip (1st component)
-fs2file = "fs2" # fault slip (2nd component)
-fs3file = "fs3" # fault slip (3rd component)
+fltvfile = "fltv" # fault likelihood thinned
+fptvfile = "fptv" # fault strike thinned
+fttvfile = "fttv" # fault dip thinned
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
-smfile = "sm"
-cmfile = "cm"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -60,18 +59,21 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goSkinTv()
-  #goReskin()
-  #goSmooth()
-  #goSlip()
-  #goUnfaultS()
-  #goDisplay()
+  #goSkinTv()
   #goFaultImages()
+  goSufaces()
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goPadding()
+def goSurfaces():
+  nl1 = 1646796
+  nu1 = 1330218
+  nm1 =  888165
+  sl = readImage2D(3,nl1,"L1.dat")
+  su = readImage2D(3,nl1,"U1.dat")
+  sm = readImage2D(3,nl1,"M1.dat")
 def goPadding():
   gx = readImage(gxfile)
   tp = readImage2D(n2,n3,"ob")
@@ -92,7 +94,7 @@ def getOceanBottom():
 def goScan():
   print "goScan ..."
   if not plotOnly:
-    gx = readImage(gxfile)
+    gx = readImage(gxpfile)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sig1,sig2,smooth=16.0,1.0,4.0
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sig1,sig2,smooth,gx)
@@ -232,20 +234,23 @@ def goSkinTv():
     writeImage("fptv",fp)
     writeImage("fttv",ft)
   else:
-    fl = zerofloat(n1,n2,n3)
+    fp = zerofloat(n1,n2,n3)
     skins = readSkins(fsktv)
     fsx = FaultSkinnerX()
-    fsx.getFl(2000,skins,fl)
+    fsx.getFp(4000,skins,fp)
 
     #fl = readImage("fltv")
     #fp = readImage("fptv")
     #ft = readImage("fttv")
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+
+  '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  '''
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   print len(skins)
   fd = FaultDisplay()
@@ -303,33 +308,27 @@ def goSkin():
 def goFaultImages():
   gx = readImage(gxfile)
   if not plotOnly:
-    fd = FaultDisplay()
-    #skins = readSkins(fsktv)
-    skins = readSkins(fskbase)
-    print "fault skins load finish..."
-    #flt = fillfloat(-0.001,n1,n2,n3)
-    fpt = fillfloat(-0.001,n1,n2,n3)
-    #ftt = fillfloat(-0.001,n1,n2,n3)
-    fd = FaultDisplay()
-    #fd.getFlt(skins,gx,flt)
-    fd.getFpt(skins,gx,fpt)
-    #fd.getFtt(skins,gx,ftt)
-    #writeImage(fltfile,flt)
-    writeImage("fpk",fpt)
-    #writeImage(fttfile,ftt)
+    fl = fillfloat(-0.001,n1,n2,n3)
+    fp = fillfloat(-0.001,n1,n2,n3)
+    ft = fillfloat(-0.001,n1,n2,n3)
+    skins = readSkins(fsktv)
+    fp = zerofloat(n1,n2,n3)
+    skins = readSkins(fsktv)
+    fsx = FaultSkinnerX()
+    fsx.getFlpt(4000,skins,fl,fp,ft)
+    writeImage(fltvfile,fl)
+    writeImage(fptvfile,fp)
+    writeImage(fttvfile,ft)
   else:
-    #flt = readImage(fltfile)
-    #fpt = readImage(fptfile)
-    fpt = readImage("fpk")
-    #ftt = readImage(fttfile)
-  '''
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+    fl = readImage(fltvfile)
+    fp = readImage(fptvfile)
+    ft = readImage(fttvfile)
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
+  plot3(gx,ft,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
-  '''
 def goSmooth():
   print "goSmooth ..."
   flstop = 0.1

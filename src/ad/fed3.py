@@ -34,7 +34,7 @@ n1,n2,n3 = 240,880,500
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goLinearDiffusion()
@@ -42,14 +42,14 @@ def main(args):
   #goStratigraphyOrientedDiffusion()
   #goNormalPlanar()
   #goTest()
-  goStratigraphyOrientedDiffusionX()
+  #goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
   #goSemblance()
   #goSemblanceHale()
   #goCovariance()
   #goFastCovariance()
   #goVariance()
-  #goShapeSemblance()
+  goShapeSemblance()
 def goNormalPlanar():
   fx = readImage(fxfile)
   u1 = zerofloat(n1,n2,n3)
