@@ -95,7 +95,7 @@ def goHorizonL1():
     se = SurfaceExtractorC()
     se.setWeights(0.0)
     se.setCG(0.01,100)
-    sf = se.surfaceInitialization(n2,n3,n1-1,x1,x2,x3)
+    sf = se.surfaceInitializationFast(n2,n3,n1-1,x1,x2,x3)
     se.surfaceUpdateFromSlopes(ep,p2,p3,x1,x2,x3,sf)
     writeImage(hl1file,sf)
   else:

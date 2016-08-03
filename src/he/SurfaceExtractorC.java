@@ -78,6 +78,28 @@ public class SurfaceExtractorC {
     }
   }
 
+  // Interpolate an initial surface passing through control points
+  public float[][] surfaceInitializationFast
+    (int n2, int n3, float lmt, float[] k1, float[] k2, float[] k3) 
+  {
+    if (k1.length==1) {
+      float[][] surf = zerofloat(n2,n3);
+      add(surf,k1[0],surf);
+      return surf; 
+    } else {
+      Sampling s2 = new Sampling(n2,1.0f,0.0f);
+      Sampling s3 = new Sampling(n3,1.0f,0.0f);
+      //RadialInterpolator2.Biharmonic bs = new RadialInterpolator2.Biharmonic();
+      SibsonInterpolator2 si = new SibsonInterpolator2(k1,k2,k3);
+      //RadialGridder2 rg = new RadialGridder2(bs,k1,k2,k3);    
+      float[][] surf = si.interpolate(s2,s3);
+      surfaceCorrect(surf,lmt);
+      checkControlPoints(k1,k2,k3,surf); 
+      return surf;
+    }
+  }
+
+
   // Updates the surface using the seismic normal vectors and control points.
   public void surfaceUpdateFromSlopes
     (float[][][] ep, float[][][] p ,float[][][] q,
@@ -395,6 +417,21 @@ public class SurfaceExtractorC {
       }
     }
   }
+
+  private static void checkControlPoints(
+    float[] k1, float[] k2, float[] k3, float[][] f) 
+  {
+    if (k2!=null && k3!=null) {
+      int np = k2.length;
+      for (int ip=0; ip<np; ++ip) {
+        int i2 = (int)k2[ip];
+        int i3 = (int)k3[ip];
+        System.out.println(" i2="+i2+" i3="+i3+" f1="+f[i3][i2]);
+        f[i3][i2] = k1[ip];
+      }
+    }
+  }
+
 
   private static void constrain(float[] k2, float[] k3, float[][] x) {
     if (k2!=null && k3!=null) {
