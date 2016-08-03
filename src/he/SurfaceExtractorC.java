@@ -90,9 +90,10 @@ public class SurfaceExtractorC {
       Sampling s2 = new Sampling(n2,1.0f,0.0f);
       Sampling s3 = new Sampling(n3,1.0f,0.0f);
       //RadialInterpolator2.Biharmonic bs = new RadialInterpolator2.Biharmonic();
-      SibsonInterpolator2 si = new SibsonInterpolator2(k1,k2,k3);
+      //SibsonInterpolator2 si = new SibsonInterpolator2(k1,k2,k3);
+      BlendedGridder2 bg = new BlendedGridder2(k1,k2,k3);
       //RadialGridder2 rg = new RadialGridder2(bs,k1,k2,k3);    
-      float[][] surf = si.interpolate(s2,s3);
+      float[][] surf = bg.grid(s2,s3);
       surfaceCorrect(surf,lmt);
       checkControlPoints(k1,k2,k3,surf); 
       return surf;

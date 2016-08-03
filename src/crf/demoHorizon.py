@@ -17,7 +17,7 @@ hl1file = "hl1"
 
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -76,6 +76,9 @@ def goSlopes():
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
 def goHorizonL1():
+
+  d1 = s1.getDelta();
+  f1 = s1.getFirst();
   gx = readImage(gxfile)
   if not plotOnly:
     fn = "sl1"
@@ -94,12 +97,17 @@ def goHorizonL1():
     ep = pow(ep,6)
     se = SurfaceExtractorC()
     se.setWeights(0.0)
-    se.setCG(0.01,100)
-    sf = se.surfaceInitialization(n2,n3,n1-1,x1,x2,x3)
+    se.setCG(0.01,200)
+    sf = se.surfaceInitializationFast(n2,n3,n1-1,x1,x2,x3)
     se.surfaceUpdateFromSlopes(ep,p2,p3,x1,x2,x3,sf)
+    sf = add(sf,f1)
+    sf = mul(sf,d1)
     writeImage(hl1file,sf)
   else:
     sf = readImage2D(n2,n3,hl1file)
+    sf = add(sf,f1)
+    sf = mul(sf,d1)
+
   plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
 
 def goHorizon3():
