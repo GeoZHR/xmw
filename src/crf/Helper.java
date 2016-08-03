@@ -1,5 +1,6 @@
 package crf;
 
+import java.util.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.*;
@@ -56,8 +57,38 @@ public class Helper {
 
   public float[][] controlPointsFromSurface(
     Sampling s2, Sampling s3, float[][] sf) {
+    int n2 = s2.getCount();
+    int n3 = s3.getCount();
     ArrayList<Float> fxa = new ArrayList<Float>();
-    return null;
+    ArrayList<Float> x2a = new ArrayList<Float>();
+    ArrayList<Float> x3a = new ArrayList<Float>();
+    float[][] g2 = new float[n3][n2];
+    float[][] g3 = new float[n3][n2];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
+    rgf.apply10(sf,g2);
+    rgf.apply01(sf,g3);
+    for (int i3=5; i3<n3-5; i3+=20) {
+    for (int i2=5; i2<n2-5; i2+=20) {
+      float g2i = g2[i3][i2];
+      float g3i = g3[i3][i2];
+      float sfi = sf[i3][i2];
+      if (sfi<10f) {continue;}
+      float gsi = sqrt(g2i*g2i+g3i*g3i);
+      if (gsi>5f) {System.out.println("gsi="+gsi);continue;}
+      fxa.add(sfi);
+      x2a.add((float)s2.getValue(i2));
+      x3a.add((float)s3.getValue(i3));
+    }}
+    int np = fxa.size();
+    float[] fx = new float[np];
+    float[] x2 = new float[np];
+    float[] x3 = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+      fx[ip] = fxa.get(ip);
+      x2[ip] = x2a.get(ip);
+      x3[ip] = x3a.get(ip);
+    }
+    return new float[][]{fx,x2,x3};
   }
 
   public float[][] surfaceResample(

@@ -16,13 +16,46 @@ p3file  = "p3" # crossline slopes
 
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goSlopes()
+  goPickedSurfaces()
+  #goSlopes()
   #goHorizon1()
+
+def goPickedSurfaces():
+  fn = "sl1"
+  gx = readImage(gxfile)
+  if not plotOnly:
+    nl1 = 1646796
+    nu1 = 1330218
+    nm1 =  888165
+    sp = readImage2D(nl1,3,"hzs/L1")
+    #sp = readImage2D(nu1,3,"hzs/U1")
+    #sp = readImage2D(nm1,3,"hzs/M1")
+    print min(sp[0])
+    print max(sp[0])
+    print min(sp[2])
+    print max(sp[2])
+    hp = Helper()
+    ndfs = zerofloat(3,2)
+    sf = hp.surfaceResample(s2,s3,1.5,sp,ndfs)
+    sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
+    sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
+    writeImage(fn,sf)
+    writeImage(fn+"ndfs",ndfs)
+  else:
+    ndfs = readImage2D(3,2,fn+"ndfs")
+    ny = round(ndfs[0][0])
+    nx = round(ndfs[1][0])
+    sf = readImage2D(ny,nx,fn)
+    sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
+    sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
+    x1,x2,x3=hp.controlPointsFromSurface(sy,sx,sf)
+  #plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
+
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
