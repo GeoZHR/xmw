@@ -55,7 +55,7 @@ def goPickedSurfaces():
     sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
     hp = Helper()
     x1,x2,x3=hp.controlPointsFromSurface(sy,sx,sf)
-  #plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
+  plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
 
 def goSlopes():
   print "goSlopes ..."

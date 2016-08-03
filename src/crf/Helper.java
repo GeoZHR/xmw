@@ -74,7 +74,7 @@ public class Helper {
       float sfi = sf[i3][i2];
       if (sfi<10f) {continue;}
       float gsi = sqrt(g2i*g2i+g3i*g3i);
-      if (gsi>5f) {System.out.println("gsi="+gsi);continue;}
+      if (gsi>20f) {System.out.println("gsi="+gsi);continue;}
       fxa.add(sfi);
       x2a.add((float)s2.getValue(i2));
       x3a.add((float)s3.getValue(i3));
