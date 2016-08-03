@@ -217,8 +217,7 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          horizon=None,fd=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,png=None):
+        sx=None,sy=None,horizon=None,fd=None,cells=None,skins=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -283,20 +282,12 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg.setStates(ss)
     sf.world.addChild(qg)
   if horizon and not fd:
-    tg = TriangleGroup(True, s3, s2, horizon)
-    states = StateSet()
-    cs = ColorState()
-    cs.setColor(Color.CYAN)
-    states.add(cs)
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    states.add(lms)
-    ms = MaterialState()
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    ms.setSpecular(Color.WHITE)
-    ms.setShininess(100.0)
-    states.add(ms)
-    tg.setStates(states);
+    hp = Helper()
+    print "fvalues"
+    print min(f)
+    print max(f)
+    ts = hp.horizonWithAmplitude(s1,s2,s3,s1,sy,sx,[cmin,cmax],horizon,f)
+    tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if horizon and fd:
     hp = Helper()
@@ -326,55 +317,16 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setSpecular(Color.GRAY)
     ms.setShininess(100.0)
     ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    if not smax:
-      ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     sg.setStates(ss)
     size = 2.0
-    if links:
-      size = 0.65 
-      ls = LineState()
-      ls.setWidth(1.5)
-      ls.setSmooth(True)
-      ss.add(ls)
-    ct = 0
     for skin in skins:
-      if smax>0.0: # show fault throws
-        cmap = ColorMap(-smax,smax,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
-      else: # show fault likelihood
-        cmap = ColorMap(0.2,0.8,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
+      cmap = ColorMap(0.2,0.8,ColorMap.JET)
+      xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
       qg = QuadGroup(xyz,uvw,rgb)
       qg.setStates(None)
       sg.addChild(qg)
-      if curve or trace:
-        cell = skin.getCellNearestCentroid()
-        if curve:
-          xyz = cell.getFaultCurveXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-        if trace:
-          xyz = cell.getFaultTraceXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-      if links:
-        if ct==0:
-          r,g,b=0,0,0
-        if ct==1:
-          r,g,b=0,0,1
-        if ct==2:
-          r,g,b=0,1,1
-        if ct==3:
-          #r,g,b=0.627451,0.12549,0.941176
-          r,g,b=1,1,1
-        r,g,b=0,0,1
-        xyz = skin.getCellLinksXyz()
-        #rgb = skin.getCellLinksRgb(r,g,b,xyz)
-        #lg = LineGroup(xyz,rgb)
-        lg = LineGroup(xyz)
-        sg.addChild(lg)
-        #ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(150,5,56)
   #ipg.setSlices(85,5,43)
