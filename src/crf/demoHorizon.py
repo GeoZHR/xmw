@@ -252,19 +252,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
-  if xyz:
-    pg = PointGroup(0.2,xyz)
-    ss = StateSet()
-    cs = ColorState()
-    cs.setColor(Color.YELLOW)
-    ss.add(cs)
-    pg.setStates(ss)
-    #ss = StateSet()
-    #ps = PointState()
-    #ps.setSize(5.0)
-    #ss.add(ps)
-    #pg.setStates(ss)
-    sf.world.addChild(pg)
   if cells:
     ss = StateSet()
     lms = LightModelState()
