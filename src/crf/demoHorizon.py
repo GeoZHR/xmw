@@ -10,7 +10,6 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-fxfile  = "fx" # input image (maybe after bilateral filtering)
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
@@ -22,8 +21,8 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSlopes()
-  goHorizon1()
+  goSlopes()
+  #goHorizon1()
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)

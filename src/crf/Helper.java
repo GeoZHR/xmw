@@ -54,6 +54,12 @@ public class Helper {
     }}}
   }
 
+  public float[][] controlPointsFromSurface(
+    Sampling s2, Sampling s3, float[][] sf) {
+    ArrayList<Float> fxa = new ArrayList<Float>();
+    return null;
+  }
+
   public float[][] surfaceResample(
     Sampling s2, Sampling s3, float d3, float[][] fxs, float[][] ndfs) 
   {
