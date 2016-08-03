@@ -56,9 +56,10 @@ public class Helper {
   }
 
   public float[][] controlPointsFromSurface(
-    Sampling s2, Sampling s3, float[][] sf) {
-    int n2 = s2.getCount();
-    int n3 = s3.getCount();
+    Sampling fs1, Sampling fs2, Sampling fs3,
+    Sampling ss2, Sampling ss3, float[][] sf) {
+    int n2 = ss2.getCount();
+    int n3 = ss3.getCount();
     ArrayList<Float> fxa = new ArrayList<Float>();
     ArrayList<Float> x2a = new ArrayList<Float>();
     ArrayList<Float> x3a = new ArrayList<Float>();
@@ -67,6 +68,8 @@ public class Helper {
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     rgf.apply10(sf,g2);
     rgf.apply01(sf,g3);
+    double f1 = fs1.getFirst();
+    double d1 = fs1.getDelta();
     for (int i3=5; i3<n3-5; i3+=20) {
     for (int i2=5; i2<n2-5; i2+=20) {
       float g2i = g2[i3][i2];
@@ -75,9 +78,10 @@ public class Helper {
       if (sfi<10f) {continue;}
       float gsi = sqrt(g2i*g2i+g3i*g3i);
       if (gsi>20f) {System.out.println("gsi="+gsi);continue;}
-      fxa.add(sfi);
-      x2a.add((float)s2.getValue(i2));
-      x3a.add((float)s3.getValue(i3));
+      float fxi = (float)((sfi-f1)/d1);
+      fxa.add(fxi);
+      x2a.add((float)(ss2.getValue(i2)-fs2.getFirst()));
+      x3a.add((float)(ss3.getValue(i3)-fs3.getFirst()));
     }}
     int np = fxa.size();
     float[] fx = new float[np];

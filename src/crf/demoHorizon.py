@@ -13,6 +13,7 @@ gxfile  = "gx" # input image (maybe after bilateral filtering)
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
+hl1file = "hl1"
 
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
@@ -23,7 +24,7 @@ plotOnly = True
 def main(args):
   goPickedSurfaces()
   #goSlopes()
-  #goHorizon1()
+  #goHorizonL1()
 
 def goPickedSurfaces():
   fn = "sl1"
@@ -74,34 +75,32 @@ def goSlopes():
         clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
-def goHorizon1():
-  k1 = [ 232, 228, 210, 222, 202, 200, 178, 194, 189, 234, 248, 243,
-         123, 161, 174, 152, 145, 168, 158, 173, 200, 250, 214, 182]
-  k2 = [1481,1481,1481,1481,1481,1481,1481,1481,1486,1480,1487,1487,
-        1924,1894,1855,1821,1745,1707,1690,1628,1561,1486,1420,1280]
-  k3 = [ 181,  20, 252, 313, 393, 443, 512, 572, 623, 676, 754, 780,
-         811, 811, 811, 811, 811, 811, 811, 811, 811, 811, 811, 811]
+def goHorizonL1():
   gx = readImage(gxfile)
   if not plotOnly:
+    fn = "sl1"
+    ndfs = readImage2D(3,2,fn+"ndfs")
+    ny = round(ndfs[0][0])
+    nx = round(ndfs[1][0])
+    sf = readImage2D(ny,nx,fn)
+    sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
+    sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
+    hp = Helper()
+    x1,x2,x3=hp.controlPointsFromSurface(sy,sx,sf)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
-    ep = pow(ep,4)
+
+    ep = pow(ep,6)
     se = SurfaceExtractorC()
     se.setWeights(0.0)
     se.setCG(0.01,100)
-    sf = se.surfaceInitialization(n2,n3,n1-1,k1,k2,k3)
-    se.surfaceUpdateFromSlopes(ep,p2,p3,k1,k2,k3,sf)
-    writeImage(hz1file,sf)
+    sf = se.surfaceInitialization(n2,n3,n1-1,x1,x2,x3)
+    se.surfaceUpdateFromSlopes(ep,p2,p3,x1,x2,x3,sf)
+    writeImage(hl1file,sf)
   else:
-    sf = readImage2D(n2,n3,hz1file)
-  #rgf = RecursiveGaussianFilterP(2.0)
-  #rgf.apply00(sf,sf)
-  hp = Helper()
-  hv = zerofloat(n1,n2,n3)
-  hp.horizonToImage(sf,hv)
-  #plot3(gx,horizon=sf)
-  plot3(gx,hv,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
+    sf = readImage2D(n2,n3,hl1file)
+  plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
 
 def goHorizon3():
   k1 = [ 199, 148, 212, 266, 169, 175, 147, 218, 193, 127, 203,  95,
@@ -221,7 +220,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  #s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
