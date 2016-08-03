@@ -55,7 +55,7 @@ def goPickedSurfaces():
     sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
     sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
     hp = Helper()
-    x1,x2,x3=hp.controlPointsFromSurface(sy,sx,sf)
+    x1,x2,x3=hp.controlPointsFromSurface(s1,s2,s3,sy,sx,sf)
   plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
 
 def goSlopes():
@@ -86,7 +86,7 @@ def goHorizonL1():
     sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
     sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
     hp = Helper()
-    x1,x2,x3=hp.controlPointsFromSurface(sy,sx,sf)
+    x1,x2,x3=hp.controlPointsFromSurface(s1,s2,s3,sy,sx,sf)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
