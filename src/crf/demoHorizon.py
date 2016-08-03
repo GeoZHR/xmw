@@ -53,6 +53,7 @@ def goPickedSurfaces():
     sf = readImage2D(ny,nx,fn)
     sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
     sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
+    hp = Helper()
     x1,x2,x3=hp.controlPointsFromSurface(sy,sx,sf)
   #plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
 
