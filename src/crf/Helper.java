@@ -70,8 +70,8 @@ public class Helper {
     rgf.apply01(sf,g3);
     double f1 = fs1.getFirst();
     double d1 = fs1.getDelta();
-    for (int i3=5; i3<n3-5; i3+=20) {
-    for (int i2=5; i2<n2-5; i2+=20) {
+    for (int i3=5; i3<n3-5; i3+=50) {
+    for (int i2=5; i2<n2-5; i2+=50) {
       float g2i = g2[i3][i2];
       float g3i = g3[i3][i2];
       float sfi = sf[i3][i2];
