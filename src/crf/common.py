@@ -23,7 +23,8 @@ from edu.mines.jtk.util.ArrayMath import *
 #from beg import *
 #from ad import *
 #from hv import *
-#from he import *
+from sso import *
+from he import *
 from mef import *
 from crf import *
 

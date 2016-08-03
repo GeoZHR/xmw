@@ -12,6 +12,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
 gxpfile  = "gxp" # input image (maybe after bilateral filtering)
+epsfile  = "eps" # fault likelihood
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -56,17 +57,48 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  #goMask()
+  goPlanar()
   #goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
   #goFaultImages()
-  goSurfaces()
+  #goSurfaces()
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
-  #goPadding()
+
+def goMask():
+  f1 = s1.getFirst()
+  d1 = s1.getDelta()
+  gx = readImage(gxfile)
+  tp = readImage2D(n2,n3,"ob")
+  bt = readImage2D(n2,n3,"hl1")
+  bt = sub(bt,f1)
+  bt = div(bt,d1)
+  hp = Helper()
+  hp.padValues(tp,bt,gx)
+  plot3(gx)
+  writeImage(gxpfile,gx)
+
+def goPlanar():
+  gx = readImage(gxfile)
+  au = zerofloat(n1,n2,n3)
+  av = zerofloat(n1,n2,n3)
+  aw = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(8,2)
+  ets = lof.applyForTensors(gx)
+  ets.setEigenvalues(1.0,0.01,0.01)
+  sso = StratigraphicOrientFilter(8,2)
+  sso.applyForEigenvalues(15,ets,gx,au,av,aw)
+  writeImage("au",au)
+  writeImage("av",av)
+  writeImage("aw",aw)
+  plot3(gx,cmin=-3,cmax=3)
+  plot3(div(sub(au,av),au),cmin=0.1,cmax=0.9)
+
 def goSurfaces():
   fn = "sm1"
   gx = readImage(gxfile)
@@ -97,15 +129,6 @@ def goSurfaces():
     sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
   plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
 
-def goPadding():
-  gx = readImage(gxfile)
-  tp = readImage2D(n2,n3,"ob")
-  bt = readImage2D(n2,n3,"hz")
-  bt = add(bt,150)
-  hp = Helper()
-  hp.padValues(tp,bt,gx)
-  plot3(gx)
-  writeImage("gxp",gx)
 def getOceanBottom():
   hp = Helper()
   gx = readImage(gxfile)

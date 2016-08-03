@@ -395,6 +395,7 @@ public class StratigraphicOrientFilter {
         if (evi<0.0f) evi = 0.0f;
         if (eui<evi) eui = evi;
         el[i2][i1] = (eui-evi)/eui;
+        if (Float.isNaN(el[i2][i1])) el[i2][i1] = 0f;
         if (a1i<0.0f) {
           a1i = -a1i;
           a2i = -a2i;
@@ -461,6 +462,7 @@ public class StratigraphicOrientFilter {
         if (evi<0.0f) evi = 0.0f;
         if (eui<evi) eui = evi;
         el[i2][i1] = (eui-evi)/eui;
+        if (Float.isNaN(el[i2][i1])) el[i2][i1] = 0f;
         if (a1i<0.0f) {
           a1i = -a1i;
           a2i = -a2i;
@@ -689,9 +691,42 @@ public class StratigraphicOrientFilter {
     return et;
   }
 
-  public EigenTensors3 applyForPlanar(
-    EigenTensors3 et, float[][][] fx, 
-    float[][][] ep, float[][][] el) 
+  public void applyForEigenvalues(
+    float scale, EigenTensors3 et, float[][][] fx, 
+    float[][][] au, float[][][] av, float[][][] aw) 
+  {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    
+    float[][][] gu = au;
+    float[][][] gv = av;
+    float[][][] gw = aw;
+
+    float[][][] guu = new float[n3][n2][n1];
+    float[][][] guv = new float[n3][n2][n1];
+    float[][][] guw = new float[n3][n2][n1];
+    float[][][] gvv = new float[n3][n2][n1];
+    float[][][] gvw = new float[n3][n2][n1];
+    float[][][] gww = new float[n3][n2][n1];
+
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    computeOrientGradientM(et,fx,gu,gv,gw);
+    computeGradientProducts(gu,gv,gw,guu,guv,guw,gvv,gvw,gww);
+    float[][][] h = au;
+    float[][][][] gs = {guu,guv,guw,gvv,gvw,gww};
+    for (float[][][] g:gs) {
+      lsf.applySmoothS(g,h);
+      lsf.apply(et,scale,h,g);
+    }
+    solveEigenproblems(guu,guv,guw,gvv,gvw,gww,
+      null,null,null,null,null,null,
+      null,null,null,null,null,au,av,aw,null,null);
+  }
+
+
+  public void applyForPlanar(
+    float scale, EigenTensors3 et, float[][][] fx, float[][][] ep) 
   {
     int n3 = fx.length;
     int n2 = fx[0].length;
@@ -708,78 +743,18 @@ public class StratigraphicOrientFilter {
     float[][][] gvw = new float[n3][n2][n1];
     float[][][] gww = new float[n3][n2][n1];
 
-    float[][][] z1 = new float[n3][n2][n1];
-    float[][][] z2 = new float[n3][n2][n1];
-    float[][][] z3 = new float[n3][n2][n1];
-
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     computeOrientGradientM(et,fx,gu,gv,gw);
     computeGradientProducts(gu,gv,gw,guu,guv,guw,gvv,gvw,gww);
     float[][][] h = new float[n3][n2][n1];
     float[][][][] gs = {guu,guv,guw,gvv,gvw,gww};
-    et.setEigenvalues(0.800f,0.001f,1.0f);
     for (float[][][] g:gs) {
       lsf.applySmoothS(g,h);
-      lsf.apply(et,20,h,g);
+      lsf.apply(et,scale,h,g);
     }
-    float[][][] x1 = gu;
-    float[][][] x2 = gv;
-    float[][][] x3 = gw;
-
     solveEigenproblems(guu,guv,guw,gvv,gvw,gww,
-      null,null,x1,x2,x3,null,null,null,z1,z2,z3,null,null,null,ep,el);
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float[] u = et.getEigenvectorU(i1,i2,i3);
-      float u1i = u[0];
-      float u2i = u[1];
-      float u3i = u[2];
-
-      float v1i = -u2i/u1i;
-      float v2i = 1;
-      float v3i = 0;
-
-      float w1i = -u3i/u1i;
-      float w2i = 0;
-      float w3i = 1;
-
-      v2i  = 1f/(v1i*v1i+1);
-      v1i *= v2i;
-
-      w3i  = 1f/(w1i*w1i+1);
-      w1i *= w3i;
-      
-      float x1i = x1[i3][i2][i1];
-      float x2i = x2[i3][i2][i1];
-      float x3i = x3[i3][i2][i1];
-
-      float z1i = z1[i3][i2][i1];
-      float z2i = z2[i3][i2][i1];
-      float z3i = z3[i3][i2][i1];
-
-      float a1i = u1i*x1i+v1i*x2i+w1i*x3i;
-      float a2i = u2i*x1i+v2i*x2i+w2i*x3i;
-      float a3i = u3i*x1i+v3i*x2i+w3i*x3i;
-
-      float c1i = u1i*z1i+v1i*z2i+w1i*z3i;
-      float c2i = u2i*z1i+v2i*z2i+w2i*z3i;
-      float c3i = u3i*z1i+v3i*z2i+w3i*z3i;
-
-      float asi = 1f/sqrt(a1i*a1i+a2i*a2i+a3i*a3i);
-      float csi = 1f/sqrt(c1i*c1i+c2i*c2i+c3i*c3i);
-      a1i *= asi;
-      a2i *= asi;
-      a3i *= asi;
-
-      c1i *= csi;
-      c2i *= csi;
-      c3i *= csi;
-
-      et.setEigenvectorU(i1,i2,i3,a1i,a2i,a3i);
-      et.setEigenvectorW(i1,i2,i3,c1i,c2i,c3i);
-    }}}
-    return et;
+      null,null,null,null,null,null,
+      null,null,null,null,null,null,null,null,ep,null);
   }
 
 

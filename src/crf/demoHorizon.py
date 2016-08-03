@@ -17,7 +17,7 @@ hl1file = "hl1"
 
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -75,10 +75,14 @@ def goSlopes():
         clab="Crossline slope (sample/sample)",png="p3")
   plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
         clab="Planarity")
-def goHorizonL1():
 
+def goHorizonL1():
   d1 = s1.getDelta();
   f1 = s1.getFirst();
+  d2 = s2.getDelta();
+  f2 = s2.getFirst();
+  d3 = s3.getDelta();
+  f3 = s3.getFirst();
   gx = readImage(gxfile)
   if not plotOnly:
     fn = "sl1"
@@ -90,6 +94,22 @@ def goHorizonL1():
     sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
     hp = Helper()
     x1,x2,x3=hp.controlPointsFromSurface(s1,s2,s3,sy,sx,sf)
+    k1 = [1795,1795,1795,2495,1965,2193,2002,2298,2210,1924,2120,2001,2105,2417,2204]
+    k2 = [6969,6969,6964,4122,4029,3839,3782,3821,3414,3631,3428,3344,3398,3707,3431]
+    k3 = [2109,2195,2870,2765,2765,2771,2787,2201,2221,2718,2594,2594,2550,2128,2128]
+    np = len(x1)
+    nk = len(k1)
+    c1 = zerofloat(np+nk)
+    c2 = zerofloat(np+nk)
+    c3 = zerofloat(np+nk)
+    for ip in range(np):
+      c1[ip] = x1[ip]
+      c2[ip] = x2[ip]
+      c3[ip] = x3[ip]
+    for ik in range(nk):
+      c1[ik+np] = (k1[ik]-f1)/d1
+      c2[ik+np] = (k2[ik]-f2)/d2
+      c3[ik+np] = (k3[ik]-f3)/d3
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
@@ -97,18 +117,19 @@ def goHorizonL1():
     ep = pow(ep,6)
     se = SurfaceExtractorC()
     se.setWeights(0.0)
-    se.setCG(0.01,200)
-    sf = se.surfaceInitializationFast(n2,n3,n1-1,x1,x2,x3)
-    se.surfaceUpdateFromSlopes(ep,p2,p3,x1,x2,x3,sf)
+    se.setCG(0.01,100)
+    sf = se.surfaceInitializationFast(n2,n3,n1-1,c1,c2,c3)
+    se.surfaceUpdateFromSlopes(ep,p2,p3,c1,c2,c3,sf)
     sf = add(sf,f1)
     sf = mul(sf,d1)
     writeImage(hl1file,sf)
   else:
     sf = readImage2D(n2,n3,hl1file)
-    sf = add(sf,f1)
-    sf = mul(sf,d1)
-
-  plot3(gx,cmin=-3,cmax=3,sx=s3,sy=s2,horizon=sf)
+    hp = Helper()
+    hx = zerofloat(n1,n2,n3)
+    hp.horizonToImage(s1,sf,hx)
+  #plot3(gx,cmin=-3,cmax=3,sx=s3,sy=s2,horizon=sf)
+  plot3(gx,hx,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
 
 def goHorizon3():
   k1 = [ 199, 148, 212, 266, 169, 175, 147, 218, 193, 127, 203,  95,

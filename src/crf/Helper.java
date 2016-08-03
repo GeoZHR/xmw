@@ -70,8 +70,8 @@ public class Helper {
     rgf.apply01(sf,g3);
     double f1 = fs1.getFirst();
     double d1 = fs1.getDelta();
-    for (int i3=5; i3<n3-5; i3+=50) {
-    for (int i2=5; i2<n2-5; i2+=50) {
+    for (int i3=5; i3<n3-5; i3+=20) {
+    for (int i2=5; i2<n2-5; i2+=20) {
       float g2i = g2[i3][i2];
       float g3i = g3[i3][i2];
       float sfi = sf[i3][i2];
@@ -271,6 +271,25 @@ public class Helper {
       fx[i3][i2][ip] = 1f;
     }}
   }
+
+  public void horizonToImage(Sampling s1, float[][] hz, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float f1 = (float)s1.getFirst();
+    float d1 = (float)s1.getDelta();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int i1 = round((hz[i3][i2]-f1)/d1);
+      i1 = min(i1,n1-1);
+      int im = max(i1-1,0);
+      int ip = min(i1+1,n1-1);
+      fx[i3][i2][i1] = 1f;
+      fx[i3][i2][im] = 1f;
+      fx[i3][i2][ip] = 1f;
+    }}
+  }
+
 
   public float[][] faultDensity(float[][] ob, float[][] sf, float[][][] fp) {
     int n3 = fp.length;

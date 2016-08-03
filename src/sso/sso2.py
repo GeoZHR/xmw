@@ -15,6 +15,8 @@ from edu.mines.jtk.mosaic import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from mef import *
+from ipfx import *
 from util import *
 from sso import *
 from ad import *
@@ -23,10 +25,12 @@ pngDir = "../../../png/ad/fed2/"
 pngDir = None
 
 seismicDir = "../../../data/seis/sso/2d/poseidon/"
+seismicDir = "../../../data/seis/sso/2d/crd/"
 fxfile = "fx"
 f1,f2 = 0,0
 d1,d2 = 1,1
-n1,n2 = 120,923 # f3d75s
+n1,n2 = 120,923 # poseidon
+n1,n2 = 601,3675 # poseidon
 d1,d2 = 0.004,0.025
 f1,f2 = 0.004+d1*240,0.000
 s1 = Sampling(n1,d1,f1)
@@ -159,7 +163,7 @@ def goGaussian():
 def goLinearDiffusionX():
   fx = readImage(fxfile)
   fx = gain(fx)
-  addNoise(0.2,fx)
+  #addNoise(0.2,fx)
   sig1,sig2=8,2
   el = zerofloat(n1,n2)
   u1 = zerofloat(n1,n2)
@@ -184,11 +188,41 @@ def goLinearDiffusionX():
   lsf.apply(ets,30,fx,gx)
 
   p2 = mul(-1,div(u2,u1))
+  '''
   plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2)
   plot(gx,cmin=-1,cmax=1,cint=1.0)
   plot(fx,cmin=-1,cmax=1,cint=1.0)
+  '''
+  print min(el)
+  print max(el)
   plot(el,cmin=0,cmax=1,cint=0.2,png="el")
-  plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
+  #plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
+  goFaultScan(el)
+
+def goFaultScan(el):
+  print "goScan ..."
+  gx = readImage(fxfile)
+  smooth=2.0
+  minTheta,maxTheta = 65,85
+  sigmaTheta = 40
+  lof = LocalOrientFilter(8,2)
+  ets = lof.applyForTensors(gx)
+  fs = FaultScanner2(sigmaTheta)
+  #fl,ft = fs.scan(minTheta,maxTheta,ets,smooth,gx)
+  fl,ft = fs.scan(minTheta,maxTheta,el)
+  flt,ftt = FaultScanner2.thin([fl,ft])
+  #plot(fl,cmin=0,cmax=1,cint=0.2,png="fl")
+  plot(gx,flt,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),cint=0.2,png="wsn")
+  fc = FaultCurver()
+  fc.setMinCurveSize(30)
+  fc.setGrowLikelihoods(0.2,0.7)
+  ps = fc.findPoints([fl,ft])
+  cs = fc.findCurves(ps)
+  flt = zerofloat(n1,n2)
+  FaultCurve.getFlImage(cs,flt)
+  plot(gx,flt,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),cint=0.2,png="wsn")
+
+
 
 def goLinearDiffusion():
   fx = readImage(fxfile)

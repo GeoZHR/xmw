@@ -146,6 +146,21 @@ public class FaultScanner2 {
     return scan(st,sig1,sig2,smooth,g);
   }
 
+  public float[][][] scan(
+    double thetaMin, double thetaMax,
+    EigenTensors2 et, float smooth, float[][] g) {
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    return scan(st,et,smooth,g);
+  }
+
+  public float[][][] scan(
+    double thetaMin, double thetaMax, float[][] g) {
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    return scan(st,g);
+  }
+
+
+
 
   /**
    * Scans with the specified sampling of fault strikes and dips.
@@ -165,6 +180,19 @@ public class FaultScanner2 {
     float[][][] snd = semblanceNumDen(sig1,sig2, smooth,g);
     return scanTheta(thetaSampling,snd);
   }
+
+  public float[][][] scan(
+      Sampling thetaSampling, EigenTensors2 et, float smooth, float[][] g) {
+    float[][][] snd = semblanceNumDen(et, smooth,g);
+    return scanTheta(thetaSampling,snd);
+  }
+
+  public float[][][] scan(
+      Sampling thetaSampling, float[][] g) {
+    return scanTheta(thetaSampling,g);
+  }
+
+
 
 
   /**
@@ -431,6 +459,64 @@ public class FaultScanner2 {
     return new float[][][]{f,t};
   }
 
+  private float[][][] scanTheta(Sampling thetaSampling, float[][] el) {
+    final int n2 = el.length;
+    final int n1 = el[0].length;
+    final float[][] f = new float[n2][n1];
+    final float[][] t = new float[n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    int nt = thetaSampling.getCount();
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = -1.0f/tan(theta);
+      float[][] els = shear(si,shear,el);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(els,els);
+      float[][] s2 = unshear(si,shear,els);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        float fi = 1.0f-st;
+        if (fi>f[i2][i1]) {
+          f[i2][i1] = fi;
+          t[i2][i1] = ti;
+        }
+      }}
+    }
+
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = 1.0f/tan(theta);
+      float[][] els = shear(si,shear,el);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(els,els);
+      float[][] s2 = unshear(si,shear,els);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        float fi = 1.0f-st;
+        if (fi>f[i2][i1]) {
+          f[i2][i1] = fi;
+          t[i2][i1] = -ti;
+        }
+      }}
+    }
+    return new float[][][]{f,t};
+  }
+
+
+
 
   // Computes fault semblance numerators and denominators.
   private static float[][][] semblanceNumDen(
@@ -449,6 +535,23 @@ public class FaultScanner2 {
     lsf.apply(ets,smooth,fs,sd);
     return new float[][][]{mul(sn,sn),sd};
   }
+
+  // Computes fault semblance numerators and denominators.
+  private static float[][][] semblanceNumDen(
+    EigenTensors2 et, float smooth, float[][] f) 
+  {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    float[][] sn = new float[n2][n1];
+    float[][] sd = new float[n2][n1];
+    float[][] fs = mul(f,f);
+    et.setEigenvalues(0.00001f,1.0f);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(et,smooth,f, sn);
+    lsf.apply(et,smooth,fs,sd);
+    return new float[][][]{mul(sn,sn),sd};
+  }
+
 
 
   // Computes fault semblance numerators and denominators.
