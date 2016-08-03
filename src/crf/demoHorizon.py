@@ -108,7 +108,7 @@ def goHorizonL1():
     sf = add(sf,f1)
     sf = mul(sf,d1)
 
-  plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
+  plot3(gx,cmin=-3,cmax=3,sx=s3,sy=s2,horizon=sf)
 
 def goHorizon3():
   k1 = [ 199, 148, 212, 266, 169, 175, 147, 218, 193, 127, 203,  95,
