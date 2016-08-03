@@ -17,14 +17,14 @@ hl1file = "hl1"
 
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goPickedSurfaces()
+  #goPickedSurfaces()
   #goSlopes()
-  #goHorizonL1()
+  goHorizonL1()
 
 def goPickedSurfaces():
   fn = "sl1"
