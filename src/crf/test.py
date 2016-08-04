@@ -52,17 +52,17 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goMask()
-  goPlanar()
+  #goPlanar()
   #goScan()
-  goFaultScan()
+  #goFaultScan()
   #goThin()
-  #goSkin()
+  goSkin()
   #goSkinTv()
   #goFaultImages()
   #goSurfaces()
@@ -102,24 +102,25 @@ def goFaultScan():
   ep = readImage("ep")
   ep = clip(0.0,1.0,ep)
   gx = readImage(gxfile)
-  fe = FaultEnhancer(sigmaPhi,sigmaTheta)
-  flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
-  writeImage(flfile,flpt[0])
-  writeImage(fpfile,flpt[1])
-  writeImage(ftfile,flpt[2])
-  #plot3(gx,flpt[0],cmin=0.01,cmax=1,cmap=jetRamp(1.0))
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  flt,fpt,ftt=fe.thin(flpt)
-  writeImage(fltfile,flt)
-  writeImage(fptfile,ftt)
-  writeImage(fttfile,ftt)
-  '''
+  if not plotOnly:
+    fe = FaultEnhancer(sigmaPhi,sigmaTheta)
+    flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
+    writeImage(flfile,flpt[0])
+    writeImage(fpfile,flpt[1])
+    writeImage(ftfile,flpt[2])
+    #plot3(gx,flpt[0],cmin=0.01,cmax=1,cmap=jetRamp(1.0))
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    flt,fpt,ftt=fe.thin(flpt)
+    writeImage(fltfile,flt)
+    writeImage(fptfile,ftt)
+    writeImage(fttfile,ftt)
+  else:
+    flt = readImage(fltfile)
   plot3(gx)
   plot3(ep,cmin=0.1,cmax=0.9)
   plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0))
-  '''
 
 
 def goSurfaces():
@@ -355,8 +356,6 @@ def goSkin():
     fd.getFpt(skins,fp)
     fd.getFtt(skins,ft)
     writeImage("flk",fl)
-    writeImage("fpk",fp)
-    writeImage("ftk",ft)
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
   else:
