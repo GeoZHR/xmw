@@ -12,7 +12,8 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
 gxpfile  = "gxp" # input image (maybe after bilateral filtering)
-epsfile  = "eps" # fault likelihood
+epfile  = "ep" # fault likelihood
+eppfile  = "epp" # fault likelihood
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -52,7 +53,7 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -73,7 +74,7 @@ def main(args):
 def goMask():
   f1 = s1.getFirst()
   d1 = s1.getDelta()
-  gx = readImage(gxfile)
+  ep = readImage(epfile)
   tp = readImage2D(n2,n3,"ob")
   bt = readImage2D(n2,n3,"hl1")
   bt = sub(bt,f1)
@@ -85,19 +86,39 @@ def goMask():
 
 def goPlanar():
   gx = readImage(gxfile)
-  au = zerofloat(n1,n2,n3)
-  av = zerofloat(n1,n2,n3)
-  aw = zerofloat(n1,n2,n3)
   lof = LocalOrientFilter(8,2)
   ets = lof.applyForTensors(gx)
-  ets.setEigenvalues(1.0,0.01,0.01)
-  sso = StratigraphicOrientFilter(8,2)
-  sso.applyForEigenvalues(15,ets,gx,au,av,aw)
-  writeImage("au",au)
-  writeImage("av",av)
-  writeImage("aw",aw)
-  plot3(gx,cmin=-3,cmax=3)
-  plot3(div(sub(au,av),au),cmin=0.1,cmax=0.9)
+  ets.setEigenvalues(1.0,0.01,0.1)
+  fer = FaultEnhancer(sigmaPhi,sigmaTheta)
+  ep = fer.applyForPlanar(20,ets,gx)
+  writeImage(epfile,ep)
+  print min(ep)
+  print max(ep)
+  #plot3(gx,cmin=-3,cmax=3)
+  #plot3(ep,cmin=0.1,cmax=0.9)
+
+def goFaultScan():
+  ep = readImage("ep")
+  ep = clip(0.0,1.0,ep)
+  gx = readImage(gxfile)
+  fe = FaultEnhancer(sigmaPhi,sigmaTheta)
+  flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
+  writeImage(flfile,flpt[0])
+  writeImage(fpfile,flpt[1])
+  writeImage(ftfile,flpt[2])
+  #plot3(gx,flpt[0],cmin=0.01,cmax=1,cmap=jetRamp(1.0))
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  flt,fpt,ftt=fe.thin(flpt)
+  writeImage(fltfile,flt)
+  writeImage(fptfile,ftt)
+  writeImage(fttfile,ftt)
+  '''
+  plot3(gx)
+  plot3(ep,cmin=0.1,cmax=0.9)
+  plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0))
+  '''
 
 def goSurfaces():
   fn = "sm1"
