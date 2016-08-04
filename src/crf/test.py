@@ -12,7 +12,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
 gxpfile  = "gxp" # input image (maybe after bilateral filtering)
-epsfile  = "eps" # fault likelihood
+epfile  = "ep" # fault likelihood
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -34,11 +34,11 @@ fsktv = "fst" # fault skin (basename only)
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 20,40
+sigmaPhi,sigmaTheta = 20,50
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.6
+lowerLikelihood = 0.3
 upperLikelihood = 0.7
 minSkinSize = 200
 
@@ -58,7 +58,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goMask()
-  #goPlanar()
+  goPlanar()
   #goScan()
   goFaultScan()
   #goThin()
@@ -70,6 +70,7 @@ def main(args):
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
+
 
 def goMask():
   f1 = s1.getFirst()
@@ -92,25 +93,33 @@ def goPlanar():
   fer = FaultEnhancer(sigmaPhi,sigmaTheta)
   ep = fer.applyForPlanar(20,ets,gx)
   writeImage("ep",ep)
-  plot3(gx,cmin=-3,cmax=3)
-  plot3(ep,cmin=0.1,cmax=0.9)
+  print min(ep)
+  print max(ep)
+  #plot3(gx,cmin=-3,cmax=3)
+  #plot3(ep,cmin=0.1,cmax=0.9)
 
 def goFaultScan():
   ep = readImage("ep")
-  #gx = readImage(gxfile)
+  ep = clip(0.0,1.0,ep)
+  gx = readImage(gxfile)
   fe = FaultEnhancer(sigmaPhi,sigmaTheta)
   flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
   writeImage(flfile,flpt[0])
   writeImage(fpfile,flpt[1])
   writeImage(ftfile,flpt[2])
-  plot3(gx,flpt[0],cmin=0.25,cmax=1,cmap=jetRamp(1.0))
-  flt,fpt,ftt=fe.thin(fpt)
+  #plot3(gx,flpt[0],cmin=0.01,cmax=1,cmap=jetRamp(1.0))
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  flt,fpt,ftt=fe.thin(flpt)
   writeImage(fltfile,flt)
   writeImage(fptfile,ftt)
   writeImage(fttfile,ftt)
+  '''
   plot3(gx)
   plot3(ep,cmin=0.1,cmax=0.9)
   plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0))
+  '''
 
 
 def goSurfaces():
