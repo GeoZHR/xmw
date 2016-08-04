@@ -599,14 +599,16 @@ public class FaultEnhancer {
 
   // Sampling of angles depends on extent of smoothing.
   private Sampling makePhiSampling(float phiMin, float phiMax) {
+    /*
+    float fa = phiMin;
+    float da = max(toDegrees(0.5f/_sigmaPhi),3);
+    int na = 1+(int)((phiMax-phiMin)/da);
+    da = (phiMax-phiMin)/(na-1);
+    return new Sampling(na,da,fa);
+    */
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
   private Sampling makeThetaSampling(float thetaMin, float thetaMax) {
-    /*
-    float da = 2f;
-    int na = 1+(int)((thetaMax-thetaMin)/da);
-    return new Sampling(na,da,thetaMin);
-    */
     return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
   private static Sampling angleSampling(
