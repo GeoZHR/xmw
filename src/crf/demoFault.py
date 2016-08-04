@@ -35,7 +35,7 @@ fsktv = "fst" # fault skin (basename only)
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 20,60
+sigmaPhi,sigmaTheta = 20,50
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -103,13 +103,17 @@ def goPlanar():
 def goFaultScan():
   ep = readImage("ep")
   ep = clip(0.0,1.0,ep)
-  gx = readImage(gxfile)
-  fe = FaultEnhancer(sigmaPhi,sigmaTheta)
-  flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
-  writeImage(flfile,flpt[0])
-  writeImage(fpfile,flpt[1])
-  writeImage(ftfile,flpt[2])
+  if not potOnly:
+    fe = FaultEnhancer(sigmaPhi,sigmaTheta)
+    flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
+    writeImage(flfile,flpt[0])
+    writeImage(fpfile,flpt[1])
+    writeImage(ftfile,flpt[2])
+  else:
+    fl = readImage(flfile)
+  #gx = readImage(gxfile)
   #plot3(gx,flpt[0],cmin=0.01,cmax=1,cmap=jetRamp(1.0))
+  '''
   fl = readImage(flfile)
   fp = readImage(fpfile)
   ft = readImage(ftfile)
@@ -117,7 +121,6 @@ def goFaultScan():
   writeImage(fltfile,flt)
   writeImage(fptfile,ftt)
   writeImage(fttfile,ftt)
-  '''
   plot3(gx)
   plot3(ep,cmin=0.1,cmax=0.9)
   plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0))
