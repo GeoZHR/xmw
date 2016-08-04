@@ -103,7 +103,7 @@ def goPlanar():
 def goFaultScan():
   ep = readImage("ep")
   ep = clip(0.0,1.0,ep)
-  if not potOnly:
+  if not plotOnly:
     fe = FaultEnhancer(sigmaPhi,sigmaTheta)
     flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
     writeImage(flfile,flpt[0])
