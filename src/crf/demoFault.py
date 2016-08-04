@@ -53,14 +53,14 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goMask()
-  goPlanar()
-  #goScan()
+  #goPlanar()
+  goFaultScan()
   #goThin()
   #goSkin()
   #goSkinTv()
