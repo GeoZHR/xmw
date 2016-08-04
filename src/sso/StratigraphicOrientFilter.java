@@ -732,7 +732,7 @@ public class StratigraphicOrientFilter {
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
     
-    float[][][] gu = new float[n3][n2][n1];
+    float[][][] gu = ep;
     float[][][] gv = new float[n3][n2][n1];
     float[][][] gw = new float[n3][n2][n1];
 
@@ -746,7 +746,7 @@ public class StratigraphicOrientFilter {
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     computeOrientGradientM(et,fx,gu,gv,gw);
     computeGradientProducts(gu,gv,gw,guu,guv,guw,gvv,gvw,gww);
-    float[][][] h = new float[n3][n2][n1];
+    float[][][] h = ep;
     float[][][][] gs = {guu,guv,guw,gvv,gvw,gww};
     for (float[][][] g:gs) {
       lsf.applySmoothS(g,h);

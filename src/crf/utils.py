@@ -93,6 +93,16 @@ def setupForSubset(name):
     d1,d2,d3 = 5,1,1 # (meter,inline,crossline)
     f1,f2,f3 = 0,2220+1100,2012+60 # (sample,inline,crossline)
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="nathanTest":
+    print "setupForSubset: nathanTest"
+    seismicDir = _datdir+"nathan/test/"
+    n1,n2,n3 = 250,600,500  #fx = copy(500,n2,n3,0,0,0,fx) gxfault
+    #d1,d2,d3 = 0.002,0.0125,0.0125 
+    #f1,f2,f3 = 0.0,1100*d2,60*d3 # (s,km,km)
+    d1,d2,d3 = 1,1,1 # (meter,inline,crossline)
+    f1,f2,f3 = 0,0,0 # (sample,inline,crossline)
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+
 
   elif name=="nathanSub6":
     print "setupForSubset: nathanSub6"
