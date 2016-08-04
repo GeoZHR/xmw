@@ -103,7 +103,6 @@ def goFaultScan():
   writeImage(flfile,flpt[0])
   writeImage(fpfile,flpt[1])
   writeImage(ftfile,flpt[2])
-  '''
   plot3(gx,flpt[0],cmin=0.25,cmax=1,cmap=jetRamp(1.0))
   flt,fpt,ftt=fe.thin(fpt)
   writeImage(fltfile,flt)
@@ -112,7 +111,6 @@ def goFaultScan():
   plot3(gx)
   plot3(ep,cmin=0.1,cmax=0.9)
   plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0))
-  '''
 
 
 def goSurfaces():
