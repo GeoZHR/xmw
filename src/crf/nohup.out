@@ -407,3 +407,18 @@ X11Util: Open[1]: NamedX11Display[:0, 0x7f9fc4141c00, refCount 1, unCloseable fa
 X11Util: Open[2]: NamedX11Display[:0, 0x7f9fc49a2980, refCount 1, unCloseable false]
 X11Util: Open[3]: NamedX11Display[:0, 0x7f9fc50005f0, refCount 1, unCloseable false]
 X11Util: Open[4]: NamedX11Display[:0, 0x7f9fc5659760, refCount 1, unCloseable false]
+setupForSubset: nathanSub8
+FINE LocalSmoothingFilter: solve: bnorm=143783.55 rnorm=1184703.8
+FINE LocalSmoothingFilter:   iter=23 rnorm=1362.0571 ratio=0.0011497027
+FINE LocalSmoothingFilter: solve: bnorm=18856.09 rnorm=185335.88
+FINE LocalSmoothingFilter:   iter=23 rnorm=182.32611 ratio=9.837605E-4
+FINE LocalSmoothingFilter: solve: bnorm=17689.574 rnorm=185506.38
+FINE LocalSmoothingFilter:   iter=23 rnorm=168.13162 ratio=9.063388E-4
+FINE LocalSmoothingFilter: solve: bnorm=20498.61 rnorm=133670.11
+FINE LocalSmoothingFilter:   iter=23 rnorm=163.3039 ratio=0.0012216935
+FINE LocalSmoothingFilter: solve: bnorm=9105.653 rnorm=84405.47
+FINE LocalSmoothingFilter:   iter=23 rnorm=89.851494 ratio=0.0010645222
+FINE LocalSmoothingFilter: solve: bnorm=17988.309 rnorm=117707.79
+FINE LocalSmoothingFilter:   iter=22 rnorm=168.91986 ratio=0.001435078
+0.0
+1.0

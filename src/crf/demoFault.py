@@ -53,7 +53,7 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -86,16 +86,19 @@ def goMask():
 
 def goPlanar():
   gx = readImage(gxfile)
-  lof = LocalOrientFilter(8,2)
-  ets = lof.applyForTensors(gx)
-  ets.setEigenvalues(1.0,0.01,0.1)
-  fer = FaultEnhancer(sigmaPhi,sigmaTheta)
-  ep = fer.applyForPlanar(20,ets,gx)
-  writeImage(epfile,ep)
-  print min(ep)
-  print max(ep)
+  if not plotOnly:
+    lof = LocalOrientFilter(8,2)
+    ets = lof.applyForTensors(gx)
+    ets.setEigenvalues(1.0,0.01,0.1)
+    fer = FaultEnhancer(sigmaPhi,sigmaTheta)
+    ep = fer.applyForPlanar(20,ets,gx)
+    writeImage(epfile,ep)
+    print min(ep)
+    print max(ep)
+  else:
+    ep = readImage(epfile)
   #plot3(gx,cmin=-3,cmax=3)
-  #plot3(ep,cmin=0.1,cmax=0.9)
+  plot3(ep,cmin=0.1,cmax=0.9)
 
 def goFaultScan():
   ep = readImage("ep")
