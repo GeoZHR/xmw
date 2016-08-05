@@ -19,13 +19,13 @@ public class Helper {
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
       int b1 = round(tp[i3][i2])+5;
-      int e1 = round(bt[i3][i2])+10;
+      int e1 = round(bt[i3][i2])+5;
       e1 = min(e1,n1-1);
       for (int i1=0; i1<=b1; ++i1) {
-        gx[i3][i2][i1] = 2f;
+        gx[i3][i2][i1] = 1f;
       }
       for (int i1=e1; i1<n1; ++i1) {
-        gx[i3][i2][i1] = 2f;
+        gx[i3][i2][i1] = 1f;
       }
     }}
   }
