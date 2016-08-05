@@ -58,12 +58,12 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goMask()
   #goPlanar()
-  goFaultScan()
+  #goMask()
+  #goFaultScan()
   #goThin()
   #goSkin()
-  #goSkinTv()
+  goSkinTv()
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
@@ -71,18 +71,6 @@ def main(args):
   #goSeisResample()
   #goHorizon()
 
-def goMask():
-  f1 = s1.getFirst()
-  d1 = s1.getDelta()
-  ep = readImage(epfile)
-  tp = readImage2D(n2,n3,"ob")
-  bt = readImage2D(n2,n3,"hl1")
-  bt = sub(bt,f1)
-  bt = div(bt,d1)
-  hp = Helper()
-  hp.padValues(tp,bt,gx)
-  plot3(gx)
-  writeImage(gxpfile,gx)
 
 def goPlanar():
   gx = readImage(gxfile)
@@ -100,8 +88,22 @@ def goPlanar():
   #plot3(gx,cmin=-3,cmax=3)
   plot3(ep,cmin=0.1,cmax=0.9)
 
+def goMask():
+  f1 = s1.getFirst()
+  d1 = s1.getDelta()
+  ep = readImage(epfile)
+  plot3(ep,cmin=0.1,cmax=0.9)
+  tp = readImage2D(n2,n3,"ob")
+  bt = readImage2D(n2,n3,"hl1")
+  bt = sub(bt,f1)
+  bt = div(bt,d1)
+  hp = Helper()
+  hp.padValues(tp,bt,ep)
+  writeImage(eppfile,ep)
+  plot3(ep,cmin=0.1,cmax=0.9)
+
 def goFaultScan():
-  ep = readImage("ep")
+  ep = readImage(eppfile)
   ep = clip(0.0,1.0,ep)
   if not plotOnly:
     fe = FaultEnhancer(sigmaPhi,sigmaTheta)
@@ -196,7 +198,7 @@ def goThin():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-    flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+    flt,fpt,ftt = FaultEnhancer.thin([fl,fp,ft])
     writeImage(fltfile,flt)
     writeImage(fptfile,fpt)
     writeImage(fttfile,ftt)
@@ -208,7 +210,7 @@ def goThin():
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
 
 def goReskin():
@@ -288,8 +290,8 @@ def goSkinTv():
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)
     fsx = FaultSkinnerX()
-    fsx.setGrowLikelihoods(0.3,upperLikelihood)
-    fsx.setMinSkinSize(minSkinSize)
+    fsx.setGrowLikelihoods(0.3,0.5)
+    fsx.setMinSkinSize(1000)
     fsx.setMaxPlanarDistance(0.2)
 
     fsx.resetCells(cells)
@@ -315,10 +317,10 @@ def goSkinTv():
     #fl = readImage("fltv")
     #fp = readImage("fptv")
     #ft = readImage("fttv")
+  '''
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
-  '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
