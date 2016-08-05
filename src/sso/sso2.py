@@ -24,13 +24,13 @@ from ad import *
 pngDir = "../../../png/ad/fed2/"
 pngDir = None
 
+#seismicDir = "../../../data/seis/sso/2d/crd/"
 seismicDir = "../../../data/seis/sso/2d/poseidon/"
-seismicDir = "../../../data/seis/sso/2d/crd/"
 fxfile = "fx"
 f1,f2 = 0,0
 d1,d2 = 1,1
-n1,n2 = 120,923 # poseidon
 n1,n2 = 601,3675 # poseidon
+n1,n2 = 120,923 # poseidon
 d1,d2 = 0.004,0.025
 f1,f2 = 0.004+d1*240,0.000
 s1 = Sampling(n1,d1,f1)
@@ -39,7 +39,8 @@ s2 = Sampling(n2,d2,f2)
 def main(args):
   #goGaussian()
   #goLinearDiffusion()
-  goLinearDiffusionX()
+  #goLinearDiffusionX()
+  goLoe()
   #goNonlinearDiffusion()
   #goHilbert()
   #goGaussianD()
@@ -188,16 +189,50 @@ def goLinearDiffusionX():
   lsf.apply(ets,30,fx,gx)
 
   p2 = mul(-1,div(u2,u1))
-  '''
   plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2)
   plot(gx,cmin=-1,cmax=1,cint=1.0)
   plot(fx,cmin=-1,cmax=1,cint=1.0)
-  '''
   print min(el)
   print max(el)
   plot(el,cmin=0,cmax=1,cint=0.2,png="el")
-  #plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
-  goFaultScan(el)
+  plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
+  #goFaultScan(el)
+
+def goLoe():
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  addNoise(0.2,fx)
+  sig1,sig2=8,2
+  el = zerofloat(n1,n2)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  #lof = LocalOrientFilterP(sig1,sig2)
+  lof = LocalOrientFilter(sig1,sig2)
+  ets = lof.applyForTensors(fx)
+  loe = LocalOrientEstimator(ets,20)
+  loe.applyForNormalLinear(fx,u1,u2,el)
+  ets = loe.applyForTensors(fx)
+  ets.setEigenvalues(0.0001,1.0)
+  '''
+  sig = 10
+  cycle,limit=3,0.5
+  fed = FastExplicitDiffusion()
+  fed.setCycles(cycle,limit)
+  gx = fed.apply(sig,et,fx)
+  '''
+  gx = zerofloat(n1,n2)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,30,fx,gx)
+
+  p2 = mul(-1,div(u2,u1))
+  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2)
+  plot(gx,cmin=-1,cmax=1,cint=1.0)
+  plot(fx,cmin=-1,cmax=1,cint=1.0)
+  print min(el)
+  print max(el)
+  plot(el,cmin=0,cmax=1,cint=0.2,png="el")
+  plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
+
 
 def goFaultScan(el):
   print "goScan ..."

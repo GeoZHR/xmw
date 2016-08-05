@@ -50,14 +50,12 @@ n1,n2,n3 = 121,152,153
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
   #goFakeData()
   #goLof()
-  goSof()
-  #goSmoothL()
-  #goSmoothS()
+  goLoe()
 
 def goFakeData():
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
@@ -75,10 +73,12 @@ def goFakeData():
     hz = hs[0]
     ha = hs[1]
     writeImage(fxfile,fx)
+    '''
     writeImage(hzfile,hz)
     writeImage(hacfile,ha)
     writeImage(p2kfile,p2)
     writeImage(p3kfile,p3)
+    '''
   else:
     fx = readImage(fxfile)
     p2 = readImage(p2kfile)
@@ -98,6 +98,7 @@ def goFakeData():
 
 def goLof():
   fx = readImage(fxfile)
+  hz = readImage2D(hzfile)
   if not plotOnly:
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
@@ -106,15 +107,10 @@ def goLof():
     w2 = zerofloat(n1,n2,n3)
     w3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    el = zerofloat(n1,n2,n3)
-    au = zerofloat(n1,n2,n3)
-    av = zerofloat(n1,n2,n3)
-    aw = zerofloat(n1,n2,n3)
     sig1,sig2=8,2
     lof = LocalOrientFilter(sig1,sig2)
-    lof.apply(fx,None,None,u1,u2,u3,None,None,None,w1,w2,w3,au,av,aw,ep,el)
+    lof.apply(fx,None,None,u1,u2,u3,None,None,None,w1,w2,w3,None,None,None,ep,None)
     hp = Helper()
-    hz = readImage2D(hzfile)
     ha = hp.channelAzimuth(w2,w3,hz)
     et = hp.tensorsFromNormal(u1,u2,u3,w1,w2,w3,au,av,aw)
     p2 = mul(div(u2,u1),-1)
@@ -123,84 +119,77 @@ def goLof():
     writeImage(p3lfile,p3)
     writeImage(halfile,ha)
     writeImage(eplfile,ep)
-    writeImage(ellfile,el)
     writeTensors(etlfile,et)
   else:
-    el = readImage(ellfile)
     ep = readImage(eplfile)
     et = readTensors(etlfile)
     p2 = readImage(p2lfile)
     p3 = readImage(p3lfile)
   p2k = readImage(p2kfile)
   p3k = readImage(p3kfile)
-  hz = readImage2D(hzfile)
   ha = readImage2D(halfile)
   hc = readImage2D(hacfile)
-  au = zerofloat(n1,n2,n3)
-  av = zerofloat(n1,n2,n3)
-  aw = zerofloat(n1,n2,n3)
-  et.getEigenvalues(au,av,aw)
-  sa = add(au,av)
-  sa = add(sa,aw)
-  auv = sub(au,av)
-  plot3(div(auv,sa),hz=hz,cmin=0.4,cmax=1.0)
+  ep = pow(ep,6)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  dp3 = abs(sub(p3k,p3))
+  dp2 = abs(sub(p2k,p2))
+  dh = abs(sub(hc,ha))
+  plot3(fx,dh=dh,cmin=-2,cmax=2)
+  plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
   plot3(fx,ha=ha,cmin=-2,cmax=2)
-  plot3(fx,ha=sub(hc,ha),cmin=-2,cmax=2)
   plot3(fx,g=sub(p2k,p2),cmin=-0.5,cmax=0.5,cmap=jetFill(1.0))
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
-  plot3(fx,g=sub(p2k,p2),cmin=-0.5,cmax=0.5,cmap=jetFill(1.0),clab="p2")
-  plot3(fx,g=sub(p3k,p3),cmin=-0.5,cmax=0.5,cmap=jetFill(1.0),clab="p3")
+  plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="p2")
+  plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="p3")
 
 
-def goSof():
+def goLoe():
   fx = readImage(fxfile)
+  hz = readImage2D(hzfile)
   if not plotOnly:
     ep = zerofloat(n1,n2,n3)
-    el = zerofloat(n1,n2,n3)
-    w2 = zerofloat(n1,n2,n3)
-    w3 = zerofloat(n1,n2,n3)
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
-
+    w1 = zerofloat(n1,n2,n3)
+    w2 = zerofloat(n1,n2,n3)
+    w3 = zerofloat(n1,n2,n3)
     et = readTensors(etlfile)
-    sof = StratigraphicOrientFilter(8,2)
-    et = sof.applyForSlopePlanar(et,fx,p2,p3,ep,el,w2,w3)
-    #et = sof.applyForTensors(et,fx,ep,ep,p2,p3,w2,w3)
+    loe = LocalOrientEstimator(et,20)
+    loe.setGradientSmoothing(3)
+    loe.applyForSlopePlanar(10,fx,p2,p3,ep)
+    loe.applyForInline(fx,w1,w2,w3)
     hp = Helper()
-    hz = readImage2D(hzfile)
     ha = hp.channelAzimuth(w2,w3,hz)
-    writeImage(hasfile,ha)
     writeImage(p2sfile,p2)
     writeImage(p3sfile,p3)
+    writeImage(hasfile,ha)
     writeImage(epsfile,ep)
-    writeImage(elsfile,el)
-    writeTensors(etsfile,et)
   else:
-    el = readImage(elsfile)
-    ep = readImage(epsfile)
-    et = readTensors(etsfile)
     p2 = readImage(p2sfile)
     p3 = readImage(p3sfile)
+    ep = readImage(epsfile)
+    ha = readImage2D(hasfile)
+  hz = readImage2D(hzfile)
+  hc = readImage2D(hacfile)
   p2k = readImage(p2kfile)
   p3k = readImage(p3kfile)
-  hz = readImage2D(hzfile)
-  ha = readImage2D(hasfile)
-  hc = readImage2D(hacfile)
-  au = zerofloat(n1,n2,n3)
-  av = zerofloat(n1,n2,n3)
-  aw = zerofloat(n1,n2,n3)
-  et.getEigenvalues(au,av,aw)
-  sa = add(au,av)
-  sa = add(sa,aw)
-  auv = sub(au,av)
-  plot3(div(auv,sa),hz=hz,cmin=0.4,cmax=1.0)
+  ep = pow(ep,6)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  dp3 = abs(sub(p3k,p3))
+  dp2 = abs(sub(p2k,p2))
+  dh = abs(sub(hc,ha))
+  plot3(fx,cmin=-2,cmax=2)
+  plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
+  plot3(fx,dh=dh,cmin=-2,cmax=2)
   plot3(fx,ha=ha,cmin=-2,cmax=2)
-  plot3(fx,ha=sub(hc,ha),cmin=-2,cmax=2)
-  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
-  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
-  plot3(fx,g=sub(p2k,p2),cmin=-0.5,cmax=0.5,cmap=jetFill(1.0),clab="p2")
-  plot3(fx,g=sub(p3k,p3),cmin=-0.5,cmax=0.5,cmap=jetFill(1.0),clab="p3")
+  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p2")
+  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p3")
+  plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="Absolute errors")
+  plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="Absolute errors")
+
 def goSmoothL():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -638,8 +627,8 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,k1=120,
-    cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
+def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,dh=None,k1=120,
+    cmin=None,cmax=None,cmap=None,mk=-1,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -680,22 +669,31 @@ def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,k1=120,
     sf.world.addChild(node)
   if hz:
     sd = SurfaceDisplay()
-    ts = sd.horizonWithAmplitude([cmin,cmax],hz,f)
+    ts = sd.horizonWithAmplitude(mk,[cmin,cmax],hz,f)
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if ha:
-    amin = -0.25*Math.PI
-    amax =  0.25*Math.PI
+    amin = -0.8 #-0.25*Math.PI
+    amax =  0.8 #0.25*Math.PI
     sd = SurfaceDisplay()
     hz = readImage2D(hzfile)
     ts = sd.horizonWithChannelAzimuth([cmin,cmax],[amin,amax],hz,f,ha)
+    tg = TriangleGroup(True,ts[0],ts[1])
+    sf.world.addChild(tg)
+  if dh:
+    amin = 0
+    amax = 0.5
+    sd = SurfaceDisplay()
+    hz = readImage2D(hzfile)
+    ts = sd.horizonWithChannelAzimuth([cmin,cmax],[amin,amax],hz,f,dh)
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
 
   if cbar:
     cbar.setWidthMinimum(120)
   #ipg.setSlices(153,760,450)
-  ipg.setSlices(109,131,39)
+  ipg.setSlices(101,138,39)
+  ipg.setSlices(101,136,35)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
@@ -709,8 +707,8 @@ def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,k1=120,
   ov = sf.getOrbitView()
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
-  ov.setAzimuthAndElevation(135.0,40.0)
-  ov.setTranslate(Vector3(0.02,0.16,-0.27))
+  ov.setAzimuthAndElevation(140.0,40.0)
+  ov.setTranslate(Vector3(-0.06,0.12,-0.27))
   ov.setScale(1.25)
 
 

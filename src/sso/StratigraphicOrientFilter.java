@@ -608,17 +608,17 @@ public class StratigraphicOrientFilter {
     float[][][] aw = new float[n3][n2][n1];
     float[][][] fs = new float[n3][n2][n1];
 
+    float[][][] h = new float[n3][n2][n1];
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
-    rgf.apply000(fx,fs);
+    et.setEigenvalues(0.001f,1.0f,1.0f);
+    lsf.apply(et,3,fx,fs);
     computeOrientGradientM(et,fs,gu,gv,gw);
     computeGradientProducts(gu,gv,gw,guu,guv,guw,gvv,gvw,gww);
-    float[][][] h = new float[n3][n2][n1];
     float[][][][] gs = {guu,guv,guw,gvv,gvw,gww};
-    et.setEigenvalues(1.000f,0.05f,1.0f);
     for (float[][][] g:gs) {
       lsf.applySmoothS(g,h);
-      lsf.apply(et,30,h,g);
+      et.setEigenvalues(1.0f,0.05f,1.0f);
+      lsf.apply(et,20,h,g);
     }
     float[][][] x1 = gu;
     float[][][] x2 = gv;
@@ -633,13 +633,16 @@ public class StratigraphicOrientFilter {
       float u1i = u[0];
       float u2i = u[1];
       float u3i = u[2];
+      if (u1i<0f) {
+        u1i = -u1i;
+        u2i = -u2i;
+        u3i = -u3i;
+      }
 
       float v1i = -u2i/u1i;
       float v2i = 1;
-      float v3i = 0;
 
       float w1i = -u3i/u1i;
-      float w2i = 0;
       float w3i = 1;
 
       v2i  = 1f/(v1i*v1i+1);
@@ -662,12 +665,12 @@ public class StratigraphicOrientFilter {
 
 
       float a1i = u1i*x1i+v1i*x2i+w1i*x3i;
-      float a2i = u2i*x1i+v2i*x2i+w2i*x3i;
-      float a3i = u3i*x1i+v3i*x2i+w3i*x3i;
+      float a2i = u2i*x1i+v2i*x2i;
+      float a3i = u3i*x1i+w3i*x3i;
 
       float c1i = u1i*z1i+v1i*z2i+w1i*z3i;
-      float c2i = u2i*z1i+v2i*z2i+w2i*z3i;
-      float c3i = u3i*z1i+v3i*z2i+w3i*z3i;
+      float c2i = u2i*z1i+v2i*z2i;
+      float c3i = u3i*z1i+w3i*z3i;
 
       float asi = 1f/sqrt(a1i*a1i+a2i*a2i+a3i*a3i);
       float csi = 1f/sqrt(c1i*c1i+c2i*c2i+c3i*c3i);
@@ -1142,18 +1145,17 @@ public class StratigraphicOrientFilter {
         float u1i = u[0];
         float u2i = u[1];
         float u3i = u[2];
+        if (u1i<0f) {
+          u1i = -u1i;
+          u2i = -u2i;
+          u3i = -u3i;
+        }
         float v1i = -u2i/u1i;
         float v2i = 1;
         float v3i = 0;
         float w1i = -u3i/u1i;
         float w2i = 0;
         float w3i = 1;
-
-        v2i  = 1f/(v1i*v1i+1);
-        v1i *= v2i;
-
-        w3i  = 1f/(w1i*w1i+1);
-        w1i *= w3i;
 
         float u1p = i1+u1i;
         float u2p = i2+u2i;

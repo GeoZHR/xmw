@@ -11,6 +11,8 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+import util.*;
+
 import ipfx.*;
 
 /**
@@ -28,13 +30,13 @@ public class SurfaceDisplay {
     int ns = hzs.length;
     float[][][] tgs = new float[ns][][];
     for (int is=0; is<ns; ++is) {
-      tgs[is] = horizonWithAmplitude(mfs,hzs[is],fx);
+      tgs[is] = horizonWithAmplitude(-1,mfs,hzs[is],fx);
     }
     return tgs;
   }
 
   public float[][] horizonWithAmplitude(
-    float[] mfs, float[][] hz, float[][][] fx) 
+    int mk, float[] mfs, float[][] hz, float[][][] fx) 
   {
     int nx = fx.length;
     int ny = fx[0].length;
@@ -53,7 +55,7 @@ public class SurfaceDisplay {
       mfs[0] = min(fx);
       mfs[1] = max(fx);
     }
-    return buildTrigs(nz-2,sx,sy,hz,-1,mfs,fz); 
+    return buildTrigs(nz-2,sx,sy,hz,mk,mfs,fz); 
   }
 
   public float[][][] ulOnSurface(float[][][] surfs, float[][][] f) {
@@ -461,12 +463,12 @@ public class SurfaceDisplay {
         float z4 = z[ix+1][iy  ];
         float z5 = z[ix  ][iy+1];
         float z6 = z[ix+1][iy+1];
-        if(abs(z1-z2)>1f){continue;}
-        if(abs(z1-z3)>1f){continue;}
-        if(abs(z2-z3)>1f){continue;}
-        if(abs(z4-z5)>1f){continue;}
-        if(abs(z4-z6)>1f){continue;}
-        if(abs(z5-z6)>1f){continue;}
+        if(abs(z1-z2)>0.5f){continue;}
+        if(abs(z1-z3)>0.5f){continue;}
+        if(abs(z2-z3)>0.5f){continue;}
+        if(abs(z4-z5)>0.5f){continue;}
+        if(abs(z4-z6)>0.5f){continue;}
+        if(abs(z5-z6)>0.5f){continue;}
         if(onFault(x0,y0,z1,mk)){continue;}
         if(onFault(x0,y1,z2,mk)){continue;}
         if(onFault(x1,y0,z3,mk)){continue;}
@@ -501,6 +503,9 @@ public class SurfaceDisplay {
     float[] zas = new float[nx*ny*6];
     float[] zfs = new float[nx*ny*6];
     float[] xyz = new float[nx*ny*6*3];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
+    float[][] dz = new float[nx][ny];
+    rgf.apply10(z,dz);
     for (int ix=0;ix<nx-1; ++ix) {
       float x0 = (float)sx.getValue(ix  );
       float x1 = (float)sx.getValue(ix+1);
@@ -513,12 +518,24 @@ public class SurfaceDisplay {
         float z4 = z[ix+1][iy  ];
         float z5 = z[ix  ][iy+1];
         float z6 = z[ix+1][iy+1];
+        float dii = dz[ix][iy ]; 
+        float dm1 = dz[ix][max(iy-1,0)]; 
+        float dp1 = dz[ix][min(iy+1,ny-1)]; 
+        float dp2 = dz[ix][min(iy+2,ny-1)]; 
+        if (abs(dii)>1.5f) {continue;}
+        if (abs(dm1)>1.5f) {continue;}
+        if (abs(dp1)>1.5f) {continue;}
+        if (abs(dp2)>1.5f) {continue;}
+
+
+        /*
         if(abs(z1-z2)>2f){continue;}
         if(abs(z1-z3)>2f){continue;}
         if(abs(z2-z3)>2f){continue;}
         if(abs(z4-z5)>2f){continue;}
         if(abs(z4-z6)>2f){continue;}
         if(abs(z5-z6)>2f){continue;}
+        */
 
         if(Float.isNaN(z1)){continue;}
         if(z1<0||z2<0||z3<0){continue;}
@@ -582,6 +599,10 @@ public class SurfaceDisplay {
     float[] xyz = new float[nx*ny*6*3];
     float pi = (float)Math.PI;
     float dp = 2f*pi/(float)ny;
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
+    float[][] dz = new float[nx][ny];
+    rgf.apply10(z,dz);
+
     for (int ix=0;ix<nx-1; ++ix) {
       float x0 = (float)sx.getValue(ix  );
       float x1 = (float)sx.getValue(ix+1);
@@ -597,12 +618,23 @@ public class SurfaceDisplay {
         float z4 = z[ix+1][iy  ];
         float z5 = z[ix  ][iy+1];
         float z6 = z[ix+1][iy+1];
+        /*
         if(abs(z1-z2)>2f){continue;}
         if(abs(z1-z3)>2f){continue;}
         if(abs(z2-z3)>2f){continue;}
         if(abs(z4-z5)>2f){continue;}
         if(abs(z4-z6)>2f){continue;}
         if(abs(z5-z6)>2f){continue;}
+        */
+        float dii = dz[ix][iy ]; 
+        float dm1 = dz[ix][max(iy-1,0)]; 
+        float dp1 = dz[ix][min(iy+1,ny-1)]; 
+        float dp2 = dz[ix][min(iy+2,ny-1)]; 
+        if (abs(dii)>1.5f) {continue;}
+        if (abs(dm1)>1.5f) {continue;}
+        if (abs(dp1)>1.5f) {continue;}
+        if (abs(dp2)>1.5f) {continue;}
+
 
         if(Float.isNaN(z1)){continue;}
         if(z1<0||z2<0||z3<0){continue;}
@@ -665,6 +697,10 @@ public class SurfaceDisplay {
     float[] xyz = new float[nx*ny*6*3];
     float pi = (float)Math.PI;
     float dp = 2f*pi/(float)ny;
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
+    float[][] dz = new float[nx][ny];
+    rgf.apply10(z,dz);
+
     for (int iy=0; iy<ny-1; ++iy) {
       float x = 0.6f*nx+20f*sin(dp*iy)+10;
       int jx = round(x);
@@ -674,18 +710,14 @@ public class SurfaceDisplay {
           float x1 = (float)sx.getValue(ix+1);
           float y0 = (float)sy.getValue(iy  );
           float y1 = (float)sy.getValue(iy+1);
-          float z1 = z[ix  ][iy  ];
-          float z2 = z[ix  ][iy+1];
-          float z3 = z[ix+1][iy  ];
-          float z4 = z[ix+1][iy  ];
-          float z5 = z[ix  ][iy+1];
-          float z6 = z[ix+1][iy+1];
-          if(abs(z1-z2)>2f){continue;}
-          if(abs(z1-z3)>2f){continue;}
-          if(abs(z2-z3)>2f){continue;}
-          if(abs(z4-z5)>2f){continue;}
-          if(abs(z4-z6)>2f){continue;}
-          if(abs(z5-z6)>2f){continue;}
+          float dii = dz[ix][iy ]; 
+          float dm1 = dz[ix][max(iy-1,0)]; 
+          float dp1 = dz[ix][min(iy+1,ny-1)]; 
+          float dp2 = dz[ix][min(iy+2,ny-1)]; 
+          if (abs(dii)>1.5f) {continue;}
+          if (abs(dp1)>1.5f) {continue;}
+          if (abs(dp2)>1.5f) {continue;}
+          if (abs(dm1)>1.5f) {continue;}
           zfs[k++] = f[ix  ][iy  ];
           zfs[k++] = f[ix  ][iy+1];
           zfs[k++] = f[ix+1][iy  ];
