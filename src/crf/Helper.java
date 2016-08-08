@@ -328,6 +328,28 @@ public class Helper {
     }}
   }
 
+  public void horizonToImage(
+    Sampling s1, int f2, int f3, 
+    float[][] hz, float[][][] fx) 
+  {
+    int n3 = hz.length;
+    int n2 = hz[0].length;
+    int n1 = fx[0][0].length;
+    float f1 = (float)s1.getFirst();
+    float d1 = (float)s1.getDelta();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int i1 = round((hz[i3][i2]-f1)/d1);
+      i1 = min(i1,n1-1);
+      int im = max(i1-1,0);
+      int ip = min(i1+1,n1-1);
+      int k3 = i3+f3;
+      int k2 = i2+f2;
+      fx[k3][k2][i1] = 1f;
+      fx[k3][k2][im] = 1f;
+      fx[k3][k2][ip] = 1f;
+    }}
+  }
 
   public float[][] faultDensity(float[][] ob, float[][] sf, float[][][] fp) {
     int n3 = fp.length;

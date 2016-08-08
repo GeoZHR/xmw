@@ -30,6 +30,7 @@ fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
+fppfile = "fpp"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -62,11 +63,10 @@ def main(args):
   #goMask()
   #goFaultScan()
   #goThin()
-  #goSkin()
-  goSkinTv()
+  #goSkinTv()
   #goFaultImages()
   #goSurfaces()
-  #goFaultPoints()
+  goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
@@ -129,34 +129,28 @@ def goFaultScan():
   '''
 
 def goSurfaces():
-  fn = "sm1"
+  fns = ["sl1","sm1","su1"]
   gx = readImage(gxfile)
-  if not plotOnly:
-    nl1 = 1646796
-    nu1 = 1330218
-    nm1 =  888165
-    sp = readImage2D(nl1,3,"hzs/L1")
-    #sp = readImage2D(nu1,3,"hzs/U1")
-    #sp = readImage2D(nm1,3,"hzs/M1")
-    print min(sp[0])
-    print max(sp[0])
-    print min(sp[2])
-    print max(sp[2])
-    hp = Helper()
-    ndfs = zerofloat(3,2)
-    sf = hp.surfaceResample(s2,s3,1.5,sp,ndfs)
-    sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
-    sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
-    writeImage(fn,sf)
-    writeImage(fn+"ndfs",ndfs)
-  else:
-    ndfs = readImage2D(3,2,fn+"ndfs")
+  fl = readImage(fltvfile)
+  for fni in fns:
+    ndfs = readImage2D(3,2,fni+"ndfs")
     ny = round(ndfs[0][0])
     nx = round(ndfs[1][0])
-    sf = readImage2D(ny,nx,fn)
-    sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
-    sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
-  plot3(gx,cmin=-3,cmax=3,sx=sx,sy=sy,horizon=sf)
+    sf = readImage2D(ny,nx,fni)
+    hp = Helper()
+    b2 = round(ndfs[0][2]-s2.getFirst())
+    b3 = round(ndfs[1][2]-s3.getFirst())
+    hp.horizonToImage(s1,b2,b3,sf,fl)
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+
+def goFaultPoints():
+  fp = readImage(fptvfile)
+  rp = RosePlot()
+  ps = rp.faultPoints(fp)
+  print len(ps)
+  print len(ps[0])
+  writeImage(fppfile,ps)
 
 def getOceanBottom():
   hp = Helper()
@@ -213,56 +207,6 @@ def goThin():
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
 
-def goReskin():
-  print "go skin..."
-  #gx = readImage(gxfile)
-  if not plotOnly:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-    fsk = FaultSkinner()
-    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsk.setMaxDeltaStrike(10)
-    fsk.setMaxPlanarDistance(0.2)
-    fsk.setMinSkinSize(minSkinSize)
-    cells = fsk.findCells([fl,fp,ft])
-    sks = fsk.findSkins(cells)
-    print len(sks)
-    print "fault skins load finish..."
-    fcs = FaultSkin.getCells(sks)
-    cells = []
-    for ic in range(0,len(fcs),2):
-      cells.append(fcs[ic])
-    print len(cells)
-    print "fault cells load finish..."
-    fs = FaultScanner(sigmaPhi,sigmaTheta)
-    sp = fs.makePhiSampling(minPhi,maxPhi)
-    dp = sp.getDelta()
-    fr = FaultReconstructor(n1,n2,n3,cells)
-    skins = fr.reskin(minSkinSize,dp)
-    writeSkins(fsktv,skins)
-    fd = FaultDisplay()
-    print "fault skins load finish..."
-    fd = FaultDisplay()
-    fd.getFlt(skins,fl)
-    fd.getFpt(skins,fp)
-    fd.getFtt(skins,ft)
-    writeImage(fltfile,fl)
-    writeImage(fptfile,fp)
-    writeImage(fttfile,ft)
-  else:
-    skins = readSkins(fsktv)
-  '''
-  print len(skins)
-  fd = FaultDisplay()
-  cells = FaultSkin.getCells(skins)
-  flt = fillfloat(-0.001,n1,n2,n3)
-  fd.getFlImage(cells,flt)
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Fault likelihood",png="smt")
-  plot3(gx,skins=skins,png="skinsTv")
-  '''
-
-
 def goSkinTv():
   print "go skin..."
   gx = readImage(gxfile)
@@ -309,37 +253,16 @@ def goSkinTv():
     writeImage("fptv",fp)
     writeImage("fttv",ft)
   else:
-    fl = fillfloat(-0.01,n1,n2,n3)
-    fp = fillfloat(-0.01,n1,n2,n3)
-    ft = fillfloat(-0.01,n1,n2,n3)
-    skins = readSkins(fsktv)
-    fsx = FaultSkinnerX()
-    fsx.getFlpt(3000,skins,fl,fp,ft)
-    writeImage("fltv3",fl)
-    writeImage("fptv3",fp)
-    writeImage("fttv3",ft)
-
-    #fl = readImage("fltv")
-    #fp = readImage("fptv")
-    #ft = readImage("fttv")
+    fl = readImage("fltv")
+    fp = readImage("fptv")
+    ft = readImage("fttv")
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  '''
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  print len(skins)
-  fd = FaultDisplay()
-  cells = FaultSkin.getCells(skins)
-  flt = fillfloat(-0.001,n1,n2,n3)
-  fd.getFlImage(cells,flt)
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Fault likelihood",png="smt")
-  plot3(gx,skins=skins,png="skinsTv")
-  '''
 
 def goSkin():
   print "goSkin ..."
@@ -388,25 +311,29 @@ def goSkin():
 def goFaultImages():
   gx = readImage(gxfile)
   if not plotOnly:
-    fl = fillfloat(-0.001,n1,n2,n3)
-    fp = fillfloat(-0.001,n1,n2,n3)
-    ft = fillfloat(-0.001,n1,n2,n3)
-    skins = readSkins(fsktv)
-    fp = zerofloat(n1,n2,n3)
+    fl = fillfloat(-0.01,n1,n2,n3)
+    fp = fillfloat(-0.01,n1,n2,n3)
+    ft = fillfloat(-0.01,n1,n2,n3)
     skins = readSkins(fsktv)
     fsx = FaultSkinnerX()
-    fsx.getFlpt(4000,skins,fl,fp,ft)
+    fsx.getFlpt(3000,skins,fl,fp,ft)
+    hp = Helper()
+    hp.rotateX(26,fp)
+    hp.rotate(90,fp)
+    hp.convert(fp)
     writeImage(fltvfile,fl)
     writeImage(fptvfile,fp)
     writeImage(fttvfile,ft)
   else:
-    fl = readImage(fltvfile)
+    #fl = readImage(fltvfile)
+    #ft = readImage(fttvfile)
     fp = readImage(fptvfile)
-    ft = readImage(fttvfile)
+  '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ft,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
+  '''
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
@@ -487,7 +414,7 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YIN_ZDOWN)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)
