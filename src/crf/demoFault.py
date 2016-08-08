@@ -31,6 +31,7 @@ fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
 fppfile = "fpp"
+hl1file = "hl1"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -65,8 +66,8 @@ def main(args):
   #goThin()
   #goSkinTv()
   #goFaultImages()
-  #goSurfaces()
-  goFaultPoints()
+  goSurfaces()
+  #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
@@ -129,18 +130,20 @@ def goFaultScan():
   '''
 
 def goSurfaces():
-  fns = ["sl1","sm1","su1"]
+  fns = ["sm1","su1"]
   gx = readImage(gxfile)
   fl = readImage(fltvfile)
+  hp = Helper()
   for fni in fns:
     ndfs = readImage2D(3,2,fni+"ndfs")
     ny = round(ndfs[0][0])
     nx = round(ndfs[1][0])
     sf = readImage2D(ny,nx,fni)
-    hp = Helper()
     b2 = round(ndfs[0][2]-s2.getFirst())
     b3 = round(ndfs[1][2]-s3.getFirst())
     hp.horizonToImage(s1,b2,b3,sf,fl)
+  sl1 = readImage2D(n2,n3,hl1file)
+  hp.horizonToImage(s1,0,0,sl1,fl)
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
 
