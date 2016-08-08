@@ -78,12 +78,15 @@ def goRosePlots():
   fpp = readImage2D(71989342,4,fppfile)
 
 def goResetSurfaces():
+  gx = readImage(gxfile)
+  fl = readImage(fltvfile)
   fns = ["m1","u1"]
+  hp = Helper()
   for fni in fns:
     ndfs = readImage2D(3,2,"s"+fni+"ndfs")
     ny = round(ndfs[0][0])
     nx = round(ndfs[1][0])
-    sf = readImage2D(ny,nx,fni)
+    sf = readImage2D(ny,nx,"s"+fni)
     b2 = round(ndfs[0][2]-s2.getFirst())
     b3 = round(ndfs[1][2]-s3.getFirst())
     hz = zerofloat(n2,n3)
@@ -91,6 +94,9 @@ def goResetSurfaces():
       for iy in range(ny):
         hz[ix+b3][iy+b2] = sf[ix][iy]
     writeImage("h"+fni,hz)
+    hp.horizonToImage(s1,0,0,hz,fl)
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
 
 def goPlanar():
   gx = readImage(gxfile)
