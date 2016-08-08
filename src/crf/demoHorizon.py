@@ -22,27 +22,27 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goPickedSurfaces()
+  goPickedSurfaces()
   #goSlopes()
-  goHorizonL1()
+  #goHorizonL1()
 
 def goPickedSurfaces():
-  fn = "sl1"
+  fn = "su1"
   gx = readImage(gxfile)
   if not plotOnly:
     nl1 = 1646796
     nu1 = 1330218
     nm1 =  888165
-    sp = readImage2D(nl1,3,"hzs/L1")
-    #sp = readImage2D(nu1,3,"hzs/U1")
-    #sp = readImage2D(nm1,3,"hzs/M1")
+    #sp = readImage2D(nl1,3,"hzs/L1")
+    sp = readImage2D(nu1,3,"hzs/U1");  dmax=100
+    #sp = readImage2D(nm1,3,"hzs/M1"); dmax=200
     print min(sp[0])
     print max(sp[0])
     print min(sp[2])
     print max(sp[2])
     hp = Helper()
     ndfs = zerofloat(3,2)
-    sf = hp.surfaceResample(s2,s3,1.5,sp,ndfs)
+    sf = hp.surfaceResample(s2,s3,1.5,dmax,sp,ndfs)
     sy = Sampling(round(ndfs[0][0]),ndfs[0][1],ndfs[0][2])
     sx = Sampling(round(ndfs[1][0]),ndfs[1][1],ndfs[1][2])
     writeImage(fn,sf)
@@ -130,51 +130,6 @@ def goHorizonL1():
     hp.horizonToImage(s1,sf,hx)
   #plot3(gx,cmin=-3,cmax=3,sx=s3,sy=s2,horizon=sf)
   plot3(gx,hx,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
-
-def goHorizon3():
-  k1 = [ 199, 148, 212, 266, 169, 175, 147, 218, 193, 127, 203,  95,
-         136, 150, 125, 133,  81, 239,  72, 118,  89, 201, 160,  46,
-          91, 110,  80,  66, 134, 190, 171, 202, 248, 180, 222, 214,
-         163, 189, 295, 236, 217, 237, 243, 195, 187, 160, 144, 229,
-         205, 253, 192, 175, 194, 282, 213, 237, 135, 192, 229, 200,
-         211, 253, 180, 284, 133, 172, 173, 277, 252, 146]
-  k2 = [1577,1499,1499,1499,1681,1430,1430,1266,1266,1232,1856,1856,
-        1926,2295,2796,2169,2826,2156,2948,1971,1145,1062,1000,2488,
-        2336,3407,2389,2668, 774,1744, 612, 608,1001, 603,1619,1565,
-        1509, 483, 539, 559, 611, 611, 619, 654, 365, 459, 439, 271,
-         286, 325, 337, 382, 457, 353, 904, 475,1478,1840,1728,1567,
-        1692, 426, 258, 465, 531, 564, 206,  92,  65, 576]
-  k3 = [ 352, 521, 441, 762,  41, 261, 359, 163, 482, 792, 648, 262,
-          60,  44,  44, 320, 320, 658, 658, 658, 613, 673, 634, 661,
-         457, 548, 325, 325, 345, 325, 114, 327,  84,  84, 704, 575,
-         575, 367, 367, 280, 280, 294, 318, 318, 377, 372, 416, 416,
-         338, 338, 328, 328, 328, 100, 106, 106, 460, 547, 638,  23,
-         723, 640, 671, 671, 671, 747, 747, 490, 742, 742]
-  gx = readImage("gxhz")
-  if not plotOnly:
-    p2 = readImage("p2")
-    p3 = readImage("p3")
-    ep = readImage("ep")
-    ep = pow(ep,4)
-    se = SurfaceExtractorC()
-    se.setWeights(0.0)
-    se.setCG(0.01,100)
-    sf = se.surfaceInitialization(n2,n3,n1-1,k1,k2,k3)
-    se.surfaceUpdateFromSlopes(ep,p2,p3,k1,k2,k3,sf)
-    writeImage("hz",sf)
-  else:
-    sf = readImage2D(n2,n3,"hz")
-  #sf = add(100,sf)
-  rgf = RecursiveGaussianFilterP(2.0)
-  rgf.apply00(sf,sf)
-  hp = Helper()
-  hv = zerofloat(n1,n2,n3)
-  hp.horizonToImage(sf,hv)
-  #plot3(gx)
-  plot3(gx,horizon=sf)
-  plot3(gx,hv,cmin=0,cmax=1,cmap=jetFillExceptMin(1.0))
-
-
 
 def like(x):
   n3 = len(x)

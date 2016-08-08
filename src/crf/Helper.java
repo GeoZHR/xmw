@@ -96,7 +96,8 @@ public class Helper {
   }
 
   public float[][] surfaceResample(
-    Sampling s2, Sampling s3, float d3, float[][] fxs, float[][] ndfs) 
+    Sampling s2, Sampling s3, float d3, float dmax, 
+    float[][] fxs, float[][] ndfs) 
   {
     int np = fxs[0].length;
     float l2 = (float)s2.getLast();
@@ -113,34 +114,71 @@ public class Helper {
     }
     float x2min = max(f2,min(x2));
     float x2max = min(l2,max(x2));
-    float x3min = max(f3,min(x3));
-    float x3max = min(l3,max(x3));
     System.out.println("x2min="+x2min);
     System.out.println("x2max="+x2max);
-    System.out.println("x3min="+x3min);
-    System.out.println("x3max="+x3max);
     System.out.println("l3="+l3);
-    final int b2 = round(x2min)+1;
-    final int e2 = round(x2max)-1;
-    final int b3 = round(x3min);
-    final int e3 = round(x3max);
-    final int n2 = e2-b2+1;
-    final int n3 = e3-b3+1;
-    final float[][] sf = new float[n3][n2];
-    //RadialInterpolator2.Biharmonic bs = new RadialInterpolator2.Biharmonic();
-    //final RadialInterpolator2 ri = new RadialInterpolator2(bs,fx,x2,x3);
-    final SibsonInterpolator2 si = new SibsonInterpolator2(fx,x2,x3);
-    //Parallel.loop(n3,new Parallel.LoopInt() {
-    //public void compute(int i3) {
-      for (int i3=0; i3<n3; ++i3) {
-    System.out.println("i3="+i3);
-      for (int i2=0; i2<n2; ++i2) {
-        sf[i3][i2] = si.interpolate(i2+b2,i3+b3);
-      }}
-    //}});
+    int b2 = round(x2min);
+    int e2 = round(x2max);
+    int b3 = round(f3);
+    int e3 = round(l3);
+    int n2 = e2-b2+1;
+    int n3 = e3-b3+1;
+    Sampling c2 = new Sampling(n2,1,b2);
+    Sampling c3 = new Sampling(n3,1,b3);
+    SibsonInterpolator2 si = new SibsonInterpolator2(fx,x2,x3);
     ndfs[0] = new float[]{n2,1,b2};
     ndfs[1] = new float[]{n3,1,b3};
-    return sf;
+    float[][] sf = si.interpolate(c2,c3);
+    return despike(dmax,sf);
+  }
+
+  public float[][] despike(float dmax, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    System.out.println("fxmin="+min(fx));
+    System.out.println("fxmax="+max(fx));
+    float[][] gs = new float[n2][n1];
+    for (int i2=1; i2<n2; ++i2) {
+    for (int i1=1; i1<n1; ++i1) {
+      float fxi = fx[i2  ][i1  ];
+      float fm1 = fx[i2  ][i1-1];
+      float fm2 = fx[i2-1][i1  ];
+      float g1i = fxi-fm1;
+      float g2i = fxi-fm2;
+      gs[i2][i1] = sqrt(g1i*g1i+g2i*g2i);
+    }}
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if (gs[i2][i1]>dmax) {
+        ArrayList<Float> x1a = new ArrayList<Float>(); 
+        ArrayList<Float> x2a = new ArrayList<Float>(); 
+        ArrayList<Float> fxa = new ArrayList<Float>(); 
+        int b1 = max(   0,i1-20);
+        int e1 = min(n1-1,i1+20);
+        int b2 = max(   0,i2-20);
+        int e2 = min(n2-1,i2+20);
+        for (int k2=b2; k2<=e2; ++k2) {
+        for (int k1=b1; k1<=e1; ++k1) {
+          if (gs[k2][k1]<dmax&&fx[k2][k1]>10f) {
+            x1a.add((float)k1);
+            x2a.add((float)k2);
+            fxa.add(fx[k2][k1]);
+          }
+        }}
+        int np = x1a.size();
+        float[] x1 = new float[np];
+        float[] x2 = new float[np];
+        float[] xv = new float[np];
+        for (int ip=0; ip<np; ++ip) {
+          x1[ip] = x1a.get(ip);
+          x2[ip] = x2a.get(ip);
+          xv[ip] = fxa.get(ip);
+        }
+        SibsonInterpolator2 si = new SibsonInterpolator2(xv,x1,x2);
+        fx[i2][i1] = si.interpolate(i1,i2);
+      }
+    }}
+    return fx;
   }
 
   public void resample(

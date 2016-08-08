@@ -53,7 +53,7 @@ maxThrow = 85.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -309,20 +309,25 @@ def goSkinTv():
     writeImage("fptv",fp)
     writeImage("fttv",ft)
   else:
-    fp = zerofloat(n1,n2,n3)
+    fl = fillfloat(-0.01,n1,n2,n3)
+    fp = fillfloat(-0.01,n1,n2,n3)
+    ft = fillfloat(-0.01,n1,n2,n3)
     skins = readSkins(fsktv)
     fsx = FaultSkinnerX()
-    fsx.getFp(4000,skins,fp)
+    fsx.getFlpt(3000,skins,fl,fp,ft)
+    writeImage("fltv3",fl)
+    writeImage("fptv3",fp)
+    writeImage("fttv3",ft)
 
     #fl = readImage("fltv")
     #fp = readImage("fptv")
     #ft = readImage("fttv")
-  '''
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
+  '''
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
