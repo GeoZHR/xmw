@@ -55,6 +55,16 @@ public class Helper {
     }}}
   }
 
+  public void pointsToImage(float[][] fpp, float[][][] fpt) {
+    int np = fpp[0].length;
+    for (int ip=0; ip<np; ++ip) {
+      int i1 = round(fpp[0][ip]);
+      int i2 = round(fpp[1][ip]);
+      int i3 = round(fpp[2][ip]);
+      fpt[i3][i2][i1] = fpp[3][ip];
+    }
+  }
+
   public float[][] controlPointsFromSurface(
     Sampling fs1, Sampling fs2, Sampling fs3,
     Sampling ss2, Sampling ss3, float[][] sf) {

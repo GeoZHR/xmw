@@ -66,12 +66,31 @@ def main(args):
   #goThin()
   #goSkinTv()
   #goFaultImages()
-  goSurfaces()
+  #goSurfaces()
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
+  #goRosePlots()
+  goResetSurfaces()
 
+def goRosePlots():
+  fpp = readImage2D(71989342,4,fppfile)
+
+def goResetSurfaces():
+  fns = ["m1","u1"]
+  for fni in fns:
+    ndfs = readImage2D(3,2,"s"+fni+"ndfs")
+    ny = round(ndfs[0][0])
+    nx = round(ndfs[1][0])
+    sf = readImage2D(ny,nx,fni)
+    b2 = round(ndfs[0][2]-s2.getFirst())
+    b3 = round(ndfs[1][2]-s3.getFirst())
+    hz = zerofloat(n2,n3)
+    for ix in range(nx):
+      for iy in range(ny):
+        hz[ix+b3][iy+b2] = sf[ix][iy]
+    writeImage("h"+fni,hz)
 
 def goPlanar():
   gx = readImage(gxfile)
@@ -130,10 +149,10 @@ def goFaultScan():
   '''
 
 def goSurfaces():
-  fns = ["sm1","su1"]
   gx = readImage(gxfile)
   fl = readImage(fltvfile)
   hp = Helper()
+  fns = ["sm1","su1"]
   for fni in fns:
     ndfs = readImage2D(3,2,fni+"ndfs")
     ny = round(ndfs[0][0])
