@@ -2,6 +2,7 @@ import sys
 
 from java.awt import *
 from java.io import *
+from java.nio import *
 from java.lang import *
 from javax.swing import *
 from java.util import *
@@ -15,188 +16,70 @@ from edu.mines.jtk.mosaic import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from mef import *
-from ipfx import *
-from util import *
+from he import *
 from sso import *
-from ad import *
 
-pngDir = "../../../png/ad/fed2/"
 pngDir = None
+pngDir = "../../../png/sso/2d/poseidon/"
 
-#seismicDir = "../../../data/seis/sso/2d/crd/"
+seismicDir = "../../../data/seis/sso/2d/mexico/"
 seismicDir = "../../../data/seis/sso/2d/poseidon/"
 fxfile = "fx"
+fxfile = "gx"
+p2lfile = "p2l"
+ellfile = "ell"
+p2sfile = "p2s"
+elsfile = "els"
 f1,f2 = 0,0
 d1,d2 = 1,1
-n1,n2 = 601,3675 # poseidon
-n1,n2 = 120,923 # poseidon
-d1,d2 = 0.004,0.025
-f1,f2 = 0.004+d1*240,0.000
+n1,n2 = 301,920 # mexico fx
+n1,n2 = 120,923 # poseidon fx
+n1,n2 = 100,923 # poseidon gx
+d1,d2 = 1.0,1.0
+f1,f2 = 0.0,0.0
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
-
 def main(args):
-  #goGaussian()
-  #goLinearDiffusion()
-  #goLinearDiffusionX()
+  #goLof()
   goLoe()
-  #goNonlinearDiffusion()
-  #goHilbert()
-  #goGaussianD()
-  #goFaultSmooth()
-  #goSlope()
-  #goSlopeX()
-def goSlope():
-  gx,px=FakeData.seismicAndSlopes2d2014A(0.0)
-  gx = copy(n1,n2,0,0,gx)
-  px = copy(n1,n2,0,0,px)
-  sig1,sig2=10,1
-  lof = LocalOrientFilter(sig1,sig2)
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  el = zerofloat(n1,n2)
-  lof.applyForNormalLinear(gx,u1,u2,el)
-  ps = mul(-1,div(u2,u1))
-  pmin = min(px)
-  pmax = max(px)
-  clip(pmin,pmax,ps)
-  plot(gx)
-  plot(gx,px,cmin=-1,cmax=1,cmap=jetFill(1.0),cint=1.0)
-  plot(gx,ps,cmin=-1,cmax=1,cmap=jetFill(1.0),cint=1.0)
-  plot(gx,abs(sub(ps,px)),cmin=0.001,cmax=0.5,cmap=jetFill(1.0),cint=0.2)
+  #goHorizonLof()
+  goHorizonLoe()
 
-def goSlopeX():
-  gx,px=FakeData.seismicAndSlopes2d2014A(0.0)
-  gx = copy(n1,n2,0,0,gx)
-  px = copy(n1,n2,0,0,px)
-
-  sig1,sig2=10,1
-  e1 = zerofloat(n1,n2)
-  e2 = zerofloat(n1,n2)
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  lof = LocalOrientFilter(sig1,sig2)
-  lof.applyForNormalLinear(gx,u1,u2,e1)
-  ets = lof.applyForTensors(gx)
-  sof = StratigraphicOrientFilter(sig1,sig2)
-  sof.applyForNormalLinear(ets,gx,u1,u2,e2)
-  ps = mul(-1,div(u2,u1))
-  pmin = min(px)
-  pmax = max(px)
-  clip(pmin,pmax,ps)
-  plot(gx)
-  plot(gx,px,cmin=-1,cmax=1,cmap=jetFill(1.0),cint=1.0)
-  plot(gx,ps,cmin=-1,cmax=1,cmap=jetFill(1.0),cint=1.0)
-  plot(gx,abs(sub(ps,px)),cmin=0.001,cmax=0.5,cmap=jetFill(1.0),cint=0.2)
-
-
-def goFaultSmooth():
+def goResample():
+  fx = readImage(fxfile)
+  fs = zerofloat(n1,600)
+  c2 = Sampling(600,1.5,0)
+  si = SincInterpolator()
+  for i2 in range(600):
+    x2 = i2*1.5
+    for i1 in range(n1):
+      fs[i2][i1]=si.interpolate(s1,s2,fx,i1,x2)
+  writeImage("fs",fs)
+def goLof():
   fx = readImage(fxfile)
   fx = gain(fx)
-  sig1,sig2=3,1
-  lof = LocalOrientFilterP(sig1,sig2)
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  el = zerofloat(n1,n2)
-  lof.applyForNormalLinear(fx,u1,u2,el)
-  el = sub(1,el)
-  los = LocalOrientFilterS(sig1,sig2)
-  ets = los.applyForTensors(pow(el,0.5))
-  ets.setEigenvalues(0.0001,1.0)
-  sig = 32
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  es = fed.apply(sig,ets,el)
-  plot(fx)
-  es = sub(es,min(es))
-  es = div(es,max(es))
-  plot(fx,el,cmin=0.1,cmax=0.2,cmap=jetRamp(1.0),cint=0.2,png="wsn")
-  plot(fx,es,cmin=0.3,cmax=0.6,cmap=jetRamp(1.0),cint=0.2,png="wsn")
-
-def goHilbert():
-  gx,px=FakeData.seismicAndSlopes2d2014A(0.0)
-  gx = copy(n1,n2,0,0,gx)
-  rgf = RecursiveGaussianFilter(1.0)
-  f1 = zerofloat(n1,n2)
-  f2 = zerofloat(n1,n2)
-  g1 = zerofloat(n1,n2)
-  g2 = zerofloat(n1,n2)
-  ht = HilbertTransform(100,1)
-  ht.applyInFrequency(gx,f1,f2)
-  rgf.apply10(gx,g1)
-  rgf.apply01(gx,g2)
-  plot(gx,cmin=-1,cmax=1,cint=1.0,label="gx")
-  plot(g2,cmin=-1,cmax=1,cint=1.0,label="g2")
-  plot(f2,cmin=-1,cmax=1,cint=1.0,label="f2")
-
-def goGaussianD():
-  fx = readImage(fxfile)
-  fx = gain(fx)
-  fx = zerofloat(n1,n2)
-  for i2 in range(50,150,1):
-    fx[i2][i2] = 20
-
-  '''
-  for i2 in range(200,300,1):
-    fx[i2][i2-150] = 10
-  '''
-  fx[n2/2][n1/2] = 20
-  g1 = zerofloat(n1,n2)
-  g2 = zerofloat(n1,n2)
-  rgf = RecursiveGaussianFilterP(1.0)
-  rgf.apply10(fx,g1)
-  rgf.apply01(fx,g2)
-  plot(g2,cmin=-1,cmax=1,cint=1.0)
-  plot(g1,cmin=-1,cmax=1,cint=1.0)
-  plot(fx,cmin=-1,cmax=1,cint=1.0)
-
-
-def goGaussian():
-  gx = zerofloat(n1,n2)
-  fx = readImage(fxfile)
-  fx = gain(fx)
-  rgf = RecursiveGaussianFilter(16)
-  rgf.apply00(fx,gx)
-  plot(gx,cmin=-1,cmax=1,cint=1.0,png="gxg")
-
-def goLinearDiffusionX():
-  fx = readImage(fxfile)
-  fx = gain(fx)
-  #addNoise(0.2,fx)
+  addNoise(0.2,fx)
   sig1,sig2=8,2
   el = zerofloat(n1,n2)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
-  #lof = LocalOrientFilterP(sig1,sig2)
   lof = LocalOrientFilter(sig1,sig2)
+  lof.applyForNormalLinear(fx,u1,u2,el)
   ets = lof.applyForTensors(fx)
-  sof = StratigraphicOrientFilter(sig1,sig2)
-  sof.applyForNormalLinear(ets,fx,u1,u2,el)
-  ets = sof.applyForTensors(ets,fx,el)
-  #ets = sof.applyForTensors(ets,fx,el)
   ets.setEigenvalues(0.0001,1.0)
-  '''
-  sig = 10
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  gx = fed.apply(sig,et,fx)
-  '''
   gx = zerofloat(n1,n2)
   lsf = LocalSmoothingFilter()
   lsf.apply(ets,30,fx,gx)
 
   p2 = mul(-1,div(u2,u1))
-  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2)
-  plot(gx,cmin=-1,cmax=1,cint=1.0)
-  plot(fx,cmin=-1,cmax=1,cint=1.0)
-  print min(el)
-  print max(el)
-  plot(el,cmin=0,cmax=1,cint=0.2,png="el")
-  plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
-  #goFaultScan(el)
+  writeImage(p2lfile,p2)
+  writeImage(ellfile,el)
+  plot(s1,s2,sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,clab="Amplitude",png="dif1")
+  plot(s1,s2,fx,cmin=-1,cmax=1,cint=1.0,clab="Amplitude",png="seis")
+  plot(s1,s2,gx,cmin=-1,cmax=1,cint=1.0,clab="Amplitude",png="smooth1")
+  plot(s1,s2,fx,p2,cmin=-0.6,cmax=0.6,cmap=jetFill(0.4),cint=0.2,
+        clab="Slopes (samples/trace)",png="slope1")
+
 
 def goLoe():
   fx = readImage(fxfile)
@@ -209,107 +92,62 @@ def goLoe():
   #lof = LocalOrientFilterP(sig1,sig2)
   lof = LocalOrientFilter(sig1,sig2)
   ets = lof.applyForTensors(fx)
-  loe = LocalOrientEstimator(ets,20)
+  loe = LocalOrientEstimator(ets,10)
+  loe.setEigenvalues(1,0.05)
   loe.applyForNormalLinear(fx,u1,u2,el)
   ets = loe.applyForTensors(fx)
   ets.setEigenvalues(0.0001,1.0)
-  '''
-  sig = 10
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  gx = fed.apply(sig,et,fx)
-  '''
   gx = zerofloat(n1,n2)
   lsf = LocalSmoothingFilter()
   lsf.apply(ets,30,fx,gx)
 
   p2 = mul(-1,div(u2,u1))
-  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2)
-  plot(gx,cmin=-1,cmax=1,cint=1.0)
-  plot(fx,cmin=-1,cmax=1,cint=1.0)
-  print min(el)
-  print max(el)
-  plot(el,cmin=0,cmax=1,cint=0.2,png="el")
-  plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
+  writeImage(p2sfile,p2)
+  writeImage(elsfile,el)
+  plot(s1,s2,sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,clab="Amplitude",png="dif2")
+  plot(s1,s2,gx,cmin=-1,cmax=1,cint=1.0,clab="Amplitude",png="smooth2")
+  plot(s1,s2,fx,p2,cmin=-0.6,cmax=0.6,cmap=jetFill(0.4),cint=0.2,
+       clab="Slopes (samples/trace)",png="slope2")
 
-
-def goFaultScan(el):
-  print "goScan ..."
-  gx = readImage(fxfile)
-  smooth=2.0
-  minTheta,maxTheta = 65,85
-  sigmaTheta = 40
-  lof = LocalOrientFilter(8,2)
-  ets = lof.applyForTensors(gx)
-  fs = FaultScanner2(sigmaTheta)
-  #fl,ft = fs.scan(minTheta,maxTheta,ets,smooth,gx)
-  fl,ft = fs.scan(minTheta,maxTheta,el)
-  flt,ftt = FaultScanner2.thin([fl,ft])
-  #plot(fl,cmin=0,cmax=1,cint=0.2,png="fl")
-  plot(gx,flt,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),cint=0.2,png="wsn")
-  fc = FaultCurver()
-  fc.setMinCurveSize(30)
-  fc.setGrowLikelihoods(0.2,0.7)
-  ps = fc.findPoints([fl,ft])
-  cs = fc.findCurves(ps)
-  flt = zerofloat(n1,n2)
-  FaultCurve.getFlImage(cs,flt)
-  plot(gx,flt,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),cint=0.2,png="wsn")
-
-
-
-def goLinearDiffusion():
+def goHorizonLof():
   fx = readImage(fxfile)
   fx = gain(fx)
   addNoise(0.2,fx)
-  sig1,sig2=8,2
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  el = zerofloat(n1,n2)
-  #lof = LocalOrientFilterP(sig1,sig2)
-  lof = LocalOrientFilter(sig1,sig2)
-  lof.applyForNormalLinear(fx,u1,u2,el)
-  ets = lof.applyForTensors(fx)
-  ets.setEigenvalues(0.001,1.0)
-  '''
-  sig = 10
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  gx = fed.apply(sig,ets,fx)
-  '''
-  gx = zerofloat(n1,n2)
-  lsf = LocalSmoothingFilter()
-  lsf.apply(ets,30,fx,gx)
-  p2 = mul(-1,div(u2,u1))
-  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,png="fgl")
-  plot(gx,cmin=-1,cmax=1,cint=1.0,png="gxl")
-  plot(fx,cmin=-1,cmax=1,cint=1.0,png="fx")
-  plot(el,cmin=0,cmax=1,cint=0.2,png="el")
-  plot(fx,p2,cmin=-0.2,cmax=0.2,cmap=jetFill(0.4),cint=0.1)
+  p2 = readImage(p2lfile)
+  el = readImage(ellfile)
+  k2 = 200
+  k1 = rampfloat(28,1,30)
+  k2 = 430
+  k1 = rampfloat(40,1,32)
+  k1 = rampfloat(46,1,20)
+  k2 = rampfloat(410,5,20)
 
-def goNonlinearDiffusion():
+  hv = HorizonVolume2()
+  hc = hv.applyForHorizonVolume(k1,k2,el,p2)
+  fs = copy(54,n2,33,0,fx)
+  c1 = Sampling(54,1,33)
+  plot(c1,s2,fs,cmin=-1.5,cmax=1.5,clab="Amplitude",png="seisSub")
+  plot(c1,s2,fs,hv=hc,cmin=-1.5,cmax=1.5,clab="Amplitude",png="horizon1")
+
+
+def goHorizonLoe():
   fx = readImage(fxfile)
   fx = gain(fx)
-  sig1,sig2=4,2
-  lof = LocalOrientFilterP(sig1,sig2)
-  ets = lof.applyForTensors(fx)
-  sig = 8
-  lbd = 0.12
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  gx = fed.apply(sig,lbd,ets,fx)
-  wp = zerofloat(n1,n2)
-  ws = zerofloat(n1,n2)
-  fed.applyForWeightsP(lbd,ets,gx,wp)
-  fed.applyForWeightsP(lbd,ets,fx,ws)
-  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,png="fgn")
-  plot(fx,sub(1,ws),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,png="wsn")
-  plot(gx,sub(1,wp),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,png="wpn")
-  plot(gx,cmin=-1,cmax=1,cint=1.0,png="gxn")
-  plot(fx,cmin=-1,cmax=1,cint=1.0,png="fx")
+  addNoise(0.2,fx)
+  p2 = readImage(p2sfile)
+  el = readImage(elsfile)
+  k2 = 200
+  k1 = rampfloat(28,1,30)
+  k2 = 430
+  k1 = rampfloat(40,1,32)
+  k1 = rampfloat(46,1,20)
+  k2 = rampfloat(410,5,20)
+  hv = HorizonVolume2()
+  hc = hv.applyForHorizonVolume(k1,k2,el,p2)
+  fs = copy(54,n2,33,0,fx)
+  c1 = Sampling(54,1,33)
+  plot(c1,s2,fs,hv=hc,cmin=-1.5,cmax=1.5,clab="Amplitude",png="horizon2")
+ 
 
 def normalize(ss):
   sub(ss,min(ss),ss)
@@ -351,13 +189,19 @@ def jetRamp(alpha):
 def grayRamp(alpha):
   return ColorMap.setAlpha(ColorMap.GRAY,rampfloat(0.0,alpha/256,256))
 
-def plot(f,g=None,cmap=None,cmin=None,cmax=None,cint=None,label=None,png=None): 
+def plot(s1,s2,f,g=None,hv=None,k1=None,k2=None,cmap=None,cmin=None,cmax=None,
+        cint=None,clab=None,png=None): 
+  f1 = s1.getFirst()
+  f2 = s2.getFirst()
+  d1 = s1.getDelta()
+  d2 = s2.getDelta()
+  n1 = s1.getCount()
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
-  panel.setVInterval(0.1)
-  panel.setHInterval(1.0)
-  panel.setHLabel("Inline (km)")
-  panel.setVLabel("Time (s)")
+  #panel.setVInterval(0.1)
+  #panel.setHInterval(1.0)
+  panel.setHLabel("Traces")
+  panel.setVLabel("Samples")
   pxv = panel.addPixels(0,0,s1,s2,f);
   pxv.setColorModel(ColorMap.GRAY)
   #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
@@ -372,98 +216,30 @@ def plot(f,g=None,cmap=None,cmin=None,cmax=None,cint=None,label=None,png=None):
     pv.setColorModel(cmap)
     if cmin and cmax:
       pv.setClips(cmin,cmax)
+  if hv:
+    nh = len(hv)
+    mp = ColorMap(0,nh,ColorMap.JET)
+    px = rampfloat(f2,d2,n2)
+    for ih in range(0,nh,1):
+      pvh=panel.addPoints(hv[ih],px)
+      pvh.setLineWidth(1.0)
+      pvh.setLineColor(mp.getColor(ih))
   cb = panel.addColorBar();
   if cint:
     cb.setInterval(cint)
-  if label:
-    cb.setLabel(label)
-  panel.setColorBarWidthMinimum(70)
+  if clab:
+    cb.setLabel(clab)
+  panel.setColorBarWidthMinimum(50)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1020,700) #for f3d
-  frame.setSize(1020,500) #for poseidon
-  frame.setFontSize(30)
+  frame.setSize(920,300) #for poseidon
+  frame.setFontSize(13)
   if pngDir and png:
-    frame.paintToPng(300,3.333,pngDir+png+".png")
-
-def plot2(f,s1,s2,g=None,cmin=None,cmax=None,label=None,png=None,et=None):
-  n2 = len(f)
-  n1 = len(f[0])
-  panel = panel2Teapot()
-  panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
-  panel.setHInterval(1.0)
-  panel.setVInterval(0.1)
-  panel.setHLabel("Inline (km)")
-  panel.setVLabel("Time (s)")
-  if label:
-    panel.addColorBar(label)
-  else:
-    panel.addColorBar()
-  panel.setColorBarWidthMinimum(180)
-  pv = panel.addPixels(s1,s2,f)
-  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
-  pv.setColorModel(ColorMap.GRAY)
-  #pv.setClips(min(f),max(f))
-  if g:
-    alpha = 0.8
-  else:
-    g = zerofloat(s1.count,s2.count)
-    alpha = 0.0
-  pv = panel.addPixels(s1,s2,g)
-  #pv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  #pv.setColorModel(jetFillExceptMin(1.0))
-  pv.setColorModel(jetRamp(1.0))
-  if cmin and cmax:
-    pv.setClips(cmin,cmax)
-  frame2Teapot(panel,png)
-def panel2Teapot():
-  panel = PlotPanel(1,1,
-    PlotPanel.Orientation.X1DOWN_X2RIGHT,
-    PlotPanel.AxesPlacement.NONE)
-  return panel
-def frame2Teapot(panel,png=None):
-  frame = PlotFrame(panel)
-  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
-  #frame.setFontSizeForPrint(8,240)
-  #frame.setSize(1240,774)
-  frame.setFontSizeForSlide(1.0,0.8)
-  frame.setSize(880,700)
-  frame.setVisible(True)
-  if png and pngDir:
-    frame.paintToPng(400,3.2,pngDir+"/"+png+".png")
-  return frame
-def makePointSets(cmap,f,x1,x2):
-  sets = {}
-  for i in range(len(f)):
-    if f[i] in sets:
-      points = sets[f[i]]
-      points[0].append(f[i])
-      points[1].append(x1[i])
-      points[2].append(x2[i])
-    else:
-      points = [[f[i]],[x1[i]],[x2[i]]] # lists of f, x1, x2
-      sets[f[i]] = points
-  ns = len(sets)
-  fs = zerofloat(1,ns)
-  x1s = zerofloat(1,ns)
-  x2s = zerofloat(1,ns)
-  il = 0
-  for points in sets:
-    fl = sets[points][0]
-    x1l = sets[points][1]
-    x2l = sets[points][2]
-    nl = len(fl)
-    fs[il] = zerofloat(nl)
-    x1s[il] = zerofloat(nl)
-    x2s[il] = zerofloat(nl)
-    copy(fl,fs[il])
-    copy(x1l,x1s[il])
-    copy(x2l,x2s[il])
-    il += 1
-  return fs,x1s,x2s
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 #############################################################################
 # utilities

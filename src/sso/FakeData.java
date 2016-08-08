@@ -1354,15 +1354,15 @@ public class FakeData {
     float pi = (float)Math.PI;
     float dp = 2f*pi/(float)n2;
     for (int i2=0; i2<n2; ++i2) {
-      float x3 = 0.6f*n3+20f*sin(dp*i2)+10;
+      float x3 = 0.6f*n3+20f*sin(dp*i2)+30;
       int j3 = (int)(x3+0.5);
       for (int i3=j3-2; i3<j3+2; ++i3) {
         if (0<i3 && i3<n3) {
           float d2 = i3-j3;
           float a = 0.1f*exp(-0.125f*d2*d2);
-          r[0][i3][i2][k1-1] += 8000f*a;
-          r[0][i3][i2][k1  ] += 9000f*a;
-          r[0][i3][i2][k1+1] += 8000f*a;
+          r[0][i3][i2][k1-1] += 6000f*a;
+          r[0][i3][i2][k1  ] += 8000f*a;
+          r[0][i3][i2][k1+1] += 6000f*a;
 
           r[1][i3][i2][k1-1] += 2.0f*a;
           r[1][i3][i2][k1  ] += 3.0f*a;
