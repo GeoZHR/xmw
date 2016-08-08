@@ -50,7 +50,7 @@ public class Helper {
     float pi = (float)Math.PI;
     float dp = 2f*pi/(float)n2;
     for (int i2=0; i2<n2; ++i2) {
-      float x3 = 0.6f*n3+20f*sin(dp*i2)+10;
+      float x3 = 0.6f*n3+20f*sin(dp*i2)+30;
       int j3 = (int)(x3+0.5);
     for (int i3=j3-2; i3<j3+2; ++i3) {
       float hi = hz[i3][i2];
@@ -71,7 +71,7 @@ public class Helper {
     float pi = (float)Math.PI;
     float dp = 2f*pi/(float)n2;
     for (int i2=0; i2<n2; ++i2) {
-      float x3 = 0.6f*n3+20f*sin(dp*i2)+10;
+      float x3 = 0.6f*n3+20f*sin(dp*i2)+30;
       int j3 = (int)(x3+0.5);
     for (int i3=j3-2; i3<j3+2; ++i3) {
       float w2i = w2[i3][i2];
@@ -90,7 +90,7 @@ public class Helper {
     float pi = (float)Math.PI;
     float dp = 2f*pi/(float)n2;
     for (int i2=0; i2<n2; ++i2) {
-      float x3 = 0.6f*n3+20f*sin(dp*i2)+10;
+      float x3 = 0.6f*n3+20f*sin(dp*i2)+30;
       int j3 = (int)(x3+0.5);
     for (int i3=j3-2; i3<j3+2; ++i3) {
       ha[i3][i2] = atan(20*2f*pi*cos(dp*i2)/(float)n2);

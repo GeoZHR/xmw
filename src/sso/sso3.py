@@ -22,8 +22,10 @@ pngDir = "../../../png/sso/3d/"
 pngDir = None
 
 seismicDir = "../../../data/seis/sso/3d/real/"
+seismicDir = "../../../data/seis/gbc/dat/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
+fxfile = "pp"
 ellfile = "ell"
 elsfile = "els"
 eplfile = "epl"
@@ -35,14 +37,18 @@ gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 240,880,500
+n1,n2,n3 = 2000,150,145
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
+  gx = readImage(fxfile)
+  print min(gx)
+  plot3(gx,cmin=-1,cmax=1)
   #goLof()
-  goLoe()
+  #goLoe()
   #goSmoothL()
   #goSmoothS()
   #goSemblanceHale()
@@ -79,7 +85,7 @@ def goLoe():
     lof = LocalOrientFilter(sig1,sig2)
     et = lof.applyForTensors(fx)
     loe = LocalOrientEstimator(et,20)
-    loe.setEigenvalues(1.0,0.01,0.5)
+    loe.setEigenvalues(1.0,0.01,0.8)
     loe.applyForNormalPlanar(fx,u1,u2,u3,ep)
     writeImage(epsfile,ep)
     writeTensors(etsfile,et)

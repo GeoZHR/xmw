@@ -607,7 +607,7 @@ public class SurfaceDisplay {
       float x0 = (float)sx.getValue(ix  );
       float x1 = (float)sx.getValue(ix+1);
       for (int iy=0; iy<ny-1; ++iy) {
-        float x = 0.6f*nx+20f*sin(dp*iy)+10;
+        float x = 0.6f*nx+20f*sin(dp*iy)+30;
         int jx = round(x);
         if(ix>=jx-3 && ix<=jx+1) {continue;}
         float y0 = (float)sy.getValue(iy  );
@@ -702,7 +702,7 @@ public class SurfaceDisplay {
     rgf.apply10(z,dz);
 
     for (int iy=0; iy<ny-1; ++iy) {
-      float x = 0.6f*nx+20f*sin(dp*iy)+10;
+      float x = 0.6f*nx+20f*sin(dp*iy)+30;
       int jx = round(x);
       for (int ix=jx-3; ix<=jx+1; ++ix) {
         if (0<ix && ix<nx-1) {

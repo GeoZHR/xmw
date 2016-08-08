@@ -18,6 +18,8 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.Parallel;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+import ad.FastExplicitDiffusion;
+
 /**
  * Structure tensors for estimating local structural 
  * and stratigraphic orientations.
@@ -83,6 +85,7 @@ public class LocalOrientEstimator {
     _et3 = et;
     _scale = (float)scale;
     setEigenvalues(1.0f,0.05f,1.0f);
+    //resetTensors();
   }
 
   /**
@@ -259,7 +262,7 @@ public class LocalOrientEstimator {
         }
         float v1i = -u2i/u1i;
         float v2i = 1;
-        v2i  = 1f/(v1i*v1i+1);
+        v2i  = 1f/(v1i*v1i+1f);
         v1i *= v2i;
 
         a[0][0] = g11[i2][i1];
@@ -443,6 +446,53 @@ public class LocalOrientEstimator {
 
   }
 
+    /**
+   * Applies this filter to estimate 3-D structure tensors.
+   * @param x input array for 3-D image.
+   * @param compressed true, for compressed tensors; false, otherwise.
+   * @return structure tensors.
+   */
+  public EigenTensors3 applyForTensors(float[][][] x) {
+    int n1 = x[0][0].length;
+    int n2 = x[0].length;
+    int n3 = x.length;
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    float[][][] w1 = new float[n3][n2][n1];
+    float[][][] w2 = new float[n3][n2][n1];
+    float[][][] eu = new float[n3][n2][n1];
+    float[][][] ev = new float[n3][n2][n1];
+    float[][][] ew = new float[n3][n2][n1];
+    apply(x,
+      null,null,
+      null,u2,u3,
+      null,null,null,
+      w1,w2,null,
+      eu,ev,ew,
+      null,null);
+
+    // Compute u1 such that u3 > 0.
+    float[][][] u1 = u3;
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float u2i = u2[i3][i2][i1];
+          float u3i = u3[i3][i2][i1];
+          float u1s = 1.0f-u2i*u2i-u3i*u3i;
+          float u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
+          if (u3i<0.0f) {
+            u1i = -u1i;
+            u2i = -u2i;
+          }
+          u1[i3][i2][i1] = u1i;
+          u2[i3][i2][i1] = u2i;
+        }
+      }
+    }
+    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+  }
+
+
   /**
    * Applies this filter for the specified image and outputs. All
    * outputs are optional and are computed for only non-null arrays.
@@ -518,18 +568,89 @@ public class LocalOrientEstimator {
     computeGradientProducts(g1,g2,g3,g11,g12,g13,g22,g23,g33);
     
     // Smoothed gradient products comprise the structure tensor.
+    RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(_scale);
+    FastExplicitDiffusion fed = new FastExplicitDiffusion();
+    fed.setCycles(3,0.1f);
     float[][][] h = (nt>6)?t[6]:new float[n3][n2][n1];
     float[][][][] gs = {g11,g22,g33,g12,g13,g23};
     _et3.setEigenvalues(_au,_av,_aw);
     for (float[][][] g:gs) {
-      _lsf.applySmoothS(g,h);
-      _lsf.apply(_et3,_scale,h,g);
+      rgf1.apply0XX(g,h);
+      h = fed.apply(_scale,_et3,h);
+      copy(h,g);
     }
 
     // Compute eigenvectors, eigenvalues, and outputs that depend on them.
     solveEigenproblems(g11,g12,g13,g22,g23,g33,
       theta,phi,a1,a2,a3,b1,b2,b3,c1,c2,c3,ea,eb,ec,ep,el);
+  }
 
+  public void applyForStratigraphy(
+    float[][][] x, float[][][] w2, float[][][] w3, float[][][] el) {
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    float[][][] xs = new float[n3][n2][n1];
+    FastExplicitDiffusion fed = new FastExplicitDiffusion();
+    fed.setCycles(5,0.1f);
+    if (_scaleG>0.0f) {
+      _et3.setEigenvalues(0.001f,1.0f,1.0f);
+      _lsf.apply(_et3,_scaleG,x,xs);
+      computeOrientGradient(xs,g2,g3);
+    } else {
+      computeOrientGradient(x,g2,g3);
+    }
+    float[][][] g22 = new float[n3][n2][n1];
+    float[][][] g23 = new float[n3][n2][n1];
+    float[][][] g33 = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g2i = g2[i3][i2][i1];
+      float g3i = g3[i3][i2][i1];
+      g22[i3][i2][i1] = g2i*g2i;
+      g23[i3][i2][i1] = g2i*g3i;
+      g33[i3][i2][i1] = g3i*g3i;
+    }}}
+
+    // Smoothed gradient products comprise the structure tensor.
+    float[][][] h = new float[n3][n2][n1];
+    float[][][][] gs = {g22,g33,g23};
+    _et3.setEigenvalues(_au,_av,_aw);
+    for (float[][][] g:gs) {
+      _lsf.applySmoothS(g,h);
+      h = fed.apply(_scale,_et3,h);
+      copy(h,g);
+    }
+    // Compute eigenvectors, eigenvalues, and outputs that depend on them.
+    float[][] a = new float[2][2];
+    float[][] z = new float[2][2];
+    float[] e = new float[2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        a[0][0] = g22[i3][i2][i1];
+        a[0][1] = g23[i3][i2][i1];
+        a[1][0] = g23[i3][i2][i1];
+        a[1][1] = g33[i3][i2][i1];
+        Eigen.solveSymmetric22(a,z,e);
+        float eui = e[0];
+        float evi = e[1];
+        if (evi<0.0f) evi = 0.0f;
+        if (eui<evi) eui = evi;
+        float x2i = z[0][0];
+        float x3i = z[0][1];
+        if (x2i<0.0f) {
+          x2i = -x2i;
+          x3i = -x3i;
+        }
+        w2[i3][i2][i1] = -x3i;
+        w3[i3][i2][i1] =  x2i;
+        el[i3][i2][i1] = (eui-evi)/eui;
+      }
+    }}
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -680,6 +801,84 @@ public class LocalOrientEstimator {
       }
     }});
   }
+
+  public void computeOrientGradient(
+    final float[][][] fx, final float[][][] g2, final float[][][] g3) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] p2 = new float[n3][n2][n1];
+    final float[][][] p3 = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] p2i = p2[i3][i2];
+        float[] p3i = p3[i3][i2];
+        for (int i1=0; i1<n1; ++i1) {
+          float[] u = _et3.getEigenvectorU(i1,i2,i3);
+          float u1i = u[0];
+          float u2i = u[1];
+          float u3i = u[2];
+          if (u1i<0f) {
+            u1i = -u1i;
+            u2i = -u2i;
+            u3i = -u3i;
+          }
+          float p2t = -u2i/u1i;
+          float p3t = -u3i/u1i;
+          p2t = max(p2t,-10f);
+          p2t = min(p2t, 10f);
+          p3t = max(p3t,-10f);
+          p3t = min(p3t, 10f);
+          p2i[i1] = p2t;
+          p3i[i1] = p3t;
+        }
+      }
+    }});
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      float[] x2m = new float[n1];
+      float[] x2p = new float[n1];
+      float[] x3m = new float[n1];
+      float[] x3p = new float[n1];
+      float[] g2m = new float[n1];
+      float[] g2p = new float[n1];
+      float[] g3m = new float[n1];
+      float[] g3p = new float[n1];
+      int i3m = max(i3-1,0);
+      int i3p = min(i3+1,n3-1);
+      for (int i2=0; i2<n2; ++i2) {
+        int i2m = max(i2-1,0);
+        int i2p = min(i2+1,n2-1);
+        float[] g2i = g2[i3 ][i2 ];
+        float[] g3i = g3[i3 ][i2 ];
+        float[] p2i = p2[i3 ][i2 ];
+        float[] p3i = p3[i3 ][i2 ];
+        float[] f2m = fx[i3 ][i2m];
+        float[] f2p = fx[i3 ][i2p];
+        float[] f3m = fx[i3m][i2 ];
+        float[] f3p = fx[i3p][i2 ];
+        for (int i1=0; i1<n1; ++i1) {
+          x2m[i1] = i1-p2i[i1];
+          x2p[i1] = i1+p2i[i1];
+          x3m[i1] = i1-p3i[i1];
+          x3p[i1] = i1+p3i[i1];
+        }
+        si.interpolate(n1,1.0,0.0,f2m,n1,x2m,g2m);
+        si.interpolate(n1,1.0,0.0,f2p,n1,x2p,g2p);
+        si.interpolate(n1,1.0,0.0,f3m,n1,x3m,g3m);
+        si.interpolate(n1,1.0,0.0,f3p,n1,x3p,g3p);
+        for (int i1=0; i1<n1; ++i1) {
+          g2i[i1] = g2p[i1]-g2m[i1];
+          g3i[i1] = g3p[i1]-g3m[i1];
+        }
+      }
+    }});
+  }
+
 
   public void computeOrientGradientX(
     final float[][][] fx, final float[][][] g1, 
@@ -851,34 +1050,34 @@ public class LocalOrientEstimator {
             v1i *= v2i;
             w3i  = 1f/(w1i*w1i+1);
             w1i *= w3i;
-            if (a1!=null) {
+            if (a1!=null||a2!=null||a3!=null) {
               float a1i = u1i*x1i+v1i*x2i+w1i*x3i;
               float a2i = u2i*x1i+v2i*x2i;
               float a3i = u3i*x1i+w3i*x3i;
               float asi = 1f/sqrt(a1i*a1i+a2i*a2i+a3i*a3i);
-              a1[i3][i2][i1] = a1i*asi;
-              a2[i3][i2][i1] = a2i*asi;
-              a3[i3][i2][i1] = a3i*asi;
+              if (a1!=null) a1[i3][i2][i1] = a1i*asi;
+              if (a2!=null) a2[i3][i2][i1] = a2i*asi;
+              if (a3!=null) a3[i3][i2][i1] = a3i*asi;
             }
 
-            if (b1!=null) {
+            if (b1!=null||b2!=null||b3!=null) {
               float b1i = u1i*y1i+v1i*y2i+w1i*y3i;
               float b2i = u2i*y1i+v2i*y2i;
               float b3i = u3i*y1i+w3i*y3i;
               float bsi = 1f/sqrt(b1i*b1i+b2i*b2i+b3i*b3i);
-              b1[i3][i2][i1] = b1i*bsi;
-              b2[i3][i2][i1] = b2i*bsi;
-              b3[i3][i2][i1] = b3i*bsi;
+              if (b1!=null) b1[i3][i2][i1] = b1i*bsi;
+              if (b2!=null) b2[i3][i2][i1] = b2i*bsi;
+              if (b3!=null) b3[i3][i2][i1] = b3i*bsi;
             }
 
-            if (c1!=null) {
+            if (c1!=null||c2!=null||c3!=null) {
               float c1i = u1i*z1i+v1i*z2i+w1i*z3i;
               float c2i = u2i*z1i+v2i*z2i;
               float c3i = u3i*z1i+w3i*z3i;
               float csi = 1f/sqrt(c1i*c1i+c2i*c2i+c3i*c3i);
-              c1[i3][i2][i1] = c1i*csi;
-              c2[i3][i2][i1] = c2i*csi;
-              c3[i3][i2][i1] = c3i*csi;
+              if (c1!=null) c1[i3][i2][i1] = c1i*csi;
+              if (c2!=null) c2[i3][i2][i1] = c2i*csi;
+              if (c3!=null) c3[i3][i2][i1] = c3i*csi;
             }
             float eai = (float)e[0];
             float ebi = (float)e[1];
@@ -1032,6 +1231,33 @@ public class LocalOrientEstimator {
   }
 
 
+  private void resetTensors() {
+    int n1 = _et3.getN1();
+    int n2 = _et3.getN2();
+    int n3 = _et3.getN3();
+    for (int i3=0; i3<n3;++i3) {
+    for (int i2=0; i2<n2;++i2) {
+    for (int i1=0; i1<n1;++i1) {
+      float[] u = _et3.getEigenvectorU(i1,i2,i3);
+      float u1i = u[0];
+      float u2i = u[1];
+      float u3i = u[2];
+      if (u1i<0f) {
+        u1i = -u1i; u2i = -u2i; u3i = -u3i;
+      }
+      float w1i = -u3i/u1i;
+      float w2i = 0f;
+      float w3i = 1;
+      w3i  = 1f/(w1i*w1i+1);
+      w1i *= w3i;
+      _et3.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
+      _et3.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
+    }}}
+    System.out.println("test!!!!");
+
+  }
+
+
   private float _au=1.00f;
   private float _av=0.05f;
   private float _aw=1.00f;
@@ -1039,5 +1265,5 @@ public class LocalOrientEstimator {
   private EigenTensors2 _et2=null;
   private EigenTensors3 _et3=null;
   private float _scaleG = 0.0f;
-  private LocalSmoothingFilter _lsf = new LocalSmoothingFilter();
+  private LocalSmoothingFilter _lsf = new LocalSmoothingFilter(0.0001f,1000);
 }

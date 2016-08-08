@@ -18,8 +18,8 @@ from ad import *
 from util import *
 from sso import *
 
-pngDir = "../../../png/sso/3d/"
 pngDir = None
+pngDir = "../../../png/sso/3d/fake/"
 
 seismicDir = "../../../data/seis/sso/3d/fake/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
@@ -39,6 +39,8 @@ p2lfile = "p2l"
 p3lfile = "p3l"
 p2sfile = "p2s"
 p3sfile = "p3s"
+gxsfile = "gxs"
+gxlfile = "gxl"
 
 hzfile = "hz"
 halfile = "hal"
@@ -55,7 +57,10 @@ plotOnly = False
 def main(args):
   #goFakeData()
   #goLof()
-  goLoe()
+  #goLoe()
+  #goStratigraphy()
+  goChannel()
+  #goSmoothS()
 
 def goFakeData():
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
@@ -73,12 +78,10 @@ def goFakeData():
     hz = hs[0]
     ha = hs[1]
     writeImage(fxfile,fx)
-    '''
     writeImage(hzfile,hz)
     writeImage(hacfile,ha)
     writeImage(p2kfile,p2)
     writeImage(p3kfile,p3)
-    '''
   else:
     fx = readImage(fxfile)
     p2 = readImage(p2kfile)
@@ -91,10 +94,11 @@ def goFakeData():
   print "p2 min =",min(p2)," max =",max(p2)
   print "p3 min =",min(p3)," max =",max(p3)
   gmin,gmax,gmap = -2.0,2.0,ColorMap.GRAY
-  plot3(fx,hz=hz,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="fx")
-  plot3(fx,ha=ha,cmin=gmin,cmax=gmax)
-  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
-  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
+  plot3(fx,cmin=gmin,cmax=gmax,png="fx")
+  plot3(fx,hz=hz,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="fxhz")
+  plot3(fx,ha=ha,cmin=gmin,cmax=gmax,png="fxha")
+  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2k")
+  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3k")
 
 def goLof():
   fx = readImage(fxfile)
@@ -107,12 +111,12 @@ def goLof():
     w2 = zerofloat(n1,n2,n3)
     w3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    sig1,sig2=8,2
+    sig1,sig2=4,2
     lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
     lof.apply(fx,None,None,u1,u2,u3,None,None,None,w1,w2,w3,None,None,None,ep,None)
     hp = Helper()
     ha = hp.channelAzimuth(w2,w3,hz)
-    et = hp.tensorsFromNormal(u1,u2,u3,w1,w2,w3,au,av,aw)
     p2 = mul(div(u2,u1),-1)
     p3 = mul(div(u3,u1),-1)
     writeImage(p2lfile,p2)
@@ -135,14 +139,13 @@ def goLof():
   dp3 = abs(sub(p3k,p3))
   dp2 = abs(sub(p2k,p2))
   dh = abs(sub(hc,ha))
-  plot3(fx,dh=dh,cmin=-2,cmax=2)
-  plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
-  plot3(fx,ha=ha,cmin=-2,cmax=2)
-  plot3(fx,g=sub(p2k,p2),cmin=-0.5,cmax=0.5,cmap=jetFill(1.0))
-  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
-  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0))
-  plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="p2")
-  plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="p3")
+  plot3(fx,dh=dh,cmin=-2,cmax=2,png="dhl")
+  plot3(ep,hz=hz,cmin=0.2,cmax=1.0,png="epl")
+  plot3(fx,ha=ha,cmin=-2,cmax=2,png="hal")
+  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2l")
+  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3l")
+  plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp2l")
+  plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp3l")
 
 
 def goLoe():
@@ -156,7 +159,8 @@ def goLoe():
     w2 = zerofloat(n1,n2,n3)
     w3 = zerofloat(n1,n2,n3)
     et = readTensors(etlfile)
-    loe = LocalOrientEstimator(et,20)
+    loe = LocalOrientEstimator(et,5)
+    loe.setEigenvalues(0.001,0.2,0.2)
     loe.setGradientSmoothing(3)
     loe.applyForSlopePlanar(10,fx,p2,p3,ep)
     loe.applyForInline(fx,w1,w2,w3)
@@ -189,6 +193,62 @@ def goLoe():
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p3")
   plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="Absolute errors")
   plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="Absolute errors")
+
+
+def goStratigraphy():
+  fx = readImage(fxfile)
+  hz = readImage2D(hzfile)
+  if not plotOnly:
+    ep = zerofloat(n1,n2,n3)
+    w1 = zerofloat(n1,n2,n3)
+    w2 = zerofloat(n1,n2,n3)
+    w3 = zerofloat(n1,n2,n3)
+    et = readTensors(etsfile)
+    loe = LocalOrientEstimator(et,12)
+    loe.setEigenvalues(1.00,0.05,1.0)
+    loe.setGradientSmoothing(3)
+    loe.applyForInline(fx,w1,w2,w3)
+    hp = Helper()
+    ha = hp.channelAzimuth(w2,w3,hz)
+  else:
+    hz = readImage2D(hzfile)
+  hc = readImage2D(hacfile)
+  ep = pow(ep,6)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  dh = abs(sub(hc,ha))
+  plot3(fx,cmin=-2,cmax=2)
+  plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
+  plot3(fx,dh=dh,cmin=-2,cmax=2)
+  plot3(fx,ha=ha,cmin=-2,cmax=2)
+
+def goChannel():
+  fx = readImage(fxfile)
+  hz = readImage2D(hzfile)
+  if not plotOnly:
+    ep = zerofloat(n1,n2,n3)
+    w2 = zerofloat(n1,n2,n3)
+    w3 = zerofloat(n1,n2,n3)
+    et = readTensors(etsfile)
+    loe = LocalOrientEstimator(et,5)
+    loe.setEigenvalues(0.1,1.0,1.0)
+    loe.setGradientSmoothing(3)
+    loe.applyForStratigraphy(fx,w2,w3,ep)
+    hp = Helper()
+    ha = hp.channelAzimuth(w2,w3,hz)
+  else:
+    hz = readImage2D(hzfile)
+  hc = readImage2D(hacfile)
+  print min(w3)
+  print max(w3)
+  ep = pow(ep,2)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  dh = abs(sub(hc,ha))
+  plot3(fx,cmin=-2,cmax=2)
+  plot3(ep,hz=hz,cmin=0.1,cmax=1.0)
+  plot3(fx,dh=dh,cmin=-2,cmax=2)
+  plot3(fx,ha=ha,cmin=-2,cmax=2)
 
 def goSmoothL():
   fx = readImage(fxfile)
@@ -224,306 +284,35 @@ def goSmoothL():
     writeImage(gxlfile,gx)
   else:
     gx = readImage(gxlfile)
-  plot3(fx)
-  plot3(gx)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  hz = readImage2D(hzfile)
+  plot3(fx,hz=hz,cmin=-2,cmax=2)
+  plot3(gx,hz=hz,cmin=-2,cmax=2)
 
 def goSmoothS():
   fx = readImage(fxfile)
   if not plotOnly:
-    ep = readImage(epsfile)
-    et = readTensors(etsfile)
+    ets = readTensors(etlfile)
     '''
-    eu = zerofloat(n1,n2,n3)
-    ev = zerofloat(n1,n2,n3)
-    ew = zerofloat(n1,n2,n3)
-    et.getEigenvalues(eu,ev,ew)
-    eu = clip(0.005,1.0,eu)
-    ev = clip(0.005,1.0,ev)
-    ew = clip(0.005,1.0,ew)
-    et.setEigenvalues(eu,ev,ew)
-    et.invertStructure(1.0,4.0,4.0)
-    et.getEigenvalues(eu,ev,ew)
-    eu = mul(eu,0.01)
-    et.setEigenvalues(eu,ev,ew)
+    loe = LocalOrientEstimator(ets,12)
+    loe.setEigenvalues(1.00,0.05,1.0)
+    loe.setGradientSmoothing(3)
+    ets = loe.applyForTensors(fx)
     '''
-    eu = fillfloat(0.0001,n1,n2,n3)
-    ev = pow(ep,30)
-    ew = fillfloat(1.0000,n1,n2,n3)
-    et.setEigenvalues(eu,ev,ew)
-    gx = zerofloat(n1,n2,n3)
+    ets.setEigenvalues(0.001,0.1,1.0)
     lsf = LocalSmoothingFilter()
-    lsf.apply(et,50,fx,gx)
-    '''
-    sig = 10
-    cycle,limit=3,0.5
-    fed = FastExplicitDiffusion()
-    fed.setCycles(cycle,limit)
-    gx = fed.apply(sig,et,fx)
-    '''
+    gx = zerofloat(n1,n2,n3)
+    lsf.apply(ets,20,fx,gx)
     writeImage(gxsfile,gx)
   else:
     gx = readImage(gxsfile)
-  plot3(fx)
-  plot3(gx)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  hz = readImage2D(hzfile)
+  plot3(fx,hz=hz,cmin=-2,cmax=2)
+  plot3(gx,hz=hz,cmin=-2,cmax=2)
 
-def goLinearDiffusion():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=4,2
-    lof = LocalOrientFilter(sig1,sig2)
-    ets = lof.applyForTensors(fx)
-    ets.setEigenvalues(0.0001,1.0,1.0)
-    sig = 5
-    cycle,limit=3,0.5
-    fed = FastExplicitDiffusion()
-    fed.setCycles(cycle,limit)
-    gx = fed.apply(sig,ets,fx)
-    writeImage(gxlfile,gx)
-  else:
-    gx = readImage(gxlfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx)
-  plot3(fx)
-def goLocalSmoothingFilter():
-  fx = readImage(fxfile)
-  sig1,sig2=4,2
-  lof = LocalOrientFilter(sig1,sig2)
-  ets = lof.applyForTensors(fx)
-  ets.setEigenvalues(0.0001,1.0,1.0)
-  sig = 12.5
-  gx = zerofloat(n1,n2,n3)
-  lsf = LocalSmoothingFilter()
-  lsf.apply(ets,sig,fx,gx)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx)
-  plot3(fx)
-
-def goStratigraphyOrientedDiffusion():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=8,2
-    lof = LocalOrientFilter(sig1,sig2)
-    ets = lof.applyForTensors(fx)
-    ets.setEigenvalues(0.0001,0.0001,1.0000)
-    sig = 10
-    cycle,limit=3,0.5
-    fed = FastExplicitDiffusion()
-    fed.setCycles(cycle,limit)
-    gx = fed.apply(sig,ets,fx)
-    writeImage(gxsfile,gx)
-  else:
-    gx = readImage(gxsfile)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
-  plot3(gx,cmin=-1.0,cmax=1.0)
-  plot3(fx,cmin=-1.0,cmax=1.0)
-
-def goStratigraphyOrientedDiffusionX():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=4,2
-    ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(sig1,sig2)
-    ets = lof.applyForTensors(fx)
-    sof = StratigraphicOrientFilter(sig1,sig2)
-    et = sof.applyForTensors(ets,fx,ep)
-    et.setEigenvalues(0.0001,0.0001,1.0000)
-    sig = 10
-    cycle,limit=3,0.5
-    fed = FastExplicitDiffusion()
-    fed.setCycles(cycle,limit)
-    gx = fed.apply(sig,et,fx)
-    writeImage(gxsfile,gx)
-    writeImage("epx",ep)
-  else:
-    fx = readImage(fxfile)
-    gx = readImage(gxsfile)
-    ep = readImage("epx")
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
-  plot3(gx,cmin=-1.0,cmax=1.0)
-  plot3(fx,cmin=-1.0,cmax=1.0)
-  plot3(ep,cmin=0.4,cmax=1.0)
-
-def goNonlinearDiffusion():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=4,2
-    lof = LocalOrientFilter(sig1,sig2)
-    ets = lof.applyForTensors(fx)
-    ets.setEigenvalues(0.0001,1.0,1.0)
-    sig = 5
-    cycle,limit=3,0.5
-    lbd = 0.1
-    fed = FastExplicitDiffusion()
-    fed.setCycles(cycle,limit)
-    gx = fed.apply(sig,lbd,ets,fx)
-    writeImage(gxnfile,gx)
-  else:
-    gx = readImage(gxnfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx)
-  plot3(fx)
-
-def goShapeSemblance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
-    sm = Semblance()
-    '''
-    sd = mul(fx,fx)
-    sn = sm.smoothVW(2,et,fx)
-    sd = sm.smoothVW(2,et,sd)
-    sn = mul(sn,sn)
-    writeImage("sn",sn)
-    writeImage("sd",sd)
-    '''
-    sn = readImage("sn")
-    sd = readImage("sd")
-    wp = sub(1,ep)
-    #wp = fillfloat(1,n1,n2,n3)
-    et.setEigenvalues(0.2,0.0001,1.0000)
-    ss = sm.shapeSemblance(et,wp,sn,sd)
-    writeImage("ss",ss)
-  else:
-    ss = readImage("ss")
-  plot3(fx)
-  plot3(ss,cmin=0.2,cmax=1.0)
-
-
-def goSemblance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.0001,0.5,1.000)
-    fxs = goDiffusion(2,et,fx)
-    fxs = mul(fxs,fxs)
-    fss = mul(fx,fx)
-    fss = goDiffusion(2,et,fss)
-    et.setEigenvalues(0.2,0.001,1.0)
-    fxs = goDiffusion(4,et,fxs)
-    fss = goDiffusion(4,et,fss)
-    sem = div(fxs,fss)
-    writeImage("sem",sem)
-  else:
-    sem = readImage("sem")
-  plot3(fx)
-  plot3(sem,cmin=0.3,cmax=1.0)
-
-def goSemblanceHale():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    lsf = LocalSemblanceFilter(2,2)
-    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,et,fx)
-    '''
-    et.setEigenvalues(0.0001,1.0,1.0)
-    fxs = goDiffusion(2,et,fx)
-    fxs = mul(fxs,fxs)
-
-    fss = mul(fx,fx)
-    fss = goDiffusion(2,et,fss)
-
-    et.setEigenvalues(0.5,0.0001,1.0000)
-    fxs = goDiffusion(4,et,fxs)
-    fss = goDiffusion(4,et,fss)
-
-    sem = div(fxs,fss)
-    '''
-    writeImage("semHale",sem)
-  else:
-    sig1,sig2=2,6
-    sem = readImage("semHale")
-    '''
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.0001,0.001,1.0)
-    ses = goNonlinearDiffusionX(4,et,sem)
-    '''
-  plot3(fx)
-  plot3(sem,cmin=0.2,cmax=1.0)
-
-def goCovariance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    p2 = zerofloat(n1,n2,n3)
-    p3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    '''
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.001,0.001,1.0)
-    fx = goDiffusion(4,et,fx)
-    '''
-    lsf = LocalSlopeFinder(sig1,sig2,sig2,5)
-    lsf.findSlopes(fx,p2,p3,ep)
-    cov = Covariance()
-    em,es=cov.covarianceEigen(7,p2,p3,fx)
-    sem = div(em,es)
-    writeImage("em",em)
-    writeImage("es",es)
-  else:
-    sig1,sig2=2,6
-    em = readImage("em")
-    es = readImage("es")
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.0,0.001,1.0)
-    ess = goDiffusion(4,et,es)
-    ems = goDiffusion(4,et,em)
-    sem = div(em,es)
-    ses = div(ems,ess)
-    #sss = goDiffusion(4,et,sem)
-  plot3(fx)
-  plot3(sem,cmin=0.3,cmax=1.0)
-  plot3(ses,cmin=0.3,cmax=1.0)
-  '''
-  plot3(ses,cmin=0.2,cmax=1.0)
-  plot3(sss,cmin=0.2,cmax=1.0)
-  '''
-def goFastCovariance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,8
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.001,1.000,0.001)
-    gx = goDiffusion(4,et,fx)
-    et.setEigenvalues(0.001,0.001,1.000)
-    fx = goDiffusion(4,et,fx)
-    cv = Covariance()
-    em,es=cv.covarianceEigenX(3,fx,gx)
-    sem = div(em,es)
-  else:
-    sem = readImage("sem")
-  plot3(fx)
-  plot3(sem,cmin=0.2,cmax=1.0)
-
-def goDiffusion(sig,et,fx):
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  return fed.apply(sig,et,fx)
-
-def goDiffusionX(sig,et,fx):
-  lbd = 0.1
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  return fed.apply(sig,lbd,et,fx)
-
+def toDegrees(fx):
+  pi = Math.PI
+  scale = 180/pi
+  return mul(scale,fx)
 
 def normalize(ss):
   sub(ss,min(ss),ss)
@@ -673,18 +462,21 @@ def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,dh=None,k1=120,
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if ha:
-    amin = -0.8 #-0.25*Math.PI
-    amax =  0.8 #0.25*Math.PI
+    amin = -45 #-0.25*Math.PI
+    amax =  45 #0.25*Math.PI
     sd = SurfaceDisplay()
     hz = readImage2D(hzfile)
+    ha = toDegrees(ha)
     ts = sd.horizonWithChannelAzimuth([cmin,cmax],[amin,amax],hz,f,ha)
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if dh:
+    pi = Math.PI
     amin = 0
-    amax = 0.5
+    amax = 20
     sd = SurfaceDisplay()
     hz = readImage2D(hzfile)
+    dh = toDegrees(dh)
     ts = sd.horizonWithChannelAzimuth([cmin,cmax],[amin,amax],hz,f,dh)
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
@@ -693,7 +485,7 @@ def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,dh=None,k1=120,
     cbar.setWidthMinimum(120)
   #ipg.setSlices(153,760,450)
   ipg.setSlices(101,138,39)
-  ipg.setSlices(101,136,35)
+  ipg.setSlices(101,135,35)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:

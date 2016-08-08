@@ -11,7 +11,7 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-  goF3d()
+  #goF3d()
   #goHongliu()
   #goF3dUnc()
   #goJake()
@@ -25,7 +25,7 @@ def main(args):
   #goHan()
   #goNwc()
   #goShengwen()
-  #goPoseidon()
+  goPoseidon()
 def goPoseidon():
   firstLook = False # fast, does not read all trace headers
   secondLook = True # slow, must read all trace headers
