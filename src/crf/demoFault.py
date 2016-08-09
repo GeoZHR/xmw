@@ -32,6 +32,8 @@ fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
 fppfile = "fpp"
 hl1file = "hl1"
+hu1file = "hu1"
+hm1file = "hm1"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -53,8 +55,8 @@ maxThrow = 85.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/beg/nathan/sub8/"
 pngDir = None
+pngDir = "../../../png/beg/nathan/sub8/"
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -67,36 +69,75 @@ def main(args):
   #goSkinTv()
   #goFaultImages()
   #goSurfaces()
+  #goFaultsAndSurfs()
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
-  goResetSurfaces()
+  #goResetSurfaces()
+  #goRosePlots()
+  goFaultDensity()
+
+def goFaultsAndSurfs():
+  fpt = readImage(fptvfile)
+  hu1 = readImage2D(n2,n3,hu1file)
+  hm1 = readImage2D(n2,n3,hm1file)
+  hl1 = readImage2D(n2,n3,hl1file)
+  hpr = Helper()
+  hpr.horizonToImage(div(hu1,5),fpt)
+  hpr.horizonToImage(div(hm1,5),fpt)
+  hpr.horizonToImage(div(hl1,5),fpt)
+  plot3(fpt,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+
+def goFaultDensity():
+  stfile = hm1file
+  sbfile = hl1file
+  if not plotOnly:
+    fp = readImage(fptvfile)
+    st = readImage2D(n2,n3,stfile)
+    sb = readImage2D(n2,n3,sbfile)
+    st = div(st,5)
+    sb = div(sb,5)
+    hp = Helper()
+    fd = hp.faultDensity(st,sb,fp)
+    writeImage("fd"+stfile+sbfile,fd)
+  else:
+    sf = readImage2D(n2,n3,sbfile)
+    fd = readImage2D(n2,n3,"fd"+stfile+sbfile)
+    print min(fd)
+    print max(fd)
+    rgf = RecursiveGaussianFilterP(20)
+    rgf.apply00(fd,fd)
+  gx = readImage(gxfile)
+  plot3(gx,horizon=sf,fd=fd)
+
 
 def goRosePlots():
+  tpfile = hm1file
+  btfile = hl1file
+  tp = readImage2D(n2,n3,tpfile)
+  bt = readImage2D(n2,n3,btfile)
+  tp = div(tp,5)
+  bt = div(bt,5)
   fpp = readImage2D(71989342,4,fppfile)
-
-def goResetSurfaces():
-  gx = readImage(gxfile)
-  fl = readImage(fltvfile)
-  fns = ["m1","u1"]
-  hp = Helper()
-  for fni in fns:
-    ndfs = readImage2D(3,2,"s"+fni+"ndfs")
-    ny = round(ndfs[0][0])
-    nx = round(ndfs[1][0])
-    sf = readImage2D(ny,nx,"s"+fni)
-    b2 = round(ndfs[0][2]-s2.getFirst())
-    b3 = round(ndfs[1][2]-s3.getFirst())
-    hz = zerofloat(n2,n3)
-    for ix in range(nx):
-      for iy in range(ny):
-        hz[ix+b3][iy+b2] = sf[ix][iy]
-    writeImage("h"+fni,hz)
-    hp.horizonToImage(s1,0,0,hz,fl)
-  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
+  c2,c3=20,4
+  rp = RosePlot()
+  title = tpfile+'~'+btfile
+  #pp = rp.applyForRosePlotsX(npm,tp,bt,c2,c3,n2,n3,36,fc,ob)
+  pp = rp.applyForRosePlotsN(64,tp,bt,c2,c3,n2,n3,36,fpp)
+  #pp = rp.applyForRosePlotsN(99,99,c2,c3,n2,n3,18,fc,ob)
+  pp.addTitle(title)
+  pf = PlotFrame(pp)
+  #wx,wy = 1450,round((c3*1450)/c2)+50
+  #wx,wy = 1700,round((c3*1750)/c2)+50
+  wx,wy = 2100,round((c3*2100)/c2)+100
+  wx = round(wx*1.5)
+  wy = round(wy*1.3)
+  pf.setSize(wx,wy)
+  pf.setVisible(True)
+  pf.paintToPng(720,6,pngDir+title+".png")
 
 def goPlanar():
   gx = readImage(gxfile)
@@ -365,6 +406,27 @@ def goFaultImages():
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
+def goResetSurfaces():
+  gx = readImage(gxfile)
+  fl = readImage(fltvfile)
+  fns = ["m1","u1"]
+  hp = Helper()
+  for fni in fns:
+    ndfs = readImage2D(3,2,"s"+fni+"ndfs")
+    ny = round(ndfs[0][0])
+    nx = round(ndfs[1][0])
+    sf = readImage2D(ny,nx,"s"+fni)
+    b2 = round(ndfs[0][2]-s2.getFirst())
+    b3 = round(ndfs[1][2]-s3.getFirst())
+    hz = zerofloat(n2,n3)
+    for ix in range(nx):
+      for iy in range(ny):
+        hz[ix+b3][iy+b2] = sf[ix][iy]
+    writeImage("h"+fni,hz)
+    hp.horizonToImage(s1,0,0,hz,fl)
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+
 def like(x):
   n3 = len(x)
   n2 = len(x[0])
@@ -495,7 +557,7 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
     sf.world.addChild(tg)
   if horizon and fd:
     hp = Helper()
-    ts = hp.horizonWithFaultDensity(n1-2,[0.0,0.15],horizon,fd)
+    ts = hp.horizonWithFaultDensity(s1,s2,s3,[0.0,0.15],horizon,fd)
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if skins:

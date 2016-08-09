@@ -129,7 +129,7 @@ public class RosePlot {
   }
 
   public PlotPanel applyForRosePlotsN(
-    float b1, float e1, int c2, int c3, int n2, int n3, 
+    float alpha, float b1, float e1, int c2, int c3, int n2, int n3, 
     int nbin, float[][] fp, float[][] ob) 
   {
     int np = fp[0].length;
@@ -172,14 +172,65 @@ public class RosePlot {
         fpk[ik] = fpa.get(ik);
       }
       fpa.clear();
-      roseN(i3,i2,fpk,nbin,pp);
+      roseN(i3,i2,alpha,fpk,nbin,pp);
+    }}
+    return pp;
+  }
+
+  public PlotPanel applyForRosePlotsN(
+    float alpha, float[][] b1, float[][] e1, int c2, int c3, int n2, int n3, 
+    int nbin, float[][] fp) 
+  {
+    int np = fp[0].length;
+    int d2 = round(n2/c2);
+    int d3 = round(n3/c3);
+    PlotPanel.AxesPlacement axes = PlotPanel.AxesPlacement.NONE;
+    PlotPanel.Orientation orient = PlotPanel.Orientation.X1RIGHT_X2UP;
+    PlotPanel pp = new PlotPanel(c3,c2,orient,axes);
+    for (int i3=0; i3<c3; ++i3) {
+    //for (int i3=c3-1; i3>=0; --i3) {
+      int b3 = i3*d3;
+      int e3 = (i3+1)*d3;
+      if(i3==(c3-1)){e3 = max(e3,n3);}
+      System.out.println("b3="+b3);
+      System.out.println("e3="+e3);
+    for (int i2=0; i2<c2; ++i2) {
+      int b2 = i2*d2;
+      int e2 = (i2+1)*d2;
+      if(i2==(c2-1)){e2 = max(e2,n2);}
+      System.out.println("b2="+b2);
+      System.out.println("e2="+e2);
+      ArrayList<Float> fpa = new ArrayList<Float>();
+      for (int ip=0; ip<np; ++ip) {
+        int k2 = (int)fp[1][ip];
+        int k3 = (int)fp[2][ip];
+        if(k2<b2 || k2>e2) {continue;}
+        if(k3<b3 || k3>e3) {continue;}
+        float b1i = b1[k3][k2];
+        float e1i = e1[k3][k2];
+        int k1 = (int)fp[0][ip];
+        if(k1>b1i && k1<e1i) {
+        //if(k1>=b1 && k1<=e1) {
+          float fpi = fp[3][ip];
+          fpa.add(fpi);
+        }
+      }
+      int npk = fpa.size();
+      System.out.println("npk="+npk);
+      float[] fpk = new float[npk];
+      for (int ik=0; ik<npk; ++ik) {
+        fpk[ik] = fpa.get(ik);
+      }
+      fpa.clear();
+      roseN(i3,i2,alpha,fpk,nbin,pp);
     }}
     return pp;
   }
 
 
+
   public PlotPanel applyForRosePlotsX(
-    float npm,float b1, float e1, int c2, int c3, int n2, int n3, 
+    float alpha, float npm,float b1, float e1, int c2, int c3, int n2, int n3, 
     int nbin, float[][] fp, float[][] ob) 
   {
     int np = fp[0].length;
@@ -224,7 +275,7 @@ public class RosePlot {
         fpk[ik] = fpa.get(ik);
       }
       fpa.clear();
-      rose(i3,i2,scale,fpk,nbin,pp);
+      rose(i3,i2,alpha,scale,fpk,nbin,pp);
     }}
     return pp;
   }
@@ -379,18 +430,18 @@ public class RosePlot {
   }
 
   public void rose(
-    int i3, int i2, float scale, float[] phi, int nbin, PlotPanel pp) 
+    int i3, int i2, float alpha, float scale, float[] phi, int nbin, PlotPanel pp) 
   {
     float[] bins = applyHistogram(nbin,phi);
     mul(bins,scale,bins);
-    applyForRose(i3,i2,bins,pp);
+    applyForRose(i3,i2,alpha,bins,pp);
   }
 
   public void roseN(
-    int i3, int i2, float[] phi, int nbin, PlotPanel pp) 
+    int i3, int i2, float alpha, float[] phi, int nbin, PlotPanel pp) 
   {
     float[] bins = applyHistogram(nbin,phi);
-    applyForRoseN(i3,i2,bins,pp);
+    applyForRoseN(i3,i2,alpha,bins,pp);
   }
 
 
@@ -429,7 +480,7 @@ public class RosePlot {
   }
 
   private void applyForRoseN(
-    int i3, int i2, float[] bins,PlotPanel pp) 
+    int i3, int i2, float alpha, float[] bins,PlotPanel pp) 
   {
     for (float rdi=0.2f; rdi<=1.0f; rdi+=0.2f) {
       float[][] cps = makeCirclePoints(1000,rdi);
@@ -443,13 +494,13 @@ public class RosePlot {
         pvc.setLineWidth(2.f);
       }
     }
-    addRadials(i3,i2,pp,Color.BLACK);
-    addBinsN(i3,i2,pp,bins);
+    addRadials(i3,i2,alpha, pp,Color.BLACK);
+    addBinsN(i3,i2,alpha, pp,bins);
   }
 
 
   private void applyForRose(
-    int i3, int i2, float[] bins,PlotPanel pp) 
+    int i3, int i2, float alpha, float[] bins,PlotPanel pp) 
   {
     for (float rdi=0.2f; rdi<=1.0f; rdi+=0.2f) {
       float[][] cps = makeCirclePoints(1000,rdi);
@@ -463,7 +514,7 @@ public class RosePlot {
         pvc.setLineWidth(2.f);
       }
     }
-    addRadials(i3,i2,pp,Color.BLACK);
+    addRadials(i3,i2,alpha,pp,Color.BLACK);
     addBinsF(i3,i2,pp,bins);
   }
 
@@ -505,6 +556,7 @@ public class RosePlot {
     float[] bins = new float[nbins];
     for (int ip=0; ip<np; ++ip) {
       int ib = (int)(phi[ip]/dp);
+      ib = min(ib,nbins-1);
       bins[ib] += ps;
     }
     return bins;
@@ -524,17 +576,30 @@ public class RosePlot {
     }
   }
 
-  private void addRadials(int i3, int i2, PlotPanel pp, Color color) {
-    int np = 8;
-    float dp = (float)(2*DBL_PI/np);
+  private void addRadials(
+    int i3, int i2, float alpha, PlotPanel pp, Color color) 
+  {
+    int np = 4;
+    float dp = 360f/np;
     for (int ip=0; ip<np; ++ip) {
-      float phi = dp*ip;
+      float phi = dp*ip+alpha;
+      if(phi>360f) phi-=360f;
+      phi = (float)toRadians(phi);
       float[][] rps = makeRadialPoints(1f,phi);
       PointsView pv = pp.addPoints(i3,i2,rps[0],rps[1]);
       pv.setLineStyle(PointsView.Line.DASH);
       pv.setLineColor(color);
       pv.setLineWidth(2.f);
     }
+  }
+
+    /**
+   * Converts an angle measured in degrees to radians.
+   * @param angdeg an angle, in degrees.
+   * @return the angle in radians.
+   */
+  public static double toRadians(double angdeg) {
+    return Math.toRadians(angdeg);
   }
 
   private void addBins(PlotPanel pp, float[] bins) {
@@ -682,19 +747,27 @@ public class RosePlot {
     return rc;
   }
 
-  private float addBinsN(int i3, int i2, PlotPanel pp, float[] bins) {
+  private float addBinsN(int i3, int i2, float alpha, 
+    PlotPanel pp, float[] bins) {
     int nb = bins.length;
-    float dp = (float)(DBL_PI/nb);
+    float dp = 180f/nb;
     float rmax = max(bins);
     float rc = round(rmax*120f)/100f;
     mul(bins,1.0f/rc,bins);
     for (int ib=0; ib<nb; ++ib) {
       float phi = ib*dp;
+      float phm = phi+alpha;
+      float php = phi+alpha+dp;
+      if (phm>180f) phm-=180f;
+      if (php>180f) php-=180f;
+      phi = (float)toRadians(phi);
+      phm = (float)toRadians(phm);
+      php = (float)toRadians(php);
       float rdi = bins[ib];
       float aci = (float)(phi/DBL_PI);
       Color rgb = Color.getHSBColor(aci,1f,1f);
-      float[][] rp1 = makeRadialPoints(rdi,phi);
-      float[][] rp2 = makeRadialPoints(rdi,phi+dp);
+      float[][] rp1 = makeRadialPoints(rdi,phm);
+      float[][] rp2 = makeRadialPoints(rdi,php);
       float dx = rp2[0][1] - rp1[0][1];
       float dy = rp2[1][1] - rp1[1][1];
       float ds = sqrt(dx*dx+dy*dy);

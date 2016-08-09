@@ -361,33 +361,33 @@ public class Helper {
     }}
   }
 
-  public float[][] faultDensity(float[][] ob, float[][] sf, float[][][] fp) {
+  public float[][] faultDensity(float[][] st, float[][] sb, float[][][] fp) {
     int n3 = fp.length;
     int n2 = fp[0].length;
     float[][] fd = new float[n3][n2];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
       int nc = 0;
-      int b1 = round(ob[i3][i2]);
-      int e1 = round(sf[i3][i2]);
-      for (int i1=b1; i1<=e1; ++i1) {
-        float fpi = fp[i3][i2][i1];
-        if (fpi>0f) {nc++;}
+      int b1 = round(st[i3][i2]);
+      int e1 = round(sb[i3][i2]);
+      if (e1<=b1) {fd[i3][i2] = 0f;}
+      else {
+        for (int i1=b1; i1<=e1; ++i1)
+          if (fp[i3][i2][i1]>0f) {nc++;}
+        fd[i3][i2] = (float)nc/(float)(e1-b1);
       }
-      fd[i3][i2] = (float)nc/(float)(e1-b1);
     }}
     return fd;
   }
 
   public float[][] horizonWithFaultDensity(
-    int nz, float[] mfs, float[][] hz, float[][] fd) 
+    Sampling sz, Sampling sy, Sampling sx, 
+    float[] mfs, float[][] hz, float[][] fd) 
   {
-    int nx = fd.length;
-    int ny = fd[0].length;
-    Sampling sx = new Sampling(nx);
-    Sampling sy = new Sampling(ny);
-    return buildTrigs(nz-2,sx,sy,hz,-1,mfs,fd); 
+    int lz = (int)sz.getLast()-1;
+    return buildTrigs(lz,sx,sy,hz,1,mfs,fd); 
   }
+
 
   public float[][] horizonWithAmplitude(
     Sampling fsz, Sampling fsy, Sampling fsx, 
@@ -478,10 +478,9 @@ public class Helper {
       if (zi>zmax) {zmax=zi;}
     }}
     if(color>0.0f) {
-      zero(zas);
-      add(zas,color,zas);
-      ColorMap cp = new ColorMap(0.0f,1.0f,ColorMap.JET);
-      rgb = cp.getRgbFloats(zas);
+      //ColorMap cp = new ColorMap(0.0f,1.0f,ColorMap.JET);
+      ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.JET);
+      rgb = cp.getRgbFloats(zfs);
     } else if (f==null) {
       ColorMap cp = new ColorMap(-zmax,-zmin,ColorMap.JET);
       rgb = cp.getRgbFloats(mul(zas,-1f));
