@@ -22,6 +22,7 @@ pngDir = "../../../png/sso/3d/"
 pngDir = None
 
 seismicDir = "../../../data/seis/sso/3d/real/"
+seismicDir = "../../../data/seis/pnz/pnz11/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
 ellfile = "ell"
@@ -36,19 +37,23 @@ gxsfile = "gxs"
 gxcfile = "gxc"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
-n1,n2,n3 = 240,880,500
+n1,n2,n3 = 400,700,800
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
-  #goLof()
+  goLof()
   #goLoe()
   #goChannel()
-  goSmoothL()
+  #goSmoothL()
   #goSmoothS()
   #goSmoothC()
+  #goFirstLook()
+def goFirstLook():
+  fx = readImage(fxfile)
+  plot3(fx,cmin=min(fx)/10,cmax=max(fx)/10)
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
