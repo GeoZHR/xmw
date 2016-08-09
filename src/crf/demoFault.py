@@ -69,54 +69,60 @@ def main(args):
   #goSkinTv()
   #goFaultImages()
   #goSurfaces()
-  #goFaultsAndSurfs()
   #goFaultPoints()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
   #goResetSurfaces()
+  #goFaultsAndSurfs()
   #goRosePlots()
   goFaultDensity()
+  #goSetFaultImages()
 
 def goFaultsAndSurfs():
-  fpt = readImage(fptvfile)
+  gx = readImage(gxfile)
+  flt = readImage(fltvfile)
+  #fpt = readImage(fptvfile)
   hu1 = readImage2D(n2,n3,hu1file)
   hm1 = readImage2D(n2,n3,hm1file)
   hl1 = readImage2D(n2,n3,hl1file)
   hpr = Helper()
-  hpr.horizonToImage(div(hu1,5),fpt)
-  hpr.horizonToImage(div(hm1,5),fpt)
-  hpr.horizonToImage(div(hl1,5),fpt)
-  plot3(fpt,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  hpr.horizonToImage(div(hu1,5),flt)
+  hpr.horizonToImage(div(hm1,5),flt)
+  hpr.horizonToImage(div(hl1,5),flt)
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  '''
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
+  '''
 
 def goFaultDensity():
-  stfile = hm1file
-  sbfile = hl1file
+  stfile = hu1file
+  sbfile = hm1file
+  st = readImage2D(n2,n3,stfile)
+  sb = readImage2D(n2,n3,sbfile)
   if not plotOnly:
     fp = readImage(fptvfile)
-    st = readImage2D(n2,n3,stfile)
-    sb = readImage2D(n2,n3,sbfile)
     st = div(st,5)
     sb = div(sb,5)
     hp = Helper()
     fd = hp.faultDensity(st,sb,fp)
     writeImage("fd"+stfile+sbfile,fd)
   else:
-    sf = readImage2D(n2,n3,sbfile)
     fd = readImage2D(n2,n3,"fd"+stfile+sbfile)
     print min(fd)
     print max(fd)
     rgf = RecursiveGaussianFilterP(20)
     rgf.apply00(fd,fd)
   gx = readImage(gxfile)
-  plot3(gx,horizon=sf,fd=fd)
+  plot3(gx,horizon=sb,fd=fd)
 
 
 def goRosePlots():
-  tpfile = hm1file
-  btfile = hl1file
+  tpfile = hu1file
+  btfile = hm1file
   tp = readImage2D(n2,n3,tpfile)
   bt = readImage2D(n2,n3,btfile)
   tp = div(tp,5)

@@ -287,7 +287,7 @@ public class Helper {
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<round(ob[i3][i2]); ++i1) {
-      fx[i3][i2][i1] = -0.001f;
+      fx[i3][i2][i1] = -0.01f;
     }}}
   }
 

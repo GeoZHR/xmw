@@ -25,7 +25,72 @@ def main(args):
   #goHan()
   #goNwc()
   #goShengwen()
-  goPoseidon()
+  #goPoseidon()
+  goParihaka()
+def goParihaka():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = /data/seis/par/sgy/Parihaka3d_raw.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 69479795156
+  number of traces = 11127449
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =  2050, i2max = 14026 (inline indices)
+    i3min =  1665, i3max =  5599 (crossline indices)
+    xmin = 2546.537000, xmax = 2619.591000 (x coordinates, in km)
+    ymin = 6226.154000, ymax = 6288.372000 (y coordinates, in km)
+  grid sampling:
+    n1 =  1501 (number of samples per trace)
+    n2 = 11977 (number of traces in inline direction)
+    n3 =  3935 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.006250 (inline sampling interval, in km)
+    d3 = 0.012500 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =  2050, i3min =  1665, x = 2556.816611, y = 6214.081487
+    i2max = 14026, i3min =  1665, x = 2619.590620, y = 6254.847271
+    i2min =  2050, i3max =  5599, x = 2530.034337, y = 6255.322955
+    i2max = 14026, i3max =  5599, x = 2592.808346, y = 6296.088740
+  grid azimuth: 57.00 degrees
+  ****** end of SEG-Y file info ******
+  NOTE:
+  In the SEG-Y file, inline indices increment by 2, 
+  so that the number n2 = 11977 of traces per line
+  includes traces not actually present in the file.
+  Ignoring those missing traces, d2 = d3 = 0.0125.
+  ***************************************************************************
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/par/"
+  sgyfile = basedir+"Parihaka_PSTM_full_angle.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1167,4200,5325,1735,2657
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    gain(100,x)
+    show3d(x,clip=max(x)/2)
+
 def goPoseidon():
   firstLook = False # fast, does not read all trace headers
   secondLook = True # slow, must read all trace headers
