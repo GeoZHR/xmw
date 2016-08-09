@@ -22,81 +22,112 @@ pngDir = "../../../png/sso/3d/"
 pngDir = None
 
 seismicDir = "../../../data/seis/sso/3d/real/"
+seismicDir = "../../../data/seis/gbc/dat/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
+fxfile = "pp"
 ellfile = "ell"
 elsfile = "els"
 eplfile = "epl"
 epsfile = "eps"
 etlfile = "etl"
 etsfile = "ets"
-etcfile = "etc"
 gxlfile = "gxl"
 gxsfile = "gxs"
-gxcfile = "gxc"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 240,880,500
+n1,n2,n3 = 2000,150,145
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
+  gx = readImage(fxfile)
+  print min(gx)
+  plot3(gx,cmin=-1,cmax=1)
   #goLof()
   #goLoe()
-  #goChannel()
-  goSmoothL()
+  #goSmoothL()
   #goSmoothS()
-  #goSmoothC()
+  #goSemblanceHale()
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
     sig1,sig2=8,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
+    lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
+    writeImage(eplfile,ep)
     writeTensors(etlfile,ets)
   else:
-    ets = readTensors(etlfile)
+    el = readImage(ellfile)
+    ep = readImage(eplfile)
   plot3(fx)
+  ep = pow(ep,2)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  plot3(ep,cmin=0.2,cmax=1.0)
 
 def goLoe():
   fx = readImage(fxfile)
   if not plotOnly:
-    et = readTensors(etlfile)
-    loe = LocalOrientEstimator(et,5)
-    loe.setGradientSmoothing(3)
-    loe.setEigenvalues(0.001,0.2,0.2)
-    ets = loe.applyForTensors(fx)
-    writeTensors(etsfile,ets)
-  else:
-    et = readTensors(etsfile)
-  plot3(fx)
-
-def goChannel():
-  fx = readImage(fxfile)
-  if not plotOnly:
     ep = zerofloat(n1,n2,n3)
-    w2 = zerofloat(n1,n2,n3)
-    w3 = zerofloat(n1,n2,n3)
-    et = readTensors(etsfile)
-    loe = LocalOrientEstimator(et,5)
-    loe.setEigenvalues(0.1,1.0,1.0)
-    loe.setGradientSmoothing(3)
-    loe.applyForStratigraphy(fx,w2,w3,ep)
-    loe.updateTensors(et,w2,w3)
-    writeTensors(etcfile,et)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    sig1,sig2=8,2
+    lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
+    loe = LocalOrientEstimator(et,20)
+    loe.setEigenvalues(1.0,0.01,0.8)
+    loe.applyForNormalPlanar(fx,u1,u2,u3,ep)
+    writeImage(epsfile,ep)
+    writeTensors(etsfile,et)
   else:
-    ep = readImage(epfile)
-  plot3(fx,cmin=-2,cmax=2)
-  plot3(ep,hz=hz,cmin=0.1,cmax=1.0)
+    el = readImage(elsfile)
+    ep = readImage(epsfile)
+    #et = readTensors(etsfile)
+  plot3(fx)
+  ep = pow(ep,2)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  plot3(ep,cmin=0.2,cmax=1.0)
 
 
 def goSmoothL():
   fx = readImage(fxfile)
   if not plotOnly:
+    ep = readImage(eplfile)
     et = readTensors(etlfile)
-    et.setEigenvalues(0.001,0.001,1)
+    '''
+    eu = zerofloat(n1,n2,n3)
+    ev = zerofloat(n1,n2,n3)
+    ew = zerofloat(n1,n2,n3)
+    et.getEigenvalues(eu,ev,ew)
+    eu = clip(0.005,1.0,eu)
+    ev = clip(0.005,1.0,ev)
+    ew = clip(0.005,1.0,ew)
+    et.setEigenvalues(eu,ev,ew)
+    et.invertStructure(1.0,4.0,4.0)
+    et.getEigenvalues(eu,ev,ew)
+    eu = mul(eu,0.01)
+    et.setEigenvalues(eu,ev,ew)
+    sig = 50
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,et,fx)
+    '''
+    eu = fillfloat(0.0001,n1,n2,n3)
+    ev = pow(ep,30)
+    ew = fillfloat(1.0000,n1,n2,n3)
+    et.setEigenvalues(eu,ev,ew)
     gx = zerofloat(n1,n2,n3)
     lsf = LocalSmoothingFilter()
     lsf.apply(et,50,fx,gx)
@@ -107,15 +138,39 @@ def goSmoothL():
   plot3(gx)
   plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
-
 def goSmoothS():
   fx = readImage(fxfile)
   if not plotOnly:
+    ep = readImage(epsfile)
     et = readTensors(etsfile)
-    et.setEigenvalues(0.001,0.001,1)
+    '''
+    eu = zerofloat(n1,n2,n3)
+    ev = zerofloat(n1,n2,n3)
+    ew = zerofloat(n1,n2,n3)
+    et.getEigenvalues(eu,ev,ew)
+    eu = clip(0.005,1.0,eu)
+    ev = clip(0.005,1.0,ev)
+    ew = clip(0.005,1.0,ew)
+    et.setEigenvalues(eu,ev,ew)
+    et.invertStructure(1.0,4.0,4.0)
+    et.getEigenvalues(eu,ev,ew)
+    eu = mul(eu,0.01)
+    et.setEigenvalues(eu,ev,ew)
+    '''
+    eu = fillfloat(0.0001,n1,n2,n3)
+    ev = pow(ep,30)
+    ew = fillfloat(1.0000,n1,n2,n3)
+    et.setEigenvalues(eu,ev,ew)
     gx = zerofloat(n1,n2,n3)
     lsf = LocalSmoothingFilter()
     lsf.apply(et,50,fx,gx)
+    '''
+    sig = 10
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,et,fx)
+    '''
     writeImage(gxsfile,gx)
   else:
     gx = readImage(gxsfile)
@@ -123,22 +178,168 @@ def goSmoothS():
   plot3(gx)
   plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
-def goSmoothC():
+def goLinearDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    et = readTensors(etcfile)
-    et.setEigenvalues(0.001,0.001,1)
-    gx = zerofloat(n1,n2,n3)
-    lsf = LocalSmoothingFilter()
-    lsf.apply(et,50,fx,gx)
-    writeImage(gxcfile,gx)
+    sig1,sig2=4,2
+    lof = LocalOrientFilter(sig1,sig2)
+    ets = lof.applyForTensors(fx)
+    ets.setEigenvalues(0.0001,1.0,1.0)
+    sig = 5
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,ets,fx)
+    writeImage(gxlfile,gx)
   else:
-    gx = readImage(gxcfile)
-  plot3(fx)
+    gx = readImage(gxlfile)
+  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
   plot3(gx)
+  plot3(fx)
+def goLocalSmoothingFilter():
+  fx = readImage(fxfile)
+  sig1,sig2=4,2
+  lof = LocalOrientFilter(sig1,sig2)
+  ets = lof.applyForTensors(fx)
+  ets.setEigenvalues(0.0001,1.0,1.0)
+  sig = 12.5
+  gx = zerofloat(n1,n2,n3)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,sig,fx,gx)
+  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
+  plot3(gx)
+  plot3(fx)
+
+def goStratigraphyOrientedDiffusion():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=8,2
+    lof = LocalOrientFilter(sig1,sig2)
+    ets = lof.applyForTensors(fx)
+    ets.setEigenvalues(0.0001,0.0001,1.0000)
+    sig = 10
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,ets,fx)
+    writeImage(gxsfile,gx)
+  else:
+    gx = readImage(gxsfile)
   plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  plot3(gx,cmin=-1.0,cmax=1.0)
+  plot3(fx,cmin=-1.0,cmax=1.0)
+
+def goStratigraphyOrientedDiffusionX():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=4,2
+    ep = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(sig1,sig2)
+    ets = lof.applyForTensors(fx)
+    sof = StratigraphicOrientFilter(sig1,sig2)
+    et = sof.applyForTensors(ets,fx,ep)
+    et.setEigenvalues(0.0001,0.0001,1.0000)
+    sig = 10
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,et,fx)
+    writeImage(gxsfile,gx)
+    writeImage("epx",ep)
+  else:
+    fx = readImage(fxfile)
+    gx = readImage(gxsfile)
+    ep = readImage("epx")
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  plot3(gx,cmin=-1.0,cmax=1.0)
+  plot3(fx,cmin=-1.0,cmax=1.0)
+  plot3(ep,cmin=0.4,cmax=1.0)
+
+def goNonlinearDiffusion():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=4,2
+    lof = LocalOrientFilter(sig1,sig2)
+    ets = lof.applyForTensors(fx)
+    ets.setEigenvalues(0.0001,1.0,1.0)
+    sig = 5
+    cycle,limit=3,0.5
+    lbd = 0.1
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    gx = fed.apply(sig,lbd,ets,fx)
+    writeImage(gxnfile,gx)
+  else:
+    gx = readImage(gxnfile)
+  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
+  plot3(gx)
+  plot3(fx)
+
+def goShapeSemblance():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=2,6
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
+    lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
+    sm = Semblance()
+    '''
+    sd = mul(fx,fx)
+    sn = sm.smoothVW(2,et,fx)
+    sd = sm.smoothVW(2,et,sd)
+    sn = mul(sn,sn)
+    writeImage("sn",sn)
+    writeImage("sd",sd)
+    '''
+    sn = readImage("sn")
+    sd = readImage("sd")
+    wp = sub(1,ep)
+    #wp = fillfloat(1,n1,n2,n3)
+    et.setEigenvalues(0.2,0.0001,1.0000)
+    ss = sm.shapeSemblance(et,wp,sn,sd)
+    writeImage("ss",ss)
+  else:
+    ss = readImage("ss")
+  plot3(fx)
+  plot3(ss,cmin=0.2,cmax=1.0)
 
 
+def goSemblance():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=2,6
+    lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
+    et.setEigenvalues(0.0001,0.5,1.000)
+    fxs = goDiffusion(2,et,fx)
+    fxs = mul(fxs,fxs)
+    fss = mul(fx,fx)
+    fss = goDiffusion(2,et,fss)
+    et.setEigenvalues(0.2,0.001,1.0)
+    fxs = goDiffusion(4,et,fxs)
+    fss = goDiffusion(4,et,fss)
+    sem = div(fxs,fss)
+    writeImage("sem",sem)
+  else:
+    sem = readImage("sem")
+  plot3(fx)
+  plot3(sem,cmin=0.3,cmax=1.0)
+
+def goSemblanceHale():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    et = readTensors(etlfile)
+    lsf = LocalSemblanceFilter(2,2)
+    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,et,fx)
+    writeImage("semHale",sem)
+  else:
+    sem = readImage("semHale")
+  plot3(fx)
+  plot3(sem,cmin=0.2,cmax=1.0)
 
 def normalize(ss):
   sub(ss,min(ss),ss)

@@ -31,6 +31,7 @@ eplfile = "epl"
 epsfile = "eps"
 etlfile = "etl"
 etsfile = "ets"
+etcfile = "etc"
 gxlfile = "gxl"
 gxsfile = "gxs"
 p2kfile = "p2k"
@@ -163,20 +164,16 @@ def goLoe():
     loe.setEigenvalues(0.001,0.2,0.2)
     loe.setGradientSmoothing(3)
     loe.applyForSlopePlanar(10,fx,p2,p3,ep)
-    loe.applyForInline(fx,w1,w2,w3)
-    hp = Helper()
-    ha = hp.channelAzimuth(w2,w3,hz)
+    ets = loe.applyForTensors(fx)
     writeImage(p2sfile,p2)
     writeImage(p3sfile,p3)
-    writeImage(hasfile,ha)
     writeImage(epsfile,ep)
+    writeTensors(etsfile,ets)
   else:
     p2 = readImage(p2sfile)
     p3 = readImage(p3sfile)
     ep = readImage(epsfile)
-    ha = readImage2D(hasfile)
   hz = readImage2D(hzfile)
-  hc = readImage2D(hacfile)
   p2k = readImage(p2kfile)
   p3k = readImage(p3kfile)
   ep = pow(ep,6)
@@ -184,11 +181,8 @@ def goLoe():
   ep = div(ep,max(ep))
   dp3 = abs(sub(p3k,p3))
   dp2 = abs(sub(p2k,p2))
-  dh = abs(sub(hc,ha))
   plot3(fx,cmin=-2,cmax=2)
   plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
-  plot3(fx,dh=dh,cmin=-2,cmax=2)
-  plot3(fx,ha=ha,cmin=-2,cmax=2)
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p2")
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p3")
   plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="Absolute errors")
@@ -232,7 +226,7 @@ def goChannel():
     et = readTensors(etsfile)
     loe = LocalOrientEstimator(et,5)
     loe.setEigenvalues(0.1,1.0,1.0)
-    loe.setGradientSmoothing(3)
+    #loe.setGradientSmoothing(3)
     loe.applyForStratigraphy(fx,w2,w3,ep)
     hp = Helper()
     ha = hp.channelAzimuth(w2,w3,hz)

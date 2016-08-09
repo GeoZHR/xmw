@@ -653,6 +653,28 @@ public class LocalOrientEstimator {
     }}
   }
 
+  public void updateTensors(
+    final EigenTensors3 et, final float[][][] w2, final float[][][] w3) {
+    final int n3 = w2.length;
+    final int n2 = w2[0].length;
+    final int n1 = w2[0][0].length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float[] u = et.getEigenvectorU(i1,i2,i3);
+        float u1i = u[0];
+        float u2i = u[1];
+        float u3i = u[2];
+        float w2i = w2[i3][i2][i1];
+        float w3i = w3[i3][i2][i1];
+        float w1i = -(w2i*u2i+w3i*u3i)/u1i;
+        et.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
+        et.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
+      }}
+    }});
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // private
 
