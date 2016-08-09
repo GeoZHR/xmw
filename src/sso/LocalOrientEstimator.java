@@ -489,7 +489,7 @@ public class LocalOrientEstimator {
         }
       }
     }
-    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,false);
   }
 
 

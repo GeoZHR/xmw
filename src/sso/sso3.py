@@ -32,9 +32,10 @@ epsfile = "eps"
 etlfile = "etl"
 etsfile = "ets"
 etcfile = "etc"
-gxlfile = "gxl"
-gxsfile = "gxs"
-gxcfile = "gxc"
+gslfile = "gsl"
+gssfile = "gss"
+gclfile = "gcl"
+gcsfile = "gcs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 400,700,800
@@ -44,16 +45,18 @@ s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
-  goLof()
-  #goLoe()
+  #goLof()
+  goLoe()
   #goChannel()
-  #goSmoothL()
-  #goSmoothS()
+  #goSmoothSL()
+  #goSmoothSS()
   #goSmoothC()
   #goFirstLook()
 def goFirstLook():
   fx = readImage(fxfile)
-  plot3(fx,cmin=min(fx)/10,cmax=max(fx)/10)
+  fx = gain(fx)
+  writeImage(fxfile,fx)
+  plot3(fx)
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -97,33 +100,33 @@ def goChannel():
   plot3(ep,hz=hz,cmin=0.1,cmax=1.0)
 
 
-def goSmoothL():
+def goSmoothSL():
   fx = readImage(fxfile)
   if not plotOnly:
     et = readTensors(etlfile)
-    et.setEigenvalues(0.001,0.001,1)
+    et.setEigenvalues(0.001,1,1)
     gx = zerofloat(n1,n2,n3)
     lsf = LocalSmoothingFilter()
-    lsf.apply(et,50,fx,gx)
-    writeImage(gxlfile,gx)
+    lsf.apply(et,20,fx,gx)
+    writeImage(gslfile,gx)
   else:
-    gx = readImage(gxlfile)
+    gx = readImage(gslfile)
   plot3(fx)
   plot3(gx)
   plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
 
-def goSmoothS():
+def goSmoothSS():
   fx = readImage(fxfile)
   if not plotOnly:
     et = readTensors(etsfile)
-    et.setEigenvalues(0.001,0.001,1)
+    et.setEigenvalues(0.001,1,1)
     gx = zerofloat(n1,n2,n3)
     lsf = LocalSmoothingFilter()
-    lsf.apply(et,50,fx,gx)
-    writeImage(gxsfile,gx)
+    lsf.apply(et,20,fx,gx)
+    writeImage(gssfile,gx)
   else:
-    gx = readImage(gxsfile)
+    gx = readImage(gssfile)
   plot3(fx)
   plot3(gx)
   plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
