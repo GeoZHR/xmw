@@ -42,14 +42,14 @@ n1,n2,n3 = 400,700,800
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goLof()
-  goLoe()
+  #goLoe()
   #goChannel()
   #goSmoothSL()
-  #goSmoothSS()
+  goSmoothSS()
   #goSmoothC()
   #goFirstLook()
 def goFirstLook():
@@ -111,9 +111,9 @@ def goSmoothSL():
     writeImage(gslfile,gx)
   else:
     gx = readImage(gslfile)
-  plot3(fx)
+  #plot3(fx)
   plot3(gx)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  #plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
 
 def goSmoothSS():
@@ -127,9 +127,9 @@ def goSmoothSS():
     writeImage(gssfile,gx)
   else:
     gx = readImage(gssfile)
-  plot3(fx)
+  #plot3(fx)
   plot3(gx)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  #plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
 def goSmoothC():
   fx = readImage(fxfile)

@@ -489,7 +489,7 @@ public class LocalOrientEstimator {
         }
       }
     }
-    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,false);
+    return new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
   }
 
 
@@ -763,6 +763,11 @@ public class LocalOrientEstimator {
             u1i = -u1i;
             u2i = -u2i;
             u3i = -u3i;
+          }
+          if (u1i==0f) {
+            u1i = 1f;
+            u2i = 0f;
+            u3i = 0f;
           }
           float p2t = -u2i/u1i;
           float p3t = -u3i/u1i;
@@ -1063,6 +1068,9 @@ public class LocalOrientEstimator {
             float u3i = u[2];
             if (u1i<0f) {
               u1i = -u1i; u2i = -u2i; u3i = -u3i;
+            }
+            if (u1i==0f) {
+              u1i = 1f; u2i = 0f; u3i = 0f;
             }
             float v1i = -u2i/u1i;
             float v2i = 1;
