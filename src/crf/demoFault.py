@@ -25,6 +25,7 @@ fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
 fltvfile = "fltv" # fault likelihood thinned
 fptvfile = "fptv" # fault strike thinned
+fptmfile = "fptm" # fault strike masked out 20~40 degrees
 fttvfile = "fttv" # fault dip thinned
 fskbase = "fsk" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
@@ -74,20 +75,33 @@ def main(args):
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
+  goRosePlotsN()
   #goResetSurfaces()
   #goFaultsAndSurfs()
-  #goRosePlots()
-  goFaultDensity()
+  #goFaultDensity()
   #goSetFaultImages()
+  #goStrikeMask()
 
-def goFaultsAndSurfs():
+
+def goStrikeMask():
   gx = readImage(gxfile)
-  flt = readImage(fltvfile)
+  fp = readImage(fptvfile)
+  hp = Helper()
+  hp.strikeMask(15,40,fp)
+  writeImage(fptmfile,fp)
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+def goFaultsAndSurfs():
   #fpt = readImage(fptvfile)
   hu1 = readImage2D(n2,n3,hu1file)
   hm1 = readImage2D(n2,n3,hm1file)
   hl1 = readImage2D(n2,n3,hl1file)
   hpr = Helper()
+  spm = readImage2D(888165,3,"hzs/M1")
+  hpr.mergeU1AndTop(round(s2.getFirst()),spm,hm1)
+  writeImage(hm1file,hm1)
+  gx = readImage(gxfile)
+  flt = readImage(fltvfile)
   hpr.horizonToImage(div(hu1,5),flt)
   hpr.horizonToImage(div(hm1,5),flt)
   hpr.horizonToImage(div(hl1,5),flt)
@@ -99,8 +113,8 @@ def goFaultsAndSurfs():
   '''
 
 def goFaultDensity():
-  stfile = hu1file
-  sbfile = hm1file
+  stfile = hm1file
+  sbfile = hl1file
   st = readImage2D(n2,n3,stfile)
   sb = readImage2D(n2,n3,sbfile)
   if not plotOnly:
@@ -116,8 +130,12 @@ def goFaultDensity():
     print max(fd)
     rgf = RecursiveGaussianFilterP(20)
     rgf.apply00(fd,fd)
-  gx = readImage(gxfile)
-  plot3(gx,horizon=sb,fd=fd)
+  #gx = readImage(gxfile)
+  #plot3(gx,horizon=sb,fd=fd)
+  hp = Helper()
+  fd = hp.transpose(fd)
+  c3 = Sampling(n3,1.0/1.5,s3.getFirst())
+  plot2(c3,s2,fd,cmin=0.01,cmax=0.15,png="fd"+stfile+sbfile)
 
 
 def goRosePlots():
@@ -127,7 +145,7 @@ def goRosePlots():
   bt = readImage2D(n2,n3,btfile)
   tp = div(tp,5)
   bt = div(bt,5)
-  fpp = readImage2D(71989342,4,fppfile)
+  fpp = readImage2D(65230747,4,fppfile)
   c2,c3=20,4
   rp = RosePlot()
   title = tpfile+'~'+btfile
@@ -144,6 +162,33 @@ def goRosePlots():
   pf.setSize(wx,wy)
   pf.setVisible(True)
   pf.paintToPng(720,6,pngDir+title+".png")
+
+def goRosePlotsN():
+  hu = readImage2D(n2,n3,hu1file)
+  hm = readImage2D(n2,n3,hm1file)
+  hl = readImage2D(n2,n3,hl1file)
+  fp = readImage2D(65230747,4,fppfile)
+  hu = div(hu,5)
+  hm = div(hm,5)
+  hl = div(hl,5)
+  tpfile = hu1file
+  btfile = hm1file
+  tp = hu
+  tb = hm
+  c2,c3=20,4
+  rp = RosePlot()
+  #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
+  npm = 1193887
+  title = tpfile+'~'+btfile
+  pp = rp.applyForRosePlotsX(64,npm,tp,bt,c2,c3,n2,n3,36,fc,ob)
+  pp.addTitle(title)
+  pf = PlotFrame(pp)
+  wx,wy = 2100,round((c3*2100)/c2)+100
+  wx = round(wx*1.5)
+  wy = round(wy*1.3)
+  pf.setSize(wx,wy)
+  pf.setVisible(True)
+  pf.paintToPng(720,6,pngDir+title+"N"+".png")
 
 def goPlanar():
   gx = readImage(gxfile)
@@ -220,7 +265,7 @@ def goSurfaces():
         clab="Fault likelihood",png="flt")
 
 def goFaultPoints():
-  fp = readImage(fptvfile)
+  fp = readImage(fptmfile)
   rp = RosePlot()
   ps = rp.faultPoints(fp)
   print len(ps)
@@ -609,6 +654,41 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+
+
+def plot2(s1,s2,f,cmap=None,cmin=None,cmax=None,cint=None,clab=None,png=None): 
+  f1 = s1.getFirst()
+  f2 = s2.getFirst()
+  d1 = s1.getDelta()
+  d2 = s2.getDelta()
+  n1 = s1.getCount()
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
+  #panel.setVInterval(0.1)
+  #panel.setHInterval(1.0)
+  panel.setHLabel("Inline")
+  panel.setVLabel("Crossline")
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  pxv.setColorModel(ColorMap.JET)
+  #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  cb = panel.addColorBar();
+  if cint:
+    cb.setInterval(cint)
+  if clab:
+    cb.setLabel(clab)
+  panel.setColorBarWidthMinimum(50)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  #frame.setTitle("normal vectors")
+  frame.setVisible(True);
+  wx,wy = 2100,2100/5+100+50
+  frame.setSize(wx,wy) 
+  frame.setFontSize(13)
+  if pngDir and png:
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 
 #############################################################################

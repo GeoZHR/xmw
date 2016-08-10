@@ -111,9 +111,9 @@ def goSmoothSL():
     writeImage(gslfile,gx)
   else:
     gx = readImage(gslfile)
-  plot3(fx)
+  #plot3(fx)
   plot3(gx)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  #plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
 
 def goSmoothSS():
@@ -127,9 +127,9 @@ def goSmoothSS():
     writeImage(gssfile,gx)
   else:
     gx = readImage(gssfile)
-  plot3(fx)
+  #plot3(fx)
   plot3(gx)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  #plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
 def goSmoothC():
   fx = readImage(fxfile)

@@ -12,6 +12,30 @@ import util.*;
 
 public class Helper {
 
+  public float[][] transpose(float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] gx = new float[n1][n2];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gx[i1][i2] = fx[i2][i1];
+    }}
+    return gx;
+  }
+
+  public void strikeMask(float pm, float pp, float[][][] fp) {
+    int n3 = fp.length;
+    int n2 = fp[0].length;
+    int n1 = fp[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fpi = fp[i3][i2][i1];
+      if (fpi>pm&&fpi<pp) {
+        fp[i3][i2][i1] = -0.01f;
+      }
+    }}}
+  }
   public void padValues(float[][] tp, float[][] bt, float[][][] gx) {
     int n3 = gx.length;
     int n2 = gx[0].length;
@@ -140,6 +164,25 @@ public class Helper {
     ndfs[1] = new float[]{n3,1,b3};
     float[][] sf = si.interpolate(c2,c3);
     return despike(dmax,sf);
+  }
+
+  public void mergeU1AndTop(int f2, float[][] pm1, float[][] m1) {
+    int n3 = m1.length;
+    int n2 = m1[0].length;
+    int np = pm1[0].length;
+    int[] i3m = new int[n2];
+    for (int ip=0; ip<np; ++ip) {
+      int i2 = round(pm1[1][ip])-f2;
+      if (i2>=0) {
+        int i3 = round(1.5f*(pm1[2][ip]-2012-60));
+        if (i3m[i2]<i3) {i3m[i2]=i3;}
+      }
+    }
+    for (int i2=0; i2<n2; ++i2) {
+      int b3=i3m[i2];
+      for (int i3=b3; i3<n3; ++i3) 
+        m1[i3][i2] = 0f;
+    }
   }
 
   public float[][] despike(float dmax, float[][] fx) {

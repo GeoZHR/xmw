@@ -230,10 +230,12 @@ public class RosePlot {
 
 
   public PlotPanel applyForRosePlotsX(
-    float alpha, float npm,float b1, float e1, int c2, int c3, int n2, int n3, 
-    int nbin, float[][] fp, float[][] ob) 
+    float alpha, float npm, float[][] st, float[][] sb, 
+    int c2, int c3, int nbin, float[][] fp) 
   {
     int np = fp[0].length;
+    int n3 = st.length;
+    int n2 = st[0].length;
     int d2 = round(n2/c2);
     int d3 = round(n3/c3);
     System.out.println("npm="+npm);
@@ -259,10 +261,10 @@ public class RosePlot {
         int k3 = (int)fp[2][ip];
         if(k2<b2 || k2>e2) {continue;}
         if(k3<b3 || k3>e3) {continue;}
-        float obi = ob[k3][k2];
+        float sti = st[k3][k2];
+        float sbi = sb[k3][k2];
         int k1 = (int)fp[0][ip];
-        if(k1>=(b1+obi) && k1<=(e1+obi)) {
-        //if(k1>=b1 && k1<=e1) {
+        if(k1>=sti && k1<=sbi) {
           float fpi = fp[3][ip];
           fpa.add(fpi);
         }
@@ -279,7 +281,7 @@ public class RosePlot {
     }}
     return pp;
   }
-
+  /*
   public int findMaxSamples(
     float b1, float e1, float d1, int c2, int c3, int n2, int n3, 
     float[][] fp, float[][] ob) {
@@ -324,6 +326,52 @@ public class RosePlot {
     }}
     return npm;
   }
+  */
+
+  public int findMaxSamples(
+    int c2, int c3, float[][] hu, float[][] hm, float[][] hl, float[][] fp) 
+  {
+    int np1 = findMaxSamples(c2,c3,hu,hm,fp);
+    int np2 = findMaxSamples(c2,c3,hm,hl,fp);
+    return max(np1,np2);
+  }
+
+  public int findMaxSamples(
+    int c2, int c3, float[][] st, float[][] sb, float[][] fp) 
+  {
+    int npm = 0;
+    int n3 = st.length;
+    int n2 = st[0].length;
+    int d2 = round(n2/c2);
+    int d3 = round(n3/c3);
+    int np = fp[0].length;
+    for (int i3=0; i3<c3; ++i3) {
+      int b3 = i3*d3;
+      int e3 = (i3+1)*d3;
+      if(i3==(c3-1)){e3 = max(e3,n3);}
+    for (int i2=0; i2<c2; ++i2) {
+      int npk = 0;
+      int b2 = i2*d2;
+      int e2 = (i2+1)*d2;
+      if(i2==(c2-1)){e2 = max(e2,n2);}
+      for (int ip=0; ip<np; ++ip) {
+        int k2 = (int)fp[1][ip];
+        int k3 = (int)fp[2][ip];
+        if(k2<b2 || k2>e2) {continue;}
+        if(k3<b3 || k3>e3) {continue;}
+        float sti = st[k3][k2];
+        float sbi = sb[k3][k2];
+        int k1 = (int)fp[0][ip];
+        if(k1>=sti && k1<=sbi) {
+          npk++;
+        }
+      }
+      if(npk>npm) npm=npk;
+      System.out.println("npk="+npk);
+    }}
+    return npm;
+  }
+
 
 
   public void rose(float[][][] fp, int nbin) {
@@ -461,10 +509,10 @@ public class RosePlot {
       pvc.setLineStyle(PointsView.Line.DASH);
       if(rdi==1.0f) {
         pvc.setLineColor(Color.RED);
-        pvc.setLineWidth(4.f);
+        pvc.setLineWidth(3.f);
       } else {
         pvc.setLineColor(Color.BLACK);
-        pvc.setLineWidth(3.f);
+        pvc.setLineWidth(2.f);
       }
     }
     addRadials(pp,Color.BLACK);
@@ -683,17 +731,24 @@ public class RosePlot {
 
   private float addBinsF(PlotPanel pp, float[] bins) {
     int nb = bins.length;
-    float dp = (float)(2*DBL_PI/nb);
+    float dp = 180f/nb;
     float rmax = max(bins);
     float rc = round(rmax*120f)/100f;
     mul(bins,1.0f/rc,bins);
     for (int ib=0; ib<nb; ++ib) {
       float phi = ib*dp;
+      float phm = phi+alpha;
+      float php = phi+alpha+dp;
+      if (phm>180f) phm-=180f;
+      if (php>180f) php-=180f;
+      phi = (float)toRadians(phi);
+      phm = (float)toRadians(phm);
+      php = (float)toRadians(php);
       float rdi = bins[ib];
       float aci = (float)(phi/DBL_PI);
       Color rgb = Color.getHSBColor(aci,1f,1f);
-      float[][] rp1 = makeRadialPoints(rdi,phi);
-      float[][] rp2 = makeRadialPoints(rdi,phi+dp);
+      float[][] rp1 = makeRadialPoints(rdi,phm);
+      float[][] rp2 = makeRadialPoints(rdi,php);
       float dx = rp2[0][1] - rp1[0][1];
       float dy = rp2[1][1] - rp1[1][1];
       float ds = sqrt(dx*dx+dy*dy);
@@ -716,6 +771,7 @@ public class RosePlot {
         pvr.setLineWidth(3f);
       }
       // add black bounds
+      /*
       xi = rp2[0][1];
       yi = rp2[1][1];
       xs = new float[]{-xi,xi};
@@ -743,6 +799,7 @@ public class RosePlot {
       pvr = pp.addPoints(mul(rp3[0],-1),mul(rp3[1],-1));
       pvr.setLineColor(Color.BLACK);
       pvr.setLineWidth(2.f);
+      */
     }
     return rc;
   }
