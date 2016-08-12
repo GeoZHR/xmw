@@ -14,12 +14,12 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from util import *
 from ad import *
 from sso import *
-from util import *
 
 pngDir = None
-pngDir = "../../../png/sso/3d/poseidon/"
+pngDir = "../../../png/sso/3d/pnz/"
 
 seismicDir = "../../../data/seis/sso/3d/pnz/"
 fxfile = "fx"
@@ -38,6 +38,7 @@ gslfile = "gsl"
 gssfile = "gss"
 w2cfile = "w2c"
 w3cfile = "w3c"
+azcfile = "azc"
 epcfile = "epc"
 gclfile = "gcl"
 gcsfile = "gcs"
@@ -54,32 +55,39 @@ plotOnly = False
 def main(args):
   #goLof()
   #goChannel()
-  goLoe()
+  #goLoe()
   #goSlopes()
-  #goHorizonL()
-  #goHorizonS()
-  #goChannel()
   #goSmoothSL()
   #goSmoothSS()
   #goSmoothC()
+  goSlices()
   #goFirstLook()
-
+  #goHorizonS()
+def goHorizon():
+  fx = readImage(fxfile)
+  p2 = readImage(p2sfile)
+  p3 = readImage(p3sfile)
+  k1 = [120]
+  k2 = [370]
+  k3 = [261]
+  plot3(fx)
 def goChannel():
   fx = readImage(fxfile)
   if not plotOnly:
     ep = zerofloat(n1,n2,n3)
     w2 = zerofloat(n1,n2,n3)
     w3 = zerofloat(n1,n2,n3)
-    et = readTensors(etlfile)
+    et = readTensors(etsfile)
     loe = LocalOrientEstimator(et,5)
     loe.setEigenvalues(0.1,1.0,1.0)
     #loe.setGradientSmoothing(3)
     loe.applyForStratigraphy(fx,w2,w3,ep)
     hp = Helper()
-    ha = hp.channelAzimuth(w2,w3,hz)
+    az = hp.channelAzimuth(w2,w3)
     writeImage(w2cfile,w2)
     writeImage(w3cfile,w3)
     writeImage(epcfile,ep)
+    writeImage(azcfile,az)
   else:
     ep = readImage(epcfile)
   plot3(fx)
@@ -112,25 +120,24 @@ def goHorizonL():
 
 def goHorizonS():
   gx = readImage(fxfile)
-  ns = 40
+  ns = 100
   if not plotOnly:
-    ets = readTensors(etsfile)
-    loe = LocalOrientEstimator(ets,5)
-    p2s,p3s = loe.slopesFromTensors(10,ets)
+    p2s = readImage(p2sfile)
+    p3s = readImage(p3sfile)
     ep = fillfloat(1,n1,n2,n3)
-    c1 = rampfloat(25,1,65)
-    c2 = fillfloat(390,ns)
-    c3 = rampfloat(340,4,500)
+    c1 = rampfloat(115,1,125)
+    c2 = fillfloat(370,ns)
+    c3 = fillfloat(261,ns)
     hv = HorizonVolume()
-    hv.setCG(0.01,50)
+    hv.setCG(0.01,100)
     hs = hv.applyForHorizonVolume(c1,c2,c3,ep,p2s,p3s)
     writeImage(hvsfile,hs)
   else:
     hs = readHorizons(ns,hvsfile)
-  k1,k2,k3=41,390,416
+  k1,k2,k3=160,390,416
   plot3p(s1,s2,s3,gx,hv=hs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,
           clab="Amplitude",png="hvs")
-  k1,k2,k3=76,386,399
+  k1,k2,k3=160,386,399
   hd = HorizonDisplay()
   cs = hd.horizonCurves(k2,k3,hs)
   plot3(gx,hs=cs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="cvs")
@@ -144,7 +151,7 @@ def goFirstLook():
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=4,2
+    sig1,sig2=8,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     writeTensors(etlfile,ets)
@@ -175,6 +182,10 @@ def goSlopes():
  loe = LocalOrientEstimator(etl,5)
  p2l,p3l = loe.slopesFromTensors(10,etl)
  p2s,p3s = loe.slopesFromTensors(10,ets)
+ writeImage(p2lfile,p2l)
+ writeImage(p3lfile,p3l)
+ writeImage(p2sfile,p2s)
+ writeImage(p3sfile,p3s)
  gx = readImage(fxfile)
  clab2 = "Inline slope (samples/trace)"
  clab3 = "Crossline slope (samples/trace)"
@@ -201,10 +212,10 @@ def goSmoothSL():
   fx = readImage(fxfile)
   if not plotOnly:
     et = readTensors(etlfile)
-    et.setEigenvalues(0.001,1,1)
+    et.setEigenvalues(0.001,0.001,1)
     gx = zerofloat(n1,n2,n3)
     lsf = LocalSmoothingFilter()
-    lsf.apply(et,20,fx,gx)
+    lsf.apply(et,50,fx,gx)
     writeImage(gslfile,gx)
   else:
     gx = readImage(gslfile)
@@ -245,22 +256,29 @@ def goSmoothSS():
 def goSmoothC():
   fx = readImage(fxfile)
   if not plotOnly:
-    et = readTensors(etcfile)
+    et = readTensors(etsfile)
+    w2 = readImage(w2cfile)
+    w3 = readImage(w3cfile)
+    loe = LocalOrientEstimator(et,10)
+    loe.updateTensors(et,w2,w3)
     et.setEigenvalues(0.001,0.001,1)
     gx = zerofloat(n1,n2,n3)
     lsf = LocalSmoothingFilter()
     lsf.apply(et,50,fx,gx)
-    writeImage(gxcfile,gx)
+    writeImage(gcsfile,gx)
   else:
-    gx = readImage(gxcfile)
-  plot3(fx)
-  plot3(gx)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
-  plot3p(fx,80,390,408,s1,s2,s3,cmin=-1,cmax=1,clab="Amplitude")
-  plot3p(gx,80,390,408,s1,s2,s3,cmin=-1,cmax=1,clab="Amplitude")
-  plot3p(sub(fx,gx),80,390,408,s1,s2,s3,cmin=-0.5,cmax=0.5,clab="Amplitude")
+    gx = readImage(gcsfile)
+  plot3(gx,cmin=-1.5,cmax=1.5)
+  #plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
 
-
+def goSlices():
+  ns = 100
+  gx = readImage(gcsfile)
+  gs = readImage(gslfile)
+  hs = readHorizons(ns,hvsfile)
+  for ih in range(20,40,5):
+    plot3(gs,hz=hs[ih],cmin=-1.5,cmax=1.5)
+    plot3(gx,hz=hs[ih],cmin=-1.5,cmax=1.5)
 def normalize(ss):
   sub(ss,min(ss),ss)
   div(ss,max(ss),ss)
@@ -380,7 +398,7 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,hs=None,k1=190,k2=70,k3=75,
+def plot3(f,g=None,hz=None,hs=None,k1=290,k2=70,k3=75,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -424,6 +442,11 @@ def plot3(f,g=None,hs=None,k1=190,k2=70,k3=75,
       ls.setSmooth(False)
       ss.add(ls)
       sf.world.addChild(lg)
+  if hz:
+    sd = SurfaceDisplay()
+    ts = sd.horizonWithAmplitude(-1,[cmin,cmax],hz,f)
+    tg = TriangleGroup(True,ts[0],ts[1])
+    sf.world.addChild(tg)
   if cbar:
     cbar.setWidthMinimum(100)
   ipg.setSlices(k1,k2,k3)
@@ -438,7 +461,7 @@ def plot3(f,g=None,hs=None,k1=190,k2=70,k3=75,
   view.setScale(1.8)
   #view.setAzimuth(75.0)
   #view.setAzimuth(-75.0)
-  view.setAzimuth(115.0)
+  view.setAzimuth(25.0)
   view.setElevation(40)
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   view.setTranslate(Vector3(-0.01,-0.01,-0.01))
