@@ -11,7 +11,7 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-  #goF3d()
+  goF3d()
   #goHongliu()
   #goF3dUnc()
   #goJake()
@@ -26,7 +26,7 @@ def main(args):
   #goNwc()
   #goShengwen()
   #goPoseidon()
-  goParihaka()
+  #goParihaka()
 def goParihaka():
   """
   ***************************************************************************
@@ -1306,7 +1306,7 @@ def goF3d():
   """
   firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
-  writeImage = True # reads all traces, writes an image
+  writeImage = False # reads all traces, writes an image
   showImage = True # displays the image
   basedir = "../../../data/seis/f3d/"
   sgyfile = basedir+"f3draw.sgy"
@@ -1332,6 +1332,16 @@ def goF3d():
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     show3d(x,clip=1.0)
+
+def writeImage(basename,image):
+  """ 
+  Writes an image to a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  aos = ArrayOutputStream(fileName)
+  aos.writeFloats(image)
+  aos.close()
+  return image
 
 def goPnz():
   """

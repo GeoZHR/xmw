@@ -21,10 +21,8 @@ from util import *
 pngDir = None
 pngDir = "../../../png/sso/3d/poseidon/"
 
-#seismicDir = "../../../data/seis/sso/3d/real/"
-seismicDir = "../../../data/seis/sso/3d/poseidon/"
-#seismicDir = "../../../data/seis/beg/jake/subs/"
-fxfile = "fxs"
+seismicDir = "../../../data/seis/sso/3d/pnz/"
+fxfile = "fx"
 ellfile = "ell"
 elsfile = "els"
 eplfile = "epl"
@@ -44,25 +42,23 @@ hvlfile = "hvl"
 hvsfile = "hvs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
-n1,n2,n3 = 80,500,600
+n1,n2,n3 = 320,1001,701
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
-  #goLof()
+  goLof()
   #goLoe()
   #goSlopes()
   #goHorizonL()
-  goHorizonS()
+  #goHorizonS()
   #goChannel()
   #goSmoothSL()
   #goSmoothSS()
   #goSmoothC()
   #goFirstLook()
-  #gl = readImage(gslfile)
-  #plot3(sub(gs,gl),cmin=-0.5,cmax=0.5)
 def goHorizonL():
   gx = readImage(fxfile)
   ns = 40
@@ -118,10 +114,11 @@ def goFirstLook():
   fx = gain(fx)
   writeImage(fxfile,fx)
   plot3(fx)
+
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=8,2
+    sig1,sig2=4,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     writeTensors(etlfile,ets)
@@ -375,7 +372,7 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,hs=None,k1=None,k2=None,k3=None,
+def plot3(f,g=None,hs=None,k1=190,k2=70,k3=75,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -393,13 +390,13 @@ def plot3(f,g=None,hs=None,k1=None,k2=None,k3=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-1,1)
+      ipg.setClips(-1.5,1.5)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-1,1)
+    ipg.setClips1(-1.5,1.5)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:

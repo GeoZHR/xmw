@@ -40,9 +40,9 @@ f1,f2 = 0.0,0.0
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 def main(args):
-  #goLof()
+  goLof()
   goLoe()
-  #goHorizonLof()
+  goHorizonLof()
   goHorizonLoe()
 
 def goResample():
@@ -77,8 +77,11 @@ def goLof():
   plot(s1,s2,sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,clab="Amplitude",png="dif1")
   plot(s1,s2,fx,cmin=-1,cmax=1,cint=1.0,clab="Amplitude",png="seis")
   plot(s1,s2,gx,cmin=-1,cmax=1,cint=1.0,clab="Amplitude",png="smooth1")
-  plot(s1,s2,fx,p2,cmin=-0.6,cmax=0.6,cmap=jetFill(0.4),cint=0.2,
-        clab="Slopes (samples/trace)",png="slope1")
+  fs = copy(54,n2,33,0,fx)
+  ps = copy(54,n2,33,0,p2)
+  c1 = Sampling(54,1,33)
+  plot(c1,s2,fs,ps,cmin=-0.6,cmax=0.6,cmap=jetFill(0.5),cint=0.2,
+       clab="Crosline slope (samples/trace)",png="slope1")
 
 
 def goLoe():
@@ -106,8 +109,11 @@ def goLoe():
   writeImage(elsfile,el)
   plot(s1,s2,sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,clab="Amplitude",png="dif2")
   plot(s1,s2,gx,cmin=-1,cmax=1,cint=1.0,clab="Amplitude",png="smooth2")
-  plot(s1,s2,fx,p2,cmin=-0.6,cmax=0.6,cmap=jetFill(0.4),cint=0.2,
-       clab="Slopes (samples/trace)",png="slope2")
+  fs = copy(54,n2,33,0,fx)
+  ps = copy(54,n2,33,0,p2)
+  c1 = Sampling(54,1,33)
+  plot(c1,s2,fs,ps,cmin=-0.6,cmax=0.6,cmap=jetFill(0.5),cint=0.2,
+       clab="Crossline slope (samples/trace)",png="slope2")
 
 def goHorizonLof():
   fx = readImage(fxfile)
@@ -200,7 +206,7 @@ def plot(s1,s2,f,g=None,hv=None,k1=None,k2=None,cmap=None,cmin=None,cmax=None,
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
   #panel.setVInterval(0.1)
   #panel.setHInterval(1.0)
-  panel.setHLabel("Traces")
+  panel.setHLabel("Crossline (traces)")
   panel.setVLabel("Samples")
   pxv = panel.addPixels(0,0,s1,s2,f);
   pxv.setColorModel(ColorMap.GRAY)
@@ -236,7 +242,7 @@ def plot(s1,s2,f,g=None,hv=None,k1=None,k2=None,cmap=None,cmin=None,cmax=None,
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1020,700) #for f3d
-  frame.setSize(920,300) #for poseidon
+  frame.setSize(920,290) #for poseidon
   frame.setFontSize(13)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")

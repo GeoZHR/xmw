@@ -171,16 +171,16 @@ def goRosePlotsN():
   hu = div(hu,5)
   hm = div(hm,5)
   hl = div(hl,5)
-  tpfile = hu1file
-  btfile = hm1file
-  tp = hu
-  tb = hm
+  tpfile = hm1file
+  btfile = hl1file
+  tp = hm
+  bt = hl
   c2,c3=20,4
   rp = RosePlot()
   #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
-  npm = 1193887
+  npm = 300000
   title = tpfile+'~'+btfile
-  pp = rp.applyForRosePlotsX(64,npm,tp,bt,c2,c3,n2,n3,36,fc,ob)
+  pp = rp.applyForRosePlotsX(64,npm,tp,bt,c2,c3,36,fp)
   pp.addTitle(title)
   pf = PlotFrame(pp)
   wx,wy = 2100,round((c3*2100)/c2)+100

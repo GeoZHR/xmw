@@ -1,4 +1,4 @@
-package poseidon;
+package sso;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
