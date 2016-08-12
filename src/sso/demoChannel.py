@@ -36,6 +36,9 @@ etsfile = "ets"
 etcfile = "etc"
 gslfile = "gsl"
 gssfile = "gss"
+w2cfile = "w2c"
+w3cfile = "w3c"
+epcfile = "epc"
 gclfile = "gcl"
 gcsfile = "gcs"
 hvlfile = "hvl"
@@ -49,8 +52,9 @@ s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
-  goLof()
-  #goLoe()
+  #goLof()
+  #goChannel()
+  goLoe()
   #goSlopes()
   #goHorizonL()
   #goHorizonS()
@@ -59,6 +63,28 @@ def main(args):
   #goSmoothSS()
   #goSmoothC()
   #goFirstLook()
+
+def goChannel():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    ep = zerofloat(n1,n2,n3)
+    w2 = zerofloat(n1,n2,n3)
+    w3 = zerofloat(n1,n2,n3)
+    et = readTensors(etlfile)
+    loe = LocalOrientEstimator(et,5)
+    loe.setEigenvalues(0.1,1.0,1.0)
+    #loe.setGradientSmoothing(3)
+    loe.applyForStratigraphy(fx,w2,w3,ep)
+    hp = Helper()
+    ha = hp.channelAzimuth(w2,w3,hz)
+    writeImage(w2cfile,w2)
+    writeImage(w3cfile,w3)
+    writeImage(epcfile,ep)
+  else:
+    ep = readImage(epcfile)
+  plot3(fx)
+  plot3(ep,cmin=0.1,cmax=0.9)
+
 def goHorizonL():
   gx = readImage(fxfile)
   ns = 40
@@ -170,24 +196,6 @@ def goSlopes():
         cmap=cmap,cmin=-0.6,cmax=0.6,clab=clab2,png="p2sp")
  plot3p(s1,s2,s3,gx,g=p3s,k1=k1,k2=k2,k3=k3,
         cmap=cmap,cmin=-0.6,cmax=0.6,clab=clab3,png="p3sp")
-def goChannel():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    ep = zerofloat(n1,n2,n3)
-    w2 = zerofloat(n1,n2,n3)
-    w3 = zerofloat(n1,n2,n3)
-    et = readTensors(etsfile)
-    loe = LocalOrientEstimator(et,5)
-    loe.setEigenvalues(0.1,1.0,1.0)
-    loe.setGradientSmoothing(3)
-    loe.applyForStratigraphy(fx,w2,w3,ep)
-    loe.updateTensors(et,w2,w3)
-    writeTensors(etcfile,et)
-  else:
-    ep = readImage(epfile)
-  plot3(fx,cmin=-2,cmax=2)
-  plot3(ep,hz=hz,cmin=0.1,cmax=1.0)
-
 
 def goSmoothSL():
   fx = readImage(fxfile)
@@ -427,13 +435,13 @@ def plot3(f,g=None,hs=None,k1=190,k2=70,k3=75,
   #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   view.setAxesScale(1.0,1.0,zscale)
-  view.setScale(2.8)
+  view.setScale(1.8)
   #view.setAzimuth(75.0)
   #view.setAzimuth(-75.0)
-  view.setAzimuth(145.0)
+  view.setAzimuth(115.0)
   view.setElevation(40)
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  view.setTranslate(Vector3(-0.18,-0.06,-0.25))
+  view.setTranslate(Vector3(-0.01,-0.01,-0.01))
   #sf.viewCanvas.setBackground(sf.getBackground())
   sf.viewCanvas.setBackground(Color.WHITE)
   sf.setVisible(True)

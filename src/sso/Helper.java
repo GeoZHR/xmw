@@ -63,6 +63,23 @@ public class Helper {
     return ha;
   }
 
+  public float[][][] channelAzimuth(
+    float[][][] w2, float[][][] w3) {
+    int n3 = w2.length;
+    int n2 = w3[0].length;
+    int n1 = w3[0][0].length;
+    float[][][] az = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float w2i = w2[i3][i2][i1];
+      float w3i = w3[i3][i2][i1];
+      if(w2i<0f) {w2i = -w2i;w3i = -w3i;}
+      az[i3][i2][i1] = atan(w3i/w2i);
+    }}}
+    return az;
+  }
+
   public float[][] channelAzimuth(
     float[][] w2, float[][] w3, float[][] hz) {
     int n3 = w2.length;

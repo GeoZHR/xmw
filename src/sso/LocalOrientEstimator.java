@@ -493,9 +493,9 @@ public class LocalOrientEstimator {
   }
 
   public EigenTensors3 applyForTensorsX(float[][][] x) {
-    int n1 = x[0][0].length;
-    int n2 = x[0].length;
     int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
     float[][][] u2 = new float[n3][n2][n1];
     float[][][] u3 = new float[n3][n2][n1];
     float[][][] w1 = new float[n3][n2][n1];
