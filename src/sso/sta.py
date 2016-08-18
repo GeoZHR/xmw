@@ -37,12 +37,11 @@ n1,n2,n3 = 240,880,500
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
 
 def main(args):
-  #goLof()
+  goLof()
   goSta()
-  #goSemblanceHale()
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -70,17 +69,15 @@ def goSta():
     el = zerofloat(n1,n2,n3)
     et = readTensors(etlfile)
     sta = StructureTensorAttribute(et,20)
-    sta.setEigenvalues(1.0,0.05,0.5)
-    sta.updateTensors(4,fx)
+    sta.setEigenvalues(1.0,0.01,0.6)
+    #sta.updateTensors(4,fx)
     sta.applyForPlanarLinear(fx,ep,el)
     writeImage(epsfile,ep)
     writeImage(elsfile,el)
     writeTensors(etsfile,et)
   else:
-    el = readImage(elsfile)
     ep = readImage(epsfile)
     #et = readTensors(etsfile)
-  plot3(fx)
   ep = pow(ep,2)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
@@ -219,19 +216,19 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
   if cbar:
     cbar.setWidthMinimum(120)
   #ipg.setSlices(153,760,450)
-  ipg.setSlices(k1,760,450)
+  ipg.setSlices(k1,857,450)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
-    sf.setSize(837,700)
+    sf.setSize(1037,700)
   else:
-    sf.setSize(700,700)
+    sf.setSize(900,700)
 
   view = sf.getOrbitView()
   #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
   zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
   view.setAxesScale(1.0,1.0,zscale)
-  view.setScale(1.72)
+  view.setScale(1.6)
   #view.setAzimuth(75.0)
   #view.setAzimuth(-75.0)
   view.setAzimuth(225.0)
