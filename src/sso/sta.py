@@ -31,6 +31,7 @@ etlfile = "etl"
 etsfile = "ets"
 gxlfile = "gxl"
 gxsfile = "gxs"
+semfile = "sem"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 240,880,500
@@ -42,6 +43,7 @@ plotOnly = True
 def main(args):
   goLof()
   goSta()
+  goSemblance()
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -58,7 +60,7 @@ def goLof():
   else:
     ep = readImage(eplfile)
   plot3(fx)
-  ep = pow(ep,2)
+  ep = pow(ep,3)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
   plot3(ep,cmin=0.2,cmax=1.0)
@@ -82,6 +84,23 @@ def goSta():
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
   plot3(ep,cmin=0.2,cmax=1.0)
+
+def goSemblance():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=8,2
+    p2 = zerofloat(n1,n2,n3)
+    p3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lsf = LocalSlopeFinder(sig1,sig2,sig2,5)
+    lsf.findSlopes(fx,p2,p3,ep)
+    cov = Covariance()
+    em,es=cov.covarianceEigen(8,p2,p3,fx)
+    sem = div(em,es)
+    writeImage(semfile,sem)
+  else:
+    sem = readImage(semfile)
+  plot3(sem,cmin=0.2,cmax=1.0)
 
 def normalize(ss):
   sub(ss,min(ss),ss)
@@ -232,7 +251,7 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
   #view.setAzimuth(75.0)
   #view.setAzimuth(-75.0)
   view.setAzimuth(225.0)
-  view.setElevation(45)
+  view.setElevation(42)
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   view.setTranslate(Vector3(0.05,-0.1,0.06))
   sf.viewCanvas.setBackground(sf.getBackground())
