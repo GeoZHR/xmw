@@ -38,7 +38,7 @@ n1,n2,n3 = 240,880,500
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
   goLof()
