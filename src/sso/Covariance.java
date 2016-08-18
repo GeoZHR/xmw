@@ -192,6 +192,7 @@ public class Covariance {
         }
       }
     }});
+    System.out.println("done");
     // pad the top and bottom boundaries
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {

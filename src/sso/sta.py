@@ -41,8 +41,8 @@ s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
-  goLof()
-  goSta()
+  #goLof()
+  #goSta()
   goSemblance()
 def goLof():
   fx = readImage(fxfile)
@@ -59,11 +59,11 @@ def goLof():
     writeTensors(etlfile,et)
   else:
     ep = readImage(eplfile)
-  plot3(fx)
   ep = pow(ep,3)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
-  plot3(ep,cmin=0.2,cmax=1.0)
+  plot3(fx,clab="Amplitude",png="fx")
+  plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",png="epl")
 def goSta():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -83,7 +83,8 @@ def goSta():
   ep = pow(ep,2)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
-  plot3(ep,cmin=0.2,cmax=1.0)
+  plot3(fx)
+  plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",png="eps")
 
 def goSemblance():
   fx = readImage(fxfile)
@@ -96,6 +97,7 @@ def goSemblance():
     lsf.findSlopes(fx,p2,p3,ep)
     cov = Covariance()
     em,es=cov.covarianceEigen(8,p2,p3,fx)
+    print "done..."
     sem = div(em,es)
     writeImage(semfile,sem)
   else:
@@ -233,16 +235,12 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
     node.setStates(states)
     sf.world.addChild(node)
   if cbar:
-    cbar.setWidthMinimum(120)
-  #ipg.setSlices(153,760,450)
+    cbar.setWidthMinimum(110)
   ipg.setSlices(k1,857,450)
-  #ipg.setSlices(85,5,102)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
-    sf.setSize(1037,700)
+    sf.setSize(960,700)
   else:
-    sf.setSize(900,700)
-
+    sf.setSize(850,700)
   view = sf.getOrbitView()
   #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
   zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
@@ -255,8 +253,7 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   view.setTranslate(Vector3(0.05,-0.1,0.06))
   sf.viewCanvas.setBackground(sf.getBackground())
-  sf.setSize(850,700)
-
+  #sf.setSize(850,700)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
