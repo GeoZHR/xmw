@@ -260,7 +260,7 @@ public class FakeData {
 
     // Reflectivity or impedance.
     float[][] hz = new float[n3][n2]; // horizon with the channel
-    float[][] ha = fillfloat(100,n2,n3); // horizon with the channel
+    float[][] ha = fillfloat(0,n2,n3); // horizon with the channel
     float[][][][] vd = makeVelocityAndDensityX(m1, n2, n3, lateralViriation);
     addChannelsXXX(vd,hz,ha);
     float[][][][] p = makeReflectivityWithNormals(vd);
@@ -1352,7 +1352,7 @@ public class FakeData {
       hz[i3][i2] = k1+1;
     }}
     float pi = (float)Math.PI;
-    float dp = 2f*pi/(float)n2;
+    float dp = 2f*pi/(float)(n2-1);
     for (int i2=0; i2<n2; ++i2) {
       float x3 = 0.6f*n3+20f*sin(dp*i2)+30;
       int j3 = (int)(x3+0.5);
@@ -1367,7 +1367,7 @@ public class FakeData {
           r[1][i3][i2][k1-1] += 2.0f*a;
           r[1][i3][i2][k1  ] += 3.0f*a;
           r[1][i3][i2][k1+1] += 2.0f*a;
-          ha[i3][i2] = atan(20*2f*pi*cos(dp*i2)/(float)n2);
+          ha[i3][i2] = atan(20*dp*cos(dp*i2));
         }
       }
     }

@@ -2,6 +2,7 @@ package sso;
 
 
 import edu.mines.jtk.dsp.*;
+import static edu.mines.jtk.util.ArrayMath.*;
 /**
  * Method to display 3D tensors
  * @author Xinming Wu
@@ -38,6 +39,51 @@ public class TensorView {
       ets.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
     }}}
     return ets;
+  }
+
+  public float[][] applyForSegments(
+    float scale, EigenTensors3 et, float[][] hz) 
+  {
+    int n3 = et.getN3();
+    int n2 = et.getN2();
+    int n1 = et.getN1();
+    float[][][] w1 = new float[n3][n2][n1];
+    float[][][] w2 = new float[n3][n2][n1];
+    float[][][] w3 = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+    for (int i1=0; i1<n1; i1++) {
+      float[] w = et.getEigenvectorW(i1,i2,i3);
+      w1[i3][i2][i1] = w[0];
+      w2[i3][i2][i1] = w[1];
+      w3[i3][i2][i1] = w[2];
+    }}}
+    SincInterpolator si = new SincInterpolator();
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    Sampling s3 = new Sampling(n3);
+    float[][] ss = new float[n2*n3][6];
+    int k = 0;
+    int d = 4;
+    for (int i3=d; i3<n3-d; i3+=d) {
+    for (int i2=d; i2<n2-d; i2+=d) {
+      int p = 0;
+      float x1 = hz[i3][i2];
+      float w1i = si.interpolate(s1,s2,s3,w1,x1,i2,i3);
+      float w2i = si.interpolate(s1,s2,s3,w2,x1,i2,i3);
+      float w3i = si.interpolate(s1,s2,s3,w3,x1,i2,i3);
+      w1i *= scale;
+      w2i *= scale;
+      w3i *= scale;
+      ss[k][p++] = i3-w3i;
+      ss[k][p++] = i2-w2i;
+      ss[k][p++] = x1-w1i;
+      ss[k][p++] = i3+w3i;
+      ss[k][p++] = i2+w2i;
+      ss[k][p++] = x1+w1i;
+      k++;
+    }}
+    return copy(6,k,0,0,ss);
   }
 
    

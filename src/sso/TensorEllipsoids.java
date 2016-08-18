@@ -76,8 +76,8 @@ public class TensorEllipsoids extends Node {
     // Smallest eigenvalue permitted.
     float etiny = 0.0001f*_emax;
 
-    for (int i3=0; i3<n3; i3+=3) {
-    for (int i2=0; i2<n2; i2+=3) {
+    for (int i3=0; i3<n3; i3+=5) {
+    for (int i2=0; i2<n2; i2+=5) {
     //for (int i1=20; i1<n1-20; i1+=5) {
 
       int i1=round(_hz[i3][i2]);
@@ -138,7 +138,7 @@ public class TensorEllipsoids extends Node {
   private float[][][] _ep;
   private EigenTensors3 _et;
   private Sampling _s1,_s2,_s3;
-  private float _ellipsoidSize = 5;
+  private float _ellipsoidSize = 10;
   private float[][] _hz;
   private EllipsoidGlyph _ellipsoid = new EllipsoidGlyph();
   private BoundingSphere _bs = 

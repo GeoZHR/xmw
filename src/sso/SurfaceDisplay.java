@@ -598,7 +598,7 @@ public class SurfaceDisplay {
     float[] zfs = new float[nx*ny*6];
     float[] xyz = new float[nx*ny*6*3];
     float pi = (float)Math.PI;
-    float dp = 2f*pi/(float)ny;
+    float dp = 2f*pi/(float)(ny-1);
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     float[][] dz = new float[nx][ny];
     rgf.apply10(z,dz);
@@ -696,7 +696,7 @@ public class SurfaceDisplay {
     float[] zfs = new float[nx*ny*6];
     float[] xyz = new float[nx*ny*6*3];
     float pi = (float)Math.PI;
-    float dp = 2f*pi/(float)ny;
+    float dp = 2f*pi/(float)(ny-1);
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
     float[][] dz = new float[nx][ny];
     rgf.apply10(z,dz);

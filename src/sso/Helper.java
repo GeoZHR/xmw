@@ -115,6 +115,32 @@ public class Helper {
     return ha;
   }
 
-
+  public float[][][] applyFolding(float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][][] gx = new float[n3][n2][n1];
+    SincInterpolator si = new SincInterpolator();
+    int c1 = 100;//round(0.5f*n1);
+    int c2 = round(0.5f*n2)+75;
+    int c3 = round(0.5f*n3);
+    float[][][] sx = new float[n3][n2][n1];
+    sx[c3][c2][c1] = 1000000000f;
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(100);
+    rgf.apply000(sx,sx);
+    System.out.println("maxSx="+max(sx));
+    float[] x1 = new float[n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float[] sx1 = sx[i3][i2];
+      float[] fx1 = fx[i3][i2];
+      float[] gx1 = gx[i3][i2];
+      for (int i1=0; i1<n1; ++i1) {
+        x1[i1] = i1+sx1[i1];
+      }
+      si.interpolate(n1,1,0,fx1,n1,x1,gx1);
+    }}
+    return gx;
+  }
    
 }

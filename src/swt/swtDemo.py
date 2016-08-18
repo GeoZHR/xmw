@@ -64,8 +64,8 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/swt/print/"
-pngDir = "../../../png/swt/slides/"
 pngDir = None
+pngDir = "../../../png/swt/revision/"
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -74,9 +74,9 @@ def main(args):
   #goDisplay()
   #goSynsFlatten()
   #goSeisFlatten()
-  #goSynsSeisTie()
-  goTimeUpdateS()
-  #goTimeUpdateM()
+  #goSynsSeisTie()  
+  #goTimeUpdateS()
+  goTimeUpdateM()
   #goSlopes()
   #goScan()
   #goThin()
@@ -122,43 +122,47 @@ def goTimeUpdateS():
     sui = Sampling((int)(ndfu[il][0]),ndfu[il][1],ndfu[il][2])
     swx.append(sxi)
     swu.append(sui)
-  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15, 
+  plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisBS")
   plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisAS")
+  # show only the first two traces
+  '''
   wxs[0]=wus[0]
   swx[0]=swu[0]
   wxs[1]=wus[1]
   swx[1]=swu[1]
-
   plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisAS1")
   '''
-  svw,sdw=swt.getSamples(s1,lgs)
-  svs,sds=swt.getSamples(s1,mds)
+  spw=swt.getSamples(s1,lgs)
+  sps=swt.getSamples(s1,mds)
   vlabel2 = "RGT"
   vlabel1 = "Time (s)"
   hlabel = "Synthetic seismic traces"
-  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.0,png="seisVelBS")
-  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelAS")
-  goRgtInterp(svw,"wS")
-  goRgtInterp(svs,"sS")
-  '''
+  plot3(gx,sps=spw[0],curve="vel",wmin=2.7,wmax=4.8,png="seisVelBS")
+  plot3(gx,sps=sps[0],curve="vel",wmin=2.7,wmax=4.8,png="seisVelAS")
+  goRgtInterp(spw[0],"wS")
+  goRgtInterp(sps[0],"sS")
+  return swu,wus
 
 def goRgtInterp(sps,fname):
   gx = readImage(gxfile)
-  gt = readImage(gtcfile)
-  swt = SeismicWellTie()
-  spc = swt.convertPoints(sps)
-  ri = RgtInterp3(spc[0],spc[1],spc[2],spc[3])
-  ri.setRgt(gt)
-  ri.setScales(0.001,1.0)
-  fti,fpi,fqi = ri.grid(True,s1,s2,s3)
-  writeImage(fpifile+fname,fpi)
+  if not plotOnly:
+    gt = readImage(gtcfile)
+    swt = SeismicWellTie()
+    spc = swt.convertPoints(sps)
+    ri = RgtInterp3(spc[0],spc[1],spc[2],spc[3])
+    ri.setRgt(gt)
+    ri.setScales(0.001,1.0)
+    fti,fpi,fqi = ri.grid(True,s1,s2,s3)
+    writeImage(fpifile+fname,fpi)
   #writeImage(fqifile+fname,fqi)
-  plot3(gx,fpi,cmin=2.4,cmax=5.0,cmap=jetRamp(1.0),
+  else:
+    fpi = readImage(fpifile+fname)
+  plot3(gx,fpi,cmin=2.7,cmax=4.8,cmap=jetFill(0.7),
         clab="Velocity (km/s)",png=fpifile+fname)
-  plot3(gx,fpi,sps=sps,cmin=2.4,cmax=5.0,wmin=2.4,wmax=5.0,cmap=jetRamp(1.0),
+  plot3(gx,fpi,sps=sps,cmin=2.7,cmax=4.8,wmin=2.7,wmax=4.8,cmap=jetFill(0.7),
         clab="Velocity (km/s)",png=fpifile+fname+"Wells")
 def goReflectivity(sps):
   gx = readImage(gxfile)
@@ -176,7 +180,7 @@ def goDisplay():
   swt = SeismicWellTie()
   sps = swt.getSamples(s1,lgs)
   plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
-  plot3(gx,sps=sps[0],wmin=2.4,wmax=5.0,clab="Velocity (km/s)",png="seisVel")
+  plot3(gx,sps=sps[0],wmin=2.7,wmax=4.8,clab="Velocity (km/s)",png="seisVel")
 
 def goImpedance():
   gx = readImage(gxfile)
@@ -256,14 +260,17 @@ def goTimeUpdateM():
     ssi = Sampling((int)(ndfs[il][0]),ndfs[il][1],ndfs[il][2])
     swwx.append(swi)
     swsx.append(ssi)
-  svw,sdw=swt.getSamples(s1,lgs)
-  svs,sds,sps,=swt.getSamples(s1,mds)
+  spw=swt.getSamples(s1,lgs)
+  sps=swt.getSamples(s1,mds)
   hlabel = "Log index"
   vlabel1 = "Time (s)"
   vlabel2 = "Relative geologic time (s)"
-  #plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
-  #plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
-  #plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
+  plot1s(s1,swwx,wwx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMB")
+  plot1s(s1,swsx,wsx,rs=fx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMA")
+  plot1s(s1,swsu,wsu,rs=fu,vmin=0.1,vmax=1.15,vlabel=vlabel2,png="synsSeisF")
+  swu,wus = goTimeUpdateS()
+  plot1ss(s1,fx,swu,wus,swsx,wsx,vmin=0.1,vmax=1.15,vlabel=vlabel1,png="synsSeisMS")
+  '''
   sdc = SeismicDepthConversion()
   ndft = zerodouble(3)
   gt = readImage(gtcfile)
@@ -290,6 +297,7 @@ def goTimeUpdateM():
   plot3X(st,gxc,vt,sps=sps,cmin=min(vt),cmax=max(vt),wmin=min(vt),wmax=max(vt),
          cmap=jetRamp(1.0),clab="Velocity (km/s)")
   '''
+  '''
   plot3s(sz,s2,s3,gcc,label1="Depth (km)")
   plot3X(st,gxc,zt,cmin=min(zt),cmax=max(zt),cmap=jetRamp(1.0),
         clab="Depth (km)")
@@ -298,11 +306,11 @@ def goTimeUpdateM():
   sps = sdc.averageVelAtWellsX(st,mds)
   plot3X(st,gxc,vt,sps=sps,cmin=min(vt),cmax=max(vt),wmin=min(vt),wmax=max(vt),
          cmap=jetRamp(1.0),clab="Velocity (km/s)")
-  plot3(gx,sps=svw,curve="vel",wmin=2.4,wmax=5.0,png="seisVelB")
-  plot3(gx,sps=svs,curve="vel",wmin=2.4,wmax=5.0,png="seisVelA")
-  goRgtInterp(svw,"w")
-  goRgtInterp(svs,"s")
+  plot3(gx,sps=spw[0],curve="vel",wmin=2.7,wmax=4.8,png="seisVelB")
+  goRgtInterp(spw[0],"w")
   '''
+  plot3(gx,sps=sps[0],curve="vel",wmin=2.7,wmax=4.8,png="seisVelMA")
+  goRgtInterp(sps[0],"s")
 
 def goSynSeis():
   simple = True
@@ -633,7 +641,7 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
     y = add(y,yf)
     pv = sp.addPoints(ss[il],y)
     pv.setLineColor(color)
-    pv.setLineWidth(1.5)
+    pv.setLineWidth(2.0)
     yf = yf+sf
   rf = sf
   if rs:
@@ -644,13 +652,61 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
       r = add(r,rf)
       pv = sp.addPoints(s1,r)
       pv.setLineColor(Color.BLACK)
-      pv.setLineWidth(1.5)
+      pv.setLineWidth(2.0)
       rf = rf+sf
   sp.setSize(600,650)
   sp.setHLabel(hlabel)
   sp.setVLabel(vlabel)
-  #sp.setFontSize(20) #for print
-  sp.setFontSize(30) #for slides
+  sp.setFontSize(20) #for print
+  #sp.setFontSize(30) #for slides
+  sp.setVInterval(0.2)
+  if png and pngDir:
+    sp.paintToPng(300,7.0,pngDir+png+".png")
+
+def plot1ss(s1,rs,ss,ys,sm,ym,vmin=None,vmax=None,
+    hlabel="Log index",vlabel="Time (s)",png=None):
+  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+  sf = 1.0
+  yf = sf
+  sp.setVLimits(0.1,1.0)
+  if vmin and vmax:
+    sp.setVLimits(vmin,vmax)
+  sp.setHLimits(0.5,11.5)
+  sp.setHInterval(2)
+  for il,y in enumerate(ys):
+    ya = sum(y)/len(y)
+    y = sub(y,ya)
+    y = div(y,10)
+    y = add(y,yf)
+    pv = sp.addPoints(ss[il],y)
+    pv.setLineColor(Color.BLUE)
+    pv.setLineWidth(2.0)
+    yf = yf+sf
+  yf = sf
+  for il,y in enumerate(ym):
+    ya = sum(y)/len(y)
+    y = sub(y,ya)
+    y = div(y,10)
+    y = add(y,yf)
+    pv = sp.addPoints(sm[il],y)
+    pv.setLineColor(Color.RED)
+    pv.setLineWidth(2.0)
+    yf = yf+sf
+  rf = sf
+  for il,r in enumerate(rs):
+    ra = sum(r)/len(r)
+    r = sub(r,ra)
+    r = div(r,10)
+    r = add(r,rf)
+    pv = sp.addPoints(s1,r)
+    pv.setLineColor(Color.BLACK)
+    pv.setLineWidth(2.0)
+    rf = rf+sf
+  sp.setSize(600,650)
+  sp.setHLabel(hlabel)
+  sp.setVLabel(vlabel)
+  sp.setFontSize(20) #for print
+  #sp.setFontSize(30) #for slides
   sp.setVInterval(0.2)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
@@ -794,13 +850,14 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
   if cbar:
-    cbar.setWidthMinimum(120) # for slides
-    #cbar.setWidthMinimum(80)
+    #cbar.setWidthMinimum(120) # for slides
+    cbar.setWidthMinimum(80)
   if logs:
     wg = wellGroup(logs,curve,wmin,wmax)
     sf.world.addChild(wg)
   if sps:
     #samples = sps[0],sps[1],sps[2],sps[3]
+    #wg = makeLogPoints(samples,wmin,wmax,cbar)
     wg = makeLogPoints(sps,wmin,wmax,cbar)
     sf.world.addChild(wg)
   if hs:
@@ -819,7 +876,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ipg.setSlices(924,224,68)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
-    sf.setSize(837,700)
+    #sf.setSize(837,700)
+    sf.setSize(797,700)
   else:
     sf.setSize(700,700) # for slides
     #sf.setSize(740,700)
@@ -836,8 +894,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
-      cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
-      #cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
+      #cbar.setFont(Font("Arial", Font.PLAIN, 36)) #for slides
+      cbar.setFont(Font("Arial", Font.PLAIN, 24)) #for print
       cbar.setInterval(0.5)
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
@@ -1050,7 +1108,7 @@ def wellGroup(logs,curve,cmin=0,cmax=0,cbar=None):
 
 def makeLogPoints(samples,cmin,cmax,cbar):
   lg = Group()
-  fl,x1l,x2l,x3l,fr = samples
+  fl,x1l,x2l,x3l = samples
   for i,f in enumerate(fl):
     f = fl[i]
     x1 = x1l[i]
@@ -1071,7 +1129,7 @@ def makePoint(f,x1,x2,x3,cmin,cmax,cbar):
     rgb = cmap.getRgbFloats([f])
   pg = PointGroup(xyz,rgb)
   ps = PointState()
-  ps.setSize(4)
+  ps.setSize(8)
   ps.setSmooth(False)
   ss = StateSet()
   ss.add(ps)
@@ -1092,7 +1150,7 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
     rgb = cmap.getRgbFloats(f)
   pg = PointGroup(xyz,rgb)
   ps = PointState()
-  ps.setSize(4)
+  ps.setSize(8)
   ps.setSmooth(False)
   ss = StateSet()
   ss.add(ps)

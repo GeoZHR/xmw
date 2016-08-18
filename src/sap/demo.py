@@ -92,15 +92,21 @@ def goChannel():
   plot2(s1,gx,us=us,ss=ss,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
   #plot2(s1,dtran(d),u,vint=200,hint=200,cmap=ColorMap.GRAY)
 def goSlices():
-  fx = readImage2L(n1,n2,"sliceNew")
+  #fx = readImage2L(n1,n2,"sliceNew")
   hx = readImage2L(n1,n2,"sliceNewx")
   gx = readImage2L(n1,n2,"sliceOld")
-  fx = gain(fx)
+  #fx = gain(fx)
   hx = gain(hx)
   gx = gain(gx)
-  plot2(s1,fx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="new")
-  plot2(s1,hx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="newx")
-  plot2(s1,gx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="old")
+  #plot2(s1,s2,fx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="new")
+  plot2(s1,s2,hx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="new")
+  plot2(s1,s2,gx,vint=200,hint=200,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="old")
+  hxs = copy(150,150,550,550,hx)
+  gxs = copy(150,150,550,550,gx)
+  c1 = Sampling(150,1,550)
+  c2 = Sampling(150,1,550)
+  plot2(c1,c2,hxs,vint=10,hint=10,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="newSub")
+  plot2(c1,c2,gxs,vint=10,hint=10,cmin=-2,cmax=2,cmap=ColorMap.GRAY,title="oldSub")
 def goEnv3d():
   fx = readImageL("env")
   if not plotOnly:
@@ -378,7 +384,7 @@ def hueFillExceptMin(alpha):
 
 
 backgroundColor = Color.WHITE
-def plot2(s1,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
+def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
           cmin=0.0,cmax=0.0,cmap=ColorMap.JET,title=None,perc=None,png=None):
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
           #PlotPanel.AxesPlacement.NONE)

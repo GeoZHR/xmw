@@ -772,6 +772,7 @@ public class LocalOrientEstimator {
     _et3.setEigenvalues(_au,_av,_aw);
     for (float[][][] g:gs) {
       _lsf.applySmoothS(g,h);
+      //_lsf.apply(_et3,_scale,h,g);
       h = fed.apply(_scale,_et3,h);
       copy(h,g);
     }
@@ -819,7 +820,8 @@ public class LocalOrientEstimator {
         float u3i = u[2];
         float w2i = w2[i3][i2][i1];
         float w3i = w3[i3][i2][i1];
-        float w1i = -(w2i*u2i+w3i*u3i)/u1i;
+        float w1i = 1f;
+        if (u1i!=0f) w1i = -(w2i*u2i+w3i*u3i)/u1i;
         et.setEigenvectorU(i1,i2,i3,u1i,u2i,u3i);
         et.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
       }}
@@ -1033,17 +1035,19 @@ public class LocalOrientEstimator {
         int i2p = min(i2+1,n2-1);
         float[] g2i = g2[i3 ][i2 ];
         float[] g3i = g3[i3 ][i2 ];
-        float[] p2i = p2[i3 ][i2 ];
-        float[] p3i = p3[i3 ][i2 ];
+        float[] p2m = p2[i3 ][i2m];
+        float[] p2p = p2[i3 ][i2p];
+        float[] p3m = p3[i3m][i2 ];
+        float[] p3p = p3[i3p][i2 ];
         float[] f2m = fx[i3 ][i2m];
         float[] f2p = fx[i3 ][i2p];
         float[] f3m = fx[i3m][i2 ];
         float[] f3p = fx[i3p][i2 ];
         for (int i1=0; i1<n1; ++i1) {
-          x2m[i1] = i1-p2i[i1];
-          x2p[i1] = i1+p2i[i1];
-          x3m[i1] = i1-p3i[i1];
-          x3p[i1] = i1+p3i[i1];
+          x2m[i1] = i1-p2m[i1];
+          x2p[i1] = i1+p2p[i1];
+          x3m[i1] = i1-p3m[i1];
+          x3p[i1] = i1+p3p[i1];
         }
         si.interpolate(n1,1.0,0.0,f2m,n1,x2m,g2m);
         si.interpolate(n1,1.0,0.0,f2p,n1,x2p,g2p);

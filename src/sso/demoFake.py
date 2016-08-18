@@ -53,14 +53,14 @@ n1,n2,n3 = 121,152,153
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
 
 def main(args):
-  #goFakeData()
+  goFakeData()
   #goLof()
   #goLoe()
   #goStratigraphy()
-  goChannel()
+  #goChannel()
   #goSmoothS()
 
 def goFakeData():
@@ -89,7 +89,6 @@ def goFakeData():
     p3 = readImage(p3kfile)
     hz = readImage2D(hzfile)
     ha = readImage2D(hacfile)
-
   print "ha min =",min(ha)," max =",max(ha)
   print "fx min =",min(fx)," max =",max(fx)
   print "p2 min =",min(p2)," max =",max(p2)
@@ -100,6 +99,7 @@ def goFakeData():
   plot3(fx,ha=ha,cmin=gmin,cmax=gmax,png="fxha")
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2k")
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3k")
+  plot3(fx,g=p3,cmin=-40,cmax=40,cmap=jetFill(1.0),clab="Channel azimuth (degree)",png="fxch")
 
 def goLof():
   fx = readImage(fxfile)
@@ -134,19 +134,17 @@ def goLof():
   p3k = readImage(p3kfile)
   ha = readImage2D(halfile)
   hc = readImage2D(hacfile)
-  ep = pow(ep,6)
-  ep = sub(ep,min(ep))
-  ep = div(ep,max(ep))
   dp3 = abs(sub(p3k,p3))
   dp2 = abs(sub(p2k,p2))
   dh = abs(sub(hc,ha))
   plot3(fx,dh=dh,cmin=-2,cmax=2,png="dhl")
-  plot3(ep,hz=hz,cmin=0.2,cmax=1.0,png="epl")
   plot3(fx,ha=ha,cmin=-2,cmax=2,png="hal")
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2l")
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3l")
   plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp2l")
   plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp3l")
+  plot3(fx,g=dp3,cmin=0.0,cmax=15,cmap=jetFill(1.0),cint=5,
+        clab="Channel azimuth error (degree)", png="dhcbar")
 
 
 def goLoe():
@@ -183,10 +181,14 @@ def goLoe():
   dp2 = abs(sub(p2k,p2))
   plot3(fx,cmin=-2,cmax=2)
   plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
-  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p2")
-  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p3")
-  plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="Absolute errors")
-  plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,clab="Absolute errors")
+  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),
+        clab="Inline slope (samples/trace)",png="p2s")
+  plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),
+        clab="Crossline slope (samples/trace)",png="p3s")
+  plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,
+        clab="Inline slope error (samples/trace)",png="dp2s")
+  plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,
+        clab="Crossline slope error (samples/trace)",png="dp3s")
 
 
 def goStratigraphy():
@@ -226,23 +228,16 @@ def goChannel():
     et = readTensors(etsfile)
     loe = LocalOrientEstimator(et,5)
     loe.setEigenvalues(0.1,1.0,1.0)
-    #loe.setGradientSmoothing(3)
+    loe.setGradientSmoothing(3)
     loe.applyForStratigraphy(fx,w2,w3,ep)
     hp = Helper()
     ha = hp.channelAzimuth(w2,w3,hz)
   else:
     hz = readImage2D(hzfile)
   hc = readImage2D(hacfile)
-  print min(w3)
-  print max(w3)
-  ep = pow(ep,2)
-  ep = sub(ep,min(ep))
-  ep = div(ep,max(ep))
   dh = abs(sub(hc,ha))
-  plot3(fx,cmin=-2,cmax=2)
-  plot3(ep,hz=hz,cmin=0.1,cmax=1.0)
-  plot3(fx,dh=dh,cmin=-2,cmax=2)
-  plot3(fx,ha=ha,cmin=-2,cmax=2)
+  plot3(fx,dh=dh,cmin=-2,cmax=2,png="dhc")
+  plot3(fx,ha=ha,cmin=-2,cmax=2,png="hac")
 
 def goSmoothL():
   fx = readImage(fxfile)
@@ -461,13 +456,15 @@ def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,dh=None,k1=120,
     sd = SurfaceDisplay()
     hz = readImage2D(hzfile)
     ha = toDegrees(ha)
+    print min(ha)
+    print max(ha)
     ts = sd.horizonWithChannelAzimuth([cmin,cmax],[amin,amax],hz,f,ha)
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
   if dh:
     pi = Math.PI
     amin = 0
-    amax = 20
+    amax = 15
     sd = SurfaceDisplay()
     hz = readImage2D(hzfile)
     dh = toDegrees(dh)
