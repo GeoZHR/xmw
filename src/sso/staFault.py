@@ -24,6 +24,8 @@ pngDir = None
 seismicDir = "../../../data/seis/sso/3d/crf/"
 fxfile = "fx"
 epfile = "ep"
+p2file = "p2"
+p3file = "p3"
 ellfile = "ell"
 elsfile = "els"
 eplfile = "epl"
@@ -46,8 +48,8 @@ k1 = 59
 def main(args):
   #goSeis()
   #goSta()
-  goSlope()
-  #goSemblance()
+  #goSlope()
+  goSemblance()
 def goSeis():
   fx = readImage(fxfile)
   ep = readImage(epfile)
@@ -91,14 +93,16 @@ def goSlope():
     ep = readImage(eplfile)
   plot3(ep,cmin=0.2,cmax=1.0)
 def goSemblance():
+  print "goSemblance..."
   fx = readImage(fxfile)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     cov = Covariance()
-    em,es=cov.covarianceEigen(8,p2,p3,fx)
+    em,es=cov.covarianceEigen(12,p2,p3,fx)
     sem = div(em,es)
-    writeImage(semfile,sem)
+    #writeImage(semfile,sem)
+    writeImage("sem12",sem)
   else:
     sem = readImage(semfile)
   #sem = pow(sem,2)
