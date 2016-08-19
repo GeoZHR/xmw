@@ -100,14 +100,13 @@ public class Covariance {
     final int n3 = f.length;
     final int n2 = f[0].length;
     final int n1 = f[0][0].length;
-    System.out.println("d1="+d1);
+    final float[] c = new float[1];
     final float[][][] em = new float[n3][n2][n1];
     final float[][][] es = new float[n3][n2][n1];
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
-      System.out.println("i3="+i3);
       float[] xmm = new float[n1];
       float[] xm0 = new float[n1];
       float[] xmp = new float[n1];
@@ -191,6 +190,8 @@ public class Covariance {
           es32[i1] = (float)sum(es);
         }
       }
+      c[0]=c[0]+1f;
+      System.out.println(100f*c[0]/n3+"% "+"done...");
     }});
     System.out.println("done");
     // pad the top and bottom boundaries

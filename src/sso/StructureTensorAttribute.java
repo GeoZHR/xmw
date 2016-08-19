@@ -162,17 +162,6 @@ public class StructureTensorAttribute {
     float[] e = new float[2];
     for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
-        float[] u = _et2.getEigenvectorU(i1,i2);
-        float u1i = u[0];
-        float u2i = u[1];
-        if (u1i<0f) {
-          u1i = -u1i; u2i = -u2i;
-        }
-        float v1i = -u2i/u1i;
-        float v2i = 1;
-        v2i  = 1f/(v1i*v1i+1f);
-        v1i *= v2i;
-
         a[0][0] = g11[i2][i1];
         a[0][1] = g12[i2][i1];
         a[1][0] = g12[i2][i1];
@@ -234,6 +223,59 @@ public class StructureTensorAttribute {
     // Compute eigenvectors, eigenvalues, and outputs that depend on them.
     solveEigenproblems(g11,g12,g13,g22,g23,g33,ep,el);
   }
+
+  public void applyForLinear(
+    float[][][] x,float[][][] el)
+  {
+    // Gradient.
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    float[][][] g2 = el;
+    float[][][] g3 = new float[n3][n2][n1];
+    computeOrientGradientX(x,g2,g3);
+    float[][][] g22 = new float[n3][n2][n1];
+    float[][][] g23 = new float[n3][n2][n1];
+    float[][][] g33 = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g2i = g2[i3][i2][i1];
+      float g3i = g3[i3][i2][i1];
+      g22[i3][i2][i1] = g2i*g2i;
+      g23[i3][i2][i1] = g2i*g3i;
+      g33[i3][i2][i1] = g3i*g3i;
+    }}}
+
+    //Smoothed gradient products comprise the structure tensor.
+    float[][][] h = new float[n3][n2][n1];
+    float[][][][] gs = {g22,g33,g23};
+    _et3.setEigenvalues(_au,_av,_aw);
+    for (float[][][] g:gs) {
+      _lsf.applySmoothS(g,h);
+      _lsf.apply(_et3,_scale,h,g);
+    }
+    // Compute eigenvectors, eigenvalues, and outputs that depend on them.
+    float[][] a = new float[2][2];
+    float[][] z = new float[2][2];
+    float[] e = new float[2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        a[0][0] = g22[i3][i2][i1];
+        a[0][1] = g23[i3][i2][i1];
+        a[1][0] = g23[i3][i2][i1];
+        a[1][1] = g33[i3][i2][i1];
+        Eigen.solveSymmetric22(a,z,e);
+        float eui = e[0];
+        float evi = e[1];
+        if (evi<0.0f) evi = 0.0f;
+        if (eui<evi) eui = evi;
+        el[i3][i2][i1] = (eui-evi)/eui;
+      }
+    }}
+  }
+
 
 
   public void updateTensors(float scale, float[][][] x) {
@@ -559,6 +601,60 @@ public class StructureTensorAttribute {
       }
     }});
   }
+
+  public void computeOrientGradientX(
+    final float[][][] fx, final float[][][] g2, final float[][][] g3) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] g2i = g2[i3][i2];
+        float[] g3i = g3[i3][i2];
+        for (int i1=0; i1<n1; ++i1) {
+          float[] v = _et3.getEigenvectorV(i1,i2,i3);
+          float[] w = _et3.getEigenvectorW(i1,i2,i3);
+          float v1i = v[0];
+          float v2i = v[1];
+          float v3i = v[2];
+          float w1i = w[0];
+          float w2i = w[1];
+          float w3i = w[2];
+          if (v2i<0f) {
+            v1i = -v1i; v2i = -v2i; v3i = -v3i;
+          }
+          if (w3i<0f) {
+            w1i = -w1i; w2i = -w2i; w3i = -w3i;
+          }
+          float v1p = i1+v1i;
+          float v2p = i2+v2i;
+          float v3p = i3+v3i;
+          float v1m = i1-v1i;
+          float v2m = i2-v2i;
+          float v3m = i3-v3i;
+          float w1p = i1+w1i;
+          float w2p = i2+w2i;
+          float w3p = i3+w3i;
+          float w1m = i1-w1i;
+          float w2m = i2-w2i;
+          float w3m = i3-w3i;
+          float g2p = si.interpolate(s1,s2,s3,fx,v1p,v2p,v3p);
+          float g2m = si.interpolate(s1,s2,s3,fx,v1m,v2m,v3m);
+          float g3p = si.interpolate(s1,s2,s3,fx,w1p,w2p,w3p);
+          float g3m = si.interpolate(s1,s2,s3,fx,w1m,w2m,w3m);
+          g2i[i1] = g2p-g2m;
+          g3i[i1] = g3p-g3m;
+      }}
+    }});
+  }
+
 
 
   public void computeOrientGradientX(

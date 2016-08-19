@@ -18,11 +18,12 @@ from ad import *
 from sso import *
 from util import *
 
+pngDir = "../../../png/sso/3d/crf/"
 pngDir = None
-pngDir = "../../../png/sso/3d/sta/"
 
-seismicDir = "../../../data/seis/sso/3d/sta/"
-fxfile = "fs"
+seismicDir = "../../../data/seis/sso/3d/crf/"
+fxfile = "fx"
+epfile = "ep"
 ellfile = "ell"
 elsfile = "els"
 eplfile = "epl"
@@ -34,38 +35,24 @@ gxsfile = "gxs"
 semfile = "sem"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
-n1,n2,n3 = 140,880,500
+n1,n2,n3 = 240,1300,825
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 k1 = 51
 k1 = 59
 
 def main(args):
-  #goLof()
+  #goSeis()
   #goSta()
-  goSemblance()
-def goLof():
+  goSlope()
+  #goSemblance()
+def goSeis():
   fx = readImage(fxfile)
-  if not plotOnly:
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    sig1,sig2=8,2
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
-    writeImage(eplfile,ep)
-    writeTensors(etlfile,et)
-  else:
-    ep = readImage(eplfile)
-  ep = pow(ep,2)
-  ep = sub(ep,min(ep))
-  ep = div(ep,max(ep))
-  plot3(fx,k1=k1,clab="Amplitude",cint=0.4,png="fx"+str(k1))
-  plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epl"+str(k1))
+  ep = readImage(epfile)
+  plot3(fx)
+  plot3(ep,cmin=0.2,cmax=1.0)
 def goSta():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -87,18 +74,29 @@ def goSta():
   ep = div(ep,max(ep))
   plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
 
-def goSemblance():
-  fx = readImage(fxfile)
+def goSlope():
+  print "goSlope..."
   if not plotOnly:
     sig1,sig2=8,2
+    fx = readImage(fxfile)
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
     lsf = LocalSlopeFinder(sig1,sig2,sig2,5)
     lsf.findSlopes(fx,p2,p3,ep)
+    writeImage(p2file,p2)
+    writeImage(p3file,p3)
+    writeImage(eplfile,ep)
+  else:
+    ep = readImage(eplfile)
+  plot3(ep,cmin=0.2,cmax=1.0)
+def goSemblance():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
     cov = Covariance()
     em,es=cov.covarianceEigen(8,p2,p3,fx)
-    print "done..."
     sem = div(em,es)
     writeImage(semfile,sem)
   else:
@@ -240,16 +238,16 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
     sf.world.addChild(node)
   if cbar:
     cbar.setWidthMinimum(85)
-  ipg.setSlices(k1,857,450)
+  ipg.setSlices(k1,1135,726)
   if cbar:
-    sf.setSize(987,700)
+    sf.setSize(1237,700)
   else:
-    sf.setSize(850,700)
+    sf.setSize(1100,700)
   view = sf.getOrbitView()
   zscale = 0.35*max(n2*d2,n3*d3)/(n1*d1)
   view.setAxesScale(1.0,1.0,zscale)
-  view.setScale(1.8)
-  view.setAzimuth(235.0)
+  view.setScale(2.0)
+  view.setAzimuth(245.0)
   view.setElevation(38)
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   view.setTranslate(Vector3(0.05,-0.12,0.06))
