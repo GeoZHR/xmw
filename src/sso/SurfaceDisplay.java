@@ -23,6 +23,11 @@ import ipfx.*;
 
 public class SurfaceDisplay {
 
+  public float[][] horizonWithAmplitude(
+    float[] mf, float[][] hz, float[][][] fx) 
+  {
+    return horizonWithAmplitude(-1,mf,hz,fx);
+  }
 
   public float[][][] horizonWithAmplitude(
     float[] mfs, float[][][] hzs, float[][][] fx) 
@@ -34,6 +39,8 @@ public class SurfaceDisplay {
     }
     return tgs;
   }
+
+
 
   public float[][] horizonWithAmplitude(
     int mk, float[] mfs, float[][] hz, float[][][] fx) 
@@ -562,6 +569,7 @@ public class SurfaceDisplay {
     }
     float[] rgb;
     zas = copy(k,0,zas);
+    zfs = copy(k,0,zfs);
     xyz = copy(i,0,xyz);
     float zmin = Float.MAX_VALUE;
     float zmax = -Float.MAX_VALUE;
@@ -579,6 +587,10 @@ public class SurfaceDisplay {
       ColorMap cp = new ColorMap(-zmax,-zmin,ColorMap.JET);
       rgb = cp.getRgbFloats(mul(zas,-1f));
     } else {
+      System.out.println("zfsmin="+min(zfs));
+      System.out.println("zfsmax="+max(zfs));
+      System.out.println("fmin="+mfs[0]);
+      System.out.println("fmax="+mfs[1]);
       ColorMap cp = new ColorMap(mfs[0],mfs[1],ColorMap.GRAY);
       rgb = cp.getRgbFloats(zfs);
     }

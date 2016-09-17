@@ -15,11 +15,11 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from ad import *
-from sso import *
 from util import *
+from sso import *
 
-pngDir = None
 pngDir = "../../../png/sso/3d/poseidon/"
+pngDir = None
 
 #seismicDir = "../../../data/seis/sso/3d/real/"
 seismicDir = "../../../data/seis/sso/3d/poseidon/"
@@ -106,6 +106,7 @@ def goHorizonS():
   else:
     hs = readHorizons(ns,hvsfile)
   k1,k2,k3=41,390,416
+  plot3(gx,surf=hs[10],k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="sf10")
   plot3p(s1,s2,s3,gx,hv=hs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,
           clab="Amplitude",png="hvs")
   k1,k2,k3=76,386,399
@@ -113,7 +114,6 @@ def goHorizonS():
   cs = hd.horizonCurves(k2,k3,hs)
   plot3(gx,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="gx3d")
   plot3(gx,hs=cs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="cvs")
-
 def goFirstLook():
   fx = readImage(fxfile)
   fx = gain(fx)
@@ -376,7 +376,7 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,hs=None,k1=None,k2=None,k3=None,
+def plot3(f,g=None,hs=None,surf=None,k1=None,k2=None,k3=None,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -420,6 +420,11 @@ def plot3(f,g=None,hs=None,k1=None,k2=None,k3=None,
       ls.setSmooth(False)
       ss.add(ls)
       sf.world.addChild(lg)
+  if surf:
+    sd = SurfaceDisplay()
+    xyz,rgb = sd.horizonWithAmplitude([cmin,cmax],surf,f)
+    tgs = TriangleGroup(True,xyz,rgb)
+    sf.world.addChild(tgs)
   if cbar:
     cbar.setWidthMinimum(100)
   ipg.setSlices(k1,k2,k3)

@@ -23,7 +23,8 @@ k1 = 59
 def main(args):
   #goSta()
   #goNormals()
-  goSlopes()
+  #goSlopes()
+  goHorizonS()
 
 def goSta():
   if not plotOnly:
@@ -79,6 +80,25 @@ def goSlopes():
   writeImage(p3file,p3)
   plot3(p2,cmin=0.2,cmax=1)
 
+def goHorizonS():
+  ns = 2
+  ep = readImage(epsfile)
+  if not plotOnly:
+    ep = fillfloat(1,n1,n2,n3)
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    c1 = rampfloat(45,5,50)
+    c2 = fillfloat(1000,ns)
+    c2 = fillfloat(2000,ns)
+    hv = HorizonVolume()
+    hv.setCG(0.01,50)
+    hs = hv.applyForHorizonVolume(c1,c2,c3,ep,p2,p3)
+    writeImage(hvsfile,hs)
+  else:
+    hs = readHorizons(ns,hvsfile)
+  k1,k2,k3=41,390,416
+  plot3(ep,surf=hs[0],k1=k1,k2=k2,k3=k3,cmin=0.2,cmax=1.0,png="sf0")
+  plot3(ep,surf=hs[1],k1=k1,k2=k2,k3=k3,cmin=0.2,cmax=1.0,png="sf1")
 
 def mask(ep,mv):
   gx = readImage(gxfile)
@@ -98,6 +118,16 @@ def gain(x):
   div(x,sqrt(g),y)
   return y
 
+def readHorizons(ns,basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n2,n3,ns)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 #############################################################################
 # graphics
@@ -137,7 +167,7 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,et=None,ep=None,k1=120,
+def plot3(f,g=None,et=None,ep=None,surf=None,k1=120,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -176,6 +206,11 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
     states = StateSet.forTwoSidedShinySurface(Color.YELLOW);
     node.setStates(states)
     sf.world.addChild(node)
+  if surf:
+    sd = SurfaceDisplay()
+    xyz,rgb = sd.horizonWithAmplitude([cmin,cmax],surf,f)
+    tgs = TriangleGroup(True,xyz,rgb)
+    sf.world.addChild(tgs)
   if cbar:
     cbar.setWidthMinimum(85)
   ipg.setSlices(k1,857,450)
