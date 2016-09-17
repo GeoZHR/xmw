@@ -10,6 +10,8 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.getCount(),s2.getCount(),s3.getCount()
 d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
+print f1
+print s1.getLast()
 print n1
 print n2
 print n3
@@ -88,8 +90,8 @@ horizons = [
   "TensleepBbaseC1Dolo"]
 """
 
-pngDir = None
 pngDir = "../../../png/rgi/tp3d/"
+pngDir = None
 
 plotOnly = True
 

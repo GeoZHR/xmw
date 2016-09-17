@@ -18,8 +18,8 @@ from ad import *
 from sso import *
 from util import *
 
-pngDir = None
 pngDir = "../../../png/sso/3d/sta/"
+pngDir = None
 
 seismicDir = "../../../data/seis/sso/3d/sta/"
 fxfile = "fs"
@@ -40,12 +40,19 @@ s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
 plotOnly = True
 k1 = 51
-k1 = 59
+k1 = 56
 
 def main(args):
   #goLof()
   #goSta()
-  goSemblance()
+  #goSemblance()
+  goValley()
+def goValley():
+  fx = readImage(fxfile)
+  fs = copy(45,220,25,480,fx[246])
+  c1 = Sampling(45)
+  c2 = Sampling(220)
+  plot2(c1,c2,fs,cmin=-1.5,cmax=1.5,png="seis246")
 def goLof():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -53,19 +60,24 @@ def goLof():
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
+    el = zerofloat(n1,n2,n3)
     sig1,sig2=8,2
     lof = LocalOrientFilter(sig1,sig2)
     et = lof.applyForTensors(fx)
     lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
+    lof.applyForInlineLinear(fx,u1,u2,u3,el)
     writeImage(eplfile,ep)
+    writeImage(ellfile,el)
     writeTensors(etlfile,et)
   else:
     ep = readImage(eplfile)
-  ep = pow(ep,2)
+    el = readImage(ellfile)
+  ep = pow(ep,2.5)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
   plot3(fx,k1=k1,clab="Amplitude",cint=0.4,png="fx"+str(k1))
   plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epl"+str(k1))
+  plot3(el,k1=k1,cmin=0.0,cmax=0.4,clab="Linearity",cint=0.1,png="ell"+str(k1))
 def goSta():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -81,11 +93,13 @@ def goSta():
     writeTensors(etsfile,et)
   else:
     ep = readImage(epsfile)
+    el = readImage(elsfile)
     #et = readTensors(etsfile)
-  ep = pow(ep,2)
+  ep = pow(ep,2.5)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
   plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
+  plot3(el,k1=k1,cmin=0.0,cmax=0.4,clab="Linearity",cint=0.1,png="els"+str(k1))
 
 def goSemblance():
   fx = readImage(fxfile)
@@ -103,9 +117,9 @@ def goSemblance():
     writeImage(semfile,sem)
   else:
     sem = readImage(semfile)
-  #sem = pow(sem,2)
-  #sem = sub(sem,min(sem))
-  #sem = div(sem,max(sem))
+  sem = pow(sem,2.0)
+  sem = sub(sem,min(sem))
+  sem = div(sem,max(sem))
   plot3(sem,k1=k1,cmin=0.2,cmax=1.0,clab="Semblance",cint=0.1,png="sem"+str(k1))
 
 def normalize(ss):
@@ -261,6 +275,39 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
+def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None): 
+  f1 = s1.getFirst()
+  f2 = s2.getFirst()
+  d1 = s1.getDelta()
+  d2 = s2.getDelta()
+  n1 = s1.getCount()
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE)
+  #panel.setVInterval(0.1)
+  #panel.setHInterval(1.0)
+  panel.setHLabel("Crossline (traces)")
+  panel.setVLabel("Samples")
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  pxv.setColorModel(ColorMap.GRAY)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  #cb = panel.addColorBar();
+  if cint:
+    cb.setInterval(cint)
+  if clab:
+    cb.setLabel(clab)
+  #panel.setColorBarWidthMinimum(50)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  #frame.setTitle("normal vectors")
+  frame.setVisible(True);
+  #frame.setSize(1020,700) #for f3d
+  frame.setSize(500,325) #for poseidon
+  #frame.setFontSize(13)
+  if pngDir and png:
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread

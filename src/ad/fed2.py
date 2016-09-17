@@ -40,8 +40,8 @@ s2 = Sampling(n2,d2,f2)
 
 def main(args):
   #goGaussian()
+  #goDiffusivity()
   goLinearDiffusion()
-  #goLinearDiffusionX()
   #goNonlinearDiffusion()
   #goHilbert()
   #goGaussianD()
@@ -116,21 +116,6 @@ def goFaultSmooth():
   plot(fx,el,cmin=0.1,cmax=0.2,cmap=jetRamp(1.0),cint=0.2,png="wsn")
   plot(fx,es,cmin=0.3,cmax=0.6,cmap=jetRamp(1.0),cint=0.2,png="wsn")
 
-def goHilbert():
-  gx,px=FakeData.seismicAndSlopes2d2014A(0.0)
-  gx = copy(n1,n2,0,0,gx)
-  rgf = RecursiveGaussianFilter(1.0)
-  f1 = zerofloat(n1,n2)
-  f2 = zerofloat(n1,n2)
-  g1 = zerofloat(n1,n2)
-  g2 = zerofloat(n1,n2)
-  ht = HilbertTransform(100,1)
-  ht.applyInFrequency(gx,f1,f2)
-  rgf.apply10(gx,g1)
-  rgf.apply01(gx,g2)
-  plot(gx,cmin=-1,cmax=1,cint=1.0,label="gx")
-  plot(g2,cmin=-1,cmax=1,cint=1.0,label="g2")
-  plot(f2,cmin=-1,cmax=1,cint=1.0,label="f2")
 
 def goGaussianD():
   fx = readImage(fxfile)
@@ -162,55 +147,42 @@ def goGaussian():
   rgf.apply00(fx,gx)
   plot(gx,cmin=-1,cmax=1,cint=1.0,png="gxg")
 
-def goLinearDiffusionX():
-  fx = readImage(fxfile)
-  fx = gain(fx)
-  addNoise(0.2,fx)
-  sig1,sig2=8,2
-  e1 = zerofloat(n1,n2)
-  e2 = zerofloat(n1,n2)
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  #lof = LocalOrientFilterP(sig1,sig2)
-  lof = LocalOrientFilter(sig1,sig2)
-  lof.applyForNormalLinear(fx,u1,u2,e1)
-  ets = lof.applyForTensors(fx)
-  sof = StratigraphicOrientFilter(sig1,sig2)
-  et = sof.applyForTensors(ets,fx,e2)
-  et.setEigenvalues(0.0001,1.0)
-  '''
-  sig = 10
-  cycle,limit=3,0.5
-  fed = FastExplicitDiffusion()
-  fed.setCycles(cycle,limit)
-  gx = fed.apply(sig,et,fx)
-  '''
-  gx = zerofloat(n1,n2)
-  lsf = LocalSmoothingFilter()
-  lsf.apply(ets,30,fx,gx)
-
-  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2)
-  plot(gx,cmin=-1,cmax=1,cint=1.0)
-  plot(fx,cmin=-1,cmax=1,cint=1.0)
-  #plot(e1,cmin=0.0,cmax=1.0,cint=0.2)
-  #plot(e2,cmin=0.0,cmax=1.0,cint=0.2)
-
 def goLinearDiffusion():
   fx = readImage(fxfile)
   fx = gain(fx)
-  sig1,sig2=8,2
-  #lof = LocalOrientFilterP(sig1,sig2)
-  lof = LocalOrientFilter(sig1,sig2)
+  sig1,sig2=4,2
+  lof = LocalOrientFilterP(sig1,sig2)
   ets = lof.applyForTensors(fx)
   ets.setEigenvalues(0.001,1.0)
-  sig = 10
+  sig = 8
   cycle,limit=3,0.5
   fed = FastExplicitDiffusion()
   fed.setCycles(cycle,limit)
   gx = fed.apply(sig,ets,fx)
-  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,png="fgl")
-  plot(gx,cmin=-1,cmax=1,cint=1.0,png="gxl")
-  plot(fx,cmin=-1,cmax=1,cint=1.0,png="fx")
+  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,label="Amplitude",png="fgl")
+  plot(gx,cmin=-1,cmax=1,cint=1.0,label="Amplitude",png="gxl")
+  plot(fx,cmin=-1,cmax=1,cint=1.0,label="Amplitude",png="fx")
+def goDiffusivity():
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  sig1,sig2=4,2
+  lof = LocalOrientFilterP(sig1,sig2)
+  ets = lof.applyForTensors(fx)
+  ets.setEigenvalues(0.001,1.0)
+  sig = 8
+  lbd = 0.12
+  cycle,limit=3,0.5
+  fed = FastExplicitDiffusion()
+  fed.setCycles(cycle,limit)
+  fw = zerofloat(n1,n2)
+  fws = zerofloat(n1,n2)
+  fed.applyForWeightsP0(lbd,ets,fx,fw)
+  fed.applyForWeightsP1(lbd,ets,fx,fws)
+  fws = pow(fws,4)
+  plot(fx,sub(1,fw),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+       label="Diffusivity",png="fw")
+  plot(fx,sub(1,fws),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+       label="Diffusivity",png="fws")
 
 def goNonlinearDiffusion():
   fx = readImage(fxfile)
@@ -228,11 +200,14 @@ def goNonlinearDiffusion():
   ws = zerofloat(n1,n2)
   fed.applyForWeightsP(lbd,ets,gx,wp)
   fed.applyForWeightsP(lbd,ets,fx,ws)
-  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,png="fgn")
-  plot(fx,sub(1,ws),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,png="wsn")
-  plot(gx,sub(1,wp),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,png="wpn")
-  plot(gx,cmin=-1,cmax=1,cint=1.0,png="gxn")
-  plot(fx,cmin=-1,cmax=1,cint=1.0,png="fx")
+  plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,label="Amplitude",png="fgn")
+  plot(fx,sub(1,ws),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+       label="Diffusivity",png="wsn")
+  plot(gx,sub(1,wp),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+       label="Diffusivity",png="wpn")
+  plot(gx,cmin=-1,cmax=1,cint=1.0,label="Amplitude",png="gxn")
+  plot(fx,cmin=-1,cmax=1,cint=1.0,label="Amplitude",png="fx")
+  plot(fx,t=ets,cmin=-1,cmax=1,cint=1.0,label="Amplitude",png="fxet")
 
 def normalize(ss):
   sub(ss,min(ss),ss)
@@ -274,7 +249,8 @@ def jetRamp(alpha):
 def grayRamp(alpha):
   return ColorMap.setAlpha(ColorMap.GRAY,rampfloat(0.0,alpha/256,256))
 
-def plot(f,g=None,cmap=None,cmin=None,cmax=None,cint=None,label=None,png=None): 
+def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
+        label=None,neareast=False,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
   panel.setVInterval(0.1)
@@ -300,13 +276,22 @@ def plot(f,g=None,cmap=None,cmin=None,cmax=None,cint=None,label=None,png=None):
     cb.setInterval(cint)
   if label:
     cb.setLabel(label)
-  panel.setColorBarWidthMinimum(70)
+  if t:
+    tv = TensorsView(s1,s2,t)
+    tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
+    tv.setLineColor(Color.YELLOW)
+    tv.setLineWidth(5)
+    tv.setEllipsesDisplayed(12)
+    tv.setScale(0.9)
+    tile = panel.getTile(0,0)
+    tile.addTiledView(tv)
+  panel.setColorBarWidthMinimum(100)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
-  frame.setSize(1020,700) #for f3d
+  frame.setSize(1050,700) #for f3d
   frame.setFontSize(30)
   if pngDir and png:
     frame.paintToPng(300,3.333,pngDir+png+".png")

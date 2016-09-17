@@ -22,8 +22,8 @@ pngDir = "../../../png/sso/3d/crf/"
 pngDir = None
 
 seismicDir = "../../../data/seis/sso/3d/crf/"
-fxfile = "fx"
-epfile = "ep"
+fxfile = "fxSub"
+epfile = "epSub"
 p2file = "p2"
 p3file = "p3"
 ellfile = "ell"
@@ -34,27 +34,73 @@ etlfile = "etl"
 etsfile = "ets"
 gxlfile = "gxl"
 gxsfile = "gxs"
-semfile = "sem"
+semfile = "smSub"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
-n1,n2,n3 = 240,1300,825
+n1,n2,n3 = 210,920,825
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
+k1 = 38
 k1 = 51
-k1 = 59
+k1 = 110
 
 def main(args):
   #goSeis()
   #goSta()
   #goSlope()
-  goSemblance()
+  #goSemblance()
+  #goSub()
+  #go2dPlots()
+  goSubPlots()
+def goSubPlots():
+  fx = readImage("fxSub")
+  eps = readImage("epSub")
+  #epl = readImage("epl")
+  sm = readImage("smSub")
+  fs  = copy(n1,450,n3,0,0,0,fx)
+  ess  = copy(n1,450,n3,0,0,0,eps)
+  #els  = copy(n1,450,n3,0,0,0,epl)
+  ss  = copy(n1,450,n3,0,0,0,sm)
+  ss = pow(ss,1.2)
+  ss = sub(ss,min(ss))
+  ss = div(ss,max(ss))
+  ess = pow(ess,1.2)
+  ess = sub(ess,min(ess))
+  ess = div(ess,max(ess))
+
+  plot3s(fs,k1=k1,clab="Amplitude",cint=0.2,png="fxSub"+str(k1))
+  plot3s(ess,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epsSub"+str(k1))
+  #plot3s(els,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eplSub"+str(k1))
+  plot3s(ss,k1=k1,cmin=0.2,cmax=1.0,clab="Coherence",cint=0.1,png="smSub"+str(k1))
+def go2dPlots():
+  fx = readImage("fxSub")
+  ep = readImage("epSub")
+  sm = readImage("smSub")
+  fs = slice(k1,fx)
+  es = slice(k1,ep)
+  ss = slice(k1,sm)
+  plot2(s2,s3,fs,cmin=-2.0,cmax=2.0,png="seis2d"+str(k1))
+  plot2(s2,s3,es,cmin=0.2,cmax=1.0)
+  plot2(s2,s3,ss,cmin=0.2,cmax=1.0)
+  plot3(ep,k1=k1,cmin=0.2,cmax=1.0)
+  plot3(sm,k1=k1,cmin=0.2,cmax=1.0)
+def goSub():
+  fx = readImage(fxfile)
+  ep = readImage(epfile)
+  sem = readImage(semfile)
+  fx  = copy(210,n2,n3,30,0,0,fx)
+  ep  = copy(210,n2,n3,30,0,0,ep)
+  sem = copy(210,n2,n3,30,0,0,sem)
+  writeImage(fxfile,fx)
+  writeImage(epfile,ep)
+  writeImage(semfile,sem)
 def goSeis():
   fx = readImage(fxfile)
   ep = readImage(epfile)
-  plot3(fx)
-  plot3(ep,cmin=0.2,cmax=1.0)
+  plot3(fx,k1=k1,clab="Amplitude",png="fx"+str(k1))
+  plot3(ep,k1=k1,cmin=0.1,cmax=1.0,clab="Planarity",png="eps"+str(k1))
 def goSta():
   fx = readImage(fxfile)
   if not plotOnly:
@@ -69,12 +115,10 @@ def goSta():
     writeImage(elsfile,el)
     writeTensors(etsfile,et)
   else:
-    ep = readImage(epsfile)
+    #ep = readImage(epsfile)
+    ep = readImage("epSub")
     #et = readTensors(etsfile)
-  ep = pow(ep,2)
-  ep = sub(ep,min(ep))
-  ep = div(ep,max(ep))
-  plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
+  plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
 
 def goSlope():
   print "goSlope..."
@@ -105,10 +149,7 @@ def goSemblance():
     writeImage("sem12",sem)
   else:
     sem = readImage(semfile)
-  #sem = pow(sem,2)
-  #sem = sub(sem,min(sem))
-  #sem = div(sem,max(sem))
-  plot3(sem,k1=k1,cmin=0.2,cmax=1.0,clab="Semblance",cint=0.1,png="sem"+str(k1))
+  plot3(sem,k1=k1,cmin=0.1,cmax=1.0,clab="Semblance",cint=0.1,png="sem"+str(k1))
 
 def normalize(ss):
   sub(ss,min(ss),ss)
@@ -122,6 +163,12 @@ def gain(x):
   div(x,sqrt(g),y)
   return y
 
+def slice(k1,fx):
+  fs = zerofloat(n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      fs[i3][i2] = fx[i3][i2][k1]
+  return fs
 def readImage(basename):
   """ 
   Reads an image from a file with specified basename
@@ -201,6 +248,68 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
+def plot3s(f,g=None,et=None,ep=None,k1=120,
+    cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      ipg.setClips(-1.5,1.2)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-1.5,1.2)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if et:
+    node = TensorEllipsoids(s1,s2,s3,et,ep)
+    states = StateSet.forTwoSidedShinySurface(Color.YELLOW);
+    node.setStates(states)
+    sf.world.addChild(node)
+  if cbar:
+    cbar.setWidthMinimum(85)
+  ipg.setSlices(k1,425,5)
+  if cbar:
+    sf.setSize(1351,600)
+  else:
+    sf.setSize(950,650)
+  view = sf.getOrbitView()
+  zscale = 0.25*max(n2*d2,n3*d3)/(n1*d1)
+  view.setAxesScale(1.0,1.0,zscale)
+  view.setScale(2.7)
+  view.setAzimuth(160.0)
+  view.setElevation(35)
+  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  view.setTranslate(Vector3(0.02,-0.10,0.1))
+  sf.viewCanvas.setBackground(sf.getBackground())
+  #sf.setSize(850,700)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+
 def plot3(f,g=None,et=None,ep=None,k1=120,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
@@ -242,19 +351,19 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
     sf.world.addChild(node)
   if cbar:
     cbar.setWidthMinimum(85)
-  ipg.setSlices(k1,1135,726)
+  ipg.setSlices(k1,755,736)
   if cbar:
-    sf.setSize(1237,700)
+    sf.setSize(1051,750)
   else:
-    sf.setSize(1100,700)
+    sf.setSize(950,750)
   view = sf.getOrbitView()
-  zscale = 0.35*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.25*max(n2*d2,n3*d3)/(n1*d1)
   view.setAxesScale(1.0,1.0,zscale)
   view.setScale(2.0)
-  view.setAzimuth(245.0)
-  view.setElevation(38)
+  view.setAzimuth(248.0)
+  view.setElevation(35)
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  view.setTranslate(Vector3(0.05,-0.12,0.06))
+  view.setTranslate(Vector3(0.12,-0.02,0.1))
   sf.viewCanvas.setBackground(sf.getBackground())
   #sf.setSize(850,700)
   sf.setVisible(True)
@@ -263,6 +372,40 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
+def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None): 
+  f1 = s1.getFirst()
+  f2 = s2.getFirst()
+  d1 = s1.getDelta()
+  d2 = s2.getDelta()
+  n1 = s1.getCount()
+  #orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  orientation = PlotPanel.Orientation.X1RIGHT_X2UP;
+  panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE)
+  #panel.setVInterval(0.1)
+  #panel.setHInterval(1.0)
+  #panel.setHLabel("Crossline (traces)")
+  #panel.setVLabel("Samples")
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  pxv.setColorModel(ColorMap.GRAY)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  #cb = panel.addColorBar();
+  if cint:
+    cb.setInterval(cint)
+  if clab:
+    cb.setLabel(clab)
+  #panel.setColorBarWidthMinimum(50)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  #frame.setTitle("normal vectors")
+  frame.setVisible(True);
+  #frame.setSize(1020,700) #for f3d
+  frame.setSize(700,325) #for poseidon
+  #frame.setFontSize(13)
+  if pngDir and png:
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread

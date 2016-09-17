@@ -33,6 +33,7 @@ ultfile = "ult" # thinned unconformity likelihood
 uncfile = "unc" # unconformity surface
 fgfile = "fg" #flattened image
 rgtfile = "rgt" #relative geologic time image
+hvsfile = "hvs" #relative geologic time image
 sx1file = "sx1"
 sx2file = "sx2"
 sx3file = "sx3"
@@ -57,7 +58,7 @@ maxThrow = 20.0
 
 
 # Directory for saved png images. If None, png images will not be saved.
-#pngDir = None
+pngDir = None
 pngDir = "../../../png/ipsi/"
 plotOnly = False
 
@@ -73,12 +74,13 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  goUnfault()
+  #goUnfault()
   #goUnfaultS()
   #goUncScan()
   #goUncConvert()
   #goFlatten()
   #goHorizons()
+  goFlattenGaps()
 def goTest():
   rgt = readImage(rgtfile)
   f = zerofloat(n2,n3)
@@ -542,19 +544,19 @@ def goFlatten():
     sig1,sig2=4.0,4.0
     fl3.setSmoothings(sig1,sig2)
     fl3.setIterations(0.01,300);
-    #fl3.computeShifts(p2,p3,wp,cs,sfs,rs)
     mp = fl3.getMappingsFromSlopes(s1,s2,s3,p2,p3,wp,cs,sfs,rs)
-    #mp = fl3.getMappingsFromShifts(s1,s2,s3,rs)
     rgt = mp.u1
+    hvs = mp.x1
     fg  = mp.flatten(fw)
     writeImage(fgfile,fg)
     writeImage(rgtfile,rgt)
+    writeImage(hvsfile,hvs)
   fg  = readImage(fgfile)
   rgt = readImage(rgtfile)
   fw = gain(fw)
   fg = gain(fg)
-  #plot3(fw)
-  #plot3(fg,png="fg")
+  plot3(fw)
+  plot3(fg,png="fg")
   fs = zerofloat(n1,n2,n3)
   for i3 in range(n3):
     for i2 in range(n2):
@@ -565,7 +567,15 @@ def goFlatten():
         clab="Vertical shift (ms)",png="shifts")
   plot3(fw,rgt,cmin=10.0,cmax=n1,cmap=jetFill(1.0),
         clab="Relative geologic time",png="rgt")
-
+def goFlattenGaps():
+  u1 = readImage(rgtfile)
+  fw = readImage(fwsfile)
+  fw = gain(fw)
+  fg = readImage(fgfile)
+  fl3 = Flattener3Unc()
+  fu = fl3.flattenWithGaps(s1,u1,fw)
+  plot3(fg)
+  plot3(fu,png="fu")
 def goHorizons():
   gx  = readImage(gxfile)
   rgt = readImage(rgtfile)

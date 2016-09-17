@@ -90,8 +90,10 @@ public class FaultCurve implements Iterable<FaultPoint>,Serializable {
     for (FaultCurve curve:curves) {
     for (FaultPoint point:curve) {
       int i1 = point.i1;
-      int i2 = point.i2;
-      fs[i2][i1] = point.smp;
+      int i2m = point.i2m;
+      int i2p = point.i2p;
+      fs[i2m][i1] = point.smp;
+      fs[i2p][i1] = point.smp;
     }}
   }
 

@@ -18,39 +18,38 @@ from ad import *
 from sso import *
 from util import *
 
-pngDir = None
 pngDir = "../../../png/ad/fed/3d/"
+pngDir = None
 
 seismicDir = "../../../data/seis/ad/fed/3d/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
 gxlfile = "gxl"
 gxnfile = "gxn"
+scnfile = "scn"
+ssnfile = "ssn"
 gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
-n1,n2,n3 = 240,880,500
+n1,n2,n3 = 180,880,500
 #n1,n2,n3 = 426,800,830
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
   #goLinearDiffusion()
   #goLocalSmoothingFilter()
   #goStratigraphyOrientedDiffusion()
-  #goNormalPlanar()
-  #goStratigraphyOrientedDiffusionX()
-  #goTest()
-  #goStratigraphyOrientedDiffusionX()
-  #goNonlinearDiffusion()
+  goNonlinearDiffusion()
+  #goFaultChannelSmooth()
   #goSemblance()
   #goSemblanceHale()
   #goCovariance()
   #goFastCovariance()
   #goVariance()
-  goShapeSemblance()
+  #goShapeSemblance()
 def goNormalPlanar():
   fx = readImage(fxfile)
   u1 = zerofloat(n1,n2,n3)
@@ -100,11 +99,11 @@ def goLocalSmoothingFilter():
 def goStratigraphyOrientedDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=4,2
+    sig1,sig2=2,4
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     ets.setEigenvalues(0.0001,0.0001,1.0000)
-    sig = 10
+    sig = 5
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
@@ -112,55 +111,53 @@ def goStratigraphyOrientedDiffusion():
     writeImage(gxsfile,gx)
   else:
     gx = readImage(gxsfile)
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
+  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
   plot3(gx,cmin=-1.0,cmax=1.0)
   plot3(fx,cmin=-1.0,cmax=1.0)
-
-def goStratigraphyOrientedDiffusionX():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=4,2
-    ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(sig1,sig2)
-    ets = lof.applyForTensors(fx)
-    sof = StratigraphicOrientFilter(sig1,sig2)
-    et = sof.applyForTensors(ets,fx,ep)
-    et.setEigenvalues(0.0001,0.0001,1.0000)
-    sig = 10
-    cycle,limit=3,0.5
-    fed = FastExplicitDiffusion()
-    fed.setCycles(cycle,limit)
-    gx = fed.apply(sig,et,fx)
-    writeImage(gxsfile,gx)
-    writeImage("epx",ep)
-  else:
-    fx = readImage(fxfile)
-    gx = readImage(gxsfile)
-    ep = readImage("epx")
-  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
-  plot3(gx,cmin=-1.0,cmax=1.0)
-  plot3(fx,cmin=-1.0,cmax=1.0)
-  plot3(ep,cmin=0.4,cmax=1.0)
 
 def goNonlinearDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=4,2
+    sig1,sig2=2,4
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
-    ets.setEigenvalues(0.0001,1.0,1.0)
-    sig = 5
+    sig = 10
     cycle,limit=3,0.5
-    lbd = 0.1
+    lbd = 0.05
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
-    gx = fed.apply(sig,lbd,ets,fx)
+    sc, gx = fed.apply(sig,lbd,0.5,ets,fx)
     writeImage(gxnfile,gx)
+    writeImage(scnfile,sc)
   else:
     gx = readImage(gxnfile)
+    sc = readImage(scnfile)
   plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx)
-  plot3(fx)
+  plot3(sc,cmin=0.0,cmax=1.0)
+  plot3(gx,cmin=-1,cmax=1)
+  plot3(fx,cmin=-1,cmax=1)
+
+def goFaultChannelSmooth():
+  sc = readImage(scnfile)
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2,sig3=2,4,4
+    lof = LocalOrientFilter(sig1,sig2,sig3)
+    ets = lof.applyForTensors(fx)
+    ets.setEigenvalues(0.5,0.0001,1.0)
+    sig = 5
+    cycle,limit=3,0.5
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    ss = zerofloat(n1,n2,n3)
+    fed.applySmoothS(sc,ss)
+    ss = fed.apply(sig,ets,ss)
+    writeImage(ssnfile,ss)
+  else:
+    sc = readImage(scnfile)
+    ss = readImage(ssnfile)
+  plot3(sc,cmin=0.0,cmax=1.0)
+  plot3(ss,cmin=0.0,cmax=1.0)
 
 def goShapeSemblance():
   fx = readImage(fxfile)
@@ -430,7 +427,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   if cbar:
     cbar.setWidthMinimum(120)
   #ipg.setSlices(153,760,450)
-  ipg.setSlices(124,760,450)
+  ipg.setSlices(91,760,450)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
@@ -444,10 +441,10 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   view.setScale(1.72)
   #view.setAzimuth(75.0)
   #view.setAzimuth(-75.0)
-  view.setAzimuth(225.0)
+  view.setAzimuth(238.0)
   view.setElevation(45)
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  view.setTranslate(Vector3(0.05,-0.1,0.06))
+  view.setTranslate(Vector3(0.05,-0.2,0.06))
   sf.viewCanvas.setBackground(sf.getBackground())
   sf.setSize(850,700)
 

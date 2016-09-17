@@ -74,9 +74,9 @@ def main(args):
   #goDisplay()
   #goSynsFlatten()
   #goSeisFlatten()
-  #goSynsSeisTie()  
+  goSynsSeisTie()  
   #goTimeUpdateS()
-  goTimeUpdateM()
+  #goTimeUpdateM()
   #goSlopes()
   #goScan()
   #goThin()
@@ -155,7 +155,7 @@ def goRgtInterp(sps,fname):
     ri = RgtInterp3(spc[0],spc[1],spc[2],spc[3])
     ri.setRgt(gt)
     ri.setScales(0.001,1.0)
-    fti,fpi,fqi = ri.grid(True,s1,s2,s3)
+    fti,fpi,fqi = ri.grid(False,s1,s2,s3)
     writeImage(fpifile+fname,fpi)
   #writeImage(fqifile+fname,fqi)
   else:
@@ -1186,7 +1186,7 @@ def addColorBar(frame,clab=None,cint=None):
   cbar = ColorBar(clab)
   if cint:
     cbar.setInterval(cint)
-  cbar.setFont(Font("Arial",Font.PLAIN,32)) # size by experimenting
+  cbar.setFont(Font("Arial",Font.PLAIN,24)) # size by experimenting
   cbar.setWidthMinimum
   cbar.setBackground(Color.WHITE)
   frame.add(cbar,BorderLayout.EAST)

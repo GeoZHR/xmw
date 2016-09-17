@@ -209,6 +209,49 @@ public class Flattener3Unc {
     return g;
   }
 
+  public float[][][] flattenWithGaps(
+    Sampling s1, final float[][][] u1, final float[][][] f) 
+  {
+    final int n3 = u1.length;
+    final int n2 = u1[0].length;
+    final int n1 = u1[0][0].length;
+    float d1 = (float)s1.getDelta();
+    float f1 = (float)s1.getFirst();
+    final float[][][] x1 = new float[n3][n2][n1];
+    final InverseInterpolator ii = new InverseInterpolator(s1,s1);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) 
+        ii.invert(u1[i3][i2],x1[i3][i2]);
+    }});
+
+    final float[][][] g = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2)
+        si.interpolate(n1,d1,f1,f[i3][i2],n1,x1[i3][i2],g[i3][i2]);
+    }});
+    float gmax = max(g)+1f;
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    float[][][] g1 = new float[n3][n2][n1];
+    rgf.apply100(x1,g1);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g1i = g1[i3][i2][i1];
+      if(i1<70 && abs(g1i)<0.45f) {
+        g[i3][i2][i1] = gmax;
+      }
+      if(i1>=70 && abs(g1i)<0.3f) {
+        g[i3][i2][i1] = gmax;
+      }
+    }}}
+    return g;
+  }
+
+
   public float[][][] resampleRgt(
     Sampling s1, int[][][] uc, float[][][] u1) {
     Object[] ob = rgtSampling(s1,uc,u1);

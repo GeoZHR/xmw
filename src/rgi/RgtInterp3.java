@@ -767,12 +767,20 @@ public class RgtInterp3 {
       float eli = el[i2][i1];
       float evi = ev[i2][i1];
       float eui = eu[i2][i1];
+      /*
       if(eli>0.4f) {
         eui *=sc;
       }
+      */
       ev[i2][i1] = (amin+aeps)/(evi+aeps);
       eu[i2][i1] = (amin+aeps)/(eui+aeps);
     }}
+    float[][] sl = sub(1,el);
+    sl = pow(sl,4);
+    sl = sub(sl,min(sl));
+    sl = div(sl,max(sl));
+    eu = mul(eu,sl);
+    //ev = mul(ev,sl);
     et.setEigenvalues(eu,ev);
     //et.invertStructure(1.0,1.0);
     return et;

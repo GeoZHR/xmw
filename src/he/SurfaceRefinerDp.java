@@ -200,6 +200,24 @@ public class SurfaceRefinerDp {
     return em;
   }
 
+  public float[][][] getErrorMatrix(
+    int b1, int e1, float d1, float[][][] gx, float[][] sf) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    int m1 = e1-b1+1;
+    float[][][] em = new float[n3][n2][m1];
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int k1=b1; k1<=e1; ++k1) {
+      float x1 = k1*d1+sf[i3][i2];
+      em[i3][i2][k1-b1] = si.interpolate(n1,1,0,n2,1,0,n3,1,0,gx,x1,i2,i3);
+    }}}
+    return em;
+  }
+
+
 
   public float[][][][] getErrorMatrix(
     int m1, float d1, FaultSkin[] sks, float[][][] gx, float[][] sf) {

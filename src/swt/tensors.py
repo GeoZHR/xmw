@@ -190,6 +190,7 @@ def goTensorsDisplay():
       gs[i3][i2] = gu[i3][i2][109]
       qs[i3][i2] = qu[i3][i2][109]
   et = ri.makeImageTensorsX(fa)
+  '''
   lof.applyForNormalLinear(fa,v1,v2,el)
   ets = lof.applyForTensors(fa)
   ets.setEigenvalues(0.001,1.0)
@@ -199,16 +200,17 @@ def goTensorsDisplay():
     for i2 in range(n2):
       if(el[i3][i2]<0.5):
         el[i3][i2] = 0
-  plot2(gs,s2,s3,d=et,fmin=-2.0,fmax=1.5,dscale=2.5,png="tensors")
+  '''
+  plot2(gs,s2,s3,d=et,fmin=-2.0,fmax=1.5,dscale=2.5,png="tensorsNew")
   plot2s(s2,s3,gs,g=qs,fmin=-2.0,
-          fmax=1.5,gmin=2.1,gmax=3.2,cmap=jetFill(0.5),png="interp2d")
-  plot2s(s2,s3,fa,g=el,fmin=-2.0,
-          fmax=1.5,gmin=0.1,gmax=1.0,cmap=jetFill(0.5),png="el2d")
+          fmax=1.5,gmin=2.1,gmax=3.2,cmap=jetFill(0.5))#,png="interp2d")
+  '''
   plot2s(s2,s3,gs,g=fs,fmin=-2.0,
         fmax=1.5,gmin=2.1,gmax=3.2,nearest=True,
         cmap=jetFillExceptMin(1.0),png="samples")
   plot2(gs,s2,s3,d=et,g=fs,dscale=2.5,fmin=-2,fmax=1.5,
           gmin=2.1,gmax=3.2,cmap=jetFillExceptMin(0.5))
+  '''
 def getLogs(logType):
   k1u = [105,105,105,105,105, 21, 21, 21, 21, 21, 21, 21]
   k2u = [127,100, 81, 56, 20,142, 70, 20,  8, 96, 50,140]

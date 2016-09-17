@@ -35,8 +35,8 @@ def main(args):
   #goChannel()
   #goSurface()
   #goSemblance3d() 
-  #goEnv3d() 
-  goSlices()
+  goEnv3d() 
+  #goSlices()
 
 def goABsemblance():
   strainMax = 0.35
@@ -59,8 +59,8 @@ def goABsemblance():
   uc = copy(nc1,95,u)
   pikc = copy(nc1,95,pik)
   semc = copy(nc1,n2,95,0,sem)
-  plot2(c1,semc,uc,vint=1,hint=200,cmin=0.2,cmax=1.0)
-  plot2(c1,semc,pikc,vint=1,hint=200,cmin=0.2,cmax=1.0)
+  plot2(c1,s2,semc,uc,vint=1,hint=200,cmin=0.2,cmax=1.0)
+  plot2(c1,s2,semc,pikc,vint=1,hint=200,cmin=0.2,cmax=1.0)
 
 def goChannel():
   stms = [1,1,0.9]

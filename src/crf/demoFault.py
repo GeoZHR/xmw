@@ -75,13 +75,15 @@ def main(args):
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
-  goRosePlotsN()
+  #goRosePlotsN()
   #goResetSurfaces()
   #goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
 
+  gx = readImage(gxfile)
+  plot3(gx)
 
 def goStrikeMask():
   gx = readImage(gxfile)

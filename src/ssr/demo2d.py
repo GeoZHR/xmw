@@ -49,6 +49,7 @@ def main(args):
   #goUnfault()
   #goTensors()
   goVelocity()
+  #goShapping()
 def goScan():
   print "goScan ..."
   gx = readImage2D(n1,n2,gxfile)
@@ -166,13 +167,13 @@ def goFaultThrow():
   plot2(s1,s2,gx)
   plot2(s1,s2,gs)
   plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
-  plot2(s1,s2,gx,g=fst,cmin=minThrow,cmax=maxThrow,cmap=jetFillExceptMin(1.0))
-
+  plot2(s1,s2,gx,g=mul(fst,4),cmin=minThrow,cmax=maxThrow,
+        cmap=jetFillExceptMin(1.0),label="Fault throw (ms)",png="fst")
   smark = -999.999
   p1,p2 = fcr.getDipSlips(n1,n2,cc,smark)
   p1,p2 = fcr.interpolateDipSlips([p1,p2],smark)
   gw = fcr.unfault([p1,p2],gx)
-  plot2(s1,s2,gw)
+  plot2(s1,s2,gw,label="Amplitude",png="gw")
   return cc
 
 def goTensors():
@@ -183,16 +184,16 @@ def goTensors():
   eu = zerofloat(n1,n2)
   ev = zerofloat(n1,n2)
   et.getEigenvalues(eu,ev)
-  eu=clip(0.005,max(eu),eu)
-  ev=clip(0.005,max(ev),ev)
+  eu=clip(0.008,max(eu),eu)
+  ev=clip(0.008,max(ev),ev)
   et.setEigenvalues(eu,ev)
   et.invertStructure(1.0,1.0)
   et.getEigenvalues(eu,ev)
   print min(eu)
   print max(eu)
   #plotTensors(gx,s1,s2,d=et,dscale=20,mk=mk,cmin=-2,cmax=2,png="tensors")
-  plotTensors(gx,s1,s2,d=et,dscale=1,ne=30,cmin=-2,cmax=2,png="tensors")
-  plot2(s1,s2,gx,g=eu,cmin=0.001,cmax=0.1,cmap=jetFill(1.0))
+  plot2(s1,s2,gx,cmin=-2,cmax=2,label="Amplitdue",png="seis")
+  plotTensors(gx,s1,s2,d=et,dscale=1,ne=25,cmin=-2,cmax=2,png="tensors")
 
 def goUnfault():
   cc = goFaultThrow()
@@ -224,8 +225,8 @@ def goVelocity():
   fl = zerofloat(n1,n2)
   wp = fillfloat(1.0,n1,n2)
   slp = FaultSlipConstraints2(cc)
-  #sp = slp.screenPointsX(wp)
-  sp = None
+  sp = slp.screenPointsX(wp)
+  #sp = None
   FaultCurve.getFlsImage(cc,fl)
   gx = readImage2D(n1,n2,gxfile)
   sm = readImage2D(n1,n2,smfile)
@@ -251,12 +252,27 @@ def goVelocity():
   vi = sqrt(vi)
   vp = ve.predictVelocity(vi)
   plot2(s1,s2,wp)
-  plot2(s1,s2,gx,g=pk,cmin=1.4,cmax=2.3,cmap=jetFill(1.0))
-  plot2(s1,s2,gx,g=vp,cmin=1.4,cmax=2.3,cmap=jetFill(1.0))
-  plot2(s1,s2,gx,g=vi,cmin=1.6,cmax=2.8,cmap=jetFill(1.0))
+  clab = "Velocity (km/s)"
+  clab1 = "Picked migration velocity (km/s)"
+  clab2 = "Predicted migration velocity (km/s)"
+  clab3 = "Interval velocity (km/s)"
+  plot2(s1,s2,gx,g=pk,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab1,png="pk")
+  plot2(s1,s2,gx,g=vp,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab2,png="vp")
+  plot2(s1,s2,gx,g=vi,cmin=1.6,cmax=2.7,cmap=jetFill(1.0),label=clab3,png="vi")
+  plot2(s1,s2,gx,g=vi,cmin=1.6,cmax=2.7,cmap=jetFill(0.6),label=clab3,png="seisvi")
 
-
-
+def goShapping():
+  dix = readImage2D(n1,n2,"dix")
+  shp = readImage2D(n1,n2,"shp")
+  shpp = readImage2D(n1,n2,"shpp")
+  gx = readImage2D(n1,n2,gxfile)
+  clab1 = "Picked migration velocity (km/s)"
+  clab2 = "Predicted migration velocity (km/s)"
+  clab3 = "Interval velocity (km/s)"
+  plot2(s1,s2,gx,g=dix,cmin=1.6,cmax=2.7,cmap=jetFill(1.0),label=clab3,png="dix")
+  plot2(s1,s2,gx,g=shp,cmin=1.6,cmax=2.7,cmap=jetFill(1.0),label=clab3,png="shp")
+  plot2(s1,s2,gx,g=shp,cmin=1.6,cmax=2.7,cmap=jetFill(0.6),label=clab3,png="seishp")
+  plot2(s1,s2,gx,g=shpp,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab2,png="shpp")
 def like(x):
   n2 = len(x)
   n1 = len(x[0])
@@ -332,7 +348,7 @@ def plotTensors(g,s1,s2,d=None,dscale=1,ne=20,mk=None,cmin=0,cmax=0,png=None):
     tv = TensorsView(s1,s2,d)
     tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
     tv.setLineColor(Color.YELLOW)
-    tv.setLineWidth(2)
+    tv.setLineWidth(3)
     if(mk):
       tv.setEllipsesDisplayed(mk)
     else:
