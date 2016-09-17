@@ -33,6 +33,31 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,400,1500
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="australia":
+    print "setupForDataset: australia"
+    seismicDir = _datdir+"xavier/australia/"
+    n1,n2,n3 = 1640,1065,1905
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.004,1,2 # (s,tracet,trace)
+    #f1,f2,f3 = 128,0,0 (sample,trace,trace)
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="bahamas":
+    print "setupForDataset: bahamas"
+    seismicDir = _datdir+"xavier/bahamas/"
+    n1,n2,n3 = 280,2359,4320
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #f1,f2,f3 = 100,0.0,0.0 (sample,trace,trace)
+
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="wasson":
+    print "setupForDataset: bahamas"
+    seismicDir = _datdir+"xavier/wasson/"
+    n1,n2,n3 = 381,2359,4320
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="nathan":
     print "setupForDataset: nathan"
     seismicDir = _datdir+"nathan/"

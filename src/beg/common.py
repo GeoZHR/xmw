@@ -20,10 +20,10 @@ from edu.mines.jtk.util.ArrayMath import *
 
 from util import *
 #from uff  import *
-from beg import *
 from hv import *
 from he import *
-from mef import *
+from sso import *
+from beg import *
 
 #############################################################################
 # Run the function main on the Swing thread

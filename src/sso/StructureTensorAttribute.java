@@ -224,6 +224,44 @@ public class StructureTensorAttribute {
     solveEigenproblems(g11,g12,g13,g22,g23,g33,ep,el);
   }
 
+  public void applyForPlanar( float[][][] x,float[][][] ep) {
+    // Gradient.
+    int n3 = x.length;
+    int n2 = x[0].length;
+    int n1 = x[0][0].length;
+    float[][][] g1 = ep;
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    float[][][] xs = new float[n3][n2][n1];
+    if (_scaleG>0.0f) {
+      _et3.setEigenvalues(0.001f,1.0f,1.0f);
+      _lsf.apply(_et3,_scaleG,x,xs);
+      computeOrientGradientX(xs,g1,g2,g3);
+    } else {
+      computeOrientGradientX(x,g1,g2,g3);
+    }
+
+    // Gradient products.
+    float[][][] g11 = g1;
+    float[][][] g22 = g2;
+    float[][][] g33 = g3;
+    float[][][] g12 = xs;
+    float[][][] g13 = new float[n3][n2][n1];
+    float[][][] g23 = new float[n3][n2][n1];
+    computeGradientProducts(g1,g2,g3,g11,g12,g13,g22,g23,g33);
+    
+    float[][][] h = new float[n3][n2][n1];
+    float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+    _et3.setEigenvalues(_au,_av,_aw);
+    for (float[][][] g:gs) {
+      _lsf.applySmoothS(g,h);
+      _lsf.apply(_et3,_scale,h,g);
+    }
+    // Compute eigenvectors, eigenvalues, and outputs that depend on them.
+    solveEigenproblems(g11,g12,g13,g22,g23,g33,ep);
+  }
+
+
   public void applyForLinear(
     float[][][] x,float[][][] el)
   {
@@ -763,6 +801,45 @@ public class StructureTensorAttribute {
       }
     });
   }
+  private void solveEigenproblems(
+    final float[][][] g11, final float[][][] g12, final float[][][] g13,
+    final float[][][] g22, final float[][][] g23, final float[][][] g33,
+    final float[][][] ep)
+  {
+    final int n3 = g11.length;
+    final int n2 = g11[0].length;
+    final int n1 = g11[0][0].length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        double[][] a = new double[3][3];
+        double[][] z = new double[3][3];
+        double[] e = new double[3];
+        for (int i2=0; i2<n2; ++i2) {
+          for (int i1=0; i1<n1; ++i1) {
+            a[0][0] = g11[i3][i2][i1];
+            a[0][1] = g12[i3][i2][i1];
+            a[0][2] = g13[i3][i2][i1];
+            a[1][0] = g12[i3][i2][i1];
+            a[1][1] = g22[i3][i2][i1];
+            a[1][2] = g23[i3][i2][i1];
+            a[2][0] = g13[i3][i2][i1];
+            a[2][1] = g23[i3][i2][i1];
+            a[2][2] = g33[i3][i2][i1];
+            Eigen.solveSymmetric33(a,z,e);
+            float eai = (float)e[0];
+            float ebi = (float)e[1];
+            float eci = (float)e[2];
+            if (eci<0.0f)eci = 0.0f;
+            if (ebi<eci) ebi = eci;
+            if (eai<ebi) eai = ebi;
+            float esi = (eai>0.0f)?1.0f/eai:1.0f;
+            ep[i3][i2][i1] = (eai-ebi)*esi;
+          }
+        }
+      }
+    });
+  }
+
 
   private void solveEigenproblems(
     final float[][][] g11, final float[][][] g12, final float[][][] g13,

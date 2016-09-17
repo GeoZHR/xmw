@@ -111,6 +111,7 @@ public class FaultSlipper {
     extrapolateAlignmentErrors(lmin,lmax,cab);
     computeShifts(dw,cab,clr);
     clearErrors(skin);
+    System.out.println("test!");
     for (int nsmooth=0; nsmooth<1; ++nsmooth) // TODO: 2?
       smoothShifts(skin);
     computeDipSlips(skin);

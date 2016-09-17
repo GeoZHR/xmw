@@ -50,7 +50,6 @@ else
       disp('Check if the memory for traces (keyword "max_mem") can be increased.')
    end
    fclose(fid);
-  
    error('Abnormal termination.')
 end
 
