@@ -147,7 +147,7 @@ def getLogs():
   #return welllogs
   logs = []
   for il in range(len(welllogs)):
-    if abs(il-3)>0:
+    if abs(il-4)>0:
       logs.append(welllogs[il])
   return logs
 

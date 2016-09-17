@@ -18,10 +18,10 @@ from ad import *
 from sso import *
 from util import *
 
-pngDir = "../../../png/ad/fed/3d/"
+pngDir = "../../../png/ad/fed/f3d/"
 pngDir = None
 
-seismicDir = "../../../data/seis/ad/fed/3d/"
+seismicDir = "../../../data/seis/ad/fed/clyde/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
 fxfile = "fx"
 gxlfile = "gxl"
@@ -31,19 +31,24 @@ ssnfile = "ssn"
 gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
-n1,n2,n3 = 180,880,500
+n1,n2,n3 = 400,620,300
 #n1,n2,n3 = 426,800,830
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
+
 def main(args):
   #goLinearDiffusion()
   #goLocalSmoothingFilter()
   #goStratigraphyOrientedDiffusion()
-  goNonlinearDiffusion()
-  #goFaultChannelSmooth()
+  #goNormalPlanar()
+  #goStratigraphyOrientedDiffusionX()
+  #goTest()
+  #goStratigraphyOrientedDiffusionX()
+  #goNonlinearDiffusion()
+  goFaultChannelSmooth()
   #goSemblance()
   #goSemblanceHale()
   #goCovariance()
@@ -99,11 +104,11 @@ def goLocalSmoothingFilter():
 def goStratigraphyOrientedDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=2,4
+    sig1,sig2=4,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     ets.setEigenvalues(0.0001,0.0001,1.0000)
-    sig = 5
+    sig = 10
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
@@ -111,22 +116,23 @@ def goStratigraphyOrientedDiffusion():
     writeImage(gxsfile,gx)
   else:
     gx = readImage(gxsfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5)
   plot3(gx,cmin=-1.0,cmax=1.0)
   plot3(fx,cmin=-1.0,cmax=1.0)
 
 def goNonlinearDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=2,4
+    sig1,sig2=6,2
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
-    sig = 10
+    ets.setEigenvalues(0.0001,1.0,1.0)
+    sig = 5
     cycle,limit=3,0.5
-    lbd = 0.05
+    lbd = 0.15
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
-    sc, gx = fed.apply(sig,lbd,0.5,ets,fx)
+    sc, gx = fed.apply(sig,lbd,ets,fx)
     writeImage(gxnfile,gx)
     writeImage(scnfile,sc)
   else:
@@ -139,12 +145,11 @@ def goNonlinearDiffusion():
 
 def goFaultChannelSmooth():
   sc = readImage(scnfile)
-  fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2,sig3=2,4,4
-    lof = LocalOrientFilter(sig1,sig2,sig3)
-    ets = lof.applyForTensors(fx)
-    ets.setEigenvalues(0.5,0.0001,1.0)
+    sig1,sig2=12,4
+    lof = LocalOrientFilterW(sig1,sig2)
+    ets = lof.applyForTensors(sc)
+    ets.setEigenvalues(0.05,1.0,1.0)
     sig = 5
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
@@ -156,8 +161,14 @@ def goFaultChannelSmooth():
   else:
     sc = readImage(scnfile)
     ss = readImage(ssnfile)
+  ss = pow(ss,4)
+  ss = sub(ss,min(ss))
+  ss = div(ss,max(ss))
+  #fed = FastExplicitDiffusion()
+  #st = fed.thin(2,1,0.8,ss) 
   plot3(sc,cmin=0.0,cmax=1.0)
   plot3(ss,cmin=0.0,cmax=1.0)
+  #plot3(st,cmin=0.0,cmax=1.0)
 
 def goShapeSemblance():
   fx = readImage(fxfile)
@@ -424,37 +435,26 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
+  ipg.setSlices(262,80,200)
   if cbar:
-    cbar.setWidthMinimum(120)
-  #ipg.setSlices(153,760,450)
-  ipg.setSlices(91,760,450)
-  #ipg.setSlices(85,5,102)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
-  if cbar:
-    sf.setSize(837,700)
+    sf.setSize(1037,700)
   else:
-    sf.setSize(700,700)
-  view = sf.getOrbitView()
-  #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
+    sf.setSize(800,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
+  ov = sf.getOrbitView()
   zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
-  view.setAxesScale(1.0,1.0,zscale)
-  view.setScale(1.72)
-  #view.setAzimuth(75.0)
-  #view.setAzimuth(-75.0)
-  view.setAzimuth(238.0)
-  view.setElevation(45)
-  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  view.setTranslate(Vector3(0.05,-0.2,0.06))
-  sf.viewCanvas.setBackground(sf.getBackground())
-  sf.setSize(850,700)
-
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.6)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.0,-0.08,-0.06))
+  ov.setAzimuthAndElevation(-60.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
-
 #############################################################################
 # Run the function main on the Swing thread
 import sys

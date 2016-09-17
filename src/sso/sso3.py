@@ -111,6 +111,7 @@ def goHorizonS():
   k1,k2,k3=76,386,399
   hd = HorizonDisplay()
   cs = hd.horizonCurves(k2,k3,hs)
+  plot3(gx,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="gx3d")
   plot3(gx,hs=cs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="cvs")
 
 def goFirstLook():

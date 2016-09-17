@@ -21,9 +21,9 @@ from util import *
 pngDir = "../../../png/sso/3d/crf/"
 pngDir = None
 
-seismicDir = "../../../data/seis/sso/3d/crf/"
-fxfile = "fxSub"
-epfile = "epSub"
+seismicDir = "../../../data/seis/sso/3d/sta/f3d/"
+gxfile = "gx"
+epfile = "ep"
 p2file = "p2"
 p3file = "p3"
 ellfile = "ell"
@@ -38,41 +38,33 @@ semfile = "smSub"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 210,920,825
+n1,n2,n3 = 65,380,591
+
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 k1 = 38
 k1 = 51
 k1 = 110
 
 def main(args):
   #goSeis()
-  #goSta()
+  goSta()
   #goSlope()
   #goSemblance()
   #goSub()
   #go2dPlots()
-  goSubPlots()
+  #goSubPlots()
 def goSubPlots():
   fx = readImage("fxSub")
-  eps = readImage("epSub")
-  #epl = readImage("epl")
+  ep = readImage("epSub")
   sm = readImage("smSub")
   fs  = copy(n1,450,n3,0,0,0,fx)
-  ess  = copy(n1,450,n3,0,0,0,eps)
-  #els  = copy(n1,450,n3,0,0,0,epl)
+  es  = copy(n1,450,n3,0,0,0,ep)
   ss  = copy(n1,450,n3,0,0,0,sm)
-  ss = pow(ss,1.2)
-  ss = sub(ss,min(ss))
-  ss = div(ss,max(ss))
-  ess = pow(ess,1.2)
-  ess = sub(ess,min(ess))
-  ess = div(ess,max(ess))
-
   plot3s(fs,k1=k1,clab="Amplitude",cint=0.2,png="fxSub"+str(k1))
-  plot3s(ess,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epsSub"+str(k1))
-  #plot3s(els,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eplSub"+str(k1))
+  plot3s(es,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epSub"+str(k1))
   plot3s(ss,k1=k1,cmin=0.2,cmax=1.0,clab="Coherence",cint=0.1,png="smSub"+str(k1))
 def go2dPlots():
   fx = readImage("fxSub")
@@ -102,29 +94,28 @@ def goSeis():
   plot3(fx,k1=k1,clab="Amplitude",png="fx"+str(k1))
   plot3(ep,k1=k1,cmin=0.1,cmax=1.0,clab="Planarity",png="eps"+str(k1))
 def goSta():
-  fx = readImage(fxfile)
+  gx = readImage(gxfile)
   if not plotOnly:
     ep = zerofloat(n1,n2,n3)
     el = zerofloat(n1,n2,n3)
-    et = readTensors(etlfile)
+    lof = LocalOrientFilter(6,4)
+    et = lof.applyForTensors(gx)
     sta = StructureTensorAttribute(et,20)
-    sta.setEigenvalues(1.0,0.01,0.6)
-    #sta.updateTensors(4,fx)
-    sta.applyForPlanarLinear(fx,ep,el)
+    sta.setEigenvalues(1.0,0.05,0.4)
+    sta.applyForPlanarLinear(gx,ep,el)
     writeImage(epsfile,ep)
     writeImage(elsfile,el)
-    writeTensors(etsfile,et)
   else:
-    #ep = readImage(epsfile)
-    ep = readImage("epSub")
+    ep = readImage(epsfile)
     #et = readTensors(etsfile)
-  plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
+  plot3f(gx)
+  plot3f(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
 
 def goSlope():
   print "goSlope..."
   if not plotOnly:
     sig1,sig2=8,2
-    fx = readImage(fxfile)
+    fx = readImage(gxfile)
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
@@ -135,7 +126,7 @@ def goSlope():
     writeImage(eplfile,ep)
   else:
     ep = readImage(eplfile)
-  plot3(ep,cmin=0.2,cmax=1.0)
+  plot3f(ep,cmin=0.2,cmax=1.0)
 def goSemblance():
   print "goSemblance..."
   fx = readImage(fxfile)
@@ -247,6 +238,179 @@ def addColorBar(frame,clab=None,cint=None):
   cbar.setBackground(Color.WHITE)
   frame.add(cbar,BorderLayout.EAST)
   return cbar
+
+def plot3f(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          xyz=None,cells=None,skins=None,smax=0.0,slices=None,
+          links=False,curve=False,trace=False,htgs=None,fbs=None,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      #ipg.setClips(-2.0,2.0)
+      ipg.setClips(-2.0,1.5) # use for subset plots
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-2.0,1.5)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120)
+  if xyz:
+    pg = PointGroup(0.2,xyz)
+    ss = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.YELLOW)
+    ss.add(cs)
+    pg.setStates(ss)
+    #ss = StateSet()
+    #ps = PointState()
+    #ps.setSize(5.0)
+    #ss.add(ps)
+    #pg.setStates(ss)
+    sf.world.addChild(pg)
+  if cells:
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    cmap = ColorMap(0.0,1.0,ColorMap.JET)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
+    qg = QuadGroup(xyz,uvw,rgb)
+    qg.setStates(ss)
+    sf.world.addChild(qg)
+  if htgs:
+    for htg in htgs:
+      sf.world.addChild(htg)
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.MAGENTA)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if skins:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setLocalViewer(True)
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    if not smax:
+      ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    sg.setStates(ss)
+    size = 2.0
+    if links:
+      size = 0.65 
+      ls = LineState()
+      ls.setWidth(1.5)
+      ls.setSmooth(True)
+      ss.add(ls)
+    ct = 0
+    for skin in skins:
+      if smax>0.0: # show fault throws
+        cmap = ColorMap(-smax,smax,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
+      else: # show fault likelihood
+        cmap = ColorMap(0.15,0.8,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
+      qg = QuadGroup(xyz,uvw,rgb)
+      qg.setStates(None)
+      sg.addChild(qg)
+      if curve or trace:
+        cell = skin.getCellNearestCentroid()
+        if curve:
+          xyz = cell.getFaultCurveXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+        if trace:
+          xyz = cell.getFaultTraceXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+      if links:
+        if ct==0:
+          r,g,b=0,0,0
+        if ct==1:
+          r,g,b=0,0,1
+        if ct==2:
+          r,g,b=0,1,1
+        if ct==3:
+          #r,g,b=0.627451,0.12549,0.941176
+          r,g,b=1,1,1
+        r,g,b=0,0,1
+        xyz = skin.getCellLinksXyz()
+        #rgb = skin.getCellLinksRgb(r,g,b,xyz)
+        #lg = LineGroup(xyz,rgb)
+        lg = LineGroup(xyz)
+        sg.addChild(lg)
+        #ct = ct+1
+    sf.world.addChild(sg)
+  ipg.setSlices(106,80,207)
+  ipg.setSlices(56,25,436)
+  #ipg.setSlices(115,25,167)
+  if cbar:
+    sf.setSize(987,720)
+  else:
+    sf.setSize(850,720)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
+  ov = sf.getOrbitView()
+  zscale = 0.3*max(n2*d2,n3*d3)/(n1*d1)
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.4)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.0,0.20,0.12))
+  ov.setAzimuthAndElevation(-56.0,35.0)
+  #ov.setAzimuthAndElevation(-56.0,40.0)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 def plot3s(f,g=None,et=None,ep=None,k1=120,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):

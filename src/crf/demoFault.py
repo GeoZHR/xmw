@@ -92,6 +92,8 @@ def main(args):
   #goSetFaultImages()
   #goStrikeMask()
 
+  gx = readImage(gxfile)
+  plot3(gx)
 
 def goStrikeMask():
   gx = readImage(gxfile)

@@ -14,113 +14,113 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from ad import *
-from sso import *
+from ssr import *
 from util import *
 
-pngDir = "../../../png/sso/3d/sta/"
 pngDir = None
+pngDir = "../../../png/ssr/semblance/"
 
-seismicDir = "../../../data/seis/sso/3d/sta/"
-fxfile = "fs"
-ellfile = "ell"
-elsfile = "els"
-eplfile = "epl"
-epsfile = "eps"
-etlfile = "etl"
-etsfile = "ets"
-gxlfile = "gxl"
-gxsfile = "gxs"
-semfile = "sem"
+seismicDir = "../../../data/seis/ssr/semblance/"
+#seismicDir = "../../../data/seis/beg/jake/subs/"
+fxfile = "gx"
+snfile = "sn"
+sdfile = "sd"
+smfile = "sm"
+epfile = "ep"
+p2file = "p2"
+p3file = "p3"
+smhfile = "smh"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 140,880,500
+#n1,n2,n3 = 426,800,830
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
-k1 = 51
-k1 = 56
+plotOnly = False
 
 def main(args):
-  #goLof()
-  #goSta()
-  #goSemblance()
-  goValley()
-def goValley():
-  fx = readImage(fxfile)
-  fs = copy(45,220,25,480,fx[246])
-  c1 = Sampling(45)
-  c2 = Sampling(220)
-  plot2(c1,c2,fs,cmin=-1.5,cmax=1.5,png="seis246")
-def goLof():
+  #goPlanarity()
+  #goSlopes()
+  goShapeSemblance()
+  #goSemblanceHale()
+def goPlanarity():
+  sig1,sig2=4,2
   fx = readImage(fxfile)
   if not plotOnly:
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    el = zerofloat(n1,n2,n3)
-    sig1,sig2=8,2
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
+    lof = LocalOrientFilter(sig1,sig2,sig2)
     lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
-    lof.applyForInlineLinear(fx,u1,u2,u3,el)
-    writeImage(eplfile,ep)
-    writeImage(ellfile,el)
-    writeTensors(etlfile,et)
+    writeImage(epfile,ep)
   else:
-    ep = readImage(eplfile)
-    el = readImage(ellfile)
-  ep = pow(ep,2.5)
-  ep = sub(ep,min(ep))
-  ep = div(ep,max(ep))
-  plot3(fx,k1=k1,clab="Amplitude",cint=0.4,png="fx"+str(k1))
-  plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epl"+str(k1))
-  plot3(el,k1=k1,cmin=0.0,cmax=0.4,clab="Linearity",cint=0.1,png="ell"+str(k1))
-def goSta():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    ep = zerofloat(n1,n2,n3)
-    el = zerofloat(n1,n2,n3)
-    et = readTensors(etlfile)
-    sta = StructureTensorAttribute(et,20)
-    sta.setEigenvalues(1.0,0.01,0.6)
-    #sta.updateTensors(4,fx)
-    sta.applyForPlanarLinear(fx,ep,el)
-    writeImage(epsfile,ep)
-    writeImage(elsfile,el)
-    writeTensors(etsfile,et)
-  else:
-    ep = readImage(epsfile)
-    el = readImage(elsfile)
-    #et = readTensors(etsfile)
-  ep = pow(ep,2.5)
-  ep = sub(ep,min(ep))
-  ep = div(ep,max(ep))
-  plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
-  plot3(el,k1=k1,cmin=0.0,cmax=0.4,clab="Linearity",cint=0.1,png="els"+str(k1))
+    ep = readImage(epfile)
+  plot3(fx)
+  plot3(ep,cmin=0.2,cmax=1.0,png="ep")
 
-def goSemblance():
+def goSlopes():
+  sig1,sig2=4,2
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=8,2
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
     lsf = LocalSlopeFinder(sig1,sig2,sig2,5)
     lsf.findSlopes(fx,p2,p3,ep)
-    cov = Covariance()
-    em,es=cov.covarianceEigen(8,p2,p3,fx)
-    print "done..."
-    sem = div(em,es)
-    writeImage(semfile,sem)
+    writeImage(p2file,p2)
+    writeImage(p3file,p3)
+    #writeImage(epfile,ep)
   else:
-    sem = readImage(semfile)
-  sem = pow(sem,2.0)
-  sem = sub(sem,min(sem))
-  sem = div(sem,max(sem))
-  plot3(sem,k1=k1,cmin=0.2,cmax=1.0,clab="Semblance",cint=0.1,png="sem"+str(k1))
+    ep = readImage(epfile)
+  plot3(fx)
+  plot3(ep,cmin=0.2,cmax=1.0,png="ep")
+  plot3(fx,g=p2,cmin=-0.5,cmax=0.5,cmap=jetFill(0.6))
+
+def goShapeSemblance():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=4,2
+    sn = readImage(snfile)
+    sd = readImage(sdfile)
+    ep = readImage(epfile)
+    lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
+    sm = Semblance()
+    #sd = mul(fx,fx)
+    #sn = sm.smoothVW(2,et,fx)
+    #sd = sm.smoothVW(2,et,sd)
+    #sn = mul(sn,sn)
+    #p2 = readImage(p2file)
+    #p3 = readImage(p3file)
+    #sn,sd=sm.applyForSemblanceNumDen(p2,p3,fx)
+    #writeImage(snfile,sn)
+    #writeImage(sdfile,sd)
+    sn = readImage(snfile)
+    sd = readImage(sdfile)
+    wp = sub(1,ep)
+    et.setEigenvalues(0.2,0.0001,1.0000)
+    sem = sm.shapeSemblance(et,wp,sn,sd)
+    writeImage(smfile,sem)
+  else:
+    sem = readImage(smfile)
+  plot3(fx,png="seis")
+  plot3(sem,cmin=0.2,cmax=1.0,png="semShp")
+
+def goSemblanceHale():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    sig1,sig2=2,4
+    lof = LocalOrientFilter(sig1,sig2)
+    et = lof.applyForTensors(fx)
+    lsf = LocalSemblanceFilter(2,2)
+    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,et,fx)
+    writeImage(smhfile,sem)
+  else:
+    sem = readImage(smhfile)
+  plot3(sem,cmin=0.2,cmax=1.0,png="semh")
+
 
 def normalize(ss):
   sub(ss,min(ss),ss)
@@ -155,26 +155,6 @@ def writeImage(basename,image):
   aos.close()
   return image
 
-from org.python.util import PythonObjectInputStream
-def readTensors(name):
-  """
-  Reads tensors from file with specified basename; e.g., "tpet".
-  """
-  fis = FileInputStream(seismicDir+name+".dat")
-  ois = PythonObjectInputStream(fis)
-  tensors = ois.readObject()
-  fis.close()
-  return tensors
-def writeTensors(name,tensors):
-  """
-  Writes tensors to file with specified basename; e.g., "tpet".
-  """
-  fos = FileOutputStream(seismicDir+name+".dat")
-  oos = ObjectOutputStream(fos)
-  oos.writeObject(tensors)
-  fos.close()
-
-
 #############################################################################
 # graphics
 
@@ -207,13 +187,13 @@ def addColorBar(frame,clab=None,cint=None):
   cbar = ColorBar(clab)
   if cint:
     cbar.setInterval(cint)
-  cbar.setFont(Font("Arial",Font.PLAIN,24)) # size by experimenting
+  cbar.setFont(Font("Arial",Font.PLAIN,32)) # size by experimenting
   cbar.setWidthMinimum
   cbar.setBackground(Color.WHITE)
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,et=None,ep=None,k1=120,
+def plot3(f,g=None,k1=51,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -247,11 +227,6 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
-  if et:
-    node = TensorEllipsoids(s1,s2,s3,et,ep)
-    states = StateSet.forTwoSidedShinySurface(Color.YELLOW);
-    node.setStates(states)
-    sf.world.addChild(node)
   if cbar:
     cbar.setWidthMinimum(85)
   ipg.setSlices(k1,857,450)
@@ -274,40 +249,6 @@ def plot3(f,g=None,et=None,ep=None,k1=120,
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
-def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None): 
-  f1 = s1.getFirst()
-  f2 = s2.getFirst()
-  d1 = s1.getDelta()
-  d2 = s2.getDelta()
-  n1 = s1.getCount()
-  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
-  panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE)
-  #panel.setVInterval(0.1)
-  #panel.setHInterval(1.0)
-  panel.setHLabel("Crossline (traces)")
-  panel.setVLabel("Samples")
-  pxv = panel.addPixels(0,0,s1,s2,f);
-  pxv.setColorModel(ColorMap.GRAY)
-  if cmin and cmax:
-    pxv.setClips(cmin,cmax)
-  #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  #cb = panel.addColorBar();
-  if cint:
-    cb.setInterval(cint)
-  if clab:
-    cb.setLabel(clab)
-  #panel.setColorBarWidthMinimum(50)
-  moc = panel.getMosaic();
-  frame = PlotFrame(panel);
-  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
-  #frame.setTitle("normal vectors")
-  frame.setVisible(True);
-  #frame.setSize(1020,700) #for f3d
-  frame.setSize(500,325) #for poseidon
-  #frame.setFontSize(13)
-  if pngDir and png:
-    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread

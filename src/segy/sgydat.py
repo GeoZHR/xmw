@@ -11,7 +11,10 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
+<<<<<<< HEAD
   goAustralia()
+=======
+>>>>>>> 75baa29ec5e0e4369c5a0450272190bfef752f29
   #goF3d()
   #goHongliu()
   #goF3dUnc()
@@ -28,6 +31,7 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
+<<<<<<< HEAD
 def goAustralia():
   firstLook = False # fast, does not read all trace headers
   secondLook = True # slow, must read all trace headers
@@ -37,6 +41,51 @@ def goAustralia():
   sgyfile = basedir+"Austalia_migration_filtered.bri.sgy"
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,1167,4200,5325,1735,2657
+=======
+  goWasson()
+def goWasson():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = /data/seis/f3d/f3draw.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 699003060
+  number of traces = 600515
+  format = 3 (2-byte two's complement integer)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   300, i2max =  1250 (inline indices)
+    i3min =   100, i3max =   750 (crossline indices)
+    xmin =  605.416700, xmax =  629.576300 (x coordinates, in km)
+    ymin = 6073.556400, ymax = 6090.463200 (y coordinates, in km)
+  grid sampling:
+    n1 =   462 (number of samples per trace)
+    n2 =   951 (number of traces in inline direction)
+    n3 =   651 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.025000 (inline sampling interval, in km)
+    d3 = 0.024999 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   300, i3min =   100, x =  605.835500, y = 6073.556400
+    i2max =  1250, i3min =   100, x =  629.576300, y = 6074.219900
+    i2min =   300, i3max =   750, x =  605.381800, y = 6089.799700
+    i2max =  1250, i3max =   750, x =  629.122600, y = 6090.463200
+  grid azimuth: 88.40 degrees
+  ****** end of SEG-Y file info ******
+  good subset with no dead traces
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
+  n1,n2,n3 = 462,951,591
+  ***************************************************************************
+  """
+  firstLook = True # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
+  basedir = "../../../data/seis/beg/xavier/wasson/"
+  sgyfile = basedir+"mig32_oxy0_2000.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,750
+>>>>>>> 75baa29ec5e0e4369c5a0450272190bfef752f29
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
   if firstLook:
@@ -49,13 +98,22 @@ def goAustralia():
     plot23(si)
     plotXY(si)
   if writeImage:
+<<<<<<< HEAD
     scale = 1.00
+=======
+    scale = 1
+    #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+>>>>>>> 75baa29ec5e0e4369c5a0450272190bfef752f29
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
   if showImage:
     x = readImage(datfile,n1,n2,n3)
+<<<<<<< HEAD
     gain(100,x)
     show3d(x,clip=max(x)/2)
+=======
+    show3d(x,clip=1.0)
+>>>>>>> 75baa29ec5e0e4369c5a0450272190bfef752f29
 
 def goParihaka():
   """

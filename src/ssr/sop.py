@@ -1,7 +1,7 @@
 """
-Demonstrate velocity estimation
+Demonstrate structure-oriented processing
 Author: Xinming Wu, Colorado School of Mines
-Version: 2016.07.20
+Version: 2016.09.16
 """
 from utils import *
 setupForSubset("shapping")
@@ -31,101 +31,125 @@ upperLikelihood = 0.85
 minSize = 100
 
 minThrow = 0.0
-maxThrow = 30.0
+maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 plotOnly = False
-pngDir = "../../../png/ssr/shapping/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goScan()
-  #goThin()
-  #goFaultCurve()
-  #goFaultThrow()
-  #goUnfault()
-  #goTensors()
-  goVelocity()
-  #goShapping()
-def goScan():
-  print "goScan ..."
-  gx = readImage2D(n1,n2,gxfile)
-  if not plotOnly:
-    gx = FaultScanner2.taper(10,0,gx)
-    fs = FaultScanner2(sigmaTheta)
-    sig1,sig2,smooth=16.0,2.0,4.0
-    fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "ft min =",min(ft)," max =",max(ft)
-    writeImage(flfile,fl)
-    writeImage(ftfile,ft)
-  else:
-    fl = readImage2D(n1,n2,flfile)
-    ft = readImage2D(n1,n2,ftfile)
-  '''
-  plot2(s1,s2,gx,g=fl,cmin=0.20,cmax=1,cmap=jetRamp(1.0),
-      label="Fault likelihood",png="fl")
-  plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
-      label="Fault dip (degrees)",png="ft")
-  '''
+  goTensors()
+  goGaussianSmoothing()
+  goIsotropicDiffusion()
+  goAnisotropicDiffusion()
+  #goVelocityInversion()
 
-def goThin():
-  print "goThin ..."
+def goTensors():
+  print "goTensors ..."
   gx = readImage2D(n1,n2,gxfile)
-  if not plotOnly:
-    fl = readImage2D(n1,n2,flfile)
-    ft = readImage2D(n1,n2,ftfile)
-    fs = FaultScanner2(sigmaTheta)
-    flt,ftt = fs.thin([fl,ft])
-    for i2 in range(n2):
-      for i1 in range(n1):
-        if ((flt[i2][i1]<0.75) | (i1<70)):
-          flt[i2][i1] = 0.01
-    writeImage(fltfile,flt)
-    writeImage(fttfile,ftt)
-  else:
-    flt = readImage2D(n1,n2,fltfile)
-    ftt = readImage2D(n1,n2,fttfile)
+  fl = readImage2D(n1,n2,fltfile)
+  el = zerofloat(n1,n2)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  lof = LocalOrientFilterP(8,1)
+  et = lof.applyForTensors(gx)
+  lof.applyForNormalLinear(gx,u1,u2,el)
+  eu = zerofloat(n1,n2)
+  ev = zerofloat(n1,n2)
+  et.getEigenvalues(eu,ev)
+  eu=clip(0.005,max(eu),eu)
+  ev=clip(0.005,max(ev),ev)
+  et.setEigenvalues(eu,ev)
+  et.invertStructure(1.0,1.0)
+  et.getEigenvalues(eu,ev)
+  #plotTensors(gx,s1,s2,d=et,dscale=20,mk=mk,cmin=-2,cmax=2,png="tensors")
   plot2(s1,s2,gx)
-  plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
-  plot2(s1,s2,gx,g=abs(ftt),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
-      label="Fault dip (degrees)",png="ft")
+  plotTensors(gx,s1,s2,d=et,dscale=1,ne=30,cmin=-2,cmax=2,png="tensors")
+  plot2(s1,s2,el,cmin=0.1,cmax=1.0)
 
-def goFaultCurve():
+def goGaussianSmoothing():
+  print "goGaussianSmoothing ..."
   gx = readImage2D(n1,n2,gxfile)
-  fl = readImage2D(n1,n2,flfile)
-  ft = readImage2D(n1,n2,ftfile)
-  for i2 in range(n2):
-    for i1 in range(70):
-      fl[i2][i1] = 0.01
-  fc = FaultCurver()
-  fc.setMinCurveSize(minSize)
-  fc.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  ps = fc.findPoints([fl,ft])
-  cs = fc.findCurves(ps)
-  ftt = zerofloat(n1,n2)
-  flt = zerofloat(n1,n2)
-  FaultCurve.getFtImage(cs,ftt)
-  #cc = [cs[1],cs[3],cs[7],cs[9],cs[11],cs[14],cs[15],cs[16],cs[17]]
-  FaultCurve.getFlImage(cs,flt)
-  plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
-  writeImage(fltfile,flt)
-  '''
-  k=0
-  for ci in cs:
-    FaultCurve.getFlImage([ci],flt)
-    plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),label=str(k))
-    k=k+1
-  print min(ftt)
-  print max(ftt)
+  gs = zerofloat(n1,n2)
+  rgf = RecursiveGaussianFilter(10)
+  rgf.apply00(gx,gs)
   plot2(s1,s2,gx)
-  plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
-  plot2(s1,s2,gx,g=abs(ftt),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
-      label="Fault dip (degrees)",png="ft")
-  '''
+  plot2(s1,s2,gs)
+def goIsotropicDiffusion():
+  print "goIsotropicDiffusion ..."
+  gx = readImage2D(n1,n2,gxfile)
+  gs = zerofloat(n1,n2)
+  lof = LocalOrientFilterP(4,2)
+  et = lof.applyForTensors(gx)
+  et.setEigenvalues(1.0,1.0)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(et,400,gx,gs)
+  plot2(s1,s2,gx)
+  plot2(s1,s2,gs)
+
+def goAnisotropicDiffusion():
+  print "goAnisotropicDiffusion ..."
+  gx = readImage2D(n1,n2,gxfile)
+  g1 = zerofloat(n1,n2)
+  g2 = zerofloat(n1,n2)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  lof = LocalOrientFilterP(4,2)
+  lof.applyForNormalLinear(gx,u1,u2,el)
+  el = pow(el,8)
+  et = lof.applyForTensors(gx)
+  et.setEigenvalues(0.001,1.0)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(et,10,gx,g1)
+  lsf.apply(et,10,el,gx,g2)
+  plot2(s1,s2,gx)
+  plot2(s1,s2,g1)
+  plot2(s1,s2,g2)
+
+def goVelocityInversion():
+  cc = goFaultThrow()
+  fl = zerofloat(n1,n2)
+  wp = fillfloat(1.0,n1,n2)
+  slp = FaultSlipConstraints2(cc)
+  sp = slp.screenPointsX(wp)
+  #sp = None
+  FaultCurve.getFlsImage(cc,fl)
+  gx = readImage2D(n1,n2,gxfile)
+  sm = readImage2D(n1,n2,smfile)
+  pk = readImage2D(n1,n2,pkfile)
+  lof = LocalOrientFilterP(4,2)
+  et = lof.applyForTensors(gx)
+  eu = zerofloat(n1,n2)
+  ev = zerofloat(n1,n2)
+  et.getEigenvalues(eu,ev)
+  eu=clip(0.005,max(eu),eu)
+  ev=clip(0.005,max(ev),ev)
+  et.setEigenvalues(eu,ev)
+  et.invertStructure(1.0,1.0)
+  sm = clip(0.0,1.0,sm)
+  sm = pow(sm,2)
+  sm = mul(sm,wp)
+  ve = VelocityEstimator(10,10)
+  ve.setIterations(0.00001,400)
+  ve.setTensors(et)
+  ve.setSmoothness(200.0)
+  ps = pow(pk,2)
+  vi = ve.applyForVelocity(sp,sm,wp,ps)
+  vi = sqrt(vi)
+  vp = ve.predictVelocity(vi)
+  #plot2(s1,s2,wp)
+  clab = "Velocity (km/s)"
+  clab1 = "Picked migration velocity (km/s)"
+  clab2 = "Predicted migration velocity (km/s)"
+  clab3 = "Interval velocity (km/s)"
+  plot2(s1,s2,gx,g=pk,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab1,png="pk")
+  plot2(s1,s2,gx,g=vp,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab2,png="vp")
+  plot2(s1,s2,gx,g=vi,cmin=1.6,cmax=2.7,cmap=jetFill(1.0),label=clab3,png="vi")
+  plot2(s1,s2,gx,g=vi,cmin=1.6,cmax=2.7,cmap=jetFill(0.6),label=clab3,png="seisvi")
 
 def goFaultThrow():
   gx = readImage2D(n1,n2,gxfile)
@@ -162,6 +186,7 @@ def goFaultThrow():
   fcr.computeThrow(cc,minThrow,maxThrow)
   fst = zerofloat(n1,n2)
   FaultCurve.getFsImage(cc,fst)
+  '''
   print min(fst)
   print max(fst)
   plot2(s1,s2,gx)
@@ -174,111 +199,14 @@ def goFaultThrow():
   p1,p2 = fcr.interpolateDipSlips([p1,p2],smark)
   gw = fcr.unfault([p1,p2],gx)
   plot2(s1,s2,gw,label="Amplitude",png="gw")
+  '''
   return cc
 
-def goTensors():
-  gx = readImage2D(n1,n2,gxfile)
-  fl = readImage2D(n1,n2,fltfile)
-  lof = LocalOrientFilterP(4,2)
-  et = lof.applyForTensors(gx)
-  eu = zerofloat(n1,n2)
-  ev = zerofloat(n1,n2)
-  et.getEigenvalues(eu,ev)
-  eu=clip(0.008,max(eu),eu)
-  ev=clip(0.008,max(ev),ev)
-  et.setEigenvalues(eu,ev)
-  et.invertStructure(1.0,1.0)
-  et.getEigenvalues(eu,ev)
-  print min(eu)
-  print max(eu)
-  #plotTensors(gx,s1,s2,d=et,dscale=20,mk=mk,cmin=-2,cmax=2,png="tensors")
-  plot2(s1,s2,gx,cmin=-2,cmax=2,label="Amplitdue",png="seis")
-  plotTensors(gx,s1,s2,d=et,dscale=1,ne=25,cmin=-2,cmax=2,png="tensors")
 
-def goUnfault():
-  cc = goFaultThrow()
-  fl = zerofloat(n1,n2)
-  fw = zerofloat(n1,n2)
-  wp = fillfloat(1.0,n1,n2)
-  gx = readImage2D(n1,n2,gxfile)
-  lof = LocalOrientFilterP(4,2)
-  et = lof.applyForTensors(gx)
-  et.setEigenvalues(0.001,1.0)
-  slp = FaultSlipConstraints2(cc)
-  sp = slp.screenPointsX(wp)
-  uf = UnfaultS2(10,10)
-  uf.setIters(100)
-  uf.setTensors(et)
-  np =  len(sp[0][0])
-  scale = (n1*n2/np)
-  mul(sp[3][0],scale,sp[3][0])
-  [t1,t2] = uf.findShifts(sp,wp)
-  [t1,t2] = uf.convertShifts(40,[t1,t2])
-  uf.applyShifts([t1,t2],gx,fw)
-  plot2(s1,s2,gx)
-  plot2(s1,s2,fw)
-  plot2(s1,s2,wp)
-
-
-def goVelocity():
-  cc = goFaultThrow()
-  fl = zerofloat(n1,n2)
-  wp = fillfloat(1.0,n1,n2)
-  slp = FaultSlipConstraints2(cc)
-  sp = slp.screenPointsX(wp)
-  #sp = None
-  FaultCurve.getFlsImage(cc,fl)
-  gx = readImage2D(n1,n2,gxfile)
-  sm = readImage2D(n1,n2,smfile)
-  pk = readImage2D(n1,n2,pkfile)
-  lof = LocalOrientFilterP(4,2)
-  et = lof.applyForTensors(gx)
-  eu = zerofloat(n1,n2)
-  ev = zerofloat(n1,n2)
-  et.getEigenvalues(eu,ev)
-  eu=clip(0.005,max(eu),eu)
-  ev=clip(0.005,max(ev),ev)
-  et.setEigenvalues(eu,ev)
-  et.invertStructure(1.0,1.0)
-  sm = clip(0.0,1.0,sm)
-  sm = pow(sm,2)
-  sm = mul(sm,wp)
-  ve = VelocityEstimator(10,10)
-  ve.setIterations(0.00001,400)
-  ve.setTensors(et)
-  ve.setSmoothness(200.0)
-  ps = pow(pk,2)
-  vi = ve.applyForVelocity(sp,sm,wp,ps)
-  vi = sqrt(vi)
-  vp = ve.predictVelocity(vi)
-  plot2(s1,s2,wp)
-  clab = "Velocity (km/s)"
-  clab1 = "Picked migration velocity (km/s)"
-  clab2 = "Predicted migration velocity (km/s)"
-  clab3 = "Interval velocity (km/s)"
-  plot2(s1,s2,gx,g=pk,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab1,png="pk")
-  plot2(s1,s2,gx,g=vp,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab2,png="vp")
-  plot2(s1,s2,gx,g=vi,cmin=1.6,cmax=2.7,cmap=jetFill(1.0),label=clab3,png="vi")
-  plot2(s1,s2,gx,g=vi,cmin=1.6,cmax=2.7,cmap=jetFill(0.6),label=clab3,png="seisvi")
-
-def goShapping():
-  dix = readImage2D(n1,n2,"dix")
-  shp = readImage2D(n1,n2,"shp")
-  shpp = readImage2D(n1,n2,"shpp")
-  gx = readImage2D(n1,n2,gxfile)
-  clab1 = "Picked migration velocity (km/s)"
-  clab2 = "Predicted migration velocity (km/s)"
-  clab3 = "Interval velocity (km/s)"
-  plot2(s1,s2,gx,g=dix,cmin=1.6,cmax=2.7,cmap=jetFill(1.0),label=clab3,png="dix")
-  plot2(s1,s2,gx,g=shp,cmin=1.6,cmax=2.7,cmap=jetFill(1.0),label=clab3,png="shp")
-  plot2(s1,s2,gx,g=shp,cmin=1.6,cmax=2.7,cmap=jetFill(0.6),label=clab3,png="seishp")
-  plot2(s1,s2,gx,g=shpp,cmin=1.4,cmax=2.3,cmap=jetFill(1.0),label=clab2,png="shpp")
 def like(x):
   n2 = len(x)
   n1 = len(x[0])
   return zerofloat(n1,n2)
-
-
 
 def gain(x):
   g = mul(x,x) 
@@ -336,7 +264,7 @@ def plotTensors(g,s1,s2,d=None,dscale=1,ne=20,mk=None,cmin=0,cmax=0,png=None):
   sp.setFontSize(24)
   #sp.setFontSizeForPrint(8,240)
   #sp.setFontSizeForSlide(1.0,0.9)
-  sp.setSize(423,700)
+  sp.setSize(523,800)
   pv = sp.addPixels(s1,s2,g)
   pv.setColorModel(ColorMap.GRAY)
   pv.setInterpolation(PixelsView.Interpolation.LINEAR)
@@ -348,7 +276,7 @@ def plotTensors(g,s1,s2,d=None,dscale=1,ne=20,mk=None,cmin=0,cmax=0,png=None):
     tv = TensorsView(s1,s2,d)
     tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
     tv.setLineColor(Color.YELLOW)
-    tv.setLineWidth(3)
+    tv.setLineWidth(2)
     if(mk):
       tv.setEllipsesDisplayed(mk)
     else:
@@ -405,7 +333,7 @@ def frame2Teapot(panel,png=None):
   #frame.setSize(1240,774)
   #frame.setFontSizeForSlide(1.0,0.9)
   frame.setFontSize(24)
-  frame.setSize(450+80,700)
+  frame.setSize(550+80,800)
   frame.setVisible(True)
   if png and pngDir:
     frame.paintToPng(400,3.2,pngDir+png+".png")

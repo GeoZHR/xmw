@@ -259,8 +259,9 @@ public class FakeData {
     PlanarFault3 faultc = new PlanarFault3(r1c,r2c,r3c,phic,thetac,throwc);
 
     // Reflectivity or impedance.
+    float[][] hz = new float[n3][n2];
     float[][][][] vd = makeVelocityAndDensityX(m1, n2, n3, lateralViriation);
-    addChannelsXX(vd);
+    addChannelsXX(vd,hz);
     float[][][] v1 = copy(vd[0]);
     float[][][] v2 = copy(vd[0]);
     float[][][] d1 = copy(vd[1]);
@@ -282,22 +283,26 @@ public class FakeData {
         //d1 = apply(shear,d1);
         d2 = apply(shearX,d2);
         d1 = combine(32,d1,d2);
+        apply(n1,shearX,hz);
         resetVelocityDensity(lateralViriation,32,p[0],v1,d1);
       } else if (sequence.charAt(js)=='A') {
         if (nplanar>0) {
           p  = apply(faulta,p); 
           v1 = apply(faulta,v1);
           d1 = apply(faulta,d1);
+          apply(n1,faulta,hz);
         }
         if (nplanar>1) {
           p  = apply(faultb,p);
           v1 = apply(faultb,v1);
           d1 = apply(faultb,d1);
+          apply(n1,faultb,hz);
         }
         if (nplanar>2) {
           p  = apply(faultc,p);
           v1 = apply(faultc,v1);
           d1 = apply(faultc,d1);
+          apply(n1,faultc,hz);
         }
       }
     }
@@ -338,7 +343,8 @@ public class FakeData {
 
     p[0] = copy(n1,n2,n3,p[0]);
     q[0] = copy(n1,n2,n3,q[0]);
-    return new float[][][][]{q[0],p[0],rn,pc};
+    float[][][] hs = new float[][][]{hz};
+    return new float[][][][]{q[0],p[0],rn,pc,hs};
   }
 
   /**
@@ -404,7 +410,8 @@ public class FakeData {
 
     // Reflectivity or impedance.
     float[][][][] vd = makeVelocityAndDensityX(m1, n2, n3, lateralViriation);
-    addChannelsXX(vd);
+    float[][] hz = new float[n3][n2];
+    addChannelsXX(vd,hz);
     float[][][] v1 = copy(vd[0]);
     float[][][] v2 = copy(vd[0]);
     float[][][] d1 = copy(vd[1]);
@@ -645,6 +652,25 @@ public class FakeData {
     }
     return q;
   }
+
+  private static void apply(
+    int n1, T3 t, float[][] hz) {
+    int n3 = hz.length;
+    int n2 = hz[0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float[] x = new float[n1];
+      float[] y = new float[n1];
+      for (int i1=0; i1<n1; ++i1) {
+        C3 f = t.f(i1,i2,i3);
+        y[i1] = i1;
+        x[i1] = f.c1;
+      }
+      CubicInterpolator ci = new CubicInterpolator(x,y);
+      hz[i3][i2] = ci.interpolate(hz[i3][i2]);
+    }}
+  }
+
 
   /**
    * Applies a 2D coordinate transform to an image and normal vectors.
@@ -1524,10 +1550,14 @@ public class FakeData {
     }
   }
 
-  private static void addChannelsXX(float[][][][] r) {
+  private static void addChannelsXX(float[][][][] r, float[][] hz) {
     int n3 = r[0].length;
     int n2 = r[0][0].length;
     int k1 = 70;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      hz[i3][i2] = k1+1;
+    }}
     float[] c2 = {0.1f*n2,0.5f*n2,0.7f*n2,0.9f*n2};
     float[] c3 = {0.4f*n3,0.6f*n3,0.5f*n3,0.7f*n3};
     CubicInterpolator.Method method = CubicInterpolator.Method.SPLINE;
@@ -1542,6 +1572,9 @@ public class FakeData {
           r[0][i3][i2][k1-1] += 9000f*a;
           r[0][i3][i2][k1  ] += 9000f*a;
           r[0][i3][i2][k1+1] += 9000f*a;
+          //r[1][i3][i2][k1-1] += 2.0f*a;
+          //r[1][i3][i2][k1  ] += 3.0f*a;
+          //r[1][i3][i2][k1+1] += 2.0f*a;
         }
       }
     }

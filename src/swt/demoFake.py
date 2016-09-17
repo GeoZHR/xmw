@@ -71,9 +71,9 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = "../../../png/swt/fake/"
 plotOnly = True
 pngDir = None
+pngDir = "../../../png/swt/fake/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -86,11 +86,11 @@ def main(args):
   #goReSkin()
   #goSmooth()
   #goSlip()
-  #goUnfaultS()
+  goUnfaultS()
   #goUnfaultX()
   #goUncScan()
   #goFlatten()
-  goInterp()
+  #goInterp()
   #goHorizons()
   #goTest()
   #test()
@@ -421,8 +421,8 @@ def goSlip():
   writeImage(fs2file,s2)
   writeImage(fs3file,s3)
   plot3(gx,skins=skins,smax=15.0,slices=[85,5,60],png="skinss1")
-  plot3(gx,s1,cmin=0,cmax=30.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (ms)",png="gxs1")
+  plot3(gx,s1,cmin=0,cmax=15.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
   '''
   s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
@@ -472,18 +472,18 @@ def goUnfaultS():
   mark = -999.99
   s1 = fillfloat(mark,n1,n2,n3)
   FaultSkin.getThrow(mark,skins,s1)
-  s1 = mul(s1,2)
-  t1 = mul(t1,2)
-  t2 = mul(t2,2)
-  t3 = mul(t3,2)
-  plot3(gx,s1,cmin=0.0,cmax=30.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (ms)",png="gxs1")
-  plot3(gx,t1,cmin=-20.0,cmax=20.0,cmap=jetFill(0.3),
-        clab="Vertical shift (ms)",png="gxs1i")
-  plot3(gx,t2,cmin=-6.0,cmax=6.0,cmap=jetFill(0.3),
-        clab="Inline shift (ms)",png="gxs2i")
-  plot3(gx,t3,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Crossline shift (ms)",png="gxs3i")
+  s1 = mul(s1,1)
+  t1 = mul(t1,1)
+  t2 = mul(t2,1)
+  t3 = mul(t3,1)
+  plot3(gx,s1,cmin=0.0,cmax=15.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
+  plot3(gx,t1,cmin=-10.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,t2,cmin=-3.0,cmax=3.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
 
 def goUnfaultX():
   gx = readImage(gxfile)
@@ -570,7 +570,7 @@ def goFlatten():
   for i3 in range(n3):
     for i2 in range(n2):
       for i1 in range(n1):
-        gs[i3][i2][i1] = (gt[i3][i2][i1]-i1)*2
+        gs[i3][i2][i1] = (gt[i3][i2][i1]-i1)
   plot3(gx)
   plot3(gw)
   plot3(gu,png="gu")
@@ -578,8 +578,8 @@ def goFlatten():
         clab="Relative geologic time (samples)",png="rgt")
   plot3(gw,gt,cmin=10.0,cmax=n1+20,cmap=jetFill(0.9),
         clab="Relative geologic time (samples)",png="gwt")
-  plot3(gw,gs,cmin=min(gs),cmax=80,cmap=jetFill(0.9),
-        clab="Vertical shift (ms)",png="gst")
+  plot3(gw,gs,cmin=min(gs),cmax=40,cmap=jetFill(0.9),
+        clab="Vertical shift (samples)",png="gst")
 def goHorizons():
   gx  = readImage(gxfile)
   gu  = readImage(fgfile)

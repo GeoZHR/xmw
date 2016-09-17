@@ -5,15 +5,15 @@ from imports import *
 
 seismicDir = "../../../data/seis/ssf/sub2/"
 seismicDir = "../../../data/seis/pnz/"
-n1,n2,n3=751,1001,1001
 #n1,n2,n3=375,845,828
 #n1,n2,n3=120,845,828
 #n1,n2,n3=210,1001,850
 n1,n2,n3=210,200,400
+n1,n2,n3=751,1001,1001
 s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
 #gs = copy(375,845,828,156,0,172,gx)
 #gxfile = "pnz00" # seismic image
-gxfile = "pnzSub" # seismic image
+gxfile = "pnz00" # seismic image
 gsfile = "gs" # seismic image
 
 pngDir = "../../../png/ssf/"
@@ -27,10 +27,11 @@ def main(args):
   #goSmooth()
   #gx=readImage("pnz00")
   #gx=readImage("pnzSub")
-  gx=readImage("pnzFt")
+  #gx=readImage("pnzFt")
   #gxs = copy(210,n2,n3-151,160,0,151,gx)
   #gxs = copy(210,200,400,160,800,251,gx)
   #writeImage("pnzFt",gxs)
+  gx = readImage(gxfile)
   plot3(gx,cmin=-clip,cmax=clip)
 def getSub(): 
   gx = readImage(gxfile) 
