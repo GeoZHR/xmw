@@ -242,8 +242,8 @@ def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None):
   d1 = s1.getDelta()
   d2 = s2.getDelta()
   n1 = s1.getCount()
-  #orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
-  orientation = PlotPanel.Orientation.X1RIGHT_X2UP;
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  #orientation = PlotPanel.Orientation.X1RIGHT_X2UP;
   panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE)
   #panel.setVInterval(0.1)
   #panel.setHInterval(1.0)
@@ -266,7 +266,7 @@ def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None):
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1020,700) #for f3d
-  frame.setSize(700,325) #for poseidon
+  frame.setSize(n2,n1) #for poseidon
   #frame.setFontSize(13)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
