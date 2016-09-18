@@ -17,14 +17,14 @@ u3file = "u3"
 epfile = "ep"
 epsfile = "eps"
 hvsfile = "hvs"
-plotOnly = True
+plotOnly = False
 k1 = 51
 k1 = 59
 
 def main(args):
   #goSta()
   #goNormals()
-  #goSlopes()
+  goSlopes()
   goHorizonS()
 
 def goSta():
@@ -69,36 +69,39 @@ def goNormals():
 
 def goSlopes():
   gx = readImage(gxfile)
-  u1 = readImage(u1file)
-  u2 = readImage(u2file)
-  u3 = readImage(u3file)
-  hp = Helper()
-  p2,p3=hp.slopesFromNormals(10,u1,u2,u3)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(4,2,2,10)
+  lsf.findSlopes(gx,p2,p3,ep)
   zm = ZeroMask(0.1,4,1,1,gx)
   zm.setValue(0.0,p2)
   zm.setValue(0.0,p3)
+  zm.setValue(0.01,ep)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
-  plot3(p2,cmin=0.2,cmax=1)
+  writeImage(epfile,ep)
 
 def goHorizonS():
-  ns = 2
-  ep = readImage(epsfile)
+  ns = 20
+  eps = readImage(epsfile)
   if not plotOnly:
-    ep = fillfloat(1,n1,n2,n3)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    c1 = rampfloat(45,5,ns)
+    wp = readImage(epfile)
+    wp = pow(wp,6)
+    c1 = rampfloat(40,3,ns)
     c2 = fillfloat(1000,ns)
     c3 = fillfloat(2000,ns)
     hv = HorizonVolume()
-    hv.setCG(0.01,50)
-    hs = hv.applyForHorizonVolume(c1,c2,c3,ep,p2,p3)
+    hv.setCG(0.01,100)
+    hv.setExternalIterations(15)
+    hs = hv.applyForHorizonVolume(c1,c2,c3,wp,p2,p3)
     writeImage(hvsfile,hs)
   else:
     hs = readHorizons(ns,hvsfile)
-  plot3(ep,surf=hs[0],cmin=0.2,cmax=1.0,png="sf0")
-  plot3(ep,surf=hs[1],cmin=0.2,cmax=1.0,png="sf1")
+  plot3(eps,surf=hs[0],cmin=0.2,cmax=1.0,png="sf0")
+  plot3(eps,surf=hs[1],cmin=0.2,cmax=1.0,png="sf1")
 
 def mask(ep,mv):
   gx = readImage(gxfile)
