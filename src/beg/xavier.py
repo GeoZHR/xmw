@@ -16,7 +16,8 @@ u2file = "u2"
 u3file = "u3"
 epfile = "ep"
 epsfile = "eps"
-plotOnly = False
+hvsfile = "hvs"
+plotOnly = True
 k1 = 51
 k1 = 59
 
@@ -96,9 +97,8 @@ def goHorizonS():
     writeImage(hvsfile,hs)
   else:
     hs = readHorizons(ns,hvsfile)
-  k1,k2,k3=41,390,416
-  plot3(ep,surf=hs[0],k1=k1,k2=k2,k3=k3,cmin=0.2,cmax=1.0,png="sf0")
-  plot3(ep,surf=hs[1],k1=k1,k2=k2,k3=k3,cmin=0.2,cmax=1.0,png="sf1")
+  plot3(ep,surf=hs[0],cmin=0.2,cmax=1.0,png="sf0")
+  plot3(ep,surf=hs[1],cmin=0.2,cmax=1.0,png="sf1")
 
 def mask(ep,mv):
   gx = readImage(gxfile)
