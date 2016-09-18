@@ -118,17 +118,6 @@ def gain(x):
   div(x,sqrt(g),y)
   return y
 
-def readHorizons(ns,basename):
-  """ 
-  Reads an image from a file with specified basename
-  """
-  fileName = seismicDir+basename+".dat"
-  image = zerofloat(n2,n3,ns)
-  ais = ArrayInputStream(fileName)
-  ais.readFloats(image)
-  ais.close()
-  return image
-
 #############################################################################
 # graphics
 

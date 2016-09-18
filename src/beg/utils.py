@@ -171,7 +171,16 @@ def readHorizon(name):
   ais.readFloats(image)
   ais.close()
   return image
-
+def readHorizons(ns,name):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n2,n3,ns)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 def readImage(name):
   """ 
