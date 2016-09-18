@@ -101,7 +101,13 @@ def goHorizonS():
     writeImage(hvsfile,hs)
   else:
     hs = readHorizons(ns,hvsfile)
-  plot3(eps,surf=hs[30],cmin=0.2,cmax=1.0,png="sf0")
+  sd = SurfaceDisplay()
+  ha = sd.amplitudeOnHorizon(hs[20],eps)
+  ha = pow(ha,2)
+  ha = sub(ha,min(ha))
+  ha = div(ha,max(ha))
+  plot2(s2,s3,ha,cmin=0.2,cmax=1.0)
+  #plot3(eps,surf=hs[30],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[5],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[10],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[15],cmin=0.2,cmax=1.0,png="sf0")
@@ -230,6 +236,40 @@ def plot3(f,g=None,et=None,ep=None,surf=None,k1=120,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
+def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None): 
+  f1 = s1.getFirst()
+  f2 = s2.getFirst()
+  d1 = s1.getDelta()
+  d2 = s2.getDelta()
+  n1 = s1.getCount()
+  #orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  orientation = PlotPanel.Orientation.X1RIGHT_X2UP;
+  panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE)
+  #panel.setVInterval(0.1)
+  #panel.setHInterval(1.0)
+  #panel.setHLabel("Crossline (traces)")
+  #panel.setVLabel("Samples")
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  pxv.setColorModel(ColorMap.GRAY)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  #cb = panel.addColorBar();
+  if cint:
+    cb.setInterval(cint)
+  if clab:
+    cb.setLabel(clab)
+  #panel.setColorBarWidthMinimum(50)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  #frame.setTitle("normal vectors")
+  frame.setVisible(True);
+  #frame.setSize(1020,700) #for f3d
+  frame.setSize(700,325) #for poseidon
+  #frame.setFontSize(13)
+  if pngDir and png:
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread

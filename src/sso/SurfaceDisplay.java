@@ -41,6 +41,25 @@ public class SurfaceDisplay {
   }
 
 
+  public float[][] amplitudeOnHorizon(
+    float[][] hz, float[][][] fx) 
+  {
+    int nx = fx.length;
+    int ny = fx[0].length;
+    int nz = fx[0][0].length;
+    Sampling sx = new Sampling(nx);
+    Sampling sy = new Sampling(ny);
+    Sampling sz = new Sampling(nz);
+    float[][] fz = new float[nx][ny];
+    SincInterpolator si = new SincInterpolator();
+    for (int ix=0; ix<nx; ++ix) {
+    for (int iy=0; iy<ny; ++iy) {
+      fz[ix][iy] = si.interpolate(sz,sy,sx,fx,hz[ix][iy],iy,ix);
+    }}
+    return fz;
+  }
+
+
 
   public float[][] horizonWithAmplitude(
     int mk, float[] mfs, float[][] hz, float[][][] fx) 
