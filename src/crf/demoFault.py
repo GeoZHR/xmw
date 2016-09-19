@@ -183,10 +183,10 @@ def goRosePlotsN():
   hu = div(hu,5)
   hm = div(hm,5)
   hl = div(hl,5)
-  tpfile = hm1file
-  btfile = hl1file
-  tp = hm
-  bt = hl
+  tpfile = hu1file
+  btfile = hm1file
+  tp = hu
+  bt = hm
   c2,c3=20,4
   rp = RosePlot()
   #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
@@ -200,24 +200,24 @@ def goRosePlotsN():
   wy = round(wy*1.3)
   pf.setSize(wx,wy)
   pf.setVisible(True)
-  pf.paintToPng(720,6,pngDir+title+"N"+".png")
+  #pf.paintToPng(720,6,pngDir+title+"N"+".png")
 
 def goRosePlotsNScale():
   hu = readImage2D(n2,n3,hu1file)
   hm = readImage2D(n2,n3,hm1file)
   hl = readImage2D(n2,n3,hl1file)
-  fp = readImage2D(103900155,5,fpsfile)
+  fp = readImage2D(93792800,5,fpsfile)
   hu = div(hu,5)
   hm = div(hm,5)
   hl = div(hl,5)
-  tpfile = hm1file
-  btfile = hl1file
-  tp = hm
-  bt = hl
+  tpfile = hu1file
+  btfile = hm1file
+  tp = hu
+  bt = hm
   c2,c3=20,4
   rp = RosePlot()
   #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
-  npm = 30000
+  npm = 300000
   title = tpfile+'~'+btfile
   pp = rp.applyForRosePlotsScale(64,npm,tp,bt,c2,c3,36,fp)
   pp.addTitle(title)
@@ -312,7 +312,7 @@ def goFaultPoints():
   writeImage(fppfile,ps)
 
 def goFaultPointsScale():
-  bt = readImage2D(n2,n3,hl1file)
+  bt = readImage2D(n2,n3,hm1file)
   bt = div(bt,5)
   sks = readSkins(fsktv)
   rp = RosePlot()
