@@ -40,6 +40,7 @@ fw3file = "fw3"
 gwfile = "gw"
 fsktv = "fst" # fault skin (basename only)
 fppfile = "fpp"
+fpsfile = "fps"
 hl1file = "hl1"
 hu1file = "hu1"
 hm1file = "hm1"
@@ -81,19 +82,17 @@ def main(args):
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
+  goFaultPointsX()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
-  goRosePlotsN()
+  #goRosePlotsN()
   #goResetSurfaces()
   #goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
-
-  gx = readImage(gxfile)
-  plot3(gx)
 
 def goStrikeMask():
   gx = readImage(gxfile)
@@ -202,6 +201,33 @@ def goRosePlotsN():
   pf.setVisible(True)
   pf.paintToPng(720,6,pngDir+title+"N"+".png")
 
+def goRosePlotsN():
+  hu = readImage2D(n2,n3,hu1file)
+  hm = readImage2D(n2,n3,hm1file)
+  hl = readImage2D(n2,n3,hl1file)
+  fp = readImage2D(103900155,5,fpsfile)
+  hu = div(hu,5)
+  hm = div(hm,5)
+  hl = div(hl,5)
+  tpfile = hm1file
+  btfile = hl1file
+  tp = hm
+  bt = hl
+  c2,c3=20,4
+  rp = RosePlot()
+  #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
+  npm = 300000
+  title = tpfile+'~'+btfile
+  pp = rp.applyForRosePlotsX(64,npm,tp,bt,c2,c3,36,fp)
+  pp.addTitle(title)
+  pf = PlotFrame(pp)
+  wx,wy = 2100,round((c3*2100)/c2)+100
+  wx = round(wx*1.5)
+  wy = round(wy*1.3)
+  pf.setSize(wx,wy)
+  pf.setVisible(True)
+  pf.paintToPng(720,6,pngDir+title+"N"+".png")
+
 def goPlanar():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -283,6 +309,17 @@ def goFaultPoints():
   print len(ps)
   print len(ps[0])
   writeImage(fppfile,ps)
+
+def goFaultPointsX():
+  bt = readImage2D(n2,n3,hl1file)
+  bt = div(bt,5)
+  sks = readSkins(fsktv)
+  rp = RosePlot()
+  ps = rp.faultPoints(bt,sks)
+  print len(ps)
+  print len(ps[0])
+  writeImage(fpsfile,ps)
+
 
 def getOceanBottom():
   hp = Helper()

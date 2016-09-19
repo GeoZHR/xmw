@@ -319,6 +319,51 @@ public class RosePlot {
     return npm;
   }
 
+  public float[][] faultPoints(float[][] bt, FaultSkin[] sks) {
+    ArrayList<Float> fpa = new ArrayList<Float>();
+    ArrayList<Float> x1a = new ArrayList<Float>();
+    ArrayList<Float> x2a = new ArrayList<Float>();
+    ArrayList<Float> x3a = new ArrayList<Float>();
+    ArrayList<Float> fva = new ArrayList<Float>();
+    for (FaultSkin ski:sks) {
+      int na = 0;
+      int nb = 0;
+      int nc = ski.size();  
+      for (FaultCell fci:ski) {
+        int i1 = fci.getI1();
+        int i2 = fci.getI2();
+        int i3 = fci.getI3();
+        float bti = bt[i3][i2];
+        if (i1<bti) {na++;}
+        else        {nb++;}
+      }
+      float sa = (float)na/(float)nc;
+      float sb = (float)nb/(float)nc;
+      for (FaultCell fci:ski) {
+        int i1 = fci.getI1();
+        int i2 = fci.getI2();
+        int i3 = fci.getI3();
+        fpa.add(fci.getFp());
+        x1a.add((float)i1);
+        x2a.add((float)i2);
+        x3a.add((float)i3);
+        float bti = bt[i3][i2];
+        if (i1<bti) {fva.add(sa);}
+        else        {fva.add(sb);}
+      }
+    }
+    int np = fpa.size();
+    float[][] fps = new float[5][np];
+    for (int ip=0; ip<np; ++ip) {
+      fps[0][ip] = x1a.get(ip);
+      fps[1][ip] = x2a.get(ip);
+      fps[2][ip] = x3a.get(ip);
+      fps[3][ip] = fpa.get(ip);
+      fps[4][ip] = fva.get(ip);
+    }
+    return fps;
+  }
+
 
 
   public float[][] faultPoints(float[][] ob, float[][][] fp) {

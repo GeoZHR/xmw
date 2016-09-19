@@ -5,8 +5,8 @@ setupForSubset("bahamas")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-pngDir = None
 pngDir = "../../../png/beg/xavier/bahamas/"
+pngDir = None
 
 gxfile = "gx"
 p2file = "p2"
@@ -86,7 +86,7 @@ def goSlopes():
 def goHorizonS():
   ns = 60
   #eps = readImage(epsfile)
-  #gx = readImage(gxfile)
+  gx = readImage(gxfile)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
@@ -101,8 +101,8 @@ def goHorizonS():
     hs = hv.applyForHorizonVolume(c1,c2,c3,wp,p2,p3)
     writeImage(hvsfile,hs)
   else:
-<<<<<<< HEAD
     hs = readHorizons(ns,hvsfile)
+  '''
   sd = SurfaceDisplay()
   has = zerofloat(n2,n3,ns)
   for ih in range(ns):
@@ -111,17 +111,20 @@ def goHorizonS():
   has = sub(has,min(has))
   has = div(has,max(has))
   writeImage(hasfile,has)
-=======
-    has = readHorizons(ns,hasfile)
-  for ih in range(60):
+  has = readHorizons(ns,hasfile)
+  for ih in range(0,40,1):
     title = "Slice "+str(ih)
     plot2(s2,s3,has[ih],cmin=0.2,cmax=1.0,title=title,png=title)
->>>>>>> bfc8749efe90061133e7169fab9a0ece090ceb4e
+  '''
+  #plot3(gx,surf=hs[20],cmin=-1,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[30],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[5],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[10],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[15],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[19],cmin=0.2,cmax=1.0,png="sf1")
+  for k2 in range(1100,1400,20)
+    plot3p(s1,s2,s3,gx,hv=hs,k1=110,k2=k2,k3=1800,cmin=-1,cmax=1.0)
+
 
 def mask(ep,mv):
   gx = readImage(gxfile)
@@ -179,7 +182,7 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,et=None,ep=None,surf=None,k1=120,
+def plot3(f,g=None,et=None,ep=None,surf=None,hs=None,k1=120,k2=1180,k3=2160,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -223,9 +226,19 @@ def plot3(f,g=None,et=None,ep=None,surf=None,k1=120,
     xyz,rgb = sd.horizonWithAmplitude([cmin,cmax],surf,f)
     tgs = TriangleGroup(True,xyz,rgb)
     sf.world.addChild(tgs)
+  if hs:
+    for hi in hs:
+      lg = LineGroup(hi[0],hi[1])
+      ss = StateSet()
+      lg.setStates(ss)
+      ls = LineState()
+      ls.setWidth(8)
+      ls.setSmooth(False)
+      ss.add(ls)
+      sf.world.addChild(lg)
   if cbar:
     cbar.setWidthMinimum(85)
-  ipg.setSlices(k1,857,450)
+  ipg.setSlices(k1,k2,k3)
   if cbar:
     sf.setSize(987,700)
   else:
@@ -278,10 +291,85 @@ def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,title=None,png=None):
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1020,700) #for f3d
-  frame.setSize(round(n2*0.6),round(n1*0.6)) #for poseidon
+  frame.setSize(round(n1*0.9),round(n2*0.8)) #for poseidon
   #frame.setFontSize(13)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
+
+def plot3p(s1,s2,s3,f,g=None,hv=None,k1=None,k2=None,k3=None,cmap=ColorMap.GRAY,
+        cmin=-1,cmax=1,clab=None,cint=0.1,png=None):
+  width,height,cbwm = 800,550,200
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  orient = PlotPanelPixels3.Orientation.X1DOWN_X2RIGHT;
+  axespl = PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM
+  panel = PlotPanelPixels3(orient,axespl,s1,s2,s3,f)
+  #panel.mosaic.setWidthElastic(0,100)
+  #panel.mosaic.setWidthElastic(1,75)
+  panel.mosaic.setHeightElastic(0,150)
+  #panel.mosaic.setHeightElastic(1,100)
+  panel.setSlice23(k1)
+  panel.setSlice13(k2)
+  panel.setSlice12(k3)
+  #panel.setSlice103(70)
+  panel.setClips(cmin,cmax)
+  if clab:
+    cbar = panel.addColorBar(clab)
+    cbar.setInterval(cint)
+  panel.setColorBarWidthMinimum(50)
+  panel.setLabel1("Samples")
+  panel.setLabel2("Inline (traces)")
+  panel.setLabel3("Crossline (traces)")
+  panel.setInterval2(100)
+  panel.setInterval3(100)
+  panel.setColorModel(ColorMap.GRAY)
+  panel.setLineColor(Color.WHITE)
+  panel.setHLimits(0,s2.first,s2.last)
+  panel.setVLimits(1,s1.first,s1.last)
+  if g:
+    pv12 = PixelsView(s1,s2,slice12(k3,g))
+    pv12.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
+    pv13 = PixelsView(s1,s3,slice13(k2,g))
+    pv13.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
+    pv23 = PixelsView(s2,s3,slice23(k1,g))
+    pv23.setOrientation(PixelsView.Orientation.X1RIGHT_X2UP)
+    for pv in [pv12,pv13,pv23]:
+      pv.setColorModel(cmap)
+      if cmin!=cmax:
+        pv.setClips(cmin,cmax)
+    panel.pixelsView12.tile.addTiledView(pv12)
+    panel.pixelsView13.tile.addTiledView(pv13)
+    panel.pixelsView23.tile.addTiledView(pv23)
+  if hv:
+    nh = len(hv)
+    hd = HorizonDisplay()
+    cv12 = hd.slice12(k3,s2,hv)
+    cv13 = hd.slice13(k2,s3,hv)
+    cv23 = hd.slice23X(k1,s2,s3,hv)
+    mp = ColorMap(0,nh,ColorMap.JET)
+    print nh
+    for ih in range(4,nh,1):
+      pv12 = PointsView(cv12[ih][1],cv12[ih][0])
+      pv13 = PointsView(cv13[ih][1],cv13[ih][0])
+      pv12.setLineWidth(3.0)
+      pv13.setLineWidth(3.0)
+      pv12.setLineColor(mp.getColor(ih))
+      pv13.setLineColor(mp.getColor(ih))
+      panel.pixelsView12.tile.addTiledView(pv12)
+      panel.pixelsView13.tile.addTiledView(pv13)
+      nc = len(cv23[ih][0])
+      for ic in range(nc):
+        pv23 = PointsView(cv23[ih][0][ic],cv23[ih][1][ic])
+        pv23.setLineWidth(3.0)
+        pv23.setLineColor(mp.getColor(ih))
+        panel.pixelsView23.tile.addTiledView(pv23)
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(Color(0xfd,0xfe,0xff)) # easy to make transparent
+  frame.setFontSize(12)#ForSlide(1.0,0.8)
+  frame.setSize(width,height)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(720,3.3,pngDir+"/"+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread
