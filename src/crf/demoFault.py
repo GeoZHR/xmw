@@ -82,7 +82,7 @@ def main(args):
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
-  goFaultPointsScale()
+  #goFaultPointsScale()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
@@ -90,7 +90,7 @@ def main(args):
   #goRosePlotsN()
   #goRosePlotsNScale()
   #goResetSurfaces()
-  #goFaultsAndSurfs()
+  goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
@@ -108,21 +108,24 @@ def goFaultsAndSurfs():
   hu1 = readImage2D(n2,n3,hu1file)
   hm1 = readImage2D(n2,n3,hm1file)
   hl1 = readImage2D(n2,n3,hl1file)
+  '''
   hpr = Helper()
   spm = readImage2D(888165,3,"hzs/M1")
   hpr.mergeU1AndTop(round(s2.getFirst()),spm,hm1)
   writeImage(hm1file,hm1)
-  gx = readImage(gxfile)
-  flt = readImage(fltvfile)
+  '''
+  #gx = readImage(gxfile)
+  #flt = readImage(fltvfile)
+  fpt = readImage(fptmfile)
   hpr.horizonToImage(div(hu1,5),flt)
   hpr.horizonToImage(div(hm1,5),flt)
   hpr.horizonToImage(div(hl1,5),flt)
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+  '''
+  plot3(flt,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   '''
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  plot3(fpt,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
-  '''
 
 def goFaultDensity():
   stfile = hm1file
