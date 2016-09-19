@@ -228,6 +228,66 @@ public class RosePlot {
     }}
     return pp;
   }
+
+  public PlotPanel applyForRosePlotsScale(
+    float alpha, float npm, float[][] st, float[][] sb, 
+    int c2, int c3, int nbin, float[][] fp) 
+  {
+    int np = fp[0].length;
+    int n3 = st.length;
+    int n2 = st[0].length;
+    int d2 = round(n2/c2);
+    int d3 = round(n3/c3);
+    System.out.println("npm="+npm);
+    PlotPanel.AxesPlacement axes = PlotPanel.AxesPlacement.NONE;
+    PlotPanel.Orientation orient = PlotPanel.Orientation.X1RIGHT_X2UP;
+    PlotPanel pp = new PlotPanel(c3,c2,orient,axes);
+    for (int i3=0; i3<c3; ++i3) {
+    //for (int i3=c3-1; i3>=0; --i3) {
+      int b3 = i3*d3;
+      int e3 = (i3+1)*d3;
+      if(i3==(c3-1)){e3 = max(e3,n3);}
+      System.out.println("b3="+b3);
+      System.out.println("e3="+e3);
+    for (int i2=0; i2<c2; ++i2) {
+      int b2 = i2*d2;
+      int e2 = (i2+1)*d2;
+      if(i2==(c2-1)){e2 = max(e2,n2);}
+      System.out.println("b2="+b2);
+      System.out.println("e2="+e2);
+      ArrayList<Float> fpa = new ArrayList<Float>();
+      ArrayList<Float> fvs = new ArrayList<Float>();
+      for (int ip=0; ip<np; ++ip) {
+        int k2 = (int)fp[1][ip];
+        int k3 = (int)fp[2][ip];
+        if(k2<b2 || k2>e2) {continue;}
+        if(k3<b3 || k3>e3) {continue;}
+        float sti = st[k3][k2];
+        float sbi = sb[k3][k2];
+        int k1 = (int)fp[0][ip];
+        if(k1>=sti && k1<=sbi) {
+          float fpi = fp[3][ip];
+          float fvi = fp[4][ip];
+          fpa.add(fpi);
+          fvs.add(fvi);
+        }
+      }
+      int npk = fpa.size();
+      float scale = npk/npm;
+      System.out.println("npk="+npk);
+      float[] fpk = new float[npk];
+      float[] fvk = new float[npk];
+      for (int ik=0; ik<npk; ++ik) {
+        fpk[ik] = fpa.get(ik);
+        fvk[ik] = fvs.get(ik);
+      }
+      fpa.clear();
+      fvs.clear();
+      rose(i3,i2,alpha,scale,fpk,fvk,nbin,pp);
+    }}
+    return pp;
+  }
+
   /*
   public int findMaxSamples(
     float b1, float e1, float d1, int c2, int c3, int n2, int n3, 
@@ -436,6 +496,16 @@ public class RosePlot {
     applyForRose(i3,i2,alpha,bins,pp);
   }
 
+  public void rose(
+    int i3, int i2, float alpha, float scale, float[] phi, 
+    float[] pvi, int nbin, PlotPanel pp) 
+  {
+    float[] bins = applyHistogram(nbin,phi,pvi);
+    mul(bins,scale,bins);
+    applyForRose(i3,i2,alpha,bins,pp);
+  }
+
+
   public void roseN(
     int i3, int i2, float alpha, float[] phi, int nbin, PlotPanel pp) 
   {
@@ -501,6 +571,18 @@ public class RosePlot {
     return bins;
   }
 
+  private float[] applyHistogram(int nbins, float[] phi, float[] pvi) {
+    int np = phi.length;
+    float ps = sum(pvi);
+    float dp = 180f/(float)nbins;
+    float[] bins = new float[nbins];
+    for (int ip=0; ip<np; ++ip) {
+      int ib = (int)(phi[ip]/dp);
+      ib = min(ib,nbins-1);
+      bins[ib] += pvi[ip]/ps;
+    }
+    return bins;
+  }
 
   private void addRadials(PlotPanel pp, Color color) {
     int np = 8;
