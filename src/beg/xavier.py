@@ -5,8 +5,8 @@ setupForSubset("bahamas")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-pngDir = "../../../png/sso/3d/sta/"
 pngDir = None
+pngDir = "../../../png/beg/xavier/bahamas/"
 
 gxfile = "gx"
 p2file = "p2"
@@ -17,6 +17,7 @@ u3file = "u3"
 epfile = "ep"
 epsfile = "eps"
 hvsfile = "hvs"
+hasfile = "has"
 plotOnly = True
 k1 = 51
 k1 = 59
@@ -84,7 +85,7 @@ def goSlopes():
 
 def goHorizonS():
   ns = 60
-  eps = readImage(epsfile)
+  #eps = readImage(epsfile)
   #gx = readImage(gxfile)
   if not plotOnly:
     p2 = readImage(p2file)
@@ -100,13 +101,10 @@ def goHorizonS():
     hs = hv.applyForHorizonVolume(c1,c2,c3,wp,p2,p3)
     writeImage(hvsfile,hs)
   else:
-    hs = readHorizons(ns,hvsfile)
-  sd = SurfaceDisplay()
-  ha = sd.amplitudeOnHorizon(hs[20],eps)
-  ha = pow(ha,2)
-  ha = sub(ha,min(ha))
-  ha = div(ha,max(ha))
-  plot2(s2,s3,ha,cmin=0.2,cmax=1.0)
+    has = readHorizons(ns,hasfile)
+  for ih in range(60):
+    title = "Slice "+str(ih)
+    plot2(s2,s3,has[ih],cmin=0.2,cmax=1.0,title=title,png=title)
   #plot3(eps,surf=hs[30],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[5],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[10],cmin=0.2,cmax=1.0,png="sf0")
@@ -236,7 +234,7 @@ def plot3(f,g=None,et=None,ep=None,surf=None,k1=120,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
-def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None): 
+def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,title=None,png=None): 
   f1 = s1.getFirst()
   f2 = s2.getFirst()
   d1 = s1.getDelta()
@@ -259,6 +257,8 @@ def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None):
     cb.setInterval(cint)
   if clab:
     cb.setLabel(clab)
+  if title:
+    panel.addTitle(title)
   #panel.setColorBarWidthMinimum(50)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
@@ -266,7 +266,7 @@ def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,png=None):
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1020,700) #for f3d
-  frame.setSize(n2,n1) #for poseidon
+  frame.setSize(round(n2*0.6),round(n1*0.6)) #for poseidon
   #frame.setFontSize(13)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
