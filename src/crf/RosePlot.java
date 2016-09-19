@@ -273,7 +273,6 @@ public class RosePlot {
         }
       }
       int npk = fpa.size();
-      float scale = npk/npm;
       System.out.println("npk="+npk);
       float[] fpk = new float[npk];
       float[] fvk = new float[npk];
@@ -283,6 +282,7 @@ public class RosePlot {
       }
       fpa.clear();
       fvs.clear();
+      float scale = sum(fvk)/npm;
       rose(i3,i2,alpha,scale,fpk,fvk,nbin,pp);
     }}
     return pp;
@@ -403,13 +403,32 @@ public class RosePlot {
         int i1 = fci.getI1();
         int i2 = fci.getI2();
         int i3 = fci.getI3();
-        fpa.add(fci.getFp());
-        x1a.add((float)i1);
-        x2a.add((float)i2);
-        x3a.add((float)i3);
-        float bti = bt[i3][i2];
-        if (i1<bti) {fva.add(sa);}
-        else        {fva.add(sb);}
+        float ph1 = 26f;
+        float ph2 = 90f;
+        float fpi = fci.getFp();
+        // roateX
+        if(fpi>=0.0f) {
+          fpi = ph1-fpi;
+          if (fpi<0f) fpi+=360f;
+        }
+        // roate
+        if(fpi>=0.0f) {
+          fpi += ph2;
+          if (fpi>=360f) fpi-=360f;
+        }
+        // convert
+        if(fpi>180.0f) {
+          fpi -= 180f;
+        }
+        if (fpi<=15||fpi>40) {
+          fpa.add(fpi);
+          x1a.add((float)i1);
+          x2a.add((float)i2);
+          x3a.add((float)i3);
+          float bti = bt[i3][i2];
+          if (i1<bti) {fva.add(sa);}
+          else        {fva.add(sb);}
+        }
       }
     }
     int np = fpa.size();
@@ -486,7 +505,6 @@ public class RosePlot {
     }
     return fps;
   }
-
 
   public void rose(
     int i3, int i2, float alpha, float scale, float[] phi, int nbin, PlotPanel pp) 

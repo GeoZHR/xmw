@@ -82,13 +82,13 @@ def main(args):
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
-  #goFaultPointsX()
+  goFaultPointsScale()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
   #goRosePlotsN()
-  goRosePlotsNScale()
+  #goRosePlotsNScale()
   #goResetSurfaces()
   #goFaultsAndSurfs()
   #goFaultDensity()
@@ -311,7 +311,7 @@ def goFaultPoints():
   print len(ps[0])
   writeImage(fppfile,ps)
 
-def goFaultPointsX():
+def goFaultPointsScale():
   bt = readImage2D(n2,n3,hl1file)
   bt = div(bt,5)
   sks = readSkins(fsktv)
