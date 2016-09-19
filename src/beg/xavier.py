@@ -5,12 +5,14 @@ setupForSubset("bahamas")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-pngDir = "../../../png/beg/xavier/bahamas/"
 pngDir = None
+pngDir = "../../../png/beg/xavier/bahamas/"
 
 gxfile = "gx"
 p2file = "p2"
 p3file = "p3"
+p2sfile = "p2s"
+p3sfile = "p3s"
 u1file = "u1"
 u2file = "u2"
 u3file = "u3"
@@ -18,15 +20,19 @@ epfile = "ep"
 epsfile = "eps"
 hvsfile = "hvs"
 hasfile = "has"
-plotOnly = True
+hvssfile = "hvss"
+hassfile = "hass"
+plotOnly = False
 k1 = 51
 k1 = 59
 
 def main(args):
   #goSta()
   #goNormals()
+  #goSlopesX()
   #goSlopes()
-  goHorizonS()
+  #goHorizonS()
+  goHorizonX()
 
 def goSta():
   if not plotOnly:
@@ -62,11 +68,28 @@ def goNormals():
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
-    loe.applyX(gx,None,None,u1,u2,u3,None,None,None,None,None,None,None,None,None,None,None)
+    loe.applyX(gx,None,None,u1,u2,u3,None,None,None,None,None,None,
+                  None,None,None,None,None)
     writeImage(u1file,u1)
     writeImage(u2file,u2)
     writeImage(u3file,u3)
   plot3(gx)
+
+def goSlopesX():
+  gx = readImage(gxfile)
+  u1 = readImage(u1file)
+  u2 = readImage(u2file)
+  u3 = readImage(u3file)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  hp = Helper()
+  p2,p3=hp.slopesFromNormals(5,u1,u2,u3)
+  zm = ZeroMask(0.1,4,1,1,gx)
+  zm.setValue(0.0,p2)
+  zm.setValue(0.0,p3)
+  writeImage(p2sfile,p2)
+  writeImage(p3sfile,p3)
+
 
 def goSlopes():
   gx = readImage(gxfile)
@@ -82,6 +105,28 @@ def goSlopes():
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
+
+def goHorizonX():
+  ns = 50
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2sfile)
+    p3 = readImage(p3sfile)
+    wp = readImage(epfile)
+    wp = pow(wp,2)
+    c1 = rampfloat(40,3,ns)
+    c2 = fillfloat(1180,ns)
+    c3 = fillfloat(2160,ns)
+    hv = HorizonVolume()
+    hv.setCG(0.01,100)
+    hv.setExternalIterations(12)
+    hs = hv.applyForHorizonVolume(c1,c2,c3,wp,p2,p3)
+    writeImage(hvssfile,hs)
+  else:
+    hs = readHorizons(ns,hvssfile)
+  gx = copy(220,n2,n3,0,0,0,gx)
+  c1 = Sampling(220)
+  plot3p(c1,s2,s3,gx,hv=hs,k1=100,k2=1150,k3=1800,cmin=-1,cmax=1.0,png="hcs")
 
 def goHorizonS():
   ns = 60
@@ -122,8 +167,10 @@ def goHorizonS():
   #plot3(eps,surf=hs[10],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[15],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[19],cmin=0.2,cmax=1.0,png="sf1")
-  for k2 in range(1100,1400,20):
-    plot3p(s1,s2,s3,gx,hv=hs,k1=110,k2=k2,k3=1800,cmin=-1,cmax=1.0)
+  hss = copy(n2,n3,42,0,0,0,hs)
+  gx = copy(220,n2,n3,0,0,0,gx)
+  c1 = Sampling(220)
+  plot3p(c1,s2,s3,gx,hv=hss,k1=100,k2=1150,k3=1800,cmin=-1,cmax=1.0,png="hcs")
 
 
 def mask(ep,mv):
@@ -298,14 +345,17 @@ def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,title=None,png=None):
 
 def plot3p(s1,s2,s3,f,g=None,hv=None,k1=None,k2=None,k3=None,cmap=ColorMap.GRAY,
         cmin=-1,cmax=1,clab=None,cint=0.1,png=None):
-  width,height,cbwm = 800,550,200
+  width,height,cbwm = 5500,4500,200
   n1,n2,n3 = s1.count,s2.count,s3.count
+  print n1
+  print n2
+  print n3
   orient = PlotPanelPixels3.Orientation.X1DOWN_X2RIGHT;
   axespl = PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM
   panel = PlotPanelPixels3(orient,axespl,s1,s2,s3,f)
   #panel.mosaic.setWidthElastic(0,100)
   #panel.mosaic.setWidthElastic(1,75)
-  panel.mosaic.setHeightElastic(0,150)
+  panel.mosaic.setHeightElastic(0,200)
   #panel.mosaic.setHeightElastic(1,100)
   panel.setSlice23(k1)
   panel.setSlice13(k2)
@@ -319,8 +369,8 @@ def plot3p(s1,s2,s3,f,g=None,hv=None,k1=None,k2=None,k3=None,cmap=ColorMap.GRAY,
   panel.setLabel1("Samples")
   panel.setLabel2("Inline (traces)")
   panel.setLabel3("Crossline (traces)")
-  panel.setInterval2(100)
-  panel.setInterval3(100)
+  panel.setInterval2(500)
+  panel.setInterval3(500)
   panel.setColorModel(ColorMap.GRAY)
   panel.setLineColor(Color.WHITE)
   panel.setHLimits(0,s2.first,s2.last)
@@ -350,8 +400,8 @@ def plot3p(s1,s2,s3,f,g=None,hv=None,k1=None,k2=None,k3=None,cmap=ColorMap.GRAY,
     for ih in range(4,nh,1):
       pv12 = PointsView(cv12[ih][1],cv12[ih][0])
       pv13 = PointsView(cv13[ih][1],cv13[ih][0])
-      pv12.setLineWidth(3.0)
-      pv13.setLineWidth(3.0)
+      pv12.setLineWidth(4.0)
+      pv13.setLineWidth(4.0)
       pv12.setLineColor(mp.getColor(ih))
       pv13.setLineColor(mp.getColor(ih))
       panel.pixelsView12.tile.addTiledView(pv12)
@@ -359,17 +409,17 @@ def plot3p(s1,s2,s3,f,g=None,hv=None,k1=None,k2=None,k3=None,cmap=ColorMap.GRAY,
       nc = len(cv23[ih][0])
       for ic in range(nc):
         pv23 = PointsView(cv23[ih][0][ic],cv23[ih][1][ic])
-        pv23.setLineWidth(3.0)
+        pv23.setLineWidth(4.0)
         pv23.setLineColor(mp.getColor(ih))
         panel.pixelsView23.tile.addTiledView(pv23)
   frame = PlotFrame(panel)
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   frame.setBackground(Color(0xfd,0xfe,0xff)) # easy to make transparent
-  frame.setFontSize(12)#ForSlide(1.0,0.8)
+  frame.setFontSize(36)#ForSlide(1.0,0.8)
   frame.setSize(width,height)
   frame.setVisible(True)
   if png and pngDir:
-    frame.paintToPng(720,3.3,pngDir+"/"+png+".png")
+    frame.paintToPng(1080,4,pngDir+"/"+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread

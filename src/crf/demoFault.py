@@ -82,7 +82,7 @@ def main(args):
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
-  goFaultPointsX()
+  #goFaultPointsX()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
@@ -217,7 +217,7 @@ def goRosePlotsNScale():
   c2,c3=20,4
   rp = RosePlot()
   #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
-  npm = 300000
+  npm = 30000
   title = tpfile+'~'+btfile
   pp = rp.applyForRosePlotsScale(64,npm,tp,bt,c2,c3,36,fp)
   pp.addTitle(title)
@@ -227,7 +227,7 @@ def goRosePlotsNScale():
   wy = round(wy*1.3)
   pf.setSize(wx,wy)
   pf.setVisible(True)
-  pf.paintToPng(720,6,pngDir+title+"N"+".png")
+  #pf.paintToPng(720,6,pngDir+title+"N"+".png")
 
 def goPlanar():
   gx = readImage(gxfile)
