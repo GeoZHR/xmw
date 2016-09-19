@@ -28,11 +28,11 @@ k1 = 59
 
 def main(args):
   #goSta()
-  #goNormals()
+  goNormals()
   #goSlopesX()
   #goSlopes()
   #goHorizonS()
-  goHorizonX()
+  #goHorizonX()
 
 def goSta():
   if not plotOnly:
@@ -64,7 +64,7 @@ def goNormals():
     etl = lof.applyForTensors(gx)
     loe = LocalOrientEstimator(etl,10)
     loe.setGradientSmoothing(0)
-    loe.setEigenvalues(1.0,0.2,0.2)
+    loe.setEigenvalues(1.0,0.1,0.1)
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
@@ -73,6 +73,13 @@ def goNormals():
     writeImage(u1file,u1)
     writeImage(u2file,u2)
     writeImage(u3file,u3)
+    hp = Helper()
+    p2,p3=hp.slopesFromNormals(5,u1,u2,u3)
+    zm = ZeroMask(0.1,4,1,1,gx)
+    zm.setValue(0.0,p2)
+    zm.setValue(0.0,p3)
+    writeImage(p2sfile,p2)
+    writeImage(p3sfile,p3)
   plot3(gx)
 
 def goSlopesX():
@@ -80,8 +87,6 @@ def goSlopesX():
   u1 = readImage(u1file)
   u2 = readImage(u2file)
   u3 = readImage(u3file)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
   hp = Helper()
   p2,p3=hp.slopesFromNormals(5,u1,u2,u3)
   zm = ZeroMask(0.1,4,1,1,gx)
@@ -108,7 +113,8 @@ def goSlopes():
 
 def goHorizonX():
   ns = 50
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
+  eps = readImage(epsfile)
   if not plotOnly:
     p2 = readImage(p2sfile)
     p3 = readImage(p3sfile)
@@ -124,9 +130,22 @@ def goHorizonX():
     writeImage(hvssfile,hs)
   else:
     hs = readHorizons(ns,hvssfile)
+  sd = SurfaceDisplay()
+  has = zerofloat(n2,n3,ns)
+  for ih in range(ns):
+    has[ih] = sd.amplitudeOnHorizon(hs[ih],eps)
+  has = pow(has,2)
+  has = sub(has,min(has))
+  has = div(has,max(has))
+  writeImage(hassfile,has)
+  for ih in range(10,20,1):
+    title = "Slice "+str(ih)
+    plot2(s2,s3,has[ih],cmin=0.2,cmax=1.0,title=title,png=title)
+  '''
   gx = copy(220,n2,n3,0,0,0,gx)
   c1 = Sampling(220)
   plot3p(c1,s2,s3,gx,hv=hs,k1=100,k2=1150,k3=1800,cmin=-1,cmax=1.0,png="hcs")
+  '''
 
 def goHorizonS():
   ns = 60
