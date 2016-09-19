@@ -122,7 +122,7 @@ def goHorizonS():
   #plot3(eps,surf=hs[10],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[15],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[19],cmin=0.2,cmax=1.0,png="sf1")
-  for k2 in range(1100,1400,20)
+  for k2 in range(1100,1400,20):
     plot3p(s1,s2,s3,gx,hv=hs,k1=110,k2=k2,k3=1800,cmin=-1,cmax=1.0)
 
 
