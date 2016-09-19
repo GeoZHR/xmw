@@ -17,6 +17,7 @@ u3file = "u3"
 epfile = "ep"
 epsfile = "eps"
 hvsfile = "hvs"
+hasfile = "has"
 plotOnly = True
 k1 = 51
 k1 = 59
@@ -102,11 +103,13 @@ def goHorizonS():
   else:
     hs = readHorizons(ns,hvsfile)
   sd = SurfaceDisplay()
-  ha = sd.amplitudeOnHorizon(hs[20],eps)
-  ha = pow(ha,2)
-  ha = sub(ha,min(ha))
-  ha = div(ha,max(ha))
-  plot2(s2,s3,ha,cmin=0.2,cmax=1.0)
+  has = zerofloat(n2,n3,ns)
+  for ih in range(ns):
+    has[ih] = sd.amplitudeOnHorizon(hs[ih],eps)
+  has = pow(has,2)
+  has = sub(has,min(has))
+  has = div(has,max(has))
+  writeImage(hasfile,has)
   #plot3(eps,surf=hs[30],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[5],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[10],cmin=0.2,cmax=1.0,png="sf0")
