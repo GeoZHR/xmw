@@ -44,9 +44,9 @@ k1 = 56
 
 def main(args):
   #goLof()
-  #goSta()
+  goSta()
   #goSemblance()
-  goValley()
+  #goValley()
 def goValley():
   fx = readImage(fxfile)
   fs = copy(45,220,25,480,fx[246])

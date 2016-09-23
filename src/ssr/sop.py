@@ -35,17 +35,48 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
+pngDir = "../../../png/mda/"
 pngDir = None
+
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goTensors()
+  #goGradients()
+  #goNormals()
+  #goTensors()
   goGaussianSmoothing()
-  goIsotropicDiffusion()
+  #goIsotropicDiffusion()
   goAnisotropicDiffusion()
   #goVelocityInversion()
+
+def goGradients():
+  print "goGradients ..."
+  gx = readImage2D(n1,n2,gxfile)
+  g1 = zerofloat(n1,n2)
+  g2 = zerofloat(n1,n2)
+  for i2 in range(1,n2,1):
+    for i1 in range(1,n1,1):
+      g2i = gx[i2][i1]-gx[i2-1][i1 ]
+      g1i = gx[i2][i1]-gx[i2  ][i1-1]
+      if g1i<0:
+        g2i = -g2i
+        g1i = -g1i
+      g1[i2][i1] = g1i;
+      g2[i2][i1] = g2i;
+  plot2(s1,s2,gx,cmin=-2,cmax=2,png="gx")
+  plot2(s1,s2,gx,u1=g1,u2=g2,dx=20,scale=15,cmin=-2,cmax=2,png="gxg")
+
+def goNormals():
+  print "goNormals ..."
+  gx = readImage2D(n1,n2,gxfile)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  lof = LocalOrientFilterP(8,1)
+  lof.applyForNormalLinear(gx,u1,u2,el)
+  plot2(s1,s2,gx,u1=u1,u2=u2,dx=20,scale=15,cmin=-2,cmax=2,png="gxu")
 
 def goTensors():
   print "goTensors ..."
@@ -67,8 +98,8 @@ def goTensors():
   et.getEigenvalues(eu,ev)
   #plotTensors(gx,s1,s2,d=et,dscale=20,mk=mk,cmin=-2,cmax=2,png="tensors")
   plot2(s1,s2,gx)
-  plotTensors(gx,s1,s2,d=et,dscale=1,ne=30,cmin=-2,cmax=2,png="tensors")
-  plot2(s1,s2,el,cmin=0.1,cmax=1.0)
+  plotTensors(gx,s1,s2,d=et,dscale=1,ne=30,cmin=-2,cmax=2,png="gxd")
+  plot2(s1,s2,el,cmin=0.1,cmax=1.0,png="el")
 
 def goGaussianSmoothing():
   print "goGaussianSmoothing ..."
@@ -77,7 +108,7 @@ def goGaussianSmoothing():
   rgf = RecursiveGaussianFilter(10)
   rgf.apply00(gx,gs)
   plot2(s1,s2,gx)
-  plot2(s1,s2,gs)
+  plot2(s1,s2,gs,png="gxs")
 def goIsotropicDiffusion():
   print "goIsotropicDiffusion ..."
   gx = readImage2D(n1,n2,gxfile)
@@ -107,8 +138,8 @@ def goAnisotropicDiffusion():
   lsf.apply(et,10,gx,g1)
   lsf.apply(et,10,el,gx,g2)
   plot2(s1,s2,gx)
-  plot2(s1,s2,g1)
-  plot2(s1,s2,g2)
+  plot2(s1,s2,g1,png="gxsa")
+  plot2(s1,s2,g2,png="gxsaw")
 
 def goVelocityInversion():
   cc = goFaultThrow()
@@ -264,7 +295,7 @@ def plotTensors(g,s1,s2,d=None,dscale=1,ne=20,mk=None,cmin=0,cmax=0,png=None):
   sp.setFontSize(24)
   #sp.setFontSizeForPrint(8,240)
   #sp.setFontSizeForSlide(1.0,0.9)
-  sp.setSize(523,800)
+  sp.setSize(350,800)
   pv = sp.addPixels(s1,s2,g)
   pv.setColorModel(ColorMap.GRAY)
   pv.setInterpolation(PixelsView.Interpolation.LINEAR)
@@ -288,7 +319,8 @@ def plotTensors(g,s1,s2,d=None,dscale=1,ne=20,mk=None,cmin=0,cmax=0,png=None):
     sp.paintToPng(360,3.3,pngDir+png+".png")
     #sp.paintToPng(720,3.3,pngDir+png+".png")
 
-def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
+def plot2(s1,s2,f,g=None,u1=None,u2=None,dx=10,scale=1,
+        cmin=None,cmax=None,cmap=None,label=None,png=None):
   n2 = len(f)
   n1 = len(f[0])
   f1,f2 = s1.getFirst(),s2.getFirst()
@@ -302,11 +334,13 @@ def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
   #panel.setVInterval(100.0)
   #panel.setHLabel("Pixel")
   #panel.setVLabel("Pixel")
+  '''
   if label:
     panel.addColorBar(label)
   else:
     panel.addColorBar()
   panel.setColorBarWidthMinimum(80)
+  '''
   pv = panel.addPixels(s1,s2,f)
   pv.setInterpolation(PixelsView.Interpolation.LINEAR)
   pv.setColorModel(ColorMap.GRAY)
@@ -319,6 +353,18 @@ def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
       panel.addColorBar(label)
     else:
       panel.addColorBar()
+  if (u1 and u2):
+    x1 = zerofloat(2)
+    x2 = zerofloat(2)
+    for i2 in range(dx,n2-dx,dx):
+      for i1 in range(dx,n1-dx,dx):
+        x2[0] = i2*d2+f2
+        x2[1] = (i2+u2[i2][i1]*scale)*d2+f2
+        x1[0] = i1*d1+f1
+        x1[1] = (i1+u1[i2][i1]*scale)*d1+f1
+        pvu = panel.addPoints(x1,x2)
+        pvu.setLineWidth(3)
+        pvu.setLineColor(Color.YELLOW)
   if cmin and cmax:
     pv.setClips(cmin,cmax)
   frame2Teapot(panel,png)
@@ -333,7 +379,7 @@ def frame2Teapot(panel,png=None):
   #frame.setSize(1240,774)
   #frame.setFontSizeForSlide(1.0,0.9)
   frame.setFontSize(24)
-  frame.setSize(550+80,800)
+  frame.setSize(350,800)
   frame.setVisible(True)
   if png and pngDir:
     frame.paintToPng(400,3.2,pngDir+png+".png")

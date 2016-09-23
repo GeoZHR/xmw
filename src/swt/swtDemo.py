@@ -641,7 +641,7 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
     y = add(y,yf)
     pv = sp.addPoints(ss[il],y)
     pv.setLineColor(color)
-    pv.setLineWidth(2.0)
+    pv.setLineWidth(3.0)
     yf = yf+sf
   rf = sf
   if rs:
@@ -652,7 +652,7 @@ def plot1s(s1,ss,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
       r = add(r,rf)
       pv = sp.addPoints(s1,r)
       pv.setLineColor(Color.BLACK)
-      pv.setLineWidth(2.0)
+      pv.setLineWidth(3.0)
       rf = rf+sf
   sp.setSize(600,650)
   sp.setHLabel(hlabel)
@@ -679,8 +679,8 @@ def plot1ss(s1,rs,ss,ys,sm,ym,vmin=None,vmax=None,
     y = div(y,10)
     y = add(y,yf)
     pv = sp.addPoints(ss[il],y)
-    pv.setLineColor(Color.BLUE)
-    pv.setLineWidth(2.0)
+    pv.setLineColor(Color.GREEN)
+    pv.setLineWidth(3.0)
     yf = yf+sf
   yf = sf
   for il,y in enumerate(ym):
@@ -690,7 +690,7 @@ def plot1ss(s1,rs,ss,ys,sm,ym,vmin=None,vmax=None,
     y = add(y,yf)
     pv = sp.addPoints(sm[il],y)
     pv.setLineColor(Color.RED)
-    pv.setLineWidth(2.0)
+    pv.setLineWidth(3.0)
     yf = yf+sf
   rf = sf
   for il,r in enumerate(rs):
@@ -700,7 +700,7 @@ def plot1ss(s1,rs,ss,ys,sm,ym,vmin=None,vmax=None,
     r = add(r,rf)
     pv = sp.addPoints(s1,r)
     pv.setLineColor(Color.BLACK)
-    pv.setLineWidth(2.0)
+    pv.setLineWidth(3.0)
     rf = rf+sf
   sp.setSize(600,650)
   sp.setHLabel(hlabel)

@@ -18,8 +18,8 @@ from ad import *
 from sso import *
 from util import *
 
-pngDir = "../../../png/ad/fed/3d/"
 pngDir = None
+pngDir = "../../../png/ad/fed3/"
 
 seismicDir = "../../../data/seis/ad/fed/3d/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
@@ -27,6 +27,7 @@ fxfile = "fx"
 gxlfile = "gxl"
 gxnfile = "gxn"
 scnfile = "scn"
+scifile = "sci"
 ssnfile = "ssn"
 gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
@@ -36,13 +37,14 @@ n1,n2,n3 = 180,880,500
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
 
 def main(args):
-  #goLinearDiffusion()
   #goLocalSmoothingFilter()
+  #goLinearDiffusion()
   #goStratigraphyOrientedDiffusion()
   goNonlinearDiffusion()
+  #goDiffusivity()
   #goFaultChannelSmooth()
   #goSemblance()
   #goSemblanceHale()
@@ -67,11 +69,11 @@ def goNormalPlanar():
 def goLinearDiffusion():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2=4,2
+    sig1,sig2=2,4
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     ets.setEigenvalues(0.0001,1.0,1.0)
-    sig = 5
+    sig = 10
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
@@ -79,9 +81,10 @@ def goLinearDiffusion():
     writeImage(gxlfile,gx)
   else:
     gx = readImage(gxlfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx)
-  plot3(fx)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5,png="fgl")
+  plot3(gx,cmin=-1.0,cmax=1.0,png="gxl")
+  plot3(fx,cmin=-1.0,cmax=1.0,png="fx")
+
 def goLocalSmoothingFilter():
   fx = readImage(fxfile)
   sig1,sig2=4,2
@@ -103,7 +106,7 @@ def goStratigraphyOrientedDiffusion():
     lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
     ets.setEigenvalues(0.0001,0.0001,1.0000)
-    sig = 5
+    sig = 8
     cycle,limit=3,0.5
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
@@ -111,8 +114,8 @@ def goStratigraphyOrientedDiffusion():
     writeImage(gxsfile,gx)
   else:
     gx = readImage(gxsfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(gx,cmin=-1.0,cmax=1.0)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5,png="fgs")
+  plot3(gx,cmin=-1.0,cmax=1.0,png="gxs")
   plot3(fx,cmin=-1.0,cmax=1.0)
 
 def goNonlinearDiffusion():
@@ -123,187 +126,36 @@ def goNonlinearDiffusion():
     ets = lof.applyForTensors(fx)
     sig = 10
     cycle,limit=3,0.5
-    lbd = 0.05
+    lbd = 0.1
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
-    sc, gx = fed.apply(sig,lbd,0.5,ets,fx)
-    writeImage(gxnfile,gx)
+    sc, gx = fed.apply(sig,lbd,1.0,ets,fx)
+    #writeImage(gxnfile,gx)
     writeImage(scnfile,sc)
   else:
     gx = readImage(gxnfile)
     sc = readImage(scnfile)
-  plot3(sub(fx,gx),cmin=-1.0,cmax=1.0)
-  plot3(sc,cmin=0.0,cmax=1.0)
-  plot3(gx,cmin=-1,cmax=1)
-  plot3(fx,cmin=-1,cmax=1)
+  sc = pow(sc,2.0)
+  sc = sub(sc,min(sc))
+  sc = div(sc,max(sc))
+  #plot3(sub(fx,gx),cmin=-0.5,cmax=0.5,clab="Amplitude",png="fgn")
+  plot3(sc,cmin=0.0,cmax=1.0,clab="Diffusivity",png="scn")
+  #plot3(gx,cmin=-1,cmax=1,clab="Amplitude",png="gxn59")
+  #plot3(fx,cmin=-1,cmax=1)
 
-def goFaultChannelSmooth():
-  sc = readImage(scnfile)
+def goDiffusivity():
   fx = readImage(fxfile)
   if not plotOnly:
-    sig1,sig2,sig3=2,4,4
-    lof = LocalOrientFilter(sig1,sig2,sig3)
+    sig1,sig2=2,4
+    lof = LocalOrientFilter(sig1,sig2)
     ets = lof.applyForTensors(fx)
-    ets.setEigenvalues(0.5,0.0001,1.0)
-    sig = 5
-    cycle,limit=3,0.5
+    lbd = 0.1
     fed = FastExplicitDiffusion()
-    fed.setCycles(cycle,limit)
-    ss = zerofloat(n1,n2,n3)
-    fed.applySmoothS(sc,ss)
-    ss = fed.apply(sig,ets,ss)
-    writeImage(ssnfile,ss)
+    sci = fed.applyForWeights(lbd,ets,fx)
+    writeImage(scifile,sci)
   else:
-    sc = readImage(scnfile)
-    ss = readImage(ssnfile)
-  plot3(sc,cmin=0.0,cmax=1.0)
-  plot3(ss,cmin=0.0,cmax=1.0)
-
-def goShapeSemblance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
-    sm = Semblance()
-    '''
-    sd = mul(fx,fx)
-    sn = sm.smoothVW(2,et,fx)
-    sd = sm.smoothVW(2,et,sd)
-    sn = mul(sn,sn)
-    writeImage("sn",sn)
-    writeImage("sd",sd)
-    '''
-    sn = readImage("sn")
-    sd = readImage("sd")
-    wp = sub(1,ep)
-    #wp = fillfloat(1,n1,n2,n3)
-    et.setEigenvalues(0.2,0.0001,1.0000)
-    ss = sm.shapeSemblance(et,wp,sn,sd)
-    writeImage("ss",ss)
-  else:
-    ss = readImage("ss")
-  plot3(fx)
-  plot3(ss,cmin=0.2,cmax=1.0)
-
-
-def goSemblance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.0001,0.5,1.000)
-    fxs = goDiffusion(2,et,fx)
-    fxs = mul(fxs,fxs)
-    fss = mul(fx,fx)
-    fss = goDiffusion(2,et,fss)
-    et.setEigenvalues(0.2,0.001,1.0)
-    fxs = goDiffusion(4,et,fxs)
-    fss = goDiffusion(4,et,fss)
-    sem = div(fxs,fss)
-    writeImage("sem",sem)
-  else:
-    sem = readImage("sem")
-  plot3(fx)
-  plot3(sem,cmin=0.3,cmax=1.0)
-
-def goSemblanceHale():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    lsf = LocalSemblanceFilter(2,2)
-    sem = lsf.semblance(LocalSemblanceFilter.Direction3.VW,et,fx)
-    '''
-    et.setEigenvalues(0.0001,1.0,1.0)
-    fxs = goDiffusion(2,et,fx)
-    fxs = mul(fxs,fxs)
-
-    fss = mul(fx,fx)
-    fss = goDiffusion(2,et,fss)
-
-    et.setEigenvalues(0.5,0.0001,1.0000)
-    fxs = goDiffusion(4,et,fxs)
-    fss = goDiffusion(4,et,fss)
-
-    sem = div(fxs,fss)
-    '''
-    writeImage("semHale",sem)
-  else:
-    sig1,sig2=2,6
-    sem = readImage("semHale")
-    '''
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.0001,0.001,1.0)
-    ses = goNonlinearDiffusionX(4,et,sem)
-    '''
-  plot3(fx)
-  plot3(sem,cmin=0.2,cmax=1.0)
-
-def goCovariance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,6
-    p2 = zerofloat(n1,n2,n3)
-    p3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    '''
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.001,0.001,1.0)
-    fx = goDiffusion(4,et,fx)
-    '''
-    lsf = LocalSlopeFinder(sig1,sig2,sig2,5)
-    lsf.findSlopes(fx,p2,p3,ep)
-    cov = Covariance()
-    em,es=cov.covarianceEigen(7,p2,p3,fx)
-    sem = div(em,es)
-    writeImage("em",em)
-    writeImage("es",es)
-  else:
-    sig1,sig2=2,6
-    em = readImage("em")
-    es = readImage("es")
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.0,0.001,1.0)
-    ess = goDiffusion(4,et,es)
-    ems = goDiffusion(4,et,em)
-    sem = div(em,es)
-    ses = div(ems,ess)
-    #sss = goDiffusion(4,et,sem)
-  plot3(fx)
-  plot3(sem,cmin=0.3,cmax=1.0)
-  plot3(ses,cmin=0.3,cmax=1.0)
-  '''
-  plot3(ses,cmin=0.2,cmax=1.0)
-  plot3(sss,cmin=0.2,cmax=1.0)
-  '''
-def goFastCovariance():
-  fx = readImage(fxfile)
-  if not plotOnly:
-    sig1,sig2=2,8
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
-    et.setEigenvalues(0.001,1.000,0.001)
-    gx = goDiffusion(4,et,fx)
-    et.setEigenvalues(0.001,0.001,1.000)
-    fx = goDiffusion(4,et,fx)
-    cv = Covariance()
-    em,es=cv.covarianceEigenX(3,fx,gx)
-    sem = div(em,es)
-  else:
-    sem = readImage("sem")
-  plot3(fx)
-  plot3(sem,cmin=0.2,cmax=1.0)
+    sci = readImage(scifile)
+  plot3(sci,cmin=0.0,cmax=1.0,clab="1-diffusivity",png="sci")
 
 def goDiffusion(sig,et,fx):
   cycle,limit=3,0.5
@@ -426,14 +278,12 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
-  #ipg.setSlices(153,760,450)
+  ipg.setSlices(59,760,450)
   ipg.setSlices(91,760,450)
-  #ipg.setSlices(85,5,102)
-  #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
-    sf.setSize(837,700)
+    sf.setSize(987,700)
   else:
-    sf.setSize(700,700)
+    sf.setSize(850,700)
   view = sf.getOrbitView()
   #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
   zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
@@ -446,7 +296,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   view.setTranslate(Vector3(0.05,-0.2,0.06))
   sf.viewCanvas.setBackground(sf.getBackground())
-  sf.setSize(850,700)
 
   sf.setVisible(True)
   if png and pngDir:
