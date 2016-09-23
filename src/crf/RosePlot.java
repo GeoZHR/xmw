@@ -174,6 +174,63 @@ public class RosePlot {
     return pp;
   }
 
+  public PlotPanel applyForRosePlotsNScale(
+    float alpha, float[][] b1, float[][] e1, int c2, int c3, int n2, int n3, 
+    int nbin, float[][] fp) 
+  {
+    int np = fp[0].length;
+    int d2 = round(n2/c2);
+    int d3 = round(n3/c3);
+    PlotPanel.AxesPlacement axes = PlotPanel.AxesPlacement.NONE;
+    PlotPanel.Orientation orient = PlotPanel.Orientation.X1RIGHT_X2UP;
+    PlotPanel pp = new PlotPanel(c3,c2,orient,axes);
+    for (int i3=0; i3<c3; ++i3) {
+    //for (int i3=c3-1; i3>=0; --i3) {
+      int b3 = i3*d3;
+      int e3 = (i3+1)*d3;
+      if(i3==(c3-1)){e3 = max(e3,n3);}
+      System.out.println("b3="+b3);
+      System.out.println("e3="+e3);
+    for (int i2=0; i2<c2; ++i2) {
+      int b2 = i2*d2;
+      int e2 = (i2+1)*d2;
+      if(i2==(c2-1)){e2 = max(e2,n2);}
+      System.out.println("b2="+b2);
+      System.out.println("e2="+e2);
+      ArrayList<Float> fpa = new ArrayList<Float>();
+      ArrayList<Float> fvs = new ArrayList<Float>();
+      for (int ip=0; ip<np; ++ip) {
+        int k2 = (int)fp[1][ip];
+        int k3 = (int)fp[2][ip];
+        if(k2<b2 || k2>e2) {continue;}
+        if(k3<b3 || k3>e3) {continue;}
+        float b1i = b1[k3][k2];
+        float e1i = e1[k3][k2];
+        int k1 = (int)fp[0][ip];
+        if(k1>b1i && k1<e1i) {
+        //if(k1>=b1 && k1<=e1) {
+          float fpi = fp[3][ip];
+          float fvi = fp[4][ip];
+          fpa.add(fpi);
+          fvs.add(fvi);
+        }
+      }
+      int npk = fpa.size();
+      System.out.println("npk="+npk);
+      float[] fpk = new float[npk];
+      float[] fvk = new float[npk];
+      for (int ik=0; ik<npk; ++ik) {
+        fpk[ik] = fpa.get(ik);
+        fvk[ik] = fvs.get(ik);
+      }
+      fpa.clear();
+      fvs.clear();
+      roseN(i3,i2,alpha,fpk,nbin,pp);
+    }}
+    return pp;
+  }
+
+
 
 
   public PlotPanel applyForRosePlotsX(
@@ -530,6 +587,14 @@ public class RosePlot {
     float[] bins = applyHistogram(nbin,phi);
     applyForRoseN(i3,i2,alpha,bins,pp);
   }
+
+  public void roseN(
+    int i3, int i2, float alpha, float[] phi, float[] pvi, int nbin, PlotPanel pp) 
+  {
+    float[] bins = applyHistogram(nbin,phi,pvi);
+    applyForRoseN(i3,i2,alpha,bins,pp);
+  }
+
 
 
 

@@ -218,62 +218,6 @@ public class FastExplicitDiffusion {
    return new float[][][][]{sc,gx};
   }
 
-
-  public float[][][] getWeights(float lambda, EigenTensors3 et, 
-    float[][][] fx) {
-    int n3 = fx.length;
-    int n2 = fx[0].length;
-    int n1 = fx[0][0].length;
-    float[][][] p2 = new float[n3][n2][n1];
-    float[][][] p3 = new float[n3][n2][n1];
-    float[][][] ws = new float[n3][n2][n1];
-    slopesFromTensors(et,p2,p3);
-    final float[][][] g2 = new float[n3][n2][n1];
-    final float[][][] g3 = new float[n3][n2][n1];
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      applyForDirectionalDerivative(p2[i3],fx[i3],g2[i3]);
-    }});
-    Parallel.loop(n2,new Parallel.LoopInt() {
-    public void compute(int i2) {
-      float[][] p32 = new float[n3][n1];
-      float[][] fx2 = new float[n3][n1];
-      float[][] g32 = new float[n3][n1];
-      for (int i3=0; i3<n3; ++i3) {
-        p32[i3] = p3[i3][i2];
-        fx2[i3] = fx[i3][i2];
-      }
-      applyForDirectionalDerivative(p32,fx2,g32);
-      for (int i3=0; i3<n3; ++i3)
-        g3[i3][i2] = g32[i3];
-    }});
-    final float[][][] gs = new float[n3][n2][n1];
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float g2i = g2[i3][i2][i1];
-        float g3i = g3[i3][i2][i1];
-        gs[i3][i2][i1] = g2i*g2i+g3i*g3i;
-      }}
-    }});
-    final float ls = lambda*lambda;
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float gsi = gs[i3][i2][i1];
-        float gli = gsi/ls;
-        gli *= gli;
-        gli *= gli;
-        float av = 1.0f;
-        if(gsi>0f){av=1-exp(-3.315f/gli);}
-        ws[i3][i2][i1] = av;
-      }}
-    }});
-    return ws;
-  }
-
   private void slopesFromTensors(EigenTensors2 et, float[][] p2) {
     int n2 = p2.length;
     int n1 = p2[0].length;
@@ -557,6 +501,64 @@ public class FastExplicitDiffusion {
     return ft;
   }
 
+  // for plots only
+  public float[][][] applyForWeights(
+    final float lambda, final EigenTensors3 et, final float[][][] fx) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] g2 = new float[n3][n2][n1];
+    final float[][][] g3 = new float[n3][n2][n1];
+    final float[][][] p2 = new float[n3][n2][n1];
+    final float[][][] p3 = new float[n3][n2][n1];
+    final float[][][] sc = new float[n3][n2][n1];
+    slopesFromTensors(et,p2,p3);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      applyForDirectionalDerivative(p2[i3],fx[i3],g2[i3]);
+    }});
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[][] p32 = new float[n3][n1];
+      float[][] fx2 = new float[n3][n1];
+      float[][] g32 = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3) {
+        p32[i3] = p3[i3][i2];
+        fx2[i3] = fx[i3][i2];
+      }
+      applyForDirectionalDerivative(p32,fx2,g32);
+      for (int i3=0; i3<n3; ++i3)
+        g3[i3][i2] = g32[i3];
+    }});
+    final float[][][] gs = new float[n3][n2][n1];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float g2i = g2[i3][i2][i1];
+        float g3i = g3[i3][i2][i1];
+        gs[i3][i2][i1] = g2i*g2i+g3i*g3i;
+      }}
+    }});
+    final float ls = lambda*lambda;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float gsi = gs[i3][i2][i1];
+        float gli = gsi/ls;
+        gli *= gli;
+        gli *= gli;
+        float avi = 1.0f;
+        if(gsi>0f){avi=1-exp(-3.315f/gli);}
+        sc[i3][i2][i1] = avi;
+      }}
+    }});
+    return sc;
+  }
+
+
   private void setNonlinearDiffusion(
     final float lambda, final float av, final float[][][] p2, final float[][][] p3, 
     final float[][][] fx, final float[][][] sc, final EigenTensors3 et) 
@@ -605,9 +607,23 @@ public class FastExplicitDiffusion {
         float avi = 1.0f;
         if(gsi>0f){avi=1-exp(-3.315f/gli);}
         sc[i3][i2][i1] = avi;
-        et.setEigenvalues(i1,i2,i3,0.0001f,avi*avi*av,1f);
       }}
     }});
+    et.setEigenvalues(0.5f,0.05f,1.0f);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    float[][][] ss = new float[n3][n2][n1];
+    lsf.applySmoothS(sc,ss);
+    lsf.apply(et,8,ss,sc);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+        float avi = sc[i3][i2][i1];
+        avi *= avi;
+        avi *= avi;
+        avi *= avi;
+        avi *= av;
+        et.setEigenvalues(i1,i2,i3,0.0001f,avi,1f);
+    }}}
   }
 
 

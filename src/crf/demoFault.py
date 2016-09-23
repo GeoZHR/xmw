@@ -87,10 +87,11 @@ def main(args):
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
+  goRosePlotsScale()
   #goRosePlotsN()
   #goRosePlotsNScale()
   #goResetSurfaces()
-  goFaultsAndSurfs()
+  #goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
@@ -154,8 +155,8 @@ def goFaultDensity():
 
 
 def goRosePlots():
-  tpfile = hu1file
-  btfile = hm1file
+  tpfile = hm1file
+  btfile = hl1file
   tp = readImage2D(n2,n3,tpfile)
   bt = readImage2D(n2,n3,btfile)
   tp = div(tp,5)
@@ -176,7 +177,29 @@ def goRosePlots():
   wy = round(wy*1.3)
   pf.setSize(wx,wy)
   pf.setVisible(True)
-  pf.paintToPng(720,6,pngDir+title+".png")
+  #pf.paintToPng(720,6,pngDir+title+".png")
+
+def goRosePlotsScale():
+  tpfile = hm1file
+  btfile = hl1file
+  tp = readImage2D(n2,n3,tpfile)
+  bt = readImage2D(n2,n3,btfile)
+  tp = div(tp,5)
+  bt = div(bt,5)
+  fp = readImage2D(93792800,5,fpsfile)
+  c2,c3=20,4
+  rp = RosePlot()
+  title = tpfile+'~'+btfile
+  pp = rp.applyForRosePlotsNScale(64,tp,bt,c2,c3,n2,n3,36,fp)
+  pp.addTitle(title)
+  pf = PlotFrame(pp)
+  wx,wy = 2100,round((c3*2100)/c2)+100
+  wx = round(wx*1.5)
+  wy = round(wy*1.3)
+  pf.setSize(wx,wy)
+  pf.setVisible(True)
+  #pf.paintToPng(720,6,pngDir+title+".png")
+
 
 def goRosePlotsN():
   hu = readImage2D(n2,n3,hu1file)
@@ -186,10 +209,10 @@ def goRosePlotsN():
   hu = div(hu,5)
   hm = div(hm,5)
   hl = div(hl,5)
-  tpfile = hu1file
-  btfile = hm1file
-  tp = hu
-  bt = hm
+  tpfile = hm1file
+  btfile = hl1file
+  tp = hm
+  bt = hl
   c2,c3=20,4
   rp = RosePlot()
   #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
@@ -213,10 +236,10 @@ def goRosePlotsNScale():
   hu = div(hu,5)
   hm = div(hm,5)
   hl = div(hl,5)
-  tpfile = hu1file
-  btfile = hm1file
-  tp = hu
-  bt = hm
+  tpfile = hm1file
+  btfile = hl1file
+  tp = hm
+  bt = hl
   c2,c3=20,4
   rp = RosePlot()
   #npm = rp.findMaxSamples(c2,c3,hu,hm,hl,fp)
