@@ -8,7 +8,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 pngDir = None
 pngDir = "../../../png/beg/xavier/bahamas/"
 
-gxfile = "gx"
+gxfile = "gs"
 p2file = "p2"
 p3file = "p3"
 p2sfile = "p2s"
@@ -22,6 +22,8 @@ hvsfile = "hvs"
 hasfile = "has"
 hvssfile = "hvss"
 hassfile = "hass"
+gsnfile = "gsn"
+scnfile = "scn"
 plotOnly = False
 k1 = 51
 k1 = 59
@@ -34,10 +36,31 @@ def main(args):
   #goHorizonS()
   #goHorizonX()
   #goSlices()
-  gx = readImage(gxfile)
-  gs = copy(200,n2,n3,0,0,0,gx)
-  writeImage("gs",gs)
+  goNonlinearDiffusion()
 
+def goNonlinearDiffusion():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    sig1,sig2=4,6
+    lof = LocalOrientFilter(sig1,sig2)
+    ets = lof.applyForTensors(gx)
+    sig = 10
+    cycle,limit=3,0.5
+    lbd = 0.1
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    sc, gs = fed.apply(sig,lbd,1.0,ets,gx)
+    writeImage(gsnfile,gs)
+    writeImage(scnfile,sc)
+  else:
+    gs = readImage(gsnfile)
+    sc = readImage(scnfile)
+  sc = pow(sc,2.0)
+  sc = sub(sc,min(sc))
+  sc = div(sc,max(sc))
+  plot3(sc,cmin=0.0,cmax=1.0,clab="Diffusivity",png="scn")
+  plot3(gs,cmin=-1,cmax=1,clab="Amplitude",png="gsn")
+  plot3(gx,cmin=-1,cmax=1)
 
 def goSta():
   if not plotOnly:

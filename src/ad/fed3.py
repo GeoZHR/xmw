@@ -45,13 +45,6 @@ def main(args):
   #goStratigraphyOrientedDiffusion()
   goNonlinearDiffusion()
   #goDiffusivity()
-  #goFaultChannelSmooth()
-  #goSemblance()
-  #goSemblanceHale()
-  #goCovariance()
-  #goFastCovariance()
-  #goVariance()
-  #goShapeSemblance()
 def goNormalPlanar():
   fx = readImage(fxfile)
   u1 = zerofloat(n1,n2,n3)
