@@ -92,6 +92,7 @@ def setupForSubset(name):
     #f1,f2,f3 = 0.0,1100*d2,60*d3 # (s,km,km)
     d1,d2,d3 = 5,1,1 # (meter,inline,crossline)
     f1,f2,f3 = 0,2220+1100,2012+60 # (sample,inline,crossline)
+    f1,f2,f3 = 0,0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="nathanTest":
     print "setupForSubset: nathanTest"

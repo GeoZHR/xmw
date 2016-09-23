@@ -12,6 +12,17 @@ import util.*;
 
 public class Helper {
 
+
+  public void checkPoints(float[][] fps, float[][][] fpm) {
+    int np = fps[0].length;
+    for (int ip=0; ip<np; ++ip) {
+      int i1 = round(fps[0][ip]);
+      int i2 = round(fps[1][ip]);
+      int i3 = round(fps[2][ip]);
+      fpm[i3][i2][i1] = fps[4][ip];
+    }
+
+  }
   public float[][] transpose(float[][] fx) {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -347,7 +358,7 @@ public class Helper {
 
   }
 
-  public void horizonToImage(float[][] hz, float[][][] fx) {
+  public void horizonToImage(float v, float[][] hz, float[][][] fx) {
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
@@ -357,9 +368,9 @@ public class Helper {
       i1 = min(i1,n1-1);
       int im = max(i1-1,0);
       int ip = min(i1+1,n1-1);
-      fx[i3][i2][i1] = 1f;
-      fx[i3][i2][im] = 1f;
-      fx[i3][i2][ip] = 1f;
+      fx[i3][i2][i1] = v;
+      fx[i3][i2][im] = v;
+      fx[i3][i2][ip] = v;
     }}
   }
 

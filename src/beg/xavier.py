@@ -28,34 +28,39 @@ k1 = 59
 
 def main(args):
   #goSta()
-  goNormals()
+  #goNormals()
   #goSlopesX()
   #goSlopes()
   #goHorizonS()
   #goHorizonX()
+  #goSlices()
+  gx = readImage(gxfile)
+  gs = copy(200,n2,n3,0,0,0,gx)
+  writeImage("gs",gs)
+
 
 def goSta():
   if not plotOnly:
     gx = readImage(gxfile)
     ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(3,4,4)
+    lof = LocalOrientFilter(4,6,6)
     et = lof.applyForTensors(gx)
-    sta = StructureTensorAttribute(et,15)
-    sta.setEigenvalues(0.6,0.01,1.0)
+    sta = StructureTensorAttribute(et,20)
+    sta.setEigenvalues(1.0,0.001,0.8)
     sta.applyForPlanar(gx,ep)
-    writeImage(epsfile,ep)
+    writeImage("ept",ep)
   else:
     ep = readImage(epsfile)
   '''
   ep = pow(ep,2)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
-  '''
   ep = mask(ep)
-  writeImage(epsfile,ep)
+  writeImage("ept",ep)
   print min(ep)
   print max(ep)
   plot3(ep,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps"+str(k1))
+  '''
   
 def goNormals():
   gx = readImage(gxfile)
@@ -101,7 +106,7 @@ def goSlopes():
   p2 = zerofloat(n1,n2,n3)
   p3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(4,1,1,5)
+  lsf = LocalSlopeFinder(8,2,2,5)
   lsf.findSlopes(gx,p2,p3,ep)
   zm = ZeroMask(0.1,4,1,1,gx)
   zm.setValue(0.0,p2)
@@ -113,16 +118,16 @@ def goSlopes():
 
 def goHorizonX():
   ns = 50
-  #gx = readImage(gxfile)
+  gx = readImage(gxfile)
   eps = readImage(epsfile)
   if not plotOnly:
     p2 = readImage(p2sfile)
     p3 = readImage(p3sfile)
     wp = readImage(epfile)
-    wp = pow(wp,2)
+    wp = pow(wp,4)
     c1 = rampfloat(40,3,ns)
-    c2 = fillfloat(1180,ns)
-    c3 = fillfloat(2160,ns)
+    c2 = fillfloat(1150,ns)
+    c3 = fillfloat(1800,ns)
     hv = HorizonVolume()
     hv.setCG(0.01,100)
     hv.setExternalIterations(12)
@@ -130,6 +135,7 @@ def goHorizonX():
     writeImage(hvssfile,hs)
   else:
     hs = readHorizons(ns,hvssfile)
+  '''
   sd = SurfaceDisplay()
   has = zerofloat(n2,n3,ns)
   for ih in range(ns):
@@ -145,20 +151,19 @@ def goHorizonX():
   gx = copy(220,n2,n3,0,0,0,gx)
   c1 = Sampling(220)
   plot3p(c1,s2,s3,gx,hv=hs,k1=100,k2=1150,k3=1800,cmin=-1,cmax=1.0,png="hcs")
-  '''
 
 def goHorizonS():
-  ns = 60
-  #eps = readImage(epsfile)
-  gx = readImage(gxfile)
+  ns = 50
+  eps = readImage(epsfile)
+  #gx = readImage(gxfile)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     wp = readImage(epfile)
     wp = pow(wp,6)
     c1 = rampfloat(40,3,ns)
-    c2 = fillfloat(1180,ns)
-    c3 = fillfloat(2160,ns)
+    c2 = fillfloat(1150,ns)
+    c3 = fillfloat(1800,ns)
     hv = HorizonVolume()
     hv.setCG(0.01,100)
     hv.setExternalIterations(12)
@@ -166,7 +171,6 @@ def goHorizonS():
     writeImage(hvsfile,hs)
   else:
     hs = readHorizons(ns,hvsfile)
-  '''
   sd = SurfaceDisplay()
   has = zerofloat(n2,n3,ns)
   for ih in range(ns):
@@ -174,22 +178,31 @@ def goHorizonS():
   has = pow(has,2)
   has = sub(has,min(has))
   has = div(has,max(has))
-  writeImage(hasfile,has)
-  has = readHorizons(ns,hasfile)
-  for ih in range(0,40,1):
+  writeImage("hast",has)
+  #has = readHorizons(ns,hasfile)
+  for ih in range(10,20,1):
     title = "Slice "+str(ih)
     plot2(s2,s3,has[ih],cmin=0.2,cmax=1.0,title=title,png=title)
-  '''
   #plot3(gx,surf=hs[20],cmin=-1,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[30],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[5],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[10],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[15],cmin=0.2,cmax=1.0,png="sf0")
   #plot3(eps,surf=hs[19],cmin=0.2,cmax=1.0,png="sf1")
+  '''
   hss = copy(n2,n3,42,0,0,0,hs)
   gx = copy(220,n2,n3,0,0,0,gx)
   c1 = Sampling(220)
   plot3p(c1,s2,s3,gx,hv=hss,k1=100,k2=1150,k3=1800,cmin=-1,cmax=1.0,png="hcs")
+  '''
+
+def goSlices():
+  ns = 50
+  eps = readImage("eps")
+  hs = readHorizons(ns,hvsfile)
+  sd = SurfaceDisplay()
+  ha = sd.amplitudeOnHorizon(hs[13],eps)
+  plot2(s2,s3,ha,cmin=0.1,cmax=1.0)
 
 
 def mask(ep,mv):

@@ -385,6 +385,7 @@ public class RosePlot {
     ArrayList<Float> x2a = new ArrayList<Float>();
     ArrayList<Float> x3a = new ArrayList<Float>();
     ArrayList<Float> fva = new ArrayList<Float>();
+    ArrayList<Float> fpn = new ArrayList<Float>();
     for (FaultSkin ski:sks) {
       int na = 0;
       int nb = 0;
@@ -422,6 +423,7 @@ public class RosePlot {
         }
         if (fpi<=15||fpi>40) {
           fpa.add(fpi);
+          fpn.add((float)nc);
           x1a.add((float)i1);
           x2a.add((float)i2);
           x3a.add((float)i3);
@@ -432,13 +434,14 @@ public class RosePlot {
       }
     }
     int np = fpa.size();
-    float[][] fps = new float[5][np];
+    float[][] fps = new float[6][np];
     for (int ip=0; ip<np; ++ip) {
       fps[0][ip] = x1a.get(ip);
       fps[1][ip] = x2a.get(ip);
       fps[2][ip] = x3a.get(ip);
       fps[3][ip] = fpa.get(ip);
       fps[4][ip] = fva.get(ip);
+      fps[5][ip] = fpn.get(ip);
     }
     return fps;
   }
