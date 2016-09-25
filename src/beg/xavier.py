@@ -229,19 +229,27 @@ def goHorizonS():
 
 def goSlices():
   ns = 50
-  eps = readImage(epssfile)
-  rgf = RecursiveGaussianFilterP(4)
-  rgf.apply0XX(eps,eps)
-  #eps = pow(eps,4)
-  eps = sub(eps,min(eps))
-  eps = div(eps,max(eps))
-  hs = readHorizons(ns,hvsfile)
-  sd = SurfaceDisplay()
-  ha = sd.amplitudeOnHorizon(hs[13],eps)
-  plot2(s2,s3,ha,cmin=0.1,cmax=0.8)
-  #has = readHorizons(ns,hasfile)
-  #plot2(s2,s3,has[13],cmin=0.1,cmax=0.8)
+  hat = readHorizons(ns,"hat")
+  rgf = RecursiveGaussianFilterP(1)
+  hak = hat[13]
+  gs = slog(hak)
+  gs = slog(gs)
+  gs = slog(gs)
+  gs = slog(gs)
+  gs = pow(gs,8)
+  gs = sub(gs,min(gs))
+  gs = div(gs,max(gs))
+  gt = pow(hak,4)
+  gt = sub(gt,min(gt))
+  gt = div(gt,max(gt))
 
+  plot2(s2,s3,gt,cmin=0.1,cmax=0.8)
+  plot2(s2,s3,gs,cmin=0.4,cmax=1.0)
+
+def slog(f):
+  return log(add(1.0,abs(f)))
+def sexp(f):
+  return sub(exp(abs(f)),1.0)
 def goCoherence():
   gx = readImage(gxfile)
   p2 = readImage(p2file)
@@ -250,6 +258,7 @@ def goCoherence():
   cn,cd = cv.covarianceEigen(10,p2,p3,gx)
   writeImage(cnfile,cn)
   writeImage(cdfile,cd)
+
 def goCoherenceEnhance():
   ns = 50
   cn = readImage(cnfile)
