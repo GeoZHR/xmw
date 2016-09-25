@@ -18,8 +18,8 @@ from ad import *
 from util import *
 from sso import *
 
-pngDir = "../../../png/sso/3d/poseidon/"
 pngDir = None
+pngDir = "../../../png/sso/3d/poseidon/"
 
 #seismicDir = "../../../data/seis/sso/3d/real/"
 seismicDir = "../../../data/seis/sso/3d/poseidon/"
@@ -55,7 +55,8 @@ def main(args):
   #goLoe()
   #goSlopes()
   #goHorizonL()
-  goHorizonS()
+  #goHorizonS()
+  goSurfaces()
   #goChannel()
   #goSmoothSL()
   #goSmoothSS()
@@ -114,6 +115,14 @@ def goHorizonS():
   cs = hd.horizonCurves(k2,k3,hs)
   plot3(gx,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="gx3d")
   plot3(gx,hs=cs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="cvs")
+  
+def goSurfaces():
+  ns = 40
+  gx = readImage(fxfile)
+  hs = readHorizons(ns,hvsfile)
+  k1,k2,k3=79,499,599
+  for k in range(ns):
+    plot3s(gx,surf=hs[k],k1=k1,k2=k2,k3=k3,cmin=-0.8,cmax=0.8,png="sf"+str(k))
 def goFirstLook():
   fx = readImage(fxfile)
   fx = gain(fx)
@@ -375,6 +384,43 @@ def addColorBar(frame,clab=None,cint=None):
   cbar.setBackground(Color.WHITE)
   frame.add(cbar,BorderLayout.EAST)
   return cbar
+
+def plot3s(f,surf=None,k1=None,k2=None,k3=None,cmin=None,cmax=None,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  ipg = sf.addImagePanels(s1,s2,s3,f)
+  if cmin!=None and cmax!=None:
+    ipg.setClips(cmin,cmax)
+  else:
+    ipg.setClips(-1,1)
+  if surf:
+    sd = SurfaceDisplay()
+    xyz,rgb = sd.horizonWithAmplitude([cmin,cmax],surf,f)
+    tgs = TriangleGroup(True,xyz,rgb)
+    sf.world.addChild(tgs)
+  ipg.setSlices(k1,k2,k3)
+  sf.setSize(870,700)
+  view = sf.getOrbitView()
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  view.setAxesScale(1.0,1.0,zscale)
+  view.setScale(1.2)
+  view.setAzimuth(210.0)
+  view.setElevation(40)
+  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  view.setTranslate(Vector3(-0.18,0.30,-0.25))
+  sf.viewCanvas.setBackground(Color.WHITE)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 def plot3(f,g=None,hs=None,surf=None,k1=None,k2=None,k3=None,
     cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
