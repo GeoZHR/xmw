@@ -1792,3 +1792,61 @@ setupForDataset: bahamas
 40.416668% done...
 40.439816% done...
 40.462963% done...
+setupForDataset: bahamas
+setupForDataset: bahamas
+FINE LocalSmoothingFilter: solve: bnorm=58754.707 rnorm=49490.902
+FINER LocalSmoothingFilter:   iter=0 rnorm=49490.902 ratio=1.0
+FINER LocalSmoothingFilter:   iter=1 rnorm=18080.373 ratio=0.3653272
+FINER LocalSmoothingFilter:   iter=2 rnorm=9458.327 ratio=0.19111244
+FINER LocalSmoothingFilter:   iter=3 rnorm=5446.8345 ratio=0.11005729
+FINER LocalSmoothingFilter:   iter=4 rnorm=3140.5637 ratio=0.06345739
+FINER LocalSmoothingFilter:   iter=5 rnorm=1848.3054 ratio=0.037346367
+FINER LocalSmoothingFilter:   iter=6 rnorm=1104.5927 ratio=0.022319105
+FINER LocalSmoothingFilter:   iter=7 rnorm=662.2634 ratio=0.013381518
+FINE LocalSmoothingFilter:   iter=8 rnorm=399.01178 ratio=0.008062325
+FINE LocalSmoothingFilter: solve: bnorm=212976.81 rnorm=183726.88
+FINER LocalSmoothingFilter:   iter=0 rnorm=183726.88 ratio=1.0
+FINER LocalSmoothingFilter:   iter=1 rnorm=72454.43 ratio=0.39435944
+FINER LocalSmoothingFilter:   iter=2 rnorm=38455.46 ratio=0.20930776
+FINER LocalSmoothingFilter:   iter=3 rnorm=21187.592 ratio=0.11532114
+FINER LocalSmoothingFilter:   iter=4 rnorm=12321.126 ratio=0.067062184
+FINER LocalSmoothingFilter:   iter=5 rnorm=7220.7734 ratio=0.03930167
+FINER LocalSmoothingFilter:   iter=6 rnorm=4312.46 ratio=0.023472125
+FINER LocalSmoothingFilter:   iter=7 rnorm=2580.3923 ratio=0.014044719
+FINE LocalSmoothingFilter:   iter=8 rnorm=1554.8107 ratio=0.00846262
+FINE LocalSmoothingFilter: solve: bnorm=194671.19 rnorm=2139021.5
+FINER LocalSmoothingFilter:   iter=0 rnorm=2139021.5 ratio=1.0
+FINER LocalSmoothingFilter:   iter=1 rnorm=694477.56 ratio=0.32467067
+FINER LocalSmoothingFilter:   iter=2 rnorm=323190.88 ratio=0.15109286
+FINER LocalSmoothingFilter:   iter=3 rnorm=185316.11 ratio=0.086635925
+FINER LocalSmoothingFilter:   iter=4 rnorm=117532.055 ratio=0.054946646
+FINER LocalSmoothingFilter:   iter=5 rnorm=77576.7 ratio=0.036267377
+FINER LocalSmoothingFilter:   iter=6 rnorm=51469.723 ratio=0.024062274
+FINER LocalSmoothingFilter:   iter=7 rnorm=35280.08 ratio=0.016493559
+FINER LocalSmoothingFilter:   iter=8 rnorm=24368.283 ratio=0.011392257
+FINER LocalSmoothingFilter:   iter=9 rnorm=17182.135 ratio=0.0080327075
+FINER LocalSmoothingFilter:   iter=10 rnorm=12337.784 ratio=0.005767957
+FINER LocalSmoothingFilter:   iter=11 rnorm=8950.561 ratio=0.0041844184
+FINER LocalSmoothingFilter:   iter=12 rnorm=6487.3013 ratio=0.003032836
+FINER LocalSmoothingFilter:   iter=13 rnorm=4721.223 ratio=0.0022071882
+FINER LocalSmoothingFilter:   iter=14 rnorm=3450.753 ratio=0.0016132391
+FINER LocalSmoothingFilter:   iter=15 rnorm=2517.7498 ratio=0.0011770568
+FINE LocalSmoothingFilter:   iter=16 rnorm=1825.8928 ratio=8.536113E-4
+FINE LocalSmoothingFilter: solve: bnorm=201817.3 rnorm=1893440.4
+FINER LocalSmoothingFilter:   iter=0 rnorm=1893440.4 ratio=1.0
+FINER LocalSmoothingFilter:   iter=1 rnorm=629640.1 ratio=0.3325376
+FINER LocalSmoothingFilter:   iter=2 rnorm=301662.03 ratio=0.15931953
+FINER LocalSmoothingFilter:   iter=3 rnorm=177161.36 ratio=0.09356585
+FINER LocalSmoothingFilter:   iter=4 rnorm=113732.88 ratio=0.06006679
+FINER LocalSmoothingFilter:   iter=5 rnorm=75079.8 ratio=0.039652582
+FINER LocalSmoothingFilter:   iter=6 rnorm=50062.688 ratio=0.026440065
+FINER LocalSmoothingFilter:   iter=7 rnorm=34369.09 ratio=0.018151661
+FINER LocalSmoothingFilter:   iter=8 rnorm=23801.686 ratio=0.012570602
+FINER LocalSmoothingFilter:   iter=9 rnorm=16874.094 ratio=0.0089118695
+FINER LocalSmoothingFilter:   iter=10 rnorm=12169.959 ratio=0.006427432
+FINER LocalSmoothingFilter:   iter=11 rnorm=8825.977 ratio=0.004661344
+FINER LocalSmoothingFilter:   iter=12 rnorm=6396.702 ratio=0.003378349
+FINER LocalSmoothingFilter:   iter=13 rnorm=4656.613 ratio=0.0024593396
+FINER LocalSmoothingFilter:   iter=14 rnorm=3400.662 ratio=0.0017960228
+FINER LocalSmoothingFilter:   iter=15 rnorm=2475.0361 ratio=0.0013071635
+FINE LocalSmoothingFilter:   iter=16 rnorm=1792.2627 ratio=9.4656413E-4
