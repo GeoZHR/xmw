@@ -304,13 +304,15 @@ public class Covariance {
   }
 
   public static float[][][] smooth(
-    double sigma, float au, float[][][] p2, float[][][] p3, float[][][] g) {
-    int n3 = g.length;
-    int n2 = g[0].length;
-    int n1 = g[0][0].length;
-    EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
+    final double sigma, final float au, final float[][][] p2, 
+    final float[][][] p3, final float[][][] g) {
+    final int n3 = g.length;
+    final int n2 = g[0].length;
+    final int n1 = g[0][0].length;
+    final EigenTensors3 d = new EigenTensors3(n1,n2,n3,true);
     d.setEigenvalues(au,0.001f,1.00f);
-    for (int i3=0; i3<n3; ++i3) {
+    loop(n3,new LoopInt() {
+    public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2) {
         for (int i1=0; i1<n1; ++i1) {
           float p2i = p2[i3][i2][i1];
@@ -326,14 +328,13 @@ public class Covariance {
           d.setEigenvectorW(i1,i2,i3,w1i,w2i,w3i);
         }
       }
-    }
+    }});
     float c = (float)(0.5*sigma*sigma);
     float[][][] h = new float[n3][n2][n1];
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
     lsf.apply(d,c,g,h);
     return h;
   }
-
 
   public float[][][] smooth(
     float sigma, EigenTensors3 et3, float[][][] num, float[][][] den) 

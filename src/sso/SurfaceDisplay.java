@@ -9,6 +9,7 @@ package sso;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.awt.ColorMap;
+import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 import util.*;
@@ -42,22 +43,49 @@ public class SurfaceDisplay {
 
 
   public float[][] amplitudeOnHorizon(
-    float[][] hz, float[][][] fx) 
+    final float[][] hz, final float[][][] fx) 
   {
-    int nx = fx.length;
-    int ny = fx[0].length;
-    int nz = fx[0][0].length;
-    Sampling sx = new Sampling(nx);
-    Sampling sy = new Sampling(ny);
-    Sampling sz = new Sampling(nz);
-    float[][] fz = new float[nx][ny];
-    SincInterpolator si = new SincInterpolator();
-    for (int ix=0; ix<nx; ++ix) {
-    for (int iy=0; iy<ny; ++iy) {
-      fz[ix][iy] = si.interpolate(sz,sy,sx,fx,hz[ix][iy],iy,ix);
-    }}
+    final int nx = fx.length;
+    final int ny = fx[0].length;
+    final int nz = fx[0][0].length;
+    final Sampling sx = new Sampling(nx);
+    final Sampling sy = new Sampling(ny);
+    final Sampling sz = new Sampling(nz);
+    final float[][] fz = new float[nx][ny];
+    final SincInterpolator si = new SincInterpolator();
+    loop(nx,new LoopInt() {
+    public void compute(int ix) {
+      for (int iy=0; iy<ny; ++iy) {
+        fz[ix][iy] = si.interpolate(sz,sy,sx,fx,hz[ix][iy],iy,ix);
+      }
+    }});
     return fz;
   }
+
+  public float[][][] amplitudeOnHorizons(
+    final float[][][] hz, final float[][][] fx) 
+  {
+    final int ns = hz.length;
+    final int nx = fx.length;
+    final int ny = fx[0].length;
+    final int nz = fx[0][0].length;
+    final Sampling sx = new Sampling(nx);
+    final Sampling sy = new Sampling(ny);
+    final Sampling sz = new Sampling(nz);
+    final float[][][] fz = new float[ns][nx][ny];
+    final SincInterpolator si = new SincInterpolator();
+    loop(ns,new LoopInt() {
+    public void compute(int is) {
+      float[][] hzi = hz[is];
+      float[][] fzi = fz[is];
+      for (int ix=0; ix<nx; ++ix) {
+      for (int iy=0; iy<ny; ++iy) {
+        fzi[ix][iy] = si.interpolate(sz,sy,sx,fx,hzi[ix][iy],iy,ix);
+      }}
+    }});
+    return fz;
+  }
+
 
 
 

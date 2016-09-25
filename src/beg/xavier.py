@@ -24,6 +24,10 @@ hvssfile = "hvss"
 hassfile = "hass"
 gsnfile = "gsn"
 scnfile = "scn"
+cnfile = "cn"
+cdfile = "cd"
+chfile = "ch"
+chsfile = "chs"
 plotOnly = False
 k1 = 51
 k1 = 59
@@ -36,7 +40,9 @@ def main(args):
   #goHorizonS()
   #goHorizonX()
   #goSlices()
-  goNonlinearDiffusion()
+  #goNonlinearDiffusion()
+  #goCoherence()
+  goCoherenceEnhance()
 
 def goNonlinearDiffusion():
   gx = readImage(gxfile)
@@ -66,11 +72,13 @@ def goSta():
   if not plotOnly:
     gx = readImage(gxfile)
     ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(4,6,6)
+    lof = LocalOrientFilter(2,4,4)
     et = lof.applyForTensors(gx)
-    sta = StructureTensorAttribute(et,20)
-    sta.setEigenvalues(1.0,0.001,0.8)
+    sta = StructureTensorAttribute(et,25)
+    sta.setEigenvalues(0.5,0.0001,1.0)
     sta.applyForPlanar(gx,ep)
+    zm = ZeroMask(0.1,4,1,1,gx)
+    zm.setValue(1.0,ep)
     writeImage("ept",ep)
   else:
     ep = readImage(epsfile)
@@ -78,7 +86,6 @@ def goSta():
   ep = pow(ep,2)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
-  ep = mask(ep)
   writeImage("ept",ep)
   print min(ep)
   print max(ep)
@@ -221,12 +228,47 @@ def goHorizonS():
 
 def goSlices():
   ns = 50
-  eps = readImage("eps")
+  '''
+  eps = readImage("ept")
+  eps = pow(eps,4)
+  eps = sub(eps,min(eps))
+  eps = div(eps,max(eps))
   hs = readHorizons(ns,hvsfile)
   sd = SurfaceDisplay()
   ha = sd.amplitudeOnHorizon(hs[13],eps)
-  plot2(s2,s3,ha,cmin=0.1,cmax=1.0)
+  plot2(s2,s3,ha,cmin=0.0,cmax=1.0)
+  '''
+  has = readHorizons(ns,hasfile)
+  plot2(s2,s3,has[13],cmin=0.1,cmax=0.6)
 
+def goCoherence():
+  gx = readImage(gxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  cv = Covariance()
+  cn,cd = cv.covarianceEigen(10,p2,p3,gx)
+  writeImage(cnfile,cn)
+  writeImage(cdfile,cd)
+def goCoherenceEnhance():
+  cn = readImage(cnfile)
+  cd = readImage(cdfile)
+  ch = div(cn,cd)
+  writeImage(chfile)
+
+  hs = readHorizons(ns,hvsfile)
+  sd = SurfaceDisplay()
+  ha = sd.amplitudeOnHorizon(hs[13],ch)
+  plot2(s2,s3,ha,cmin=0.0,cmax=1.0)
+
+  '''
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  cv = Covariance()
+  cns = cv.smooth(8,0.2,p2,p3,cn)
+  cds = cv.smooth(8,0.2,p2,p3,cd)
+  chs = div(cns,cds)
+  writeImage(chsfile)
+  '''
 
 def mask(ep,mv):
   gx = readImage(gxfile)
