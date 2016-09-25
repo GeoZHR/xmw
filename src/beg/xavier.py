@@ -8,7 +8,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 pngDir = None
 pngDir = "../../../png/beg/xavier/bahamas/"
 
-gxfile = "gs"
+gxfile = "gxc"
 p2file = "p2"
 p3file = "p3"
 p2sfile = "p2s"
@@ -24,11 +24,13 @@ hasfile = "has"
 hvssfile = "hvss"
 hassfile = "hass"
 gsnfile = "gsn"
+gcnfile = "gcn"
 scnfile = "scn"
 cnfile = "cn"
 cdfile = "cd"
 chfile = "ch"
 chsfile = "chs"
+semfile = "sem"
 plotOnly = False
 k1 = 51
 k1 = 59
@@ -44,6 +46,7 @@ def main(args):
   #goNonlinearDiffusion()
   #goCoherence()
   #goCoherenceEnhance()
+  #goSemblance()
 
 def goNonlinearDiffusion():
   gx = readImage(gxfile)
@@ -53,11 +56,11 @@ def goNonlinearDiffusion():
     ets = lof.applyForTensors(gx)
     sig = 10
     cycle,limit=3,0.5
-    lbd = 0.1
+    lbd = 0.08
     fed = FastExplicitDiffusion()
     fed.setCycles(cycle,limit)
     sc, gs = fed.apply(sig,lbd,1.0,ets,gx)
-    writeImage(gsnfile,gs)
+    writeImage(gcnfile,gs)
     writeImage(scnfile,sc)
   else:
     gs = readImage(gsnfile)
@@ -73,10 +76,10 @@ def goSta():
   if not plotOnly:
     gx = readImage(gxfile)
     ep = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(2,4,4)
+    lof = LocalOrientFilter(6,4,4)
     et = lof.applyForTensors(gx)
-    sta = StructureTensorAttribute(et,25)
-    sta.setEigenvalues(0.5,0.0001,1.0)
+    sta = StructureTensorAttribute(et,45)
+    sta.setEigenvalues(1.0,0.0001,0.5)
     sta.applyForPlanar(gx,ep)
     zm = ZeroMask(0.1,4,1,1,gx)
     zm.setValue(1.0,ep)
@@ -229,18 +232,18 @@ def goHorizonS():
 
 def goSlices():
   ns = 50
-  eps = readImage(epssfile)
-  rgf = RecursiveGaussianFilterP(4)
-  rgf.apply0XX(eps,eps)
-  #eps = pow(eps,4)
-  eps = sub(eps,min(eps))
-  eps = div(eps,max(eps))
-  hs = readHorizons(ns,hvsfile)
+  eps = readImage(semfile)
+  rgf = RecursiveExponentialFilter(4)
+  rgf.apply1(eps,eps)
   sd = SurfaceDisplay()
+  hs = readHorizons(ns,hvsfile)
   ha = sd.amplitudeOnHorizon(hs[13],eps)
-  plot2(s2,s3,ha,cmin=0.1,cmax=0.8)
+  writeImage("sem13",hs[13])
+  ha = pow(ha,4)
+  ha = sub(ha,min(ha))
+  ha = div(ha,max(ha))
   #has = readHorizons(ns,hasfile)
-  #plot2(s2,s3,has[13],cmin=0.1,cmax=0.8)
+  plot2(s2,s3,ha,cmin=0.0,cmax=0.4,png="sem13")
 
 def goCoherence():
   gx = readImage(gxfile)
@@ -250,6 +253,7 @@ def goCoherence():
   cn,cd = cv.covarianceEigen(10,p2,p3,gx)
   writeImage(cnfile,cn)
   writeImage(cdfile,cd)
+
 def goCoherenceEnhance():
   ns = 50
   cn = readImage(cnfile)
@@ -271,6 +275,32 @@ def goCoherenceEnhance():
   chs = div(cns,cds)
   writeImage(chsfile)
   '''
+def goSemblance():
+  gx = readImage(gxfile)
+  lof = LocalOrientFilter(8,2,2)
+  ets = lof.applyForTensors(gx)
+  lsf = LocalSmoothingFilter()
+  sed = mul(gx,gx)
+  sen = zerofloat(n1,n2,n3)
+  gxt = zerofloat(n1,n2,n3)
+  #inner smoothing
+  ets.setEigenvalues(0.0001,1.0,1.0)
+  lsf.applySmoothL(0.35,gx,gxt)
+  lsf.apply(ets,4,gxt,sen)
+  sen = mul(sen,sen)
+  lsf.applySmoothL(0.35,sed,gxt)
+  lsf.apply(ets,4,gxt,sed)
+  #outer smoothing
+  ets.setEigenvalues(1.0,0.0001,0.5)
+  lsf.applySmoothL(0.35,sen,gxt)
+  lsf.apply(ets,16,gxt,sen)
+  lsf.applySmoothL(0.35,sed,gxt)
+  lsf.apply(ets,16,gxt,sed)
+  sem = div(sen,sed)
+  zm = ZeroMask(0.1,4,1,1,gx)
+  zm.setValue(0.0,sem)
+  writeImage(semcfile,sem)
+
 
 def mask(ep,mv):
   gx = readImage(gxfile)
