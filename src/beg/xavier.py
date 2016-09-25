@@ -232,15 +232,15 @@ def goSlices():
   eps = readImage(epssfile)
   rgf = RecursiveGaussianFilterP(4)
   rgf.apply0XX(eps,eps)
-  eps = pow(eps,4)
+  #eps = pow(eps,4)
   eps = sub(eps,min(eps))
   eps = div(eps,max(eps))
   hs = readHorizons(ns,hvsfile)
   sd = SurfaceDisplay()
   ha = sd.amplitudeOnHorizon(hs[13],eps)
   plot2(s2,s3,ha,cmin=0.1,cmax=0.8)
-  has = readHorizons(ns,hasfile)
-  plot2(s2,s3,has[13],cmin=0.1,cmax=0.8)
+  #has = readHorizons(ns,hasfile)
+  #plot2(s2,s3,has[13],cmin=0.1,cmax=0.8)
 
 def goCoherence():
   gx = readImage(gxfile)
