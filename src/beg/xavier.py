@@ -39,7 +39,7 @@ def main(args):
   #goSlopes()
   #goHorizonS()
   #goHorizonX()
-  #goSlices()
+  goSlices()
   #goNonlinearDiffusion()
   #goCoherence()
   goCoherenceEnhance()
