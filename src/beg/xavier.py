@@ -39,10 +39,14 @@ def main(args):
   #goSlopes()
   #goHorizonS()
   #goHorizonX()
-  goSlices()
+  #goSlices()
   #goNonlinearDiffusion()
   #goCoherence()
-  goCoherenceEnhance()
+  #goCoherenceEnhance()
+  eps = readImage(epsfile)
+  epss = copy(200,n2,n3,0,0,0,eps)
+  writeImage(epssfile,epss)
+
 
 def goNonlinearDiffusion():
   gx = readImage(gxfile)

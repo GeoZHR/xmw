@@ -67,5 +67,4 @@ public class Helper {
     return new float[][][][]{p2,p3};
   }
 
-
 }
