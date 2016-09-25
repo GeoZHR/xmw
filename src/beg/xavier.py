@@ -250,10 +250,11 @@ def goCoherence():
   writeImage(cnfile,cn)
   writeImage(cdfile,cd)
 def goCoherenceEnhance():
+  ns = 50
   cn = readImage(cnfile)
   cd = readImage(cdfile)
   ch = div(cn,cd)
-  writeImage(chfile)
+  writeImage(chfile,ch)
 
   hs = readHorizons(ns,hvsfile)
   sd = SurfaceDisplay()
