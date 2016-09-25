@@ -304,6 +304,27 @@ public class Covariance {
   }
 
   public float[][][] smooth(
+    float sigma, float[][][] p2, float[][][] p3, float[][][] fx) 
+  {
+    int n3 = den.length;
+    int n2 = den[0].length;
+    int n1 = den[0][0].length;
+    float[][][] w = sub(1f,div(num,den));
+    float[][][] b = new float[n3][n2][n1];
+    float[][][] r = new float[n3][n2][n1];
+    VecArrayFloat3 vb = new VecArrayFloat3(b);
+    VecArrayFloat3 vr = new VecArrayFloat3(r);
+    Smoother3 smoother3 = new Smoother3(sigma, et3);
+    A3 a3 = new A3(smoother3,mul(w,den));
+    CgSolver cs = new CgSolver(0.001,20);
+    mul(w,num,b);
+    smoother3.applyTranspose(b);
+    cs.solve(a3,vb,vr);
+    return r;
+  }
+
+
+  public float[][][] smooth(
     float sigma, EigenTensors3 et3, float[][][] num, float[][][] den) 
   {
     int n3 = den.length;
