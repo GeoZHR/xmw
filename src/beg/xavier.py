@@ -231,38 +231,14 @@ def goHorizonS():
   '''
 
 def goSlices():
-  ns = 50
-<<<<<<< HEAD
-  hat = readHorizons(ns,"hat")
-  rgf = RecursiveGaussianFilterP(1)
-  hak = hat[13]
-  gs = slog(hak)
-  gs = slog(gs)
-  gs = slog(gs)
-  gs = slog(gs)
-  gs = pow(gs,8)
-  gs = sub(gs,min(gs))
-  gs = div(gs,max(gs))
-  gt = pow(hak,4)
-  gt = sub(gt,min(gt))
-  gt = div(gt,max(gt))
-=======
-  eps = readImage(semfile)
-  rgf = RecursiveExponentialFilter(4)
-  rgf.apply1(eps,eps)
-  sd = SurfaceDisplay()
-  hs = readHorizons(ns,hvsfile)
-  ha = sd.amplitudeOnHorizon(hs[13],eps)
-  writeImage("sem13",hs[13])
+  ha = readImage2D(n2,n3,"semc13")
   ha = pow(ha,4)
+  ha = gain2(ha)
   ha = sub(ha,min(ha))
   ha = div(ha,max(ha))
-  #has = readHorizons(ns,hasfile)
-  plot2(s2,s3,ha,cmin=0.0,cmax=0.4,png="sem13")
->>>>>>> d3a5fe561ca65fd52b32f58fe3587cbed6d3fc6a
-
-  plot2(s2,s3,gt,cmin=0.1,cmax=0.8)
-  plot2(s2,s3,gs,cmin=0.4,cmax=1.0)
+  print min(ha)
+  print max(ha)
+  plot2(s2,s3,ha,cmin=0.15,cmax=0.4,png="sem13")
 
 def slog(f):
   return log(add(1.0,abs(f)))
@@ -334,6 +310,15 @@ def mask(ep,mv):
 def normalize(ss):
   sub(ss,min(ss),ss)
   div(ss,max(ss),ss)
+
+def gain2(x):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(100.0)
+  ref.apply1(g,g)
+  y = zerofloat(n2,n3)
+  div(x,sqrt(g),y)
+  return y
+
   
 def gain(x):
   g = mul(x,x) 
@@ -465,33 +450,19 @@ def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,title=None,png=None):
   d2 = s2.getDelta()
   n1 = s1.getCount()
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
-  #orientation = PlotPanel.Orientation.X1RIGHT_X2UP;
   panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE)
-  #panel.setVInterval(0.1)
-  #panel.setHInterval(1.0)
-  #panel.setHLabel("Crossline (traces)")
-  #panel.setVLabel("Samples")
   pxv = panel.addPixels(0,0,s1,s2,f);
   pxv.setColorModel(ColorMap.GRAY)
+  print cmax
   if cmin and cmax:
     pxv.setClips(cmin,cmax)
-  #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  #cb = panel.addColorBar();
-  if cint:
-    cb.setInterval(cint)
-  if clab:
-    cb.setLabel(clab)
   if title:
     panel.addTitle(title)
-  #panel.setColorBarWidthMinimum(50)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
-  #frame.setTitle("normal vectors")
   frame.setVisible(True);
-  #frame.setSize(1020,700) #for f3d
   frame.setSize(round(n1*0.9),round(n2*0.8)) #for poseidon
-  #frame.setFontSize(13)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 

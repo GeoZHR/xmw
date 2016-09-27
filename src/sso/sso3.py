@@ -51,12 +51,12 @@ s3 = Sampling(n3,d3,f3)
 plotOnly = True
 
 def main(args):
-  #goLof()
+  goLof()
   #goLoe()
   #goSlopes()
   #goHorizonL()
   #goHorizonS()
-  goSurfaces()
+  #goSurfaces()
   #goChannel()
   #goSmoothSL()
   #goSmoothSS()
@@ -137,7 +137,7 @@ def goLof():
     writeTensors(etlfile,ets)
   else:
     ets = readTensors(etlfile)
-  k1,k2,k3=40,390,416
+  k1,k2,k3=41,390,416
   plot3p(s1,s2,s3,fx,k1=k1,k2=k2,k3=k3,
         cmap=ColorMap.GRAY,cmin=-0.5,cmax=0.5,clab="Amplitude",png="gxp")
   k1,k2,k3=76,348,376
