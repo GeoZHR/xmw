@@ -183,6 +183,18 @@ def readHorizons(ns,name):
   ais.close()
   return image
 
+def readImage2D(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 def readImage(name):
   """ 
   Reads an image from a file with specified name.

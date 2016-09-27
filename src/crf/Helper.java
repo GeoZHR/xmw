@@ -19,7 +19,7 @@ public class Helper {
       int i1 = round(fps[0][ip]);
       int i2 = round(fps[1][ip]);
       int i3 = round(fps[2][ip]);
-      fpm[i3][i2][i1] = fps[4][ip];
+      fpm[i3][i2][i1] = fps[3][ip];
     }
 
   }
