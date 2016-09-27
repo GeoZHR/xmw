@@ -101,13 +101,10 @@ def main(args):
 def goSkinDisplay():
   gx = readImage(gsxfile)
   sks = readSkins(fsktv)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  fsl = FaultSlipper(gx,p2,p3)
-  fsl.setOffset(2.0) # the default is 2.0 samples
-  fsl.setZeroSlope(False) # True only if we want to show the error
-  fsl.computeDipSlips(sks,minThrow,maxThrow)
-  plot3x(gx,skins=[sks[0],sks[10],sks[20],sks[30]],smax=10,links=True)
+  frs = FaultReskin()
+  skk = frs.applyForSkins(n1,n2,n3,1000,sks)
+  plot3(gx,sks)
+  plot3(gx,skk)
 def goPointsCheck():
   #fpt = readImage(fptvfile)
   hu1 = readImage2D(n2,n3,hu1file)

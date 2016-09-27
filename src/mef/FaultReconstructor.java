@@ -187,8 +187,6 @@ public class FaultReconstructor {
     return new float[][][][]{ss,fp,ft};
   }
 
-
-
   private void setKdTreeNodes(
     FaultCell[] cells, float[][] xs, float[][] us, float[] fls) {
     int nc = cells.length;
