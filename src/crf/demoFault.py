@@ -60,12 +60,12 @@ minSkinSize = 200
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 20.0
+maxThrow = 10.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/beg/nathan/sub8/"
+pngDir = "../../../png/beg/nathan/sub8/skins/"
 pngDir = None
 plotOnly = False
 
@@ -82,12 +82,12 @@ def main(args):
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
-  goFaultPointsScale()
+  #goFaultPointsScale()
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
-  goRosePlotsScale()
+  #goRosePlotsScale()
   #goRosePlotsN()
   #goRosePlotsNScale()
   #goResetSurfaces()
@@ -96,7 +96,18 @@ def main(args):
   #goSetFaultImages()
   #goStrikeMask()
   #goPointsCheck()
+  goSkinDisplay()
 
+def goSkinDisplay():
+  gx = readImage(gsxfile)
+  sks = readSkins(fsktv)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  fsl = FaultSlipper(gx,p2,p3)
+  fsl.setOffset(2.0) # the default is 2.0 samples
+  fsl.setZeroSlope(False) # True only if we want to show the error
+  fsl.computeDipSlips(sks,minThrow,maxThrow)
+  plot3x(gx,skins=[sks[0],sks[10],sks[20],sks[30]],smax=10,links=True)
 def goPointsCheck():
   #fpt = readImage(fptvfile)
   hu1 = readImage2D(n2,n3,hu1file)
@@ -111,7 +122,7 @@ def goPointsCheck():
   hp.horizonToImage(fv,div(hu1,5),fm)
   hp.horizonToImage(fv,div(hm1,5),fm)
   hp.horizonToImage(fv,div(hl1,5),fm)
-  plot3(gx,fm,cmin=0.0,cmax=1.0,cmap=jetFillExceptMin(1.0))
+  plot3(gx,fm,cmin=0.0,cmax=180,cmap=hueFillExceptMin(1.0))
 
 def goStrikeMask():
   gx = readImage(gxfile)
@@ -810,6 +821,178 @@ def plot2(s1,s2,f,cmap=None,cmin=None,cmax=None,cint=None,clab=None,png=None):
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 
+def plot3x(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          xyz=None,cells=None,skins=None,smax=0.0,slices=None,
+          links=False,curve=False,trace=False,htgs=None,fbs=None,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      #ipg.setClips(-2.0,2.0)
+      ipg.setClips(-2.0,1.5) # use for subset plots
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-2.0,1.5)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if cbar:
+    cbar.setWidthMinimum(120)
+  if xyz:
+    pg = PointGroup(0.2,xyz)
+    ss = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.YELLOW)
+    ss.add(cs)
+    pg.setStates(ss)
+    #ss = StateSet()
+    #ps = PointState()
+    #ps.setSize(5.0)
+    #ss.add(ps)
+    #pg.setStates(ss)
+    sf.world.addChild(pg)
+  if cells:
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    cmap = ColorMap(0.0,1.0,ColorMap.JET)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
+    qg = QuadGroup(xyz,uvw,rgb)
+    qg.setStates(ss)
+    sf.world.addChild(qg)
+  if htgs:
+    for htg in htgs:
+      sf.world.addChild(htg)
+  if skins:
+    sg = Group()
+    ss = StateSet()
+    lms = LightModelState()
+    lms.setLocalViewer(False)
+    lms.setTwoSide(True)
+    ss.add(lms)
+    ms = MaterialState()
+    ms.setSpecular(Color.GRAY)
+    ms.setShininess(100.0)
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    if not smax:
+      ms.setEmissiveBack(Color(0.0,0.0,0.5))
+    ss.add(ms)
+    sg.setStates(ss)
+    size = 2.0
+    if links:
+      size = 0.65 
+      ls = LineState()
+      ls.setWidth(1.5)
+      ls.setSmooth(True)
+      ss.add(ls)
+    ct = 0
+    for skin in skins:
+      if smax>0.0: # show fault throws
+        cmap = ColorMap(0,smax,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
+      else: # show fault likelihood
+        cmap = ColorMap(0.0,1.0,ColorMap.JET)
+        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
+      qg = QuadGroup(xyz,uvw,rgb)
+      qg.setStates(None)
+      sg.addChild(qg)
+      if curve or trace:
+        cell = skin.getCellNearestCentroid()
+        if curve:
+          xyz = cell.getFaultCurveXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+        if trace:
+          xyz = cell.getFaultTraceXyz()
+          pg = PointGroup(0.5,xyz)
+          sg.addChild(pg)
+      if links:
+        if ct==0:
+          r,g,b=0,0,0
+        if ct==1:
+          r,g,b=0,0,1
+        if ct==2:
+          r,g,b=0,1,1
+        if ct==3:
+          #r,g,b=0.627451,0.12549,0.941176
+          r,g,b=1,1,1
+        r,g,b=0,0,1
+        xyz = skin.getCellLinksXyz()
+        #rgb = skin.getCellLinksRgb(r,g,b,xyz)
+        #lg = LineGroup(xyz,rgb)
+        lg = LineGroup(xyz)
+        sg.addChild(lg)
+        #ct = ct+1
+    sf.world.addChild(sg)
+  ipg.setSlices(262,80,200)
+  #ipg.setSlices(85,5,43)
+  #ipg.setSlices(85,5,102)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.MAGENTA)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if cbar:
+    sf.setSize(1037,700)
+  else:
+    sf.setSize(900,700)
+  vc = sf.getViewCanvas()
+  vc.setBackground(Color.WHITE)
+  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
+  ov = sf.getOrbitView()
+  zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.6)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.0,-0.08,-0.06))
+  ov.setAzimuthAndElevation(-60.0,32.0)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 #############################################################################
 run(main)

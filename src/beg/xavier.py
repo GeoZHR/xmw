@@ -8,7 +8,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 pngDir = None
 pngDir = "../../../png/beg/xavier/bahamas/"
 
-gxfile = "gxc"
+gxfile = "gs"
 p2file = "p2"
 p3file = "p3"
 p2sfile = "p2s"
@@ -31,6 +31,7 @@ cdfile = "cd"
 chfile = "ch"
 chsfile = "chs"
 semfile = "sem"
+semcfile = "semc"
 plotOnly = False
 k1 = 51
 k1 = 59
@@ -232,18 +233,31 @@ def goHorizonS():
 
 def goSlices():
   ns = 50
-  eps = readImage(semfile)
+  '''
+  eps = readImage("semx")
   rgf = RecursiveExponentialFilter(4)
   rgf.apply1(eps,eps)
   sd = SurfaceDisplay()
   hs = readHorizons(ns,hvsfile)
-  ha = sd.amplitudeOnHorizon(hs[13],eps)
-  writeImage("sem13",hs[13])
-  ha = pow(ha,4)
-  ha = sub(ha,min(ha))
-  ha = div(ha,max(ha))
-  #has = readHorizons(ns,hasfile)
-  plot2(s2,s3,ha,cmin=0.0,cmax=0.4,png="sem13")
+  has = zerofloat(n2,n3,ns)
+  for k in range(ns):
+    ha = sd.amplitudeOnHorizon(hs[k],eps)
+    ha = pow(ha,4)
+    ha = gain2(ha)
+    ha = sub(ha,min(ha))
+    ha = div(ha,max(ha))
+    has[k] = ha
+  writeImage("has",has)
+  '''
+  hs = readHorizons(ns,hasfile)
+  for k in range(0,11,1):
+    m3 = zerofloat(n3)
+    for i3 in range(n3):
+      mf = MedianFinder(n2)
+      m3[i3]=mf.findMedian(hs[k][i3])
+    mf = MedianFinder(n3)
+    mv = mf.findMedian(m3)
+    plot2(s2,s3,hs[k],cmin=mv-0.06,cmax=mv+0.03,png="sem"+str(k))
 
 def goCoherence():
   gx = readImage(gxfile)
@@ -286,20 +300,22 @@ def goSemblance():
   #inner smoothing
   ets.setEigenvalues(0.0001,1.0,1.0)
   lsf.applySmoothL(0.35,gx,gxt)
-  lsf.apply(ets,4,gxt,sen)
+  lsf.apply(ets,5,gxt,sen)
   sen = mul(sen,sen)
   lsf.applySmoothL(0.35,sed,gxt)
-  lsf.apply(ets,4,gxt,sed)
+  lsf.apply(ets,5,gxt,sed)
   #outer smoothing
-  ets.setEigenvalues(1.0,0.0001,0.5)
+  lof = LocalOrientFilter(3,6,6)
+  ets = lof.applyForTensors(gx)
+  ets.setEigenvalues(0.5,0.0001,1.0)
   lsf.applySmoothL(0.35,sen,gxt)
-  lsf.apply(ets,16,gxt,sen)
+  lsf.apply(ets,20,gxt,sen)
   lsf.applySmoothL(0.35,sed,gxt)
-  lsf.apply(ets,16,gxt,sed)
+  lsf.apply(ets,20,gxt,sed)
   sem = div(sen,sed)
   zm = ZeroMask(0.1,4,1,1,gx)
   zm.setValue(0.0,sem)
-  writeImage(semcfile,sem)
+  writeImage("semx",sem)
 
 
 def mask(ep,mv):
@@ -312,6 +328,14 @@ def normalize(ss):
   sub(ss,min(ss),ss)
   div(ss,max(ss),ss)
   
+def gain2(x):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(50.0)
+  ref.apply(g,g)
+  y = zerofloat(n2,n3)
+  div(x,sqrt(g),y)
+  return y
+
 def gain(x):
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(100.0)
