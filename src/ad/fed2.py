@@ -19,8 +19,8 @@ from util import *
 from sso import *
 from ad import *
 
-pngDir = None
 pngDir = "../../../png/ad/fed2/"
+pngDir = None
 
 seismicDir = "../../../data/seis/ad/fed/"
 fxfile = "tp73"

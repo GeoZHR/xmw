@@ -1268,9 +1268,9 @@ public class LocalOrientEstimator {
             float v2i = 1;
             float w1i = -u3i/u1i;
             float w3i = 1;
-            v2i  = 1f/(v1i*v1i+1);
+            v2i  = 1f/sqrt(v1i*v1i+1);
             v1i *= v2i;
-            w3i  = 1f/(w1i*w1i+1);
+            w3i  = 1f/sqrt(w1i*w1i+1);
             w1i *= w3i;
             if (a1!=null||a2!=null||a3!=null) {
               float a1i = u1i*x1i+v1i*x2i+w1i*x3i;

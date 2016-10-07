@@ -8,8 +8,8 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/sap/"
-_pngdir = "../../../png/sap/"
+_datdir = "../../../data/seis/pik/"
+_pngdir = "../../../png/pik/"
 
 #############################################################################
 # Setup
@@ -25,17 +25,17 @@ def setupForSubset(name):
   global seismicDir
   global s1,s2,s3
   global n1,n2,n3
-  if name=="semblance":
-    """ semblance """
-    print "setupForSubset: semblance"
-    pngDir = _pngdir+"semblance/"
-    seismicDir = _datdir+"semblance/"
-    n1,n2 = 1001,101
-    d1,d2 = 0.004,10 # (s,km/s)
-    f1,f2 = 0.0,2000
-    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
-    n3,d3,f3 = 1,1,1
-    s3 = Sampling(n3,d3,f3)
+  if name=="fault2d":
+    """ 2d fault """
+    print "setupForSubset: 2d fault"
+    pngDir = _pngdir+"fault/2d/"
+    seismicDir = _datdir+"fault/2d/"
+    n1,n2 = 222,440 #f3d75s
+    n1,n2 = 400,801 #cylde200
+    n1,n2 = 300,1200 #gx238 crf dataset
+    d1,d2 = 1,1 # (s,km/s)
+    f1,f2 = 0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
   elif name=="channel":
     """ nwc channel (slice 120) """
     print "setupForSubset: channel"

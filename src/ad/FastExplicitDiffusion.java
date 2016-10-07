@@ -43,6 +43,7 @@ public class FastExplicitDiffusion {
     float[][] gx = copy(fx);
     for (int m=0; m<_m; ++m) {
     for (int ic=0; ic<nc; ++ic) {
+      System.out.println("ic="+ic);
       applyLaplacian(et,-ts[ic],copy(gx),gx);
     }}
     return gx;

@@ -1,0 +1,41 @@
+1.8-svn	sfsigmoid	src/pdp/2d:	xinwu@xinwu	Tue Sep 27 17:42:18 2016
+
+	d2=0.008
+	o1=0
+	n2=210
+	label1="Time"
+	o2=0
+	data_format="native_float"
+	label2="Lateral"
+	esize=4
+	in="stdout"
+	unit1="s"
+	unit2="km"
+	d1=0.004
+	n1=200
+	in="stdin"
+
+1.8-svn	sfput	src/pdp/2d:	xinwu@xinwu	Tue Sep 27 17:42:18 2016
+
+	data_format="native_float"
+	label2=Distance
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sfsmooth	src/pdp/2d:	xinwu@xinwu	Tue Sep 27 17:42:18 2016
+
+	data_format="native_float"
+	esize=4
+	in="stdout"
+	in="stdin"
+
+1.8-svn	sfsmooth	src/pdp/2d:	xinwu@xinwu	Tue Sep 27 17:42:18 2016
+
+	data_format="native_float"
+	esize=4
+	in="/Users/xinwu/Home/research/data/scratch/src/pdp/2d/sigmoid.rsf@"
+1.8-svn	sfdip	src/pdp/2d:	xinwu@xinwu	Tue Sep 27 17:42:24 2016
+
+	data_format="native_float"
+	esize=4
+	in="/Users/xinwu/Home/research/data/scratch/src/pdp/2d/sdip.rsf@"

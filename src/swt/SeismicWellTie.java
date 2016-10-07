@@ -182,6 +182,9 @@ public class SeismicWellTie {
     SynSeis.Model[] models = new SynSeis.Model[nl];
     for (int il=0; il<nl; ++il) {
       models[il] = SynSeis.getModel(logs[il]);
+      System.out.println("id="+logs[il].id);
+      System.out.println("x2="+models[il].x2);
+      System.out.println("x3="+models[il].x3);
     }
     return getSamples(s1,models);
   }

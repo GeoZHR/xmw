@@ -21,12 +21,12 @@ from sso import *
 
 
 pngDir = None
-pngDir = "../../../png/sso/3d/sta/fake/"
+pngDir = "../../../png/sso/3d/fake/"
 
-seismicDir = "../../../data/seis/sso/3d/sta/fake/"
-gxfile = "gx"
+seismicDir = "../../../data/seis/sso/3d/fake/"
+fxfile = "fx"
 hzfile = "hz"
-fskbase = "fsk"
+epsfile = "eps"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 121,152,153
@@ -37,9 +37,28 @@ plotOnly = True
 
 def main(args):
   #goLof()
-  #goSta()
+  goSta()
   #goSemblance()
-  goVW()
+def goSta():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    ep = zerofloat(n1,n2,n3)
+    el = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(4,2)
+    et = lof.applyForTensors(fx)
+    sta = StructureTensorAttribute(et,30)
+    sta.setGradientSmoothing(2)
+    sta.setEigenvalues(1.0,0.1,0.6)
+    sta.applyForPlanarLinear(fx,ep,el)
+    writeImage(epsfile,ep)
+  else:
+    ep = readImage(epsfile)
+  ep = pow(ep,6)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  hz = readImage2D(n2,n3,hzfile)
+  plot3(ep,hz=hz,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eps")
+
 def goVW():
   sk = readSkins(fskbase)
   gx = readImage(gxfile)
@@ -203,14 +222,15 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          skins=None,smax=0.0,slices=None, htgs=None,hz=None,mk=-1,
-          et=None,w=True,samples=None,png=None):
+def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,dh=None,k1=120,
+    cmin=None,cmax=None,cmap=None,mk=-1,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
   s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
-  d1,d2,d3=s1.getDelta(),s2.getDelta(),s3.getDelta()
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -220,14 +240,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-2.0,1.5) # use for subset plots
+      ipg.setClips(-2.0,2.0)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2.0,1.5)
+    ipg.setClips1(-2.0,2.0)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -237,43 +256,48 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
-  if cbar:
-    cbar.setWidthMinimum(85)
-  if htgs:
-    for htg in htgs:
-      sf.world.addChild(htg)
   if et:
-    tv = TensorView()
-    if w:
-      hs = tv.applyForSegmentsW(2,et,hz)
-    else:
-      hs = tv.applyForSegmentsV(2,et,hz,skins)
-    cp = ColorMap(0,1,ColorMap.JET)
-    vi = fillfloat(0.65,6)
-    cb = cp.getRgbFloats(vi)
-    for hi in hs:
-      lg = LineGroup(hi,cb)
-      ss = StateSet()
-      lg.setStates(ss)
-      ls = LineState()
-      ls.setWidth(10)
-      ls.setSmooth(False)
-      ss.add(ls)
-      sf.world.addChild(lg)
-  ipg.setSlices(n1,138,59)
-  #ipg.setSlices(92,140,59)
+    hz = readImage2D(hzfile)
+    node = TensorEllipsoids(s1,s2,s3,et,ep,hz)
+    states = StateSet.forTwoSidedShinySurface(Color.YELLOW);
+    node.setStates(states)
+    sf.world.addChild(node)
   if hz:
     sd = SurfaceDisplay()
     ts = sd.horizonWithAmplitude(mk,[cmin,cmax],hz,f)
     tg = TriangleGroup(True,ts[0],ts[1])
     sf.world.addChild(tg)
-  if samples:
-    fx,x1,x2,x3 = samples
-    vmin,vmax,vmap= 6000,16000,ColorMap.JET
-    pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
-    sf.world.addChild(pg)
+  if ha:
+    amin = -45 #-0.25*Math.PI
+    amax =  45 #0.25*Math.PI
+    sd = SurfaceDisplay()
+    hz = readImage2D(hzfile)
+    ha = toDegrees(ha)
+    print min(ha)
+    print max(ha)
+    ts = sd.horizonWithChannelAzimuth([cmin,cmax],[amin,amax],hz,f,ha)
+    tg = TriangleGroup(True,ts[0],ts[1])
+    sf.world.addChild(tg)
+  if dh:
+    pi = Math.PI
+    amin = 0
+    amax = 15
+    sd = SurfaceDisplay()
+    hz = readImage2D(hzfile)
+    dh = toDegrees(dh)
+    ts = sd.horizonWithChannelAzimuth([cmin,cmax],[amin,amax],hz,f,dh)
+    tg = TriangleGroup(True,ts[0],ts[1])
+    sf.world.addChild(tg)
+
   if cbar:
-    sf.setSize(852,700)
+    cbar.setWidthMinimum(120)
+  #ipg.setSlices(153,760,450)
+  ipg.setSlices(101,138,39)
+  ipg.setSlices(101,135,35)
+  #ipg.setSlices(85,5,102)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
+  if cbar:
+    sf.setSize(887,700)
   else:
     sf.setSize(750,700)
   vc = sf.getViewCanvas()
@@ -283,9 +307,9 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov = sf.getOrbitView()
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
-  ov.setAzimuthAndElevation(115.0,40.0)
-  ov.setTranslate(Vector3(0.02,0.16,-0.3))
-  ov.setScale(1.5)
+  ov.setAzimuthAndElevation(140.0,40.0)
+  ov.setTranslate(Vector3(-0.06,0.12,-0.27))
+  ov.setScale(1.25)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

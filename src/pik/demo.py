@@ -7,10 +7,10 @@ Version: 2016.06.01
 
 
 from utils import * 
-#setupForSubset("semblance")
+setupForSubset("semblance")
 #setupForSubset("channel")
 #setupForSubset("surface")
-setupForSubset("env")
+#setupForSubset("env")
 #setupForSubset("semblance3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -32,8 +32,8 @@ plotOnly = False
 
 def main(args):
   #goABsemblance()
-  #goAbSemblancePik()
-  goEnv3dPik()
+  goAbSemblancePik()
+  #goEnv3dPik()
   #goChannel()
   #goSurface()
   #goSemblance3d() 
@@ -41,7 +41,7 @@ def main(args):
   #goSlices()
 def goAbSemblancePik():
   sem = readImage(semfile)
-  opp = OptimalPathPicker(1,2)
+  opp = OptimalPathPicker(3,2)
   wht = opp.applyForWeight(sem)
   tms1 = zerofloat(n1,n2)
   tms2 = zerofloat(n1,n2)

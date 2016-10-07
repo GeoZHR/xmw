@@ -98,7 +98,16 @@ def main(args):
   #goSetFaultImages()
   #goStrikeMask()
   #goPointsCheck()
+<<<<<<< HEAD
   #goReskin()
+=======
+  #goSkinDisplay()
+
+  gx = readImage(gxfile)
+  gc = gx[238]
+  gs = copy(300,1200,50,2475,gc)
+  writeImage("gx238",gs)
+>>>>>>> 719aea5b525424830ee658ce281366a2c24d09e6
 
 def goReskin():
   sks = readSkins(fsktv)
