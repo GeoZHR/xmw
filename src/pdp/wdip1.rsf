@@ -1,0 +1,218 @@
+
+
+/book/3DI/Bin/SGI64/ComAz_salt.x:   louis@santorin   Tue Aug 10 14:58:10 1999
+		esize=4
+		n1=675
+		n2=216
+		n3=400
+		n4=1
+		n5=1
+		d1=20
+		d2=20
+		d3=12.5
+		d4=1
+		d5=1
+		o1=0
+		o2=1600
+		o3=0
+		o4=0
+		o5=0
+		sets next: in="/net/koko/data1/data_3d/elf-north/comaz_zo_salt_fine.H@"
+		data_format="xdr_float"
+in=$ELF_DATA/comaz_zo_salt_fine.H@
+
+
+Cp:   lomask@ummu.stanford.edu   Tue Mar 22 17:05:48 2005
+		sets next: in="/net/l-ummu/scr2/lomask/comaz_zo_salt_fine.H@"
+		copy_intag="/net/sepdata/data_3d1/elf/comaz_zo_salt_fine.H"
+		data_format="xdr_float"
+
+
+Transp:   lomask@ummu.stanford.edu   Tue Mar 22 17:08:41 2005
+		sets next: in="/net/l-ummu/scr2/lomask/junk.H@"
+Transposing plane 1 and 3 
+Using 10 megabytes 
+		junkME=0
+	n2=216  o2=1600.000000  d2=20.000000   label2="Undefined"   unit2="Undefined"
+	n3=675  o3=0.000000  d3=20.000000   label3="Undefined"   unit3="Undefined"
+		gff="-1"
+		hff="-1"
+hff=-1 gff=-1  n4=1  n5=1  n6=1  n7=1  n8=1  n9=1 
+	n1=400  o1=0.000000  d1=12.500000   label1="Undefined"   unit1="Undefined"
+		hff="-1"
+		gff="-1"
+		esize=4
+		data_format="xdr_float"
+
+
+Transp:   lomask@ummu.stanford.edu   Wed Mar 23 10:13:41 2005
+		sets next: in="/net/l-ummu/scr2/lomask/junk1.H@"
+Transposing plane 2 and 3 
+Using 10 megabytes 
+		junkME=0
+	n2=675  o2=0.000000  d2=20.000000   label2="Undefined"   unit2="Undefined"
+	n3=216  o3=1600.000000  d3=20.000000   label3="Undefined"   unit3="Undefined"
+		gff="-1"
+		hff="-1"
+hff=-1 gff=-1  n4=1  n5=1  n6=1  n7=1  n8=1  n9=1 
+	n1=400  o1=0.000000  d1=12.500000   label1="Undefined"   unit1="Undefined"
+		hff="-1"
+		gff="-1"
+		esize=4
+		data_format="xdr_float"
+
+
+Cp:   lomask@ummu.stanford.edu   Wed Mar 23 10:15:18 2005
+		sets next: in="/net/l-ummu/scr2/lomask/elf.H@"
+		copy_intag="junk1.H"
+		data_format="xdr_float"
+
+
+Window:   lomask@ummu.stanford.edu   Thu Mar 24 11:39:53 2005
+		sets next: in="/net/l-ummu/scr2/lomask/elf7.H@"
+		In:	float	Fortran (400,675,216,1)	C [1][216][675][400]
+		Out:	float	Fortran (194,292,216,1)	C [1][216][292][194]
+	 From History:
+		 n4=1 n3=216 n2=675 n1=400 esize=4
+	 From Par:
+		 n1=194  #f1=74  #j1=1  #min1=925.000000  #max1=3337.5
+		 n2=292  #f2=383  #j2=1  #min2=7660.000000  #max2=13480
+		 n3=216  #f3=0  #j3=1  #min3=1600.000000  #max3=5900
+		 n4=1  #f4=0  #j4=1  #min4=0  #max4=0
+	 Make header useful for further processing:
+		 n1=194 	 n2=292 	 n3=216 	 n4=1
+		 o1=925.000000 	 o2=7660.000000 	 o3=1600.000000 	 o4=0.000000
+		 d1=12.5 	 d2=20 	 d3=20 	 d4=1
+		 label1="Undefined" 	 label2="Undefined" 	 label3="Undefined" 	 label4=""
+		data_format="xdr_float"
+
+
+
+Window:   lomask@muum.stanford.edu   Thu Mar 24 18:03:31 2005
+		sets next: in="/net/l-muum/scr2/lomask/elf7_win.H@"
+		In:	float	Fortran (194,292,216,1)	C [1][216][292][194]
+		Out:	float	Fortran (194,292,56,1)	C [1][56][292][194]
+	 From History:
+		 n4=1 n3=216 n2=292 n1=194 esize=4
+	 From Par:
+		 n1=194  #f1=0  #j1=1  #min1=925.000000  #max1=3337.5
+		 n2=292  #f2=0  #j2=1  #min2=7660.000000  #max2=13480
+		 n3=56  #f3=100  #j3=1  #min3=3600.000000  #max3=4700
+		 n4=1  #f4=0  #j4=1  #min4=0  #max4=0
+	 Make header useful for further processing:
+		 n1=194 	 n2=292 	 n3=56 	 n4=1
+		 o1=925.000000 	 o2=7660.000000 	 o3=3600.000000 	 o4=0.000000
+		 d1=12.5 	 d2=20 	 d3=20 	 d4=1
+		 label1="Undefined" 	 label2="Undefined" 	 label3="Undefined" 	 label4=""
+		data_format="xdr_float"
+
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+label1=depth(m) label2=x(m) label3=y(m)
+
+
+Cp:   lomask@ummu.stanford.edu   Fri May 27 12:02:21 2005
+		sepstr_ready_out() : sets next in="stdin"
+		copy_intag="elf7_win.H"
+		data_format="xdr_float"
+
+1.8-svn	sfdd	xmw/src/pdp:	xinwu@xinwu	Tue Sep 27 17:36:20 2016
+
+	data_format="native_float"
+	esize=4
+	in="/Users/xinwu/Home/research/data/scratch/xmw/src/pdp/win.rsf@"
+1.8-svn	sfpad	xmw/src/pdp:	xinwu@xinwu	Tue Sep 27 17:36:21 2016
+
+	o1=612.5
+	end1=25
+	beg1=25
+	data_format="native_float"
+	esize=4
+	in="stdout"
+	n1=244
+	in="stdin"
+
+1.8-svn	sfpatch	xmw/src/pdp:	xinwu@xinwu	Tue Sep 27 17:36:21 2016
+
+	n2=292
+	n3=56
+	data_format="native_float"
+	n4=1
+	n5=4
+	n6=1
+	esize=4
+	in="/Users/xinwu/Home/research/data/scratch/xmw/src/pdp/patch.rsf@"
+	n0=244,292,56
+	n1=244
+1.8-svn	sfdip	xmw/src/pdp:	xinwu@xinwu	Tue Sep 27 17:36:53 2016
+
+	data_format="native_float"
+	n4=2
+	n5=1
+	n6=4
+	esize=4
+	in="/Users/xinwu/Home/research/data/scratch/xmw/src/pdp/dip.rsf@"
+1.8-svn	sfwindow	xmw/src/pdp:	xinwu@xinwu	Tue Sep 27 17:40:24 2016
+
+	d2=20
+	n2=292
+	o1=612.5
+	d3=20
+	n3=56
+	o2=7660
+	label1="depth(m)"
+	data_format="native_float"
+	d4=1
+	o3=3600
+	label2="x(m)"
+	n4=1
+	d5=1
+	n5=1
+	o4=0
+	label3="y(m)"
+	d6=1
+	n6=4
+	o5=0
+	label4=""
+	esize=4
+	o6=0
+	in="stdout"
+	squeeze=n
+	unit1="Undefined"
+	unit2="Undefined"
+	unit3="Undefined"
+	d1=12.5
+	n1=244
+	in="stdin"
+
+1.8-svn	sfpatch	xmw/src/pdp:	xinwu@xinwu	Tue Sep 27 17:40:25 2016
+
+	n2=292
+	n3=56
+	data_format="native_float"
+	n4=1
+	n5=1
+	n6=1
+	esize=4
+	in="/Users/xinwu/Home/research/data/scratch/xmw/src/pdp/wdip1.rsf@"
+	n1=244

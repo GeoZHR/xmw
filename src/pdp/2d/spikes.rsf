@@ -1,0 +1,17 @@
+1.8-svn	sfspike	src/pdp/2d:	xinwu@xinwu	Tue Sep 27 17:42:36 2016
+
+	o1=0
+	label1="Time"
+	data_format="native_float"
+	esize=4
+	in="stdout"
+	unit1="s"
+	d1=0.004
+	n1=300
+	in="stdin"
+
+1.8-svn	sfsmooth	src/pdp/2d:	xinwu@xinwu	Tue Sep 27 17:42:36 2016
+
+	data_format="native_float"
+	esize=4
+	in="/Users/xinwu/Home/research/data/scratch/src/pdp/2d/spikes.rsf@"

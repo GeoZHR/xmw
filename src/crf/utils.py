@@ -86,7 +86,7 @@ def setupForSubset(name):
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="nathanSub8":
     print "setupForSubset: nathanSub8"
-    seismicDir = _datdir+"nathan/sub8/skins/"
+    seismicDir = _datdir+"nathan/sub8/"
     n1,n2,n3 = 601,3675,825  #fx = copy(500,n2,n3,0,0,0,fx) gxfault
     #d1,d2,d3 = 0.002,0.0125,0.0125 
     #f1,f2,f3 = 0.0,1100*d2,60*d3 # (s,km,km)

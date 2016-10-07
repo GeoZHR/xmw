@@ -18,8 +18,8 @@ from ad import *
 from util import *
 from sso import *
 
-pngDir = None
 pngDir = "../../../png/sso/3d/fake/"
+pngDir = None
 
 seismicDir = "../../../data/seis/sso/3d/fake/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
@@ -53,12 +53,12 @@ n1,n2,n3 = 121,152,153
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
-  goFakeData()
+  #goFakeData()
   #goLof()
-  #goLoe()
+  goLoe()
   #goStratigraphy()
   #goChannel()
   #goSmoothS()
@@ -137,6 +137,11 @@ def goLof():
   dp3 = abs(sub(p3k,p3))
   dp2 = abs(sub(p2k,p2))
   dh = abs(sub(hc,ha))
+  ep = pow(ep,6)
+  ep = sub(ep,min(ep))
+  ep = div(ep,max(ep))
+  plot3(ep,hz=hz,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epl")
+  '''
   plot3(fx,dh=dh,cmin=-2,cmax=2,png="dhl")
   plot3(fx,ha=ha,cmin=-2,cmax=2,png="hal")
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2l")
@@ -145,6 +150,7 @@ def goLof():
   plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp3l")
   plot3(fx,g=dp3,cmin=0.0,cmax=15,cmap=jetFill(1.0),cint=5,
         clab="Channel azimuth error (degree)", png="dhcbar")
+  '''
 
 
 def goLoe():
@@ -163,10 +169,12 @@ def goLoe():
     loe.setGradientSmoothing(3)
     loe.applyForSlopePlanar(10,fx,p2,p3,ep)
     ets = loe.applyForTensors(fx)
+    '''
     writeImage(p2sfile,p2)
     writeImage(p3sfile,p3)
     writeImage(epsfile,ep)
     writeTensors(etsfile,ets)
+    '''
   else:
     p2 = readImage(p2sfile)
     p3 = readImage(p3sfile)

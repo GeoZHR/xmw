@@ -96,7 +96,12 @@ def main(args):
   #goSetFaultImages()
   #goStrikeMask()
   #goPointsCheck()
-  goSkinDisplay()
+  #goSkinDisplay()
+
+  gx = readImage(gxfile)
+  gc = gx[238]
+  gs = copy(300,1200,50,2475,gc)
+  writeImage("gx238",gs)
 
 def goSkinDisplay():
   gx = readImage(gsxfile)

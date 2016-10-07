@@ -572,7 +572,6 @@ public class SurfaceDisplay {
         float z4 = z[ix+1][iy  ];
         float z5 = z[ix  ][iy+1];
         float z6 = z[ix+1][iy+1];
-        /*
         float dii = dz[ix][iy ]; 
         float dm1 = dz[ix][max(iy-1,0)]; 
         float dp1 = dz[ix][min(iy+1,ny-1)]; 
@@ -581,8 +580,7 @@ public class SurfaceDisplay {
         if (abs(dm1)>1.5f) {continue;}
         if (abs(dp1)>1.5f) {continue;}
         if (abs(dp2)>1.5f) {continue;}
-
-
+        /*
         if(abs(z1-z2)>2f){continue;}
         if(abs(z1-z3)>2f){continue;}
         if(abs(z2-z3)>2f){continue;}

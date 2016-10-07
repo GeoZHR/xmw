@@ -61,18 +61,18 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 plotOnly = False
 pngDir = "../../../png/flc/tp/"
 pngDir = "../../../png/flc/fake/"
+pngDir = None
 fmin,fmax = -2.0,2.0
 emin,emax = -2.0,2.0
 pmin,pmax = -1.0,1.0
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goPwd()
-  #goPaint()
+  #goPwd()
+  goPaint()
 
 def goPwd():
   gx = readImage(gxfile)
