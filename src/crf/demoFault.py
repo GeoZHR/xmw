@@ -31,6 +31,7 @@ fptvfile = "fptv" # fault strike thinned
 fptmfile = "fptm" # fault strike masked out 20~40 degrees
 fttvfile = "fttv" # fault dip thinned
 fskbase = "fsk" # fault skin (basename only)
+fsrbase = "fsr" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fs1file = "fs1"
@@ -60,7 +61,7 @@ minSkinSize = 200
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 10.0
+maxThrow = 25.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -79,6 +80,7 @@ def main(args):
   #goSkinTv()
   #goSmooth()
   #goSlip()
+  goUnfault()
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
@@ -96,15 +98,14 @@ def main(args):
   #goSetFaultImages()
   #goStrikeMask()
   #goPointsCheck()
-  goSkinDisplay()
+  #goReskin()
 
-def goSkinDisplay():
-  gx = readImage(gsxfile)
+def goReskin():
   sks = readSkins(fsktv)
   frs = FaultReskin()
-  skk = frs.applyForSkins(n1,n2,n3,1000,sks)
-  plot3(gx,sks)
-  plot3(gx,skk)
+  skr = frs.applyForSkins(n1,n2,n3,1000,sks)
+  removeAllSkinFiles(fsrbase)
+  writeSkins(fsrbase,skr)
 def goPointsCheck():
   #fpt = readImage(fptvfile)
   hu1 = readImage2D(n2,n3,hu1file)
@@ -489,7 +490,7 @@ def goSmooth():
   fsigma = 8.0
   gx = readImage(gxfile)
   if not plotOnly:
-    skins = readSkins(fsktv)
+    skins = readSkins(fsrbase)
     flt = zerofloat(n1,n2,n3)
     fsx = FaultSkinnerX()
     fsx.getFl(100,skins,flt)
@@ -504,13 +505,13 @@ def goSmooth():
 
 def goSlip():
   print "goSlip ..."
-  #gx = readImage(gsxfile)
+  gx = readImage(gsxfile)
   if not plotOnly:
-    gsx = readImage(gsxfile)
+    gx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fsktv)
-    fsl = FaultSlipper(gsx,p2,p3)
+    skins = readSkins(fsrbase)
+    fsl = FaultSlipper(gx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error
     fsl.computeDipSlips(skins,minThrow,maxThrow)
@@ -541,8 +542,7 @@ def goSlip():
     #w2 = readImage(fw2file)
     #w3 = readImage(fw3file)
     #gw = readImage(gwfile)
-
-  plot3(gsx,s1,cmin=0,cmax=20.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,s1,cmin=0.1,cmax=25.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   '''
   plot3(gx,s1,cmin=0.0,cmax=30.0,cmap=jetFill(0.3),
@@ -554,6 +554,25 @@ def goSlip():
   plot3(gx)
   plot3(gw,clab="Amplitude",png="gw")
   '''
+
+def goUnfault():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    sk = readSkins(fslbase)
+    print "faults load finish"
+    smark = -999.999
+    fsl = FaultSlipper(gx)
+    s1,s2,s3 = fsl.getDipSlips(sk,smark)
+    w1,w2,w3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+    gw = fsl.unfault([w1,w2,w3],gx)
+    writeImage(fw1file,w1)
+    writeImage(fw2file,w2)
+    writeImage(fw3file,w3)
+    writeImage(gwfile,gw)
+  else:
+    gw = readImage(gwfile)
+  plot3(gx)
+  plot3(gw)
 
 
 def goFaultImages():
