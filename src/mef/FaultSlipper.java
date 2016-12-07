@@ -36,6 +36,14 @@ import static edu.mines.jtk.util.ArrayMath.*;
  */
 public class FaultSlipper {
 
+  public FaultSlipper(float[][][] gs) {
+    _gs = gs;
+    _n1 = gs[0][0].length;
+    _n2 = gs[0].length;
+    _n3 = gs.length;
+  }
+
+
   /**
    * Constructs a fault slipper for the specified seismic image and slopes.
    * @param gs seismic image, smoothed up to (but not across) faults.
@@ -111,8 +119,7 @@ public class FaultSlipper {
     extrapolateAlignmentErrors(lmin,lmax,cab);
     computeShifts(dw,cab,clr);
     clearErrors(skin);
-    System.out.println("test!");
-    for (int nsmooth=0; nsmooth<1; ++nsmooth) // TODO: 2?
+    for (int nsmooth=0; nsmooth<2; ++nsmooth) // TODO: 2?
       smoothShifts(skin);
     computeDipSlips(skin);
   }
@@ -545,7 +552,7 @@ public class FaultSlipper {
       normalizeErrors(elr); // TODO: helpful?
     }
     */
-    for (int ismooth=0; ismooth<2; ++ismooth) { // TODO: how many?
+    for (int ismooth=0; ismooth<1; ++ismooth) { // TODO: how many?
       dw.smoothErrors1X(eab,eab);
       dw.smoothErrors1X(elr,elr);
     }

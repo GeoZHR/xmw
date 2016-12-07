@@ -11,8 +11,14 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
+<<<<<<< HEAD
   #goAustralia()
   goF3d()
+=======
+  goManba()
+  #goAustralia()
+  #goF3d()
+>>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
   #goHongliu()
   #goF3dUnc()
   #goJake()
@@ -29,6 +35,67 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
+<<<<<<< HEAD
+=======
+def goManba():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/beg/manba/Time.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 6110560896
+  number of traces = 3716884
+  format = 1 (4-byte IBM floating point)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min = 13773, i2max = 20103 (inline indices)
+    i3min =   920, i3max =  2093 (crossline indices)
+    xmin =  713.975000, xmax =  743.300000 (x coordinates, in km)
+    ymin = 8770.440000, ymax = 8810.003000 (y coordinates, in km)
+  grid sampling:
+    n1 =   351 (number of samples per trace)
+    n2 =  6331 (number of traces in inline direction)
+    n3 =  1174 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.006250 (inline sampling interval, in km)
+    d3 = 0.025000 (crossline sampling interval, in km)
+  grid corner points:
+    i2min = 13773, i3min =   920, x =  713.975000, y = 8770.440000
+    i2max = 20103, i3min =   920, x =  713.975000, y = 8810.003000
+    i2min = 13773, i3max =  2093, x =  743.300000, y = 8770.440000
+    i2max = 20103, i3max =  2093, x =  743.300000, y = 8810.003000
+  grid azimuth:  0.00 degrees
+  ****** end of SEG-Y file info ******
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/beg/manba/"
+  sgyfile = basedir+"Time.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,350,13773,20103,920,2093
+  n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min)/2,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,2,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    gain(100,x)
+    show3d(x,clip=max(x)/2)
+
+>>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
 def goAustralia():
   firstLook = False # fast, does not read all trace headers
   secondLook = True # slow, must read all trace headers
@@ -92,6 +159,10 @@ def goWasson():
     plot23(si)
     plotXY(si)
   if writeImage:
+<<<<<<< HEAD
+=======
+    scale = 1.00
+>>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
     scale = 1
     #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
@@ -100,6 +171,10 @@ def goWasson():
     x = readImage(datfile,n1,n2,n3)
     gain(100,x)
     show3d(x,clip=max(x)/2)
+<<<<<<< HEAD
+=======
+    show3d(x,clip=1.0)
+>>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
 
 def goParihaka():
   """
