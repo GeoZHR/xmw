@@ -23,8 +23,44 @@ pngDir = None
 plotOnly = False
 
 def main(args):
-  goSemblance()
-  goFaultPik()
+  #goSemblance()
+  #goFaultPik()
+  goTimeMarker()
+def goTimeMarker():
+  gx = readImage(gxfile)
+  gx = gain(gx)
+  sm = readImage(smfile)
+  sm = sub(1,sm)
+  fe = FaultEnhance(4,1.0)
+  st1 = zerofloat(n1,n2)
+  seeds=fe.findSeeds(5,1,0.05,sm,st1)
+  lof = LocalOrientFilter(4,2)
+  ets = lof.applyForTensors(gx)
+  ets.setEigenvalues(sm,sm)
+  k1 = [108]
+  k2 = [511]
+  f = [1]
+  t = fillfloat(1,n1,n2)
+  p = zerofloat(n1,n2)
+  for i in range(len(k1)):
+    p[k2[i]][k1[i]] = 1
+    t[k2[i]][k1[i]] = 0
+  bd = BlendedGridder2(ets,f,k1,k2)
+  bd.gridNearest(t,p)
+  u = zerofloat(n1)
+  for i1 in range(n1):
+    tm = t[0][i1]
+    for i2 in range(n2):
+      if(tm>t[i2][i1]):
+        tm = t[i2][i1]
+        u[i1] = i2
+  cmin = -1
+  cmax =  1
+  mp1 = ColorMap.GRAY
+  mp2 = ColorMap.JET
+  plot2(s1,s2,sm,u=u,vint=10,hint=20,cmin=0.0,cmax=0.5,cmap=mp1)
+  plot(gx,t,cmin=0.0,cmax=max(t),cmap=jetFillExceptMin(0.6),cint=0.2)
+
 def goSemblance():
   gx = readImage(gxfile)
   lof = LocalOrientFilter(2,2)
@@ -40,23 +76,23 @@ def goFaultPik():
   sm = readImage(smfile)
   sm = sub(1,sm)
   fe = FaultEnhance(4,1.0)
-  st = zerofloat(n1,n2)
-  seeds=fe.findSeeds(5,1,0.1,sm,st)
+  st1 = zerofloat(n1,n2)
+  seeds=fe.findSeeds(5,1,0.05,sm,st1)
   se = fe.applyForEnhanceX(50,50,20,seeds,sm)
   rgf = RecursiveGaussianFilterP(1)
   rgf.apply00(se,se)
   se = sub(se,min(se))
   se = div(se,max(se))
-  st = zerofloat(n1,n2)
-  seeds=fe.findSeeds(1,1,0.1,se,st)
-  se = fe.applyForEnhanceX(50,50,20,seeds,se)
+  st2 = zerofloat(n1,n2)
+  seeds=fe.findSeeds(2,1,0.05,se,st2)
+  se = fe.applyForEnhanceX(50,50,20,seeds,sm)
   stt = fe.thin(0.05,se)
   cmin = -1
   cmax =  1
   mp1 = ColorMap.GRAY
   mp2 = ColorMap.JET
   plot2(s1,s2,sm,vint=50,hint=200,cmin=0.0,cmax=0.5,cmap=mp1)
-  plot2(s1,s2,st,vint=50,hint=200,cmin=0.0,cmax=0.5,cmap=mp1)
+  plot2(s1,s2,st1,vint=50,hint=200,cmin=0.0,cmax=0.5,cmap=mp1)
   plot2(s1,s2,se,vint=50,hint=200,cmin=0.0,cmax=0.5,cmap=mp1)
   plot(gx,sm,cmin=0.1,cmax=0.5,cmap=jetFillExceptMin(0.6),cint=0.2)
   plot(gx,se,cmin=0.1,cmax=0.5,cmap=jetFillExceptMin(0.6),cint=0.2)

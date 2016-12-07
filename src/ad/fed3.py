@@ -14,12 +14,12 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from ad import *
-from sso import *
 from util import *
+from sso import *
+from ad import *
 
-pngDir = None
 pngDir = "../../../png/ad/fed3/"
+pngDir = None
 
 seismicDir = "../../../data/seis/ad/fed/3d/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
@@ -37,7 +37,7 @@ n1,n2,n3 = 180,880,500
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = True
+plotOnly = False
 
 def main(args):
   #goLocalSmoothingFilter()
@@ -45,11 +45,41 @@ def main(args):
   #goStratigraphyOrientedDiffusion()
   #goNonlinearDiffusion()
   #goDiffusivity()
+  #goStratigraphicOrientation()
+  goDiffusionTest()
+def goDiffusionTest():
   fx = readImage(fxfile)
-  rgf = RecursiveGaussianFilter(20)
-  fs = zerofloat(n1,n2,n3)
-  rgf.apply000(fx,fs)
-  plot3(fs,cmin=-1.0,cmax=1.0,png="fs")
+  sig1,sig2=4,2
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  au = fillfloat(0.0001,n1,n2,n3)
+  av = fillfloat(1.0000,n1,n2,n3)
+  aw = fillfloat(1.0000,n1,n2,n3)
+  lof = LocalOrientFilter(sig1,sig2)
+  lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
+  ets = EigenTensors(u1,u2,u3,au,av,aw)
+  #ets = lof.applyForTensors(fx)
+  ets.setEigenvalues(0.0001,1.0,1.0)
+  sig = 10
+  cycle,limit=3,0.5
+  fed = FastExplicitDiffusionTest()
+  fed.setCycles(cycle,limit)
+  gx = fed.apply(sig,ets,fx)
+  plot3(sub(fx,gx),cmin=-0.5,cmax=0.5,png="fgl")
+  plot3(gx,cmin=-1.0,cmax=1.0,png="gxl")
+  plot3(fx,cmin=-1.0,cmax=1.0,png="fx")
+
+def goStratigraphicOrientation():
+  fx = readImage(fxfile)
+  sig1,sig2=2,4
+  lof = LocalOrientFilter(sig1,sig2)
+  ets = lof.applyForTensors(fx)
+  surf = fillfloat(91,n2,n3)
+  plot3X(fx,hz=surf,et=ets,cmin=-1.5,cmax=1.5,png="ets")
+
+
 def goNormalPlanar():
   fx = readImage(fxfile)
   u1 = zerofloat(n1,n2,n3)
@@ -301,6 +331,95 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
+def plot3X(f,g=None,hz=None,hs=None,et=None,k1=290,k2=17,k3=72,
+    scale=2.5,cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  cbar = None
+  if g==None:
+    ipg = sf.addImagePanels(s1,s2,s3,f)
+    if cmap!=None:
+      ipg.setColorModel(cmap)
+    if cmin!=None and cmax!=None:
+      ipg.setClips(cmin,cmax)
+    else:
+      ipg.setClips(-1.5,1.5)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMapListener(cbar)
+  else:
+    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
+    ipg.setClips1(-1.5,1.5)
+    if cmin!=None and cmax!=None:
+      ipg.setClips2(cmin,cmax)
+    if cmap==None:
+      cmap = jetFill(0.8)
+    ipg.setColorModel2(cmap)
+    if clab:
+      cbar = addColorBar(sf,clab,cint)
+      ipg.addColorMap2Listener(cbar)
+    sf.world.addChild(ipg)
+  if hs:
+    for hi in hs:
+      lg = LineGroup(hi[0],hi[1])
+      ss = StateSet()
+      lg.setStates(ss)
+      ls = LineState()
+      ls.setWidth(4)
+      ls.setSmooth(False)
+      ss.add(ls)
+      sf.world.addChild(lg)
+  if hz:
+    sd = SurfaceDisplay()
+    ts = sd.horizonWithAmplitude(-1,[cmin,cmax],hz,f)
+    tg = TriangleGroup(True,ts[0],ts[1])
+    sf.world.addChild(tg)
+  if et:
+    tv = TensorView()
+    hs = tv.applyForSegments(5,et,hz)
+    cp = ColorMap(0,1,ColorMap.JET)
+    vi = fillfloat(0.9,6)
+    cb = cp.getRgbFloats(vi)
+    for hi in hs:
+      lg = LineGroup(hi,cb)
+      ss = StateSet()
+      lg.setStates(ss)
+      ls = LineState()
+      ls.setWidth(8)
+      ls.setSmooth(False)
+      ss.add(ls)
+      sf.world.addChild(lg)
+  if cbar:
+    cbar.setWidthMinimum(100)
+  ipg.setSlices(k1,k2,k3)
+  if cbar:
+    sf.setSize(970,700)
+  else:
+    sf.setSize(870,700)
+  view = sf.getOrbitView()
+  #zscale = 0.75*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  view.setAxesScale(1.0,1.0,zscale)
+  view.setScale(scale)
+  #view.setAzimuth(75.0)
+  #view.setAzimuth(-75.0)
+  view.setAzimuth(45.0)
+  view.setElevation(50)
+  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  view.setTranslate(Vector3(-0.01,-0.01,-0.01))
+  #sf.viewCanvas.setBackground(sf.getBackground())
+  sf.viewCanvas.setBackground(Color.WHITE)
+  sf.setVisible(True)
+  if png and pngDir:
+    sf.paintToFile(pngDir+png+".png")
+    if cbar:
+      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
 #############################################################################
 # Run the function main on the Swing thread

@@ -18,6 +18,20 @@ public class FastImageGuidedInterp {
    * @param fx know values at the known points.
    * @param x1 1st coordinates of known points.
    * @param x2 2nd coordinates of known points.
+   */
+  public FastImageGuidedInterp(
+    float[] fx, float[] x1, float[] x2) 
+  {
+    _fx = copy(fx);
+    _x1 = copy(x1);
+    _x2 = copy(x2);
+  }
+
+  /**
+   * Constructs an interpolator.
+   * @param fx know values at the known points.
+   * @param x1 1st coordinates of known points.
+   * @param x2 2nd coordinates of known points.
    * @param x3 3rd coordinates of known points.
    */
   public FastImageGuidedInterp(

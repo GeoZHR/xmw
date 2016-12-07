@@ -450,6 +450,7 @@ public class FaultScanner {
     sw.start();
     for (int ip=0; ip<np; ++ip) {
       final float phi = (float)phiSampling.getValue(ip);
+      if(abs(phi-90)<20||abs(phi-270)<20) {continue;}
       if (ip>0) {
         double timeUsed = sw.time();
         double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;

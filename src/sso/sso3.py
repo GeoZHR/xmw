@@ -51,9 +51,9 @@ s3 = Sampling(n3,d3,f3)
 plotOnly = True
 
 def main(args):
-  goLof()
+  #goLof()
   #goLoe()
-  #goSlopes()
+  goSlopes()
   #goHorizonL()
   #goHorizonS()
   #goSurfaces()
@@ -85,6 +85,7 @@ def goHorizonL():
   plot3p(s1,s2,s3,gx,hv=hs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,
           clab="Amplitude",png="hvl")
   k1,k2,k3=76,348,376
+  k1,k2,k3=76,386,399
   hd = HorizonDisplay()
   cs = hd.horizonCurves(k2,k3,hs)
   plot3(gx,hs=cs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="cvl")
@@ -110,6 +111,7 @@ def goHorizonS():
   plot3(gx,surf=hs[10],k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,png="sf10")
   plot3p(s1,s2,s3,gx,hv=hs,k1=k1,k2=k2,k3=k3,cmin=-0.5,cmax=0.5,
           clab="Amplitude",png="hvs")
+  k1,k2,k3=76,348,376
   k1,k2,k3=76,386,399
   hd = HorizonDisplay()
   cs = hd.horizonCurves(k2,k3,hs)
@@ -166,6 +168,7 @@ def goSlopes():
  clab2 = "Inline slope (samples/trace)"
  clab3 = "Crossline slope (samples/trace)"
  k1,k2,k3=76,348,376
+ k1,k2,k3=76,386,399
  cmap = jetFill(0.5)
  plot3(gx,p2l,k1=k1,k2=k2,k3=k3,cmap=cmap,cmin=-0.6,cmax=0.6,png="p2l")
  plot3(gx,p3l,k1=k1,k2=k2,k3=k3,cmap=cmap,cmin=-0.6,cmax=0.6,png="p3l")

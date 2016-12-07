@@ -18,8 +18,8 @@ from ad import *
 from sso import *
 from util import *
 
-pngDir = "../../../png/sso/3d/crf/"
 pngDir = None
+pngDir = "../../../png/sso/3d/crf/"
 
 seismicDir = "../../../data/seis/sso/3d/crf/"
 fxfile = "fxSub"
@@ -57,11 +57,11 @@ def main(args):
 def goSubPlots():
   fx = readImage("fxSub")
   eps = readImage("epSub")
-  #epl = readImage("epl")
+  epl = readImage("epl")
   sm = readImage("smSub")
   fs  = copy(n1,450,n3,0,0,0,fx)
   ess  = copy(n1,450,n3,0,0,0,eps)
-  #els  = copy(n1,450,n3,0,0,0,epl)
+  els  = copy(n1,450,n3,0,0,0,epl)
   ss  = copy(n1,450,n3,0,0,0,sm)
   ss = pow(ss,1.2)
   ss = sub(ss,min(ss))
@@ -69,10 +69,13 @@ def goSubPlots():
   ess = pow(ess,1.2)
   ess = sub(ess,min(ess))
   ess = div(ess,max(ess))
+  els = pow(els,1.2)
+  els = sub(els,min(els))
+  els = div(els,max(els))
 
   plot3s(fs,k1=k1,clab="Amplitude",cint=0.2,png="fxSub"+str(k1))
   plot3s(ess,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epsSub"+str(k1))
-  #plot3s(els,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eplSub"+str(k1))
+  plot3s(els,k1=k1,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="eplSub"+str(k1))
   plot3s(ss,k1=k1,cmin=0.2,cmax=1.0,clab="Coherence",cint=0.1,png="smSub"+str(k1))
 def go2dPlots():
   fx = readImage("fxSub")

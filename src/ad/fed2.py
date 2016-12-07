@@ -19,8 +19,8 @@ from util import *
 from sso import *
 from ad import *
 
-pngDir = "../../../png/ad/fed2/"
 pngDir = None
+pngDir = "../../../png/ad/fed2/"
 
 seismicDir = "../../../data/seis/ad/fed/"
 fxfile = "tp73"
@@ -40,9 +40,9 @@ s2 = Sampling(n2,d2,f2)
 
 def main(args):
   #goGaussian()
-  #goDiffusivity()
-  goLinearDiffusion()
-  #goNonlinearDiffusion()
+  goDiffusivity()
+  #goLinearDiffusion()
+  goNonlinearDiffusion()
   #goHilbert()
   #goGaussianD()
   #goFaultSmooth()
@@ -170,7 +170,7 @@ def goDiffusivity():
   ets = lof.applyForTensors(fx)
   ets.setEigenvalues(0.001,1.0)
   sig = 8
-  lbd = 0.12
+  lbd = 0.10
   cycle,limit=3,0.5
   fed = FastExplicitDiffusion()
   fed.setCycles(cycle,limit)
@@ -178,10 +178,9 @@ def goDiffusivity():
   fws = zerofloat(n1,n2)
   fed.applyForWeightsP0(lbd,ets,fx,fw)
   fed.applyForWeightsP1(lbd,ets,fx,fws)
-  fws = pow(fws,4)
-  plot(fx,sub(1,fw),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+  plot(fx,sub(1,fw),cmin=0.3,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
        label="Diffusivity",png="fw")
-  plot(fx,sub(1,fws),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+  plot(fx,sub(1,fws),cmin=0.3,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
        label="Diffusivity",png="fws")
 
 def goNonlinearDiffusion():
@@ -191,7 +190,7 @@ def goNonlinearDiffusion():
   lof = LocalOrientFilterP(sig1,sig2)
   ets = lof.applyForTensors(fx)
   sig = 8
-  lbd = 0.12
+  lbd = 0.10
   cycle,limit=3,0.5
   fed = FastExplicitDiffusion()
   fed.setCycles(cycle,limit)
@@ -201,9 +200,9 @@ def goNonlinearDiffusion():
   fed.applyForWeightsP(lbd,ets,gx,wp)
   fed.applyForWeightsP(lbd,ets,fx,ws)
   plot(sub(fx,gx),cmin=-0.5,cmax=0.5,cint=0.2,label="Amplitude",png="fgn")
-  plot(fx,sub(1,ws),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+  plot(fx,sub(1,ws),cmin=0.3,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
        label="Diffusivity",png="wsn")
-  plot(gx,sub(1,wp),cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
+  plot(gx,sub(1,wp),cmin=0.3,cmax=1,cmap=jetFillExceptMin(1.0),cint=0.2,
        label="Diffusivity",png="wpn")
   plot(gx,cmin=-1,cmax=1,cint=1.0,label="Amplitude",png="gxn")
   plot(fx,cmin=-1,cmax=1,cint=1.0,label="Amplitude",png="fx")

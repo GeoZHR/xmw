@@ -19,8 +19,8 @@ mkfile  = "mk" # mask file
 sfcfile  = "sfc" # salt indicator function with constraints
 
 pngDir = None
-pngDir = "../../../png/slt/3d/"
 pngDir = getPngDir()
+pngDir = "../../../png/slt/3d/"
 
 plotOnly = True
 
@@ -87,8 +87,10 @@ def goSaltSurfer():
   print min(sf)
   print max(sf)
   plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
-  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
+  plot3(sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=ColorMap.BLUE_WHITE_RED,
         clab="Indicator function",png="sf")
+  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
+        clab="Indicator function",png="sfSeis")
   plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
         clab="Indicator function",png="saltSf")
 

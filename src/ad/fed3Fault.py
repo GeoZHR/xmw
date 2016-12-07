@@ -22,8 +22,10 @@ pngDir = "../../../png/ad/fed/f3d/"
 pngDir = None
 
 seismicDir = "../../../data/seis/ad/fed/clyde/"
+seismicDir = "../../../data/seis/ad/fed/f3d/"
+seismicDir = "../../../data/seis/ad/fed/opunake/"
 #seismicDir = "../../../data/seis/beg/jake/subs/"
-fxfile = "fx"
+fxfile = "gxs"
 gxlfile = "gxl"
 gxnfile = "gxn"
 scnfile = "scn"
@@ -32,11 +34,13 @@ gxsfile = "gxs"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 400,620,300
-#n1,n2,n3 = 426,800,830
+n1,n2,n3 = 65,380,591
+n1,n2,n3 = 639,557,192
+n1,n2,n3 = 350,472,184
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
-plotOnly = False
+plotOnly = True
 
 
 def main(args):
@@ -48,13 +52,41 @@ def main(args):
   #goTest()
   #goStratigraphyOrientedDiffusionX()
   #goNonlinearDiffusion()
-  goFaultChannelSmooth()
+  #goFaultChannelSmooth()
   #goSemblance()
   #goSemblanceHale()
   #goCovariance()
   #goFastCovariance()
   #goVariance()
   #goShapeSemblance()
+  goDiffusionFault()
+def goDiffusionFault():
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  lof = LocalOrientFilter(8,2)
+  ets = lof.applyForTensors(fx)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  scx = zerofloat(n1,n2,n3)
+  scs = zerofloat(n1,n2,n3)
+  sct = zerofloat(n1,n2,n3)
+  fed = FastExplicitDiffusion()
+  fed.slopesFromTensors(ets,p2,p3)
+  fed.getDiffusivity(0.1,p2,p3,fx,scx,scs,sct,ets)
+  scs = pow(scs,2)
+  scs = sub(scs,min(scs))
+  scs = div(scs,max(scs))
+  fed.setCycles(3,0.5)
+  #scn,fs = fed.applyFault(10,0.1,ets,fx)
+  plot3(fx)
+  #plot3(fs)
+  plot3(scx,cmin=0.0,cmax=0.1)
+  plot3(scs,cmin=0.0,cmax=0.6)
+  plot3(sct,cmin=0.0,cmax=0.6)
+  plot3(fx,g=sub(1,sct),cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0))
+  #plot3(scn,cmin=0.0,cmax=0.6)
+  #plot3(fs,g=sub(1,scn),cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0))
+
 def goNormalPlanar():
   fx = readImage(fxfile)
   u1 = zerofloat(n1,n2,n3)
@@ -435,21 +467,21 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
-  ipg.setSlices(262,80,200)
+  ipg.setSlices(55,33,35)
   if cbar:
     sf.setSize(1037,700)
   else:
     sf.setSize(800,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
-  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
+  radius = 0.4*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.6*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.4*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.6)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.08,-0.06))
-  ov.setAzimuthAndElevation(-60.0,35.0)
+  ov.setTranslate(Vector3(-0.3,-0.20,-0.26))
+  ov.setAzimuthAndElevation(50.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

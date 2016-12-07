@@ -18,10 +18,10 @@ sffile  = "sf" # eigenvalue-derived planarity
 mkfile  = "mk" # eigenvalue-derived planarity
 sfcfile  = "sfc" # eigenvalue-derived planarity
 
-pngDir = None
 pngDir = getPngDir()
+pngDir = None
 
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSaltLike()

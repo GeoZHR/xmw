@@ -2,6 +2,7 @@ import sys
 
 from java.awt import *
 from java.io import *
+from java.nio import *
 from java.lang import *
 from javax.swing import *
 
@@ -42,7 +43,9 @@ p2sfile = "p2s"
 p3sfile = "p3s"
 gxsfile = "gxs"
 gxlfile = "gxl"
-
+u1sfile = "u1s"
+u2sfile = "u2s"
+u3sfile = "u3s"
 hzfile = "hz"
 halfile = "hal"
 hasfile = "has"
@@ -50,6 +53,7 @@ hacfile = "hac"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
 n1,n2,n3 = 121,152,153
+n1,n2,n3 = 451,101,101
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
@@ -58,11 +62,92 @@ plotOnly = False
 def main(args):
   #goFakeData()
   #goLof()
-  goLoe()
+  #goLoe()
   #goStratigraphy()
   #goChannel()
   #goSmoothS()
+  #goLittleEnd()
+  #goLofSlope()
+  goLoeSlope()
+def goLofSlope():
+  fx = readImageL(501,n2,n3,"sfx")
+  p2k = readImageL(501,n2,n3,"sp2t")
+  p2p = readImageL(1001,n2,n3,"sp2p")
+  fx = copy(n1,n2,n3,20,0,0,fx)
+  p2k = copy(n1,n2,n3,20,0,0,p2k)
+  p2p = copy(n1,n2,n3,270,0,0,p2p)
+  writeImage("p2k70",p2k[70])
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  sig1,sig2=25,2
+  lof = LocalOrientFilterX(sig1,sig2)
+  lof.applyForNormalPlanar(fx,u1,u2,u3,ep)
+  p2 = mul(div(u2,u1),-1)
+  p3 = mul(div(u3,u1),-1)
+  dp2  = abs(sub(p2k,p2))
+  dp2p = abs(sub(p2k,p2p))
+  plot3(fx)
+  #plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2l")
+  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="st")
+  plot3(fx,g=p2p,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="pwd")
+  plot3(fx,g=p2k,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="true")
+  #plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp2l")
+  plot3(fx,g=dp2,cmin=0.0,cmax=0.2,cmap=jetFill(1.0),cint=0.1,clab="st")
+  plot3(fx,g=dp2p,cmin=0.0,cmax=0.2,cmap=jetFill(1.0),cint=0.1,clab="pwd")
 
+def goLoeSlope():
+  fx = readImageL(501,n2,n3,"sfx")
+  p3k = readImageL(501,n2,n3,"sp2t")
+  fx = copy(n1,n2,n3,20,0,0,fx)
+  p2k = copy(n1,n2,n3,20,0,0,p3k)
+  ep = zerofloat(n1,n2,n3)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(30,1)
+  lof.applyForNormal(fx,u1,u2,u3)
+  loe = LocalOrientEstimator(u1,u2,u3)
+  loe.applyForSlopePlanar(10,5,1,1,fx,p2,p3,ep)
+  dp2 = abs(sub(p2k,p2))
+  #plot3(fx)
+  #plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2l")
+  plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="dst")
+  #plot3(fx,g=p3k,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),clab="p3l")
+  #plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp2l")
+  plot3(fx,g=dp2,cmin=0.0,cmax=0.2,cmap=jetFill(1.0),cint=0.1,clab="dst")
+
+
+def goLittleEnd():
+  sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
+  nplanar = 1 # number of planar faults
+  conjugate = False # if True, two large planar faults will intersect
+  conical = False # if True, may want to set nplanar to 0 (or not!)
+  impedance = False # if True, data = impedance model
+  wavelet = True # if False, no wavelet will be used
+  lateralViriation = True
+  noise = 0.0 # (rms noise)/(rms signal) ratio
+  fx,p2,p3,hs = FakeData.seismicAndSlopes3d2015A(sequence,
+    nplanar,conjugate,conical,impedance,wavelet,lateralViriation,noise)
+  writeImage("fxt",fx)
+  plot3(fx)
+  '''
+  p2p = readImageL(361,152,153,"p2p")
+  p3p = readImageL(361,152,153,"p3p")
+  p2p = copy(n1,n2,n3,120,0,0,p2p)
+  p3p = copy(n1,n2,n3,120,0,0,p3p)
+  print min(p2)
+  print min(p2p)
+  #plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2p")
+  #plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3p")
+  plot3(fx,g=p2p,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2p")
+  plot3(fx,g=p3p,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3p")
+  plot3(fx,g=abs(sub(p2,p2p)),cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp2p")
+  plot3(fx,g=abs(sub(p3,p3p)),cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp3p")
+  '''
 def goFakeData():
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
@@ -99,7 +184,8 @@ def goFakeData():
   plot3(fx,ha=ha,cmin=gmin,cmax=gmax,png="fxha")
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2k")
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3k")
-  plot3(fx,g=p3,cmin=-40,cmax=40,cmap=jetFill(1.0),clab="Channel azimuth (degree)",png="fxch")
+  plot3(fx,g=p3,cmin=-40,cmax=40,cmap=jetFill(1.0),
+          clab="Channel azimuth (degree)",png="fxch")
 
 def goLof():
   fx = readImage(fxfile)
@@ -112,19 +198,21 @@ def goLof():
     w2 = zerofloat(n1,n2,n3)
     w3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
-    sig1,sig2=4,2
-    lof = LocalOrientFilter(sig1,sig2)
-    et = lof.applyForTensors(fx)
+    sig1,sig2=8,2
+    lof = LocalOrientFilterX(sig1,sig2)
+    et = lof.applyForTensors((fx))
     lof.apply(fx,None,None,u1,u2,u3,None,None,None,w1,w2,w3,None,None,None,ep,None)
     hp = Helper()
     ha = hp.channelAzimuth(w2,w3,hz)
     p2 = mul(div(u2,u1),-1)
     p3 = mul(div(u3,u1),-1)
+    '''
     writeImage(p2lfile,p2)
     writeImage(p3lfile,p3)
     writeImage(halfile,ha)
     writeImage(eplfile,ep)
     writeTensors(etlfile,et)
+    '''
   else:
     ep = readImage(eplfile)
     et = readTensors(etlfile)
@@ -140,17 +228,15 @@ def goLof():
   ep = pow(ep,6)
   ep = sub(ep,min(ep))
   ep = div(ep,max(ep))
-  plot3(ep,hz=hz,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epl")
-  '''
-  plot3(fx,dh=dh,cmin=-2,cmax=2,png="dhl")
-  plot3(fx,ha=ha,cmin=-2,cmax=2,png="hal")
+  #plot3(ep,hz=hz,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="epl")
+  #plot3(fx,dh=dh,cmin=-2,cmax=2,png="dhl")
+  #plot3(fx,ha=ha,cmin=-2,cmax=2,png="hal")
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p2l")
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),png="p3l")
   plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp2l")
   plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,png="dp3l")
-  plot3(fx,g=dp3,cmin=0.0,cmax=15,cmap=jetFill(1.0),cint=5,
-        clab="Channel azimuth error (degree)", png="dhcbar")
-  '''
+  #plot3(fx,g=dp3,cmin=0.0,cmax=15,cmap=jetFill(1.0),cint=5, 
+  #clab="Channel azimuth error (degree)", png="dhcbar")
 
 
 def goLoe():
@@ -160,15 +246,23 @@ def goLoe():
     ep = zerofloat(n1,n2,n3)
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
-    w1 = zerofloat(n1,n2,n3)
-    w2 = zerofloat(n1,n2,n3)
-    w3 = zerofloat(n1,n2,n3)
-    et = readTensors(etlfile)
-    loe = LocalOrientEstimator(et,5)
-    loe.setEigenvalues(0.001,0.2,0.2)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    v1 = zerofloat(n1,n2,n3)
+    v2 = zerofloat(n1,n2,n3)
+    v3 = zerofloat(n1,n2,n3)
+    #et = readTensors(etlfile)
+    lof = LocalOrientFilter(10,3)
+    lof.applyForNormal(fx,u1,u2,u3)
+    loe = LocalOrientEstimator(u1,u2,u3)
     loe.setGradientSmoothing(3)
-    loe.applyForSlopePlanar(10,fx,p2,p3,ep)
-    ets = loe.applyForTensors(fx)
+    loe.applyForSlopePlanar(10,8,2,2,fx,p2,p3,ep)
+    loe.applyForNormal(8,2,2,fx,v1,v2,v3);
+    writeImage(u1sfile,v1)
+    writeImage(u2sfile,v2)
+    writeImage(u3sfile,v3)
+    #ets = loe.applyForTensors(fx)
     '''
     writeImage(p2sfile,p2)
     writeImage(p3sfile,p3)
@@ -188,15 +282,17 @@ def goLoe():
   dp3 = abs(sub(p3k,p3))
   dp2 = abs(sub(p2k,p2))
   plot3(fx,cmin=-2,cmax=2)
-  plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
+  #plot3(ep,hz=hz,cmin=0.2,cmax=1.0)
   plot3(fx,g=p2,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),
-        clab="Inline slope (samples/trace)",png="p2s")
+        clab="Inline slope (samples/trace)",png="p2n")
   plot3(fx,g=p3,cmin=-1.2,cmax=1.2,cmap=jetFill(1.0),
-        clab="Crossline slope (samples/trace)",png="p3s")
+        clab="Crossline slope (samples/trace)",png="p3n")
+  '''
   plot3(fx,g=dp2,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,
         clab="Inline slope error (samples/trace)",png="dp2s")
   plot3(fx,g=dp3,cmin=0.0,cmax=0.25,cmap=jetFill(1.0),cint=0.1,
         clab="Crossline slope error (samples/trace)",png="dp3s")
+  '''
 
 
 def goStratigraphy():
@@ -233,11 +329,12 @@ def goChannel():
     ep = zerofloat(n1,n2,n3)
     w2 = zerofloat(n1,n2,n3)
     w3 = zerofloat(n1,n2,n3)
-    et = readTensors(etsfile)
-    loe = LocalOrientEstimator(et,5)
-    loe.setEigenvalues(0.1,1.0,1.0)
-    loe.setGradientSmoothing(3)
-    loe.applyForStratigraphy(fx,w2,w3,ep)
+    u1 = readImage(u1sfile)
+    u2 = readImage(u2sfile)
+    u3 = readImage(u3sfile)
+    lsf = LocalStratigraphicFilter(u1,u2,u3)
+    lsf.setGradientSmoothing(2)
+    lsf.applyForStratigraphy(5,0.1,1.0,1.0,fx,w2,w3,ep)
     hp = Helper()
     ha = hp.channelAzimuth(w2,w3,hz)
   else:
@@ -345,12 +442,34 @@ def readImage(basename):
   ais.close()
   return image
 
+def readImageL(n1,n2,n3,basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+
 def writeImage(basename,image):
   """ 
   Writes an image to a file with specified basename
   """
   fileName = seismicDir+basename+".dat"
   aos = ArrayOutputStream(fileName)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+
+def writeImageL(basename,image):
+  """ 
+  Writes an image to a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image
@@ -485,6 +604,7 @@ def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,dh=None,k1=120,
   #ipg.setSlices(153,760,450)
   ipg.setSlices(101,138,39)
   ipg.setSlices(101,135,35)
+  ipg.setSlices(401,24,24)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
   if cbar:
@@ -497,10 +617,11 @@ def plot3(f,g=None,et=None,ep=None,hz=None,ha=None,dh=None,k1=120,
   zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
   ov = sf.getOrbitView()
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
-  ov.setAzimuthAndElevation(140.0,40.0)
-  ov.setTranslate(Vector3(-0.06,0.12,-0.27))
-  ov.setScale(1.25)
+  #ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
+  #ov.setAzimuthAndElevation(140.0,40.0)
+  #ov.setTranslate(Vector3(-0.06,0.12,-0.27))
+  #ov.setScale(1.25)
+  ov.setScale(6.25)
 
 
   sf.setVisible(True)

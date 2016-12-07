@@ -46,6 +46,12 @@ def setupForSubset(name):
     seismicDir = _datdir+"oregan/sub1/"
     n1,n2 = 1200,3000
     s1,s2 = Sampling(n1),Sampling(n2)
+  elif name=="seam2d":
+    """ oregan image """
+    print "setupForSubset: oreganSub"
+    seismicDir = _datdir+"slt/seam/2d/"
+    n1,n2 = 560,600
+    s1,s2 = Sampling(n1),Sampling(n2)
 
 def getSamplings():
   return s1,s2

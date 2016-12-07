@@ -1,0 +1,311 @@
+/****************************************************************************
+Copyright (c) 2013, Colorado School of Mines and others. All rights reserved.
+This program and accompanying materials are made available under the terms of
+the Common Public License - v1.0, which accompanies this distribution, and is 
+available at http://www.eclipse.org/legal/cpl-v10.html
+****************************************************************************/
+package acm;
+
+import java.util.*;
+
+import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.interp.*;
+import static edu.mines.jtk.util.ArrayMath.*;
+
+/**
+ * Active contour
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2015.06.18
+ */
+
+public class ActiveContour2 {
+
+  public static class Snake {
+    public float c1;
+    public float c2;
+
+    public int size=0;
+    public ArrayList<Float> x1 = new ArrayList<Float>();
+    public ArrayList<Float> u1 = new ArrayList<Float>();
+
+    public ArrayList<Float> x2 = new ArrayList<Float>();
+    public ArrayList<Float> u2 = new ArrayList<Float>();
+
+    public float[] getArrayU1() {
+      float[] ua = new float[size];
+      for (int i=0; i<size; ++i) {
+        ua[i] = u1.get(i);
+      }
+      return ua;
+    }
+
+    public float[] getArrayU2() {
+      float[] ua = new float[size];
+      for (int i=0; i<size; ++i) {
+        ua[i] = u2.get(i);
+      }
+      return ua;
+    }
+
+
+    public float[] getArrayX1() {
+      float[] xa = new float[size];
+      for (int i=0; i<size; ++i) {
+        xa[i] = x1.get(i);
+      }
+      return xa;
+    }
+
+    public float[] getArrayX2() {
+      float[] xa = new float[size];
+      for (int i=0; i<size; ++i) {
+        xa[i] = x2.get(i);
+      }
+      return xa;
+    }
+
+  }
+
+  public Snake getSnake() {
+    return _snake;
+  }
+
+  public ActiveContour2(float c1, float c2, float d) {
+    _snake.c1=c1;
+    _snake.c2=c2;
+    _snake.size = 5;
+    float[] x1 = new float[]{c1-d,c1  ,c1+d,c1  ,c1-d};
+    float[] x2 = new float[]{c2  ,c2+d,c2  ,c2-d,c2  };
+    _snake.x1.clear();
+    _snake.x2.clear();
+    _snake.u1.clear();
+    _snake.u2.clear();
+    for (float x1i:x1) {_snake.x1.add(x1i);}
+    for (float x2i:x2) {_snake.x2.add(x2i);}
+    resampleSnakeX();
+  }
+
+
+  public ActiveContour2(
+    float c1, float c2, float[] x1, float[] x2) 
+  {
+    int n = x1.length;
+    _snake.c1=c1;
+    _snake.c2=c2;
+    _snake.size = n;
+    _snake.x1.clear();
+    _snake.x2.clear();
+    _snake.u1.clear();
+    _snake.u2.clear();
+    for (int i=0; i<n; ++i) {
+      _snake.x1.add(x1[i]);
+      _snake.x2.add(x2[i]);
+    }
+    setNormals();
+    //resampleSnakeX();
+  }
+
+  public Snake updateSnake(int niter, float[][] fd) {
+    for (int it=0; it<niter; it++) {
+      updateSnake(fd);
+    }
+    return _snake;
+  }
+
+  public void updateSnake(float[][] fd) {
+    float[] x1 = _snake.getArrayX1();
+    float[] x2 = _snake.getArrayX2();
+    float[] u1 = _snake.getArrayU1();
+    float[] u2 = _snake.getArrayU2();
+    _snake.x1.clear();
+    _snake.x2.clear();
+    _snake.u1.clear();
+    _snake.x2.clear();
+    int nc = x1.length;
+    int n2 = fd.length;
+    int n1 = fd[0].length;
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    SincInterpolator si = new SincInterpolator();
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1);
+    float[][] g1 = new float[n2][n1];
+    float[][] g2 = new float[n2][n1];
+    rgf.apply10(fd,g1);
+    rgf.apply01(fd,g2);
+    float[][] gs = add(mul(g1,g1),mul(g2,g2));
+    gs = sqrt(gs);
+    g1 = div(g1,gs);
+    g2 = div(g2,gs);
+    for (int ic=0; ic<nc; ++ic) {
+      int ip = ic+1; if(ip==nc) ip=0;
+      int im = ic-1; if(im<0)   im=nc-1;
+      float x1i = x1[ic];
+      float x1p = x1[ip];
+      float x1m = x1[im];
+      float x2i = x2[ic];
+      float x2p = x2[ip];
+      float x2m = x2[im];
+      float x1a = (x1i+x1p+x1m)/3f;
+      float x2a = (x2i+x2p+x2m)/3f;
+      float u1i = u1[ic];
+      float u2i = u2[ic];
+      float ai1 = x1a-x1i;
+      float ai2 = x2a-x2i;
+      float uas = ai1*u1i+ai2*u2i;
+      float fn1 = uas*u1i;
+      float fn2 = uas*u2i;
+      float ft1 = ai1-fn1;
+      float ft2 = ai2-fn2;
+      float g1i = si.interpolate(s1,s2,g1,x1i,x2i);
+      float g2i = si.interpolate(s1,s2,g2,x1i,x2i);
+      //float fdp = si.interpolate(s1,s2,fd,x1i+u1i,x2i+u2i);
+      //float fdm = si.interpolate(s1,s2,fd,x1i-u1i,x2i-u2i);
+      //float fpm = (fdp-fdm)*500;
+      float x1u = x1i+fn1+0.5f*ft1+g1i*0.5f;
+      float x2u = x2i+fn2+0.5f*ft2+g2i*0.5f;
+      _snake.x1.add(x1u);
+      _snake.x2.add(x2u);
+    }
+    resampleSnakeX();
+    //setNormals();
+  }
+
+  private void resampleSnakeX() {
+    resampleSnake();
+    /*
+    if(removeBadPoints()){
+      resampleSnake();
+    }
+    */
+  }
+
+
+  private void resampleSnake() {
+    int np = _snake.size;
+    float[] ds = new float[np+1];
+    float[] x1 = new float[np+1];
+    float[] x2 = new float[np+1];
+    x1[0] = _snake.x1.get(0);
+    x2[0] = _snake.x2.get(0);
+    int k = 0;
+    for (int ip=1; ip<=np; ++ip) {
+      float x1i,x2i;
+      if(ip==np){
+        x1i = _snake.x1.get(0);
+        x2i = _snake.x2.get(0);
+      } else {
+        x1i = _snake.x1.get(ip);
+        x2i = _snake.x2.get(ip);
+      }
+      float x1m = x1[ip-1];
+      float x2m = x2[ip-1];
+      float dx1 = x1i-x1m;
+      float dx2 = x2i-x2m;
+      float dsi = sqrt(dx1*dx1+dx2*dx2);
+      if(dsi>0.0f) {
+        k++;
+        x1[k] = x1i;
+        x2[k] = x2i;
+        ds[k] = ds[ip-1]+dsi;
+      }
+    }
+    x1 = copy(k+1,x1);
+    x2 = copy(k+1,x2);
+    ds = copy(k+1,ds);
+
+    double d = 1.0;
+    double f = 0.00;
+    double l = ds[k];
+    int n = (int)round((l-f)/d);
+    Sampling ss = new Sampling(n,d,f);
+    double[] sv = ss.getValues();
+    CubicInterpolator cx1 = new CubicInterpolator(ds,x1);
+    CubicInterpolator cx2 = new CubicInterpolator(ds,x2);
+    _snake.size = n;
+    _snake.x1.clear();
+    _snake.x2.clear();
+    for (int i=0; i<n; ++i) {
+      float si = (float)sv[i];
+      _snake.x1.add(cx1.interpolate(si));
+      _snake.x2.add(cx2.interpolate(si));
+    }
+    _snake.u1.clear();
+    _snake.u2.clear();
+    float[] x1a = _snake.getArrayX1();
+    float[] x2a = _snake.getArrayX2();
+    for (int i=0; i<n; ++i) {
+      int ip = i+1; if(ip==n) ip=0;
+      int im = i-1; if(im<0)  im=n-1;
+      float g1 = x1a[ip]-x1a[im];
+      float g2 = x2a[ip]-x2a[im];
+      float gs = sqrt(g1*g1+g2*g2);
+      if(gs>0.0f){g1/=gs;g2/=gs;}
+      _snake.u1.add(-g2);
+      _snake.u2.add(g1);
+    }
+  }
+
+  private void setNormals() {
+    _snake.u1.clear();
+    _snake.u2.clear();
+    float[] x1a = _snake.getArrayX1();
+    float[] x2a = _snake.getArrayX2();
+    int n = _snake.size;
+    for (int i=0; i<n; ++i) {
+      int ip = i+1; if(ip==n) ip=0;
+      int im = i-1; if(im<0)  im=n-1;
+      float g1 = x1a[ip]-x1a[im];
+      float g2 = x2a[ip]-x2a[im];
+      float gs = sqrt(g1*g1+g2*g2);
+      if(gs>0.0f){g1/=gs;g2/=gs;}
+      _snake.u1.add(-g2);
+      _snake.u2.add(g1);
+    }
+  }
+
+  private boolean removeBadPoints(Sampling s1, Sampling s2) {
+    int np = _snake.size;
+    int n1 = s1.getCount();
+    int n2 = s2.getCount();
+    int[] mp = new int[np];
+    int[][] mk = new int[n1][n2];
+    int[][] pk = new int[n1][n2];
+    float[] x1 = new float[np];
+    float[] x2 = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+      float x1i = _snake.x1.get(ip);
+      float x2i = _snake.x2.get(ip);
+      x1[ip] = x1i;
+      x2[ip] = x2i;
+      int i1 = round(x1i);
+      int i2 = round(x2i);
+      if(i1<0)    {mp[ip]=1;continue;}
+      if(i2<0)    {mp[ip]=1;continue;}
+      if(i1>n1-1) {mp[ip]=1;continue;}
+      if(i2>n2-1) {mp[ip]=1;continue;}
+      if(mk[i2][i1]>=1){
+        int pp = pk[i2][i1];
+        mp[pp] = 1;
+        mp[ip] = 1;
+      }
+      pk[i2][i1] = ip;
+      mk[i2][i1] += 1;
+    }
+    int k = 0;
+    _snake.x1.clear();
+    _snake.x2.clear();
+    for (int ip=0; ip<np; ++ip) {
+      if(mp[ip]==1) {continue;}
+      _snake.x1.add(x1[ip]);
+      _snake.x2.add(x2[ip]);
+      k++;
+    }
+    _snake.size=k;
+    if(sum(mp)>0){return true;}
+    else{return false;}
+  }
+
+  private Snake _snake = new Snake();
+
+
+}

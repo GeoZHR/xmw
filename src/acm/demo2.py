@@ -19,7 +19,10 @@ pngDir = None
 pngDir = "../../../png/acm/"
 
 seismicDir = "../../../data/seis/acm/"
+seismicDir = "../../../data/seis/slt/2d/sub2/"
+
 fxfile = "atwj1s"
+fxfile = "st"
 #fxfile = "f3d267"
 #fxfile = "f3d267Sub"
 edfile = "edge"
@@ -32,6 +35,7 @@ f1,f2 = 0,0
 d1,d2 = 1,1
 n1,n2 = 251,357
 n1,n2 = 500,500
+n1,n2 = 162,461
 #n1,n2 = 462,951
 #n1,n2 = 140,350
 #n1,n2 = 100,101
@@ -47,9 +51,30 @@ def main(args):
   #goContour()
   
   #goExForce()
-  goSnakeReal()
+  #goSnakeReal()
   #goExForceF3d()
   #goChannel()
+  goTest()
+def goTest():
+  fx = readImage(fxfile)
+  gvf = GradientVectorFlow()
+  g1,g2,gs = gvf.applyForGradient(1,fx)
+  plot(fx)#pngName+str(k))
+  ac2 = ActiveContour2(120,240,40)
+  ac2.updateSnake(1000,fd)
+  snake = ac2.getSnake()
+  plot(fx)#pngName+str(k))
+  #ac.releaseSnake(fpn,fnn,False)
+  x1 = snake.getArrayX1()
+  x2 = snake.getArrayX2()
+  k1,k2=[],[]
+  for j in range(len(x1)):
+    x1i = x1[j]
+    x2i = x2[j]
+    k1.append(x1i)
+    k2.append(x2i)
+  plot(fd,ap=[k1,k2],png=None)#pngName+str(k))
+
 def goChannel():
   fx = readImage(fxfile)
   fx = div(fx,10000)
@@ -271,6 +296,7 @@ def goSnakeFake():
   plot(f,ap=[x1,x2])
   plot(f,ap=[x1s,x2s])
 
+'''
 def goTest():
   f = goFakeImage()
   x = [20,30,50,60,80,85,85,85,85,70,65,50,40,30,20,20,20]
@@ -281,6 +307,7 @@ def goTest():
   ys = snake.getArrayX2()
   plot(f,ap=[y,x])
   plot(f,ap=[ys,xs])
+'''
   
 
 def goFakeImage():

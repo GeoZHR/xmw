@@ -64,14 +64,14 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/swt/print/"
-pngDir = "../../../png/swt/revision/"
 pngDir = None
+pngDir = "../../../png/swt/revision/"
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goDisplay()
+  #goDisplay()
   #goSynsFlatten()
   #goSeisFlatten()
   #goSynsSeisTie()  
@@ -98,7 +98,12 @@ def main(args):
   rx = re.apply3D(d1,gx)
   plot3(rx,cmin=-1,cmax=1)
   '''
+  goWellMap()
 
+def goWellMap():
+  gx = readImage(gxfile)
+  lgs = getLogs()
+  plot2s(slice23(350,gx),lgs,png="wMap")
 def goTimeUpdateS():
   gx = readImage(gxfile)
   lgs = getLogs()
@@ -127,14 +132,12 @@ def goTimeUpdateS():
   plot1s(s1,swu,wus,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisAS")
   # show only the first two traces
-  '''
   wxs[0]=wus[0]
   swx[0]=swu[0]
-  wxs[1]=wus[1]
-  swx[1]=swu[1]
+  #wxs[1]=wus[1]
+  #swx[1]=swu[1]
   plot1s(s1,swx,wxs,rs=fx,vmin=0.1,vmax=1.15,
          vlabel="Time (s)",png="synsSeisAS1")
-  '''
   spw=swt.getSamples(s1,lgs)
   sps=swt.getSamples(s1,mds)
   vlabel2 = "RGT"
@@ -708,6 +711,37 @@ def plot1ss(s1,rs,ss,ys,sm,ym,vmin=None,vmax=None,
   sp.setFontSize(20) #for print
   #sp.setFontSize(30) #for slides
   sp.setVInterval(0.2)
+  if png and pngDir:
+    sp.paintToPng(300,7.0,pngDir+png+".png")
+
+def plot2s(fx,lgs,png=None):
+  sp = SimplePlot(SimplePlot.Origin.LOWER_LEFT)
+  sp.setSize(500,900)
+  sp.setVLabel("Inline (km)")
+  sp.setHLabel("Crossline (km)")
+  sp.setSize(n2*4,n3*6)
+  sp.setFontSize(18)
+  pv = sp.addPixels(s2,s3,fx)
+  pv.setColorModel(ColorMap.GRAY)
+  nl = len(lgs)
+  for k1 in range(nl):
+    for k2 in range(k1+1,nl,1):
+      x21 = lgs[k1].x2
+      x22 = lgs[k2].x2
+      x31 = lgs[k1].x3
+      x32 = lgs[k2].x3
+      pv2 = sp.addPoints([x21[0],x22[0]],[x31[0],x32[0]])
+      pv2.setLineColor(Color.BLUE)
+      pv2.setLineWidth(3)
+  for lg in lgs:
+    x2 = lg.x2
+    x3 = lg.x3
+    pv1 = sp.addPoints([x2[0]],[x3[0]])
+    pv1.setMarkStyle(PointsView.Mark.HOLLOW_CIRCLE)
+    pv1.setMarkColor(Color.RED)
+    pv1.setMarkSize(8)
+    pv1.setLineWidth(3)
+  pv.setClips(-1.5,1.5)
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
 

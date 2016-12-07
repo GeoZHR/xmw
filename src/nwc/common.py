@@ -24,6 +24,7 @@ from mef import *
 from beg import *
 from hv import *
 from he import *
+from crf import *
 from nwc import *
 
 #############################################################################

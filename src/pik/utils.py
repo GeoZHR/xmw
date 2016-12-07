@@ -36,6 +36,40 @@ def setupForSubset(name):
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="xue":
+    """ xue """
+    print "setupForSubset: xue"
+    pngDir = _pngdir+"xue/"
+    seismicDir = _datdir+"xue/"
+    n1,n2 = 1251,7
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="fd2":
+    """ fd2 """
+    print "setupForSubset: fd2"
+    pngDir = _pngdir+"fd/"
+    seismicDir = _datdir+"fd/"
+    n1,n2 = 462,951
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="dgb":
+    """ dgb """
+    print "setupForSubset: dgb"
+    pngDir = _pngdir+"dgb/"
+    seismicDir = _datdir+"dgb/"
+    n1,n2 = 301,300
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+
   elif name=="channel":
     """ nwc channel (slice 120) """
     print "setupForSubset: channel"
@@ -69,6 +103,7 @@ def setupForSubset(name):
     seismicDir = _datdir+"env/"
     pngDir = _pngdir+"env/"
     n1,n2,n3 = 1001,1028,91
+    n1,n2,n3 = 91,1028,1001
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
@@ -144,6 +179,16 @@ def readImage1D(basename):
   ais.close()
   return image
 
+def readImage1L(basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n1)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 def writeImage(basename,image):
   """ 

@@ -135,4 +135,50 @@ public class Gradient {
     sub(x[1],x[0],g3[0]);
     sub(x[n3-1],x[n3-2],g3[n3-1]);
   }
+
+  public static void center3DX(
+    final float[][][] fx, final float[][][] g1, 
+    final float[][][] g2, final float[][][] g3) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    final float d1 = 1.0f;
+    final float d2 = 1.0f;
+    final float d3 = 1.0f;
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] g1i = g1[i3][i2];
+        float[] g2i = g2[i3][i2];
+        float[] g3i = g3[i3][i2];
+        for (int i1=0; i1<n1; ++i1) {
+          float u1p = i1+d1;
+          float u2p = i2+d2;
+          float u3p = i3+d3;
+          float u1m = i1-d1;
+          float u2m = i2-d2;
+          float u3m = i3-d3;
+
+          float gup = si.interpolate(s1,s2,s3,fx,u1p,i2,i3);
+          float gum = si.interpolate(s1,s2,s3,fx,u1m,i2,i3);
+
+          float gvp = si.interpolate(s1,s2,s3,fx,i1,u2p,i3);
+          float gvm = si.interpolate(s1,s2,s3,fx,i1,u2m,i3);
+
+          float gwp = si.interpolate(s1,s2,s3,fx,i1,i2,u3p);
+          float gwm = si.interpolate(s1,s2,s3,fx,i1,i2,u3m);
+
+          g1i[i1] = gup-gum;
+          g2i[i1] = gvp-gvm;
+          g3i[i1] = gwp-gwm;
+      }}
+    }});
+  }
+
 }

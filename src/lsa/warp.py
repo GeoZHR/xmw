@@ -35,7 +35,7 @@ from dwc import *
 
 pngDir = "../../../png/shifts/"
 seismicDir = "../../../data/seis/shifts/"
-#pngDir = None
+pngDir = None
 
 seed = 99 
 seed = 954 

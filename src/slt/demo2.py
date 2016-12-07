@@ -5,9 +5,11 @@ Version: 2015.12.19
 """
 from utils import *
 
-setupForSubset("2dSub1")
+setupForSubset("2dSub2")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
+s1 = Sampling(n1)
+s2 = Sampling(n2)
 
 # Names and descriptions of image files used below.
 gxfile = "gx" # input image 
@@ -17,8 +19,8 @@ st1file = "st1" # thinned salt likelihoods
 st2file = "st2" # thinned salt likelihoods
 sffile = "sf"   # salt indicator
 
-pngDir = None
 pngDir = getPngDir() #"../../../png/slt/2d/sub1/"
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -26,8 +28,45 @@ def main(args):
   #goLinear()       # compute lilearity
   #goSaltLike()     # compute salt likelihoods
   #goSaltSurfer()   # compute salt boundaries
-  goSaltSurferC()   # compute salt boundaries with constraints
+  #goSaltSurferC()   # compute salt boundaries with constraints
   #goTest()
+  #goPolar()
+  goPolarPik()
+
+def goPolar():
+  gx = readImage2d(gxfile)
+  sl = readImage2d(slfile)
+  pc = PolarCoordinates(161,200)
+  fr = pc.applyTransform(200,0,180,sl)
+  m2 = len(fr)
+  m1 = len(fr[0])
+  c1 = Sampling(m1)
+  c2 = Sampling(m2)
+  plot2(fr,c1,c2,cmin=0.2,cmax=0.9,cmap=ColorMap.GRAY,
+      label="Salt likelihood",png="sl")
+  plot2(gx,s1,s2,sl,cmin=0.2,cmax=0.9,cmap=jetRamp(1.0),
+      label="Salt likelihood",png="sl")
+def goPolarPik():
+  sl = readImage2d(slfile)
+  pc = PolarCoordinates(161,200,150,0,180)
+  fr = pc.applyTransform(sl)
+  m2 = len(fr)
+  m1 = len(fr[0])
+  c1 = Sampling(m1)
+  c2 = Sampling(m2)
+  opp = OptimalPathPicker(3,2)
+  ft = opp.applyTransform(fr)
+  wht = opp.applyForWeight(ft)
+  tms1 = zerofloat(m2,m1)
+  tms2 = zerofloat(m2,m1)
+  pik1 = opp.forwardPick(60,wht,tms1)
+  pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2)
+  pikr = pc.reverseTransform(n1,n2,pik2)
+  plot2X(s1,s2,sl,vint=50,hint=100,cmin=0.2,cmax=1.0)
+  #plot2X(c1,c2,fr,u=pik1,vint=50,hint=100,cmin=0.2,cmax=1.0)
+  plot2X(c1,c2,fr,u=pik2,vint=50,hint=100,cmin=0.2,cmax=1.0)
+  plot2X(s1,s2,sl,u=pikr,vint=50,hint=100,cmin=0.2,cmax=1.0)
+
 
 def goTest():
   u1 = zerofloat(n1,n2)
@@ -168,9 +207,9 @@ def gain(x):
 
 #############################################################################
 # graphics
-
 gray = ColorMap.GRAY
 jet = ColorMap.JET
+backgroundColor = Color.WHITE
 def jetFillExceptMin(alpha):
   a = fillfloat(alpha,256)
   a[0] = 0.0
@@ -260,6 +299,64 @@ def frame2Teapot(panel,png=None):
   if png and pngDir:
     frame.paintToPng(400,3.2,pngDir+"/"+png+".png")
   return frame
+
+def plot2X(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
+          cmin=0.0,cmax=0.0,cmap=ColorMap.JET,title=None,perc=None,png=None):
+  panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
+          #PlotPanel.AxesPlacement.NONE)
+  panel.setHLimits(0,s2.first,s2.last)
+  panel.setVLimits(0,s1.first,s1.last)
+  panel.setVInterval(0,vint)
+  panel.setHInterval(0,hint)
+  if title:
+    panel.addTitle(title)
+  cv = panel.addPixels(0,0,s1,s2,c)
+  cv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  cv.setColorModel(cmap)
+  if perc:
+    cv.setPercentiles(100-perc,perc)
+  elif cmin<cmax:
+    cv.setClips(cmin,cmax)
+  if u:
+    n2 = s2.getCount()
+    x2 = zerofloat(n2)
+    for i2 in range(n2):
+      x2[i2] = s2.getValue(i2)
+    uv = panel.addPoints(0,0,u,x2)
+    uv.setLineColor(Color.WHITE)
+    uv.setLineWidth(2)
+  if us:
+    colors = [Color.RED,Color.GREEN,Color.BLUE]
+    for k in range(len(us)):
+      sk = ss[k]
+      uk = copy(ss[k].getCount(),0,us[k])
+      uv = panel.addPoints(0,0,sk,uk)
+      uv.setLineColor(colors[k])
+      #uv.setLineColor(Color.WHITE)
+      uv.setLineStyle(PointsView.Line.DASH)
+      uv.setLineWidth(3)
+  if cps and css:
+    colors = [Color.RED,Color.GREEN,Color.BLUE]
+    for k in range(len(cps)):
+      pv = panel.addPoints(0,0,cps[k],css[k])
+      pv.setMarkColor(colors[k])
+      #uv.setLineColor(Color.WHITE)
+      pv.setLineStyle(PointsView.Line.NONE)
+      pv.setMarkStyle(PointsView.Mark.FILLED_SQUARE)
+      pv.setMarkSize(8)
+  #panel.addColorBar()
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(backgroundColor)
+  #frame.setFontSizeForPrint(8,240)
+  #frame.setSize(470,1000)
+  frame.setFontSize(18)
+  frame.setSize(800,400)
+  frame.setVisible(True)
+  if png and pngDir:
+    png += "n"+str(int(10*nrms))
+    png += "s"+str(int(10*strainMax))
+    frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
 
 #############################################################################
 # utilities

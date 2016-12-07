@@ -41,20 +41,29 @@ public class FaultReskin {
      FaultCell[] cells = skin.getCells();
      for (int ic=0; ic<nc; ++ic) {
        FaultCell cell = cells[ic];
-       k1[ic] = cell.getI1();
-       k2[ic] = cell.getI2();
-       k3[ic] = cell.getI3();
+       int i1 = cell.getI1();
+       int i2 = cell.getI2();
+       int i3 = cell.getI3();
+       i1 = min(i1,n1-1);
+       i2 = min(i2,n2-1);
+       i3 = min(i3,n3-1);
+       i1 = max(i1,0);
+       i2 = max(i2,0);
+       i3 = max(i3,0);
+       k1[ic] = i1;
+       k2[ic] = i2;
+       k3[ic] = i3;
        fl[ic] = cell.getFl();
        w1[ic] = cell.getW1();
        w2[ic] = cell.getW2();
        w3[ic] = cell.getW3();
      }
-     int b1 = max(min(k1)-5,0);
-     int b2 = max(min(k2)-5,0);
-     int b3 = max(min(k3)-5,0);
-     int e1 = min(max(k1)-5,n1-1);
-     int e2 = min(max(k2)-5,n2-1);
-     int e3 = min(max(k3)-5,n3-1);
+     int b1 = min(k1);
+     int b2 = min(k2);
+     int b3 = min(k3);
+     int e1 = max(k1);
+     int e2 = max(k2);
+     int e3 = max(k3);
      int m1 = e1-b1+1;
      int m2 = e2-b2+1;
      int m3 = e3-b3+1;
@@ -67,19 +76,19 @@ public class FaultReskin {
    return skinList.toArray(new FaultSkin[0]);
  }
 
- public FaultSkin[] reskin(int b1, int b2, int b3, int size, float[][][] fl) {
-   int n3 = fl.length;
-   int n2 = fl[0].length;
-   int n1 = fl[0][0].length;
-   float[][][] fp = new float[n3][n2][n1];
-   float[][][] ft = new float[n3][n2][n1];
-   computeStrikeDip(fl,fp,ft);
-   FaultSkinner  fs = new FaultSkinner();
-   fs.setGrowLikelihoods(0.01f,0.6f);
+ public FaultSkin[] reskin(int b1, int b2, int b3, int size, float[][][] fls) {
+   int n3 = fls.length;
+   int n2 = fls[0].length;
+   int n1 = fls[0][0].length;
+   float[][][] fps = new float[n3][n2][n1];
+   float[][][] fts = new float[n3][n2][n1];
+   computeStrikeDip(fls,fps,fts);
+   FaultSkinner fs = new FaultSkinner();
+   fs.setGrowLikelihoods(0.1f,0.6f);
    fs.setMaxDeltaStrike(10);
    fs.setMaxPlanarDistance(0.2f);
    fs.setMinSkinSize(size);
-   FaultCell[] fcs = fs.findCells(new float[][][][]{fl,fp,ft});
+   FaultCell[] fcs = fs.findCells(new float[][][][]{fps,fls,fts});
    int nc = fcs.length;
    for (int ic=0; ic<nc; ++ic) {
      FaultCell cell = fcs[ic];
@@ -89,10 +98,106 @@ public class FaultReskin {
      float fli = cell.getFl();
      float fpi = cell.getFp();
      float fti = cell.getFt();
-     fcs[ic] = new FaultCell(x1i-b1,x2i-b2,x3i-b3,fli,fpi,fti);
+     fcs[ic] = new FaultCell(x1i+b1,x2i+b2,x3i+b3,fli,fpi,fti);
    }
    return fs.findSkins(fcs);
  }
+
+ public float[][][][] getFaultImagesX(
+   int b1, int b2, int b3, int n1, int n2, int n3, 
+   int[] k1, int[] k2, int[] k3, float[] fl, float[] v1, float[] v2, float[] v3) 
+ {
+   float[][][] fls = new float[n3][n2][n1];
+   float[][][] fps = new float[n3][n2][n1];
+   float[][][] fts = new float[n3][n2][n1];
+   float[][][] g11 = new float[n3][n2][n1];
+   float[][][] g12 = new float[n3][n2][n1];
+   float[][][] g13 = new float[n3][n2][n1];
+   float[][][] g22 = new float[n3][n2][n1];
+   float[][][] g23 = new float[n3][n2][n1];
+   float[][][] g33 = new float[n3][n2][n1];
+   int nc = k1.length;
+   for (int ic=0; ic<nc; ++ic) {
+     int i1 = k1[ic]-b1;
+     int i2 = k2[ic]-b2;
+     int i3 = k3[ic]-b3;
+     float fli = fl[ic];
+     float w1i = v1[ic];
+     float w2i = v2[ic];
+     float w3i = v3[ic];
+     float w11 = w1i*w1i;
+     float w12 = w1i*w2i;
+     float w13 = w1i*w3i;
+     float w22 = w2i*w2i;
+     float w23 = w2i*w3i;
+     float w33 = w3i*w3i;
+     fls[i3][i2][i1] = fli;
+     g11[i3][i2][i1] = w11*fli;
+     g12[i3][i2][i1] = w12*fli;
+     g13[i3][i2][i1] = w13*fli;
+     g22[i3][i2][i1] = w22*fli;
+     g23[i3][i2][i1] = w23*fli;
+     g33[i3][i2][i1] = w33*fli;
+   }
+   RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(4);
+   rgf1.apply000(fls,fls);
+   fls = pow(abs(fls),0.5f);
+   fls = sub(fls,min(fls));
+   fls = div(fls,max(fls));
+   RecursiveGaussianFilter rgf2 = new RecursiveGaussianFilter(10);
+   float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+   for (float[][][] g:gs) {
+     rgf2.apply0XX(g,g);
+     rgf1.applyX0X(g,g);
+     rgf1.applyXX0(g,g);
+   }
+   System.out.println("gaussian smoothing done...");
+   float[][][] w1 = new float[n3][n2][n1];
+   float[][][] w2 = new float[n3][n2][n1];
+   float[][][] u1 = new float[n3][n2][n1];
+   float[][][] u2 = new float[n3][n2][n1];
+   float[][][] u3 = new float[n3][n2][n1];
+   solveEigenproblems(g11,g12,g13,g22,g23,g33,w1,w2,u1,u2,u3);
+   // Compute u1 such that u3 > 0.
+   for (int i3=0; i3<n3; ++i3) {
+     for (int i2=0; i2<n2; ++i2) {
+       for (int i1=0; i1<n1; ++i1) {
+         float u1i = u1[i3][i2][i1];
+         float u2i = u2[i3][i2][i1];
+         float u3i = u3[i3][i2][i1];
+         /*
+         float u1s = 1.0f-u2i*u2i-u3i*u3i;
+         u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
+         if (u3i<0.0f) {
+           u1i = -u1i;
+           u2i = -u2i;
+         }
+         u1[i3][i2][i1] = u1i;
+         u2[i3][i2][i1] = u2i;
+         */
+         if(u2i!=0.0f && u3i!=0.0f) {
+          fts[i3][i2][i1] = faultDipFromNormalVector(-u1i,-u2i,-u3i);
+          fps[i3][i2][i1] = faultStrikeFromNormalVector(-u1i,-u2i,-u3i);
+         }
+       }
+     }
+   }
+   System.out.println("fpmax="+max(fps));
+   System.out.println("ftmax="+max(fts));
+   /*
+   System.out.println("eigentensors done...");
+   float[][][] eu = fillfloat(0.1f,n1,n2,n3);
+   float[][][] ev = fillfloat(1.0f,n1,n2,n3);
+   float[][][] ew = fillfloat(1.0f,n1,n2,n3);
+   EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+   LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+   lsf.apply(et,10,fls,fls);
+   fls = sub(fls,min(fls));
+   fls = div(fls,max(fls));
+   */
+   return new float[][][][]{fls,fps,fts};
+ }
+
 
  public float[][][] getFaultImages(
    int b1, int b2, int b3, int n1, int n2, int n3, 
@@ -130,6 +235,9 @@ public class FaultReskin {
    }
    RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(1);
    rgf1.apply000(fls,fls);
+   fls = sub(fls,min(fls));
+   fls = div(fls,max(fls));
+
    RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(10);
    float[][][][] gs = {g11,g22,g33,g12,g13,g23};
    for (float[][][] g:gs) {
@@ -143,9 +251,9 @@ public class FaultReskin {
    float[][][] u3 = new float[n3][n2][n1];
    solveEigenproblems(g11,g12,g13,g22,g23,g33,w1,w2,u1,u2,u3);
    // Compute u1 such that u3 > 0.
-   for (int i3=0; i3<_n3; ++i3) {
-     for (int i2=0; i2<_n2; ++i2) {
-       for (int i1=0; i1<_n1; ++i1) {
+   for (int i3=0; i3<n3; ++i3) {
+     for (int i2=0; i2<n2; ++i2) {
+       for (int i1=0; i1<n1; ++i1) {
          float u1i = u2[i3][i2][i1];
          float u2i = u2[i3][i2][i1];
          float u3i = u3[i3][i2][i1];
@@ -166,6 +274,7 @@ public class FaultReskin {
    float[][][] ew = fillfloat(1.0f,n1,n2,n3);
    EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+   lsf.applySmoothS(fls,fls);
    lsf.apply(et,10,fls,fls);
    fls = sub(fls,min(fls));
    fls = div(fls,max(fls));
@@ -182,13 +291,13 @@ public class FaultReskin {
     float[][][] u1 = new float[n3][n2][n1];
     float[][][] u2 = new float[n3][n2][n1];
     float[][][] u3 = new float[n3][n2][n1];
-    LocalOrientFilterP lof = new LocalOrientFilterP(8,4);
+    LocalOrientFilter lof = new LocalOrientFilter(8,4);
     lof.applyForNormal(fl,u1,u2,u3);
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       float fli = fl[i3][i2][i1];
-      if(fli>0f) {
+      if(fli>0.001f) {
         int k1 = i1;
         int k2 = i2;
         int k3 = i3;
@@ -198,9 +307,9 @@ public class FaultReskin {
         if(k1==n1-1) {k1=n1-2;}
         if(k2==n2-1) {k2=n2-2;}
         if(k3==n3-1) {k3=n3-2;}
-        float u1i = -u1[k3][k2][k1];
-        float u2i = -u2[k3][k2][k1];
-        float u3i = -u3[k3][k2][k1];
+        float u1i = u1[k3][k2][k1];
+        float u2i = u2[k3][k2][k1];
+        float u3i = u3[k3][k2][k1];
         if(u2i!=0.0f && u3i!=0.0f) {
           ft[i3][i2][i1] = faultDipFromNormalVector(u1i,u2i,u3i);
           fp[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);

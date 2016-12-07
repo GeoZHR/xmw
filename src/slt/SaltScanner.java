@@ -6,6 +6,7 @@ import edu.mines.jtk.util.Stopwatch;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 import ad.*;
+import pik.*;
 
 /**
  * Compute salt likelihoods. 
@@ -86,6 +87,18 @@ public class SaltScanner {
     return new float[][][]{cx,ax};
   }
   */
+  public void applyForPhase(float[] u, float[]ph){
+    int n1 = u.length; 
+    float[] ui = new float[n1];
+    HilbertTransformFilter hbt = new HilbertTransformFilter();
+    hbt.apply(n1,u,ui);
+    for (int i1=0; i1<n1; i1++){
+      float uri = u[i1];
+      float uii = ui[i1];
+      ph[i1] = uri/sqrt(uri*uri+uii*uii);
+    } 
+  }
+
   public void applyForPhase(float[][] u, float[][] ph){
     int n2 = u.length;
     int n1 = u[0].length; 
@@ -142,6 +155,73 @@ public class SaltScanner {
 
   }
 
+  public void peakFinder(final int d, final float[][] f, 
+    final float[][] p) {
+    final int n2 = f.length;
+    Parallel.loop(n2,new Parallel.LoopInt() {
+      public void compute(int i2) {
+        peakFinder(d,f[i2],p[i2]);
+      }
+    });
+  }
+
+  public void peakFinder(int d, float[] f, float[] p) {
+    int n = f.length;
+    for (int i=d; i<n-d; ++i) {
+      float fi = f[i];
+      float sum1 = 0.0f;
+      float sum2 = 0.0f;
+      for (int k=1; k<=d; ++k) {
+        float dfmi = fi - f[i-k];
+        float dfpi = fi - f[i+k];
+        sum1 += dfmi+dfpi;
+        sum2 += abs(dfmi)+abs(dfpi);
+      }
+      if (sum1==sum2) {
+        p[i] = f[i];
+      } 
+    } 
+  }
+
+
+  public float[][] applyForCoorelation(int nw, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] fc = new float[n2][n1];
+    DynamicWarping dw = new DynamicWarping(-nw/2,nw/2);
+    dw.setStrainMax(0.5);
+    LocalCorrelationFilter.Type tp = LocalCorrelationFilter.Type.SYMMETRIC;
+    LocalCorrelationFilter.Window wd = LocalCorrelationFilter.Window.GAUSSIAN;
+    LocalCorrelationFilter lcf = new LocalCorrelationFilter(tp,wd,nw/2);
+    for (int i2=0; i2<n2; ++i2) {
+      float[] fc2 = fc[i2];
+      float[] fx2 = fx[i2];
+      float[] fa = new float[nw];
+      float[] fb = new float[nw];
+      int c1 = 0;
+      for (int i1=nw; i1<n1-nw-1; i1++) {
+        c1 = 0;
+        for (int k1=i1-1;k1>=i1-nw;k1--)
+          fa[c1++] = fx2[k1];
+        c1 = 0;
+        for (int k1=i1+1;k1<=i1+nw;k1++)
+          fb[c1++] = -fx2[k1];
+        float[] st = dw.findShifts(fa,fb);
+        float[] bs = dw.applyShifts(st,fb);
+        float[] lc = new float[nw];
+        lcf.setInputs(bs,fa);
+        lcf.correlate(0,lc);
+        lc = sub(lc,min(lc));
+        lc = div(lc,max(lc));
+        for (int k1=0; k1<nw; k1++) {
+          //float di = bs[k1]-fa[k1];
+          fc2[i1] += abs(lc[k1]);
+        }
+        //fc2[i1] = abs(sum(abs(sub(bs,fa))));
+      }
+    }
+    return fc;
+  }
 
   public float[][][] applyForPlanar(
     float sigma, EigenTensors3 ets, float[][][] fx) 
@@ -197,11 +277,46 @@ public class SaltScanner {
 
   }
 
+  public float[][] gradient(
+    float sigma, float[][] ep) 
+  {
+    final int n2 = ep.length;
+    final int n1 = ep[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(Float.isNaN(ep[i2][i1])) {
+        ep[i2][i1] = 1f;
+      }
+    }}
+    final float[][] g1 = new float[n2][n1];
+    final float[][] g2 = new float[n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+    rgf.apply10(ep,g1);
+    rgf.apply01(ep,g2);
+    final float[][] sl = new float[n2][n1];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g1i = g1[i2][i1];
+      float g2i = g2[i2][i1];
+      sl[i2][i1] = abs(g1i*g1i+g2i*g2i); 
+    }}
+    sub(sl,min(sl),sl);
+    div(sl,max(sl),sl);
+    return sl;
+  }
+
+
   public float[][] saltLikelihood(
     float sigma, float[][] ep, float[][] u1, float[][] u2) 
   {
     final int n2 = ep.length;
     final int n1 = ep[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(Float.isNaN(ep[i2][i1])) {
+        ep[i2][i1] = 1f;
+      }
+    }}
     final float[][] g1 = new float[n2][n1];
     final float[][] g2 = new float[n2][n1];
     RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);

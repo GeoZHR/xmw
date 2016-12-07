@@ -9,6 +9,7 @@ from common import *
 # Internal constants
 
 _datdir = "../../../data/seis/slt/"
+#_datdir = "../../../data/seis/slt/seam/"
 
 #############################################################################
 # Setup
@@ -66,6 +67,15 @@ def setupForSubset(name):
     f1,f2 = 0.004+80*d1,0*d2
     #f1,f2 = 220,340
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="seam2d":
+    print "setupForSubset: seam2d"
+    seismicDir = _datdir+"2d/"
+    pngDir = "../../../png/slt/2d/sub2/"
+    n1,n2,n3=751,1002,1002
+    n1,n2,n3=400,400,1002
+    f1,f2,f3=0,0,0
+    d1,d2,d3=1,1,1
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   else:
     print "unrecognized subset:",name
     System.exit

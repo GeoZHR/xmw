@@ -37,6 +37,7 @@ fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
 fskr = "fsr" # fault skin (basename only)
+fskrs = "fsrs" # fault skin (basename only)
 fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
@@ -78,7 +79,7 @@ maxThrow = 30.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -112,9 +113,23 @@ def main(args):
   plot3(gu1)
   plot3(gu2)
   '''
-  goResults()
+  #goResults()
   #goSlices()
   #goChannel()
+  #goReskinx()
+def goReskinx():
+  print n1
+  print n2
+  print n3
+  gx = readImage(gxfile)
+  skins = readSkins(fskr)
+  skins = [skins[1]]
+  fsr = FaultReskin()
+  skinr = fsr.applyForSkins(n1,n2,n3,400,skins)
+  #writeSkins(fskrs,skinr)
+  plot3(gx,skins=skinr)
+  plot3(gx,skins=skins)
+
 def goChannel():
   gx = readImage(gufile)
   gc = zerofloat(n2,n3)
@@ -523,7 +538,7 @@ def goSlip():
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fskr)
+    skins = readSkins(fskbase)
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error
@@ -536,13 +551,13 @@ def goSlip():
     fsk.setMinMaxThrow(minThrow,maxThrow)
     #skins = fsk.reskin(skins)
     print ", after =",len(skins)
-    removeAllSkinFiles(fslbase)
-    writeSkins(fslbase,skins)
+    #removeAllSkinFiles(fslbase)
+    #writeSkins(fslbase,skins)
     smark = -999.999
-    s1,s2,s3 = fsl.getDipSlips(skins,smark)
-    s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
-    gw = fsl.unfault([s1,s2,s3],gx)
-    writeImage(gwfile,gw)
+    #s1,s2,s3 = fsl.getDipSlips(skins,smark)
+    #s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+    #gw = fsl.unfault([s1,s2,s3],gx)
+    #writeImage(gwfile,gw)
     '''
     writeImage(fs1file,s1)
     writeImage(fs2file,s2)
@@ -551,9 +566,11 @@ def goSlip():
   else:
     gw = readImage(gwfile)
     #s1 = readImage(fs1file)
-    #skins = readSkins(fslbase)
+    skins = readSkins(fslbase)
+    skinr = readSkins(fskr)
+  plot3(gx,skins=skins,smax=30.0)
+  #plot3(gx,skins=skinr)
   '''
-  plot3(gx,skins=skins,smax=10.0,png="skinss1")
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),

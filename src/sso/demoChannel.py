@@ -28,6 +28,8 @@ pngDir = "../../../png/sso/3d/nwc/"
 #seismicDir = "../../../data/seis/sso/3d/pnz/"
 seismicDir = "../../../data/seis/sso/3d/nwc/"
 fxfile = "gn"
+gxnfile = "gxn"
+scnfile = "scn"
 ellfile = "ell"
 elsfile = "els"
 eplfile = "epl"
@@ -71,7 +73,46 @@ def main(args):
   #goHorizonS()
   #goHorizons()
   #goFolding()
-  goHorizon()
+  #goHorizon()
+  goNonlinearDiffusion()
+  goLocalSmoothingFilter()
+def goLocalSmoothingFilter():
+  fx = readImage(fxfile)
+  fs = zerofloat(n1,n2,n3)
+  ets = readTensors(etcfile)
+  lsf = LocalSmoothingFilter()
+  ets.setEigenvalues(0.001,1.0,1.0)
+  lsf.apply(ets,50,fx,fs)
+  surf = readImage2D(n2,n3,hzfile)
+  plot3(fx,hz=surf,cmin=-1.5,cmax=1.5,scale=1.6,png="fx")
+  plot3(fs,hz=surf,cmin=-1.5,cmax=1.5,scale=1.6,png="fs")
+def goNonlinearDiffusion():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    ets = readTensors(etcfile)
+    #sig1,sig2=2,4
+    #lof = LocalOrientFilter(sig1,sig2)
+    #ets = lof.applyForTensors(fx)
+    sig = 10
+    cycle,limit=3,0.5
+    lbd = 0.18
+    fed = FastExplicitDiffusion()
+    fed.setCycles(cycle,limit)
+    sc, gx = fed.apply(sig,lbd,1.0,ets,fx)
+    writeImage(gxnfile,gx)
+    writeImage(scnfile,sc)
+  else:
+    gx = readImage(gxnfile)
+    sc = readImage(scnfile)
+  sc = pow(sc,2.0)
+  sc = sub(sc,min(sc))
+  sc = div(sc,max(sc))
+  surf = readImage2D(n2,n3,hzfile)
+  #plot3(fx,hz=surf,cmin=-1.5,cmax=1.5,scale=1.6,png="fx")
+  plot3(gx,hz=surf,cmin=-1.5,cmax=1.5,scale=1.6,png="gxn")
+  #plot3(sc,hz=surf,cmin=0.0,cmax=1.0,scale=1.6,png="scn")
+  #plot3(fx,cmin=-1,cmax=1)
+
 def goHorizon():
   gx = readImage(fxfile)
   if not plotOnly:
@@ -94,10 +135,15 @@ def goHorizon():
     surf = readImage2D(n2,n3,hzfile)
   etc = readTensors(etcfile)
   etl = readTensors(etlfile)
-  plot3(gx,hz=surf,scale=1.3,cmin=-1.5,cmax=1.5,png="seisF")
-  plot3(gx,hz=surf,cmin=-1.5,cmax=1.5,png="seis")
-  plot3(gx,hz=surf,et=etc,cmin=-1.5,cmax=1.5,png="etl")
-  plot3(gx,hz=surf,et=etl,cmin=-1.5,cmax=1.5,png="ets")
+  #plot3(gx,hz=surf,scale=1.3,cmin=-1.5,cmax=1.5,png="seisF")
+  #plot3(gx,hz=surf,cmin=-1.5,cmax=1.5,png="seis")
+  #plot3(gx,hz=surf,et=etc,cmin=-1.5,cmax=1.5,scale=2.5,png="etc")
+  #plot3(gx,hz=surf,et=etl,cmin=-1.5,cmax=1.5,scale=2.5,png="etl")
+  eu = fillfloat(0.01,n1,n2,n3)
+  ev = fillfloat(1.0,n1,n2,n3)
+  ew = fillfloat(1.0,n1,n2,n3)
+  etc.setEigenvalues(eu,ev,ew)
+  plot3(gx,hz=surf,ets=etc,cmin=-1.5,cmax=1.5,scale=1.6,png="etcs")
 
 def goFolding():
   fx = readImage("gxfull")
@@ -458,7 +504,13 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot3(f,g=None,hz=None,hs=None,et=None,k1=290,k2=17,k3=72,
+def addTensorsInImage(ip,et,esize):
+  tp = TensorsPanel(s1,s2,s3,et)
+  tp.setEllipsoidSize(esize)
+  ip.getFrame().addChild(tp)
+  return tp
+
+def plot3(f,g=None,hz=None,hs=None,et=None,ets=None,k1=290,k2=17,k3=72,
     scale=2.5,cmin=None,cmax=None,cmap=None,clab=None,cint=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
@@ -509,7 +561,8 @@ def plot3(f,g=None,hz=None,hs=None,et=None,k1=290,k2=17,k3=72,
     sf.world.addChild(tg)
   if et:
     tv = TensorView()
-    hs = tv.applyForSegments(5,et,hz)
+    #hs = tv.applyForSegments(5,et,hz)
+    hs = tv.applyForSegments(4.5,et,hz)
     cp = ColorMap(0,1,ColorMap.JET)
     vi = fillfloat(0.9,6)
     cb = cp.getRgbFloats(vi)
@@ -522,6 +575,10 @@ def plot3(f,g=None,hz=None,hs=None,et=None,k1=290,k2=17,k3=72,
       ls.setSmooth(False)
       ss.add(ls)
       sf.world.addChild(lg)
+  if ets:
+    addTensorsInImage(ipg.getImagePanel(Axis.X),ets,15)
+    addTensorsInImage(ipg.getImagePanel(Axis.Y),ets,15)
+    addTensorsInImage(ipg.getImagePanel(Axis.Z),ets,15)
   if cbar:
     cbar.setWidthMinimum(100)
   ipg.setSlices(k1,k2,k3)

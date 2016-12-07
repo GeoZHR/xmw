@@ -25,6 +25,7 @@ seismicDir = "../../../data/seis/pcable/"
 fxfile = "gx"
 fafile = "ga"
 n1,n2 = 458,1184
+n1,n2 = 501,501 # fake
 d1,d2 = 0.00625,0.00625
 f1,f2 = 0,0
 s1 = Sampling(n1,d1,f1)
@@ -32,9 +33,9 @@ s2 = Sampling(n2,d2,f2)
 
 def main(args):
   #goGaussian()
-  goLinearDiffusion()
+  #goLinearDiffusion()
   #goNonlinearDiffusion()
-  #goHilbert()
+  goHilbert()
   #goGaussianD()
   #goFaultSmooth()
   #goSlope()

@@ -146,6 +146,24 @@ public class GradientVectorFlow {
     return et;
   }
 
+  public float[][][] applyForGradient(float sigma, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] g1 = new float[n2][n1];
+    float[][] g2 = new float[n2][n1];
+    float[][] gs = new float[n2][n1];
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(sigma);
+    rgf.apply10(fx,g1);
+    rgf.apply01(fx,g2);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g1i = g1[i2][i1];
+      float g2i = g2[i2][i1];
+      gs[i2][i1] = g1i*g1i+g2i*g2i;
+    }}
+    return null;
+  }
+
   public float[][][] applyForGVF(
     EigenTensors2 et, float[][] u1, float[][] u2, float[][] wp, float[][] ws) 
   {
@@ -185,9 +203,9 @@ public class GradientVectorFlow {
     CgSolver cs = new CgSolver(_small,_niter);
     A2 a2 = new A2(_scale,et,smoother,wp);
     makeRhs(wp,u,b);
-    //smoother.applyTranspose(b);
+    smoother.applyTranspose(b);
     cs.solve(a2,vb,vr);
-    //smoother.apply(r);
+    smoother.apply(r);
     return r;
   }
 
@@ -248,7 +266,7 @@ public class GradientVectorFlow {
       float[][] z = copy(x);
       v2y.zero();
       applyLhs(_scale,_et,_wp,z,y);
-      //_smoother.applyTranspose(y);
+      _smoother.applyTranspose(y);
     }
 
     private float _scale;
@@ -376,9 +394,9 @@ public class GradientVectorFlow {
     ref.apply(x,x);
   }
 
-  private static void applyLhs(final float scale,final Tensors2 et,
-    final float[][] wp, final float[][] x, final float[][] y)
-  {
+
+  private static void applyLaplace(
+    final Tensors2 et, final float[][] x, final float[][] y) {
     zero(y);
     int n2 = x.length;
     int n1 = x[0].length;
@@ -389,11 +407,9 @@ public class GradientVectorFlow {
     for (int i2=1; i2<n2; ++i2) {
       for (int i1=1; i1<n1; ++i1) {
         if(et!=null){et.getTensor(i1,i2,ds);}
-        float wpi = (wp!=null)?wp[i2][i1]:1.0f;
-        float wpm = (1.0f-wpi)*(1.0f-wpi);
-        float d11 = ds[0]*scale*wpm;
-        float d12 = ds[1]*scale*wpm;
-        float d22 = ds[2]*scale*wpm;
+        float d11 = ds[0];
+        float d12 = ds[1];
+        float d22 = ds[2];
         float xa = 0.0f;
         float xb = 0.0f;
         xa += x[i2  ][i1  ];
@@ -412,11 +428,22 @@ public class GradientVectorFlow {
         y[i2-1][i1-1] -= ya;
       }
     }
+
+  }
+  private static void applyLhs(final float scale,final Tensors2 et,
+    final float[][] wp, final float[][] x, final float[][] y)
+  {
+    zero(y);
+    int n2 = x.length;
+    int n1 = x[0].length;
+    float[][] t = new float[n2][n1];
+    applyLaplace(et,x,t);
+    applyLaplace(et,t,y);
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = (wp!=null)?wp[i2][i1]:1.0f;
       float wps = wpi*wpi;
-      y[i2][i1] += wps*x[i2][i1];
+      y[i2][i1] = scale*y[i2][i1]-wps*x[i2][i1];
     }}
   }
 
@@ -502,7 +529,7 @@ public class GradientVectorFlow {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = (wp!=null)?wp[i2][i1]:1.0f;
       float wps = wpi*wpi;
-      y[i2][i1] = wps*u[i2][i1];
+      y[i2][i1] = -wps*u[i2][i1];
     }}
   }
 

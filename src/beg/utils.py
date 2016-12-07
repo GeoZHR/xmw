@@ -59,6 +59,13 @@ def setupForSubset(name):
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="mason":
+    print "setupForDataset: mason"
+    seismicDir = _datdir+"mason/"
+    n1,n2,n3 = 55,250,200
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="nathan":
     print "setupForDataset: nathan"
     seismicDir = _datdir+"nathan/"
@@ -207,6 +214,19 @@ def readImage(name):
   ais.close()
   return image
 
+def readImageL(name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+
 def readImage2D(n1,n2,name):
   """ 
   Reads an image from a file with specified name.
@@ -228,6 +248,17 @@ def writeImage(name,image):
   """
   fileName = seismicDir+name+".dat"
   aos = ArrayOutputStream(fileName)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+def writeImageL(name,image):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  fileName = seismicDir+name+".dat"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image

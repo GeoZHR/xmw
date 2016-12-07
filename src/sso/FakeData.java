@@ -265,6 +265,7 @@ public class FakeData {
     addChannelsXXX(vd,hz,ha);
     float[][][][] p = makeReflectivityWithNormals(vd);
     float[][][][] q = makeReflectivityWithNormals(vd);
+
     if (impedance)
       p = impedanceFromReflectivity(p);
     // Apply the deformation sequence.

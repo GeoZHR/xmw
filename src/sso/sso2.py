@@ -19,8 +19,8 @@ from edu.mines.jtk.util.ArrayMath import *
 from he import *
 from sso import *
 
-pngDir = None
 pngDir = "../../../png/sso/2d/poseidon/"
+pngDir = None
 
 seismicDir = "../../../data/seis/sso/2d/mexico/"
 seismicDir = "../../../data/seis/sso/2d/poseidon/"
@@ -35,15 +35,17 @@ d1,d2 = 1,1
 n1,n2 = 301,920 # mexico fx
 n1,n2 = 120,923 # poseidon fx
 n1,n2 = 100,923 # poseidon gx
+n1,n2 = 501,501 # fake
 d1,d2 = 1.0,1.0
 f1,f2 = 0.0,0.0
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 def main(args):
-  goLof()
-  goLoe()
-  goHorizonLof()
-  goHorizonLoe()
+  #goLof()
+  #goLoe()
+  goFakeLoe()
+  #goHorizonLof()
+  #goHorizonLoe()
 
 def goResample():
   fx = readImage(fxfile)
@@ -83,6 +85,40 @@ def goLof():
   plot(c1,s2,fs,ps,cmin=-0.6,cmax=0.6,cmap=jetFill(0.5),cint=0.2,
        clab="Crosline slope (samples/trace)",png="slope1")
 
+
+def goFakeLoe():
+  fx,px=FakeData.seismicAndSlopes2d2014A(0.0)
+  sig1,sig2=23,1
+  el = zerofloat(n1,n2)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  ps = zerofloat(n1,n2)
+  lof = LocalOrientFilter(sig1,sig2)
+  lof.applyForNormalLinear(fx,u1,u2,el)
+  pl = mul(-1,div(u2,u1))
+  ets = lof.applyForTensors(fx)
+  loe = LocalOrientEstimator(ets,10)
+  #loe.setGradientSmoothing(3)
+  loe.setEigenvalues(0.0001,0.5)
+  loe.applyForSlopeLinear(5,fx,ps,el)
+  '''
+  ets = loe.applyForTensors(fx)
+  loe = LocalOrientEstimator(ets,10)
+  loe.setEigenvalues(0.001,0.5)
+  loe.applyForSlopeLinear(5,fx,ps,el)
+  ets = loe.applyForTensors(fx)
+  loe = LocalOrientEstimator(ets,10)
+  loe.setEigenvalues(0.001,0.5)
+  loe.applyForSlopeLinear(5,fx,ps,el)
+  '''
+  '''
+  plot(s1,s2,fx,px,cmin=-4.0,cmax=4.0,cmap=jetFill(0.5),cint=1.0,
+       clab="True slopes (samples/trace)",png="slope2")
+  '''
+  plot(s1,s2,fx,abs(sub(pl,px)),cmap=jetFill(1.0),cmin=0.0,cmax=0.5,cint=0.1,
+       clab="Slopes (samples/trace)",png="slope2")
+  plot(s1,s2,fx,abs(sub(ps,px)),cmap=jetFill(1.0),cmin=0.0,cmax=0.5,cint=0.1,
+       clab="Improved slopes (samples/trace)",png="slope2")
 
 def goLoe():
   fx = readImage(fxfile)
@@ -202,6 +238,8 @@ def plot(s1,s2,f,g=None,hv=None,k1=None,k2=None,cmap=None,cmin=None,cmax=None,
   d1 = s1.getDelta()
   d2 = s2.getDelta()
   n1 = s1.getCount()
+  print cmin
+  print cmax
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
   #panel.setVInterval(0.1)
@@ -220,6 +258,7 @@ def plot(s1,s2,f,g=None,hv=None,k1=None,k2=None,cmap=None,cmin=None,cmax=None,
     pv = panel.addPixels(s1,s2,g)
     pv.setInterpolation(PixelsView.Interpolation.NEAREST)
     pv.setColorModel(cmap)
+    pv.setClips(cmin,cmax)
     if cmin and cmax:
       pv.setClips(cmin,cmax)
   if hv:

@@ -7,11 +7,12 @@ Version: 2016.06.01
 
 
 from utils import * 
-setupForSubset("semblance")
+#setupForSubset("semblance")
 #setupForSubset("channel")
 #setupForSubset("surface")
-#setupForSubset("env")
+setupForSubset("env")
 #setupForSubset("semblance3d")
+setupForSubset("xue")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
@@ -23,7 +24,11 @@ semfile = "avoscnb" # input semblance image
 pikfile = "avopikb" # picked path using Sergey's method
 chfile = "channel"  # input seismic horizon slice with channels
 slfile = "sl" # 3D salt likelihood image
-gxfile = "gx" # 3D seismic image
+fxfile = "fx" # 
+fxsfile = "fxs" # 
+gxfile = "gx" # 
+ls1file = "ls1" # 
+ls2file = "ls2" # 
 p2file = "p2" # seismic slopes
 p3file = "p3" # seismic slopes
 pngDir = getPngDir()
@@ -32,13 +37,83 @@ plotOnly = False
 
 def main(args):
   #goABsemblance()
-  goAbSemblancePik()
+  #goAbSemblancePik()
   #goEnv3dPik()
+  #goEnv3dPikX()
   #goChannel()
   #goSurface()
   #goSemblance3d() 
   #goEnv3d() 
   #goSlices()
+  goCorrelation()
+  #goTimeMarker()
+def goTimeMarker():
+  gx = readImage3D("gx")
+  gx = clip(0.0001,1.0,gx)
+  t1 = fillfloat(-FLT_MAX,n1,n2,n3)
+  t2 = fillfloat(-FLT_MAX,n1,n2,n3)
+  u1 = fillfloat(1,n1,n2,n3)
+  u2 = fillfloat(0,n1,n2,n3)
+  w1 = fillfloat(0,n1,n2,n3)
+  w2 = fillfloat(0,n1,n2,n3)
+  ets = EigenTensors3(u1,u2,w1,w2,gx,gx,gx,True)
+  bg3 = BlendedGridder3(ets)
+  p = fillfloat(0,n1,n2,n3)
+  t1[0][n2/2][n1-1] = 0
+  t2[n3-1][n2/2][n1-1] = 0
+  bg3.gridNearest(t1,p)
+  bg3.gridNearest(t2,p)
+  writeImage("t1",t1)
+  writeImage("t2",t2)
+  t1 = readImage3D("t1")
+  t2 = readImage3D("t2")
+  ts = add(t1,t2)
+  ts = sub(ts,min(ts))
+  ts = div(ts,max(ts))
+  plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET)
+  plot3(t1,cmin=0,cmax=max(t1),cmap=ColorMap.JET)
+  plot3(t2,cmin=0,cmax=max(t2),cmap=ColorMap.JET)
+  plot3(ts,cmin=0,cmax=0.1,cmap=ColorMap.JET)
+
+def goCorrelation():
+  '''
+  fx = readImage1L(fxfile)
+  gx = readImage1L(gxfile)
+  ls = readImage2L(lsfile)
+  '''
+  fxs = readImage2L(n1,n2,fxsfile)
+  fx = fxs[1]
+  gx = fxs[6]
+  tp = LocalCorrelationFilter.Type.SYMMETRIC
+  wd = LocalCorrelationFilter.Window.GAUSSIAN
+  lcf = LocalCorrelationFilter(tp,wd,20)
+  lcf.setInputs(fx,gx)
+  nl = 81
+  lc = zerofloat(n1,nl)
+  sl = Sampling(nl)
+  for il in range(nl):
+    lcf.correlate(il-40,lc[il])
+  opp = OptimalPathPicker(3,4)
+  #lc = pow(lc,2)
+  lc = sub(lc,min(lc))
+  lc = div(lc,max(lc))
+  wht = opp.applyForWeight(lc)
+  tms1 = zerofloat(n1,nl)
+  tms2 = zerofloat(n1,nl)
+  tmsd = zerofloat(n1,nl)
+  pik1 = opp.forwardPick(40,wht,tms1)
+  #pik2 = opp.backwardPick(round(pik1[n1-1]),wht,tms2)
+  pik2 = opp.backwardPick(40,wht,tms2)
+  tmss = add(tms1,tms2)
+  tmss = div(1,tmss)
+  tmss = sub(tmss,min(tmss))
+  tmss = div(tmss,max(tmss))
+  print min(tmss)
+  plot2(s1,sl,lc,vint=200,hint=10,cmin=min(lc),cmax=max(lc))
+  plot2(s1,sl,tmss,vint=200,hint=10,cmin=max(tmss)-0.1,cmax=max(tmss))
+  plot2(s1,sl,lc,u=pik1,vint=200,hint=10,cmin=0.2,cmax=1.0)
+  plot2(s1,s2,ls,vint=0,hint=.2,cmin=min(ls),cmax=max(ls))
+
 def goAbSemblancePik():
   sem = readImage(semfile)
   opp = OptimalPathPicker(3,2)
@@ -57,6 +132,7 @@ def goAbSemblancePik():
   plot2(s1,s2,sem,u=pik1,vint=1,hint=200,cmin=0.2,cmax=1.0)
   plot2(s1,s2,sem,u=pik2,vint=1,hint=200,cmin=0.2,cmax=1.0)
   plot2(s1,s2,sem,u=pik3,vint=1,hint=200,cmin=0.2,cmax=1.0)
+
 def goEnv3dPik():
   fx = readImageL("env")
   fx = pow(fx,0.5)
@@ -74,6 +150,39 @@ def goEnv3dPik():
   plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=sf2)
   plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=sf1s)
   plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=sfs)
+
+def goEnv3dPikX():
+  fx = readImageL("env")
+  fx = pow(fx,0.5)
+  fx = sub(fx,min(fx))
+  fx = div(fx,max(fx))
+  hp = Helper()
+  gx = hp.transpose13(fx) 
+  opp = OptimalPathPicker(3,1)
+  vt1 = copy(gx)
+  p1 = opp.accumulateInline(vt1)
+  vt2 = div(1,vt1)
+  vt1 = sub(vt1,min(vt1))
+  vt1 = div(vt1,max(vt1))
+
+  vt2 = sub(vt2,min(vt2))
+  vt2 = div(vt2,max(vt2))
+  p2 = opp.accumulateCrossline(p1[0],vt2)
+  vt3 = div(1,vt2)
+  vt2 = sub(vt2,min(vt2))
+  vt2 = div(vt2,max(vt2))
+
+  print min(vt2)
+  print max(vt2)
+  vt3 = sub(vt3,min(vt3))
+  vt3 = div(vt3,max(vt3))
+  sf1,sf1s = opp.applyForSurfaceInline(12,12,vt3)
+  plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET)
+  plot3(vt1,cmin=0.0,cmax=0.5,cmap=ColorMap.JET)
+  plot3(vt2,cmin=0.0,cmax=0.05,cmap=ColorMap.JET)
+  plot3(vt3,cmin=0.9,cmax=1.0,cmap=ColorMap.JET,surf=sf1)
+  plot3(vt3,cmin=0.9,cmax=1.0,cmap=ColorMap.JET,surf=sf1s)
+  plot3(gx,cmin=0.0,cmax=0.5,cmap=ColorMap.JET,surf=sf1s)
 
 def goABsemblance():
   strainMax = 0.35
@@ -413,14 +522,14 @@ def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
       pv.setLineStyle(PointsView.Line.NONE)
       pv.setMarkStyle(PointsView.Mark.FILLED_SQUARE)
       pv.setMarkSize(8)
-  #panel.addColorBar()
+  panel.addColorBar()
   frame = PlotFrame(panel)
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   frame.setBackground(backgroundColor)
   #frame.setFontSizeForPrint(8,240)
   #frame.setSize(470,1000)
   frame.setFontSize(6)
-  frame.setSize(n2*2,n1)
+  frame.setSize(n2*50,n1)
   frame.setVisible(True)
   if png and pngDir:
     png += "n"+str(int(10*nrms))
@@ -664,7 +773,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setScale(1.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,0.05,-0.08))
-  ov.setAzimuthAndElevation(25,45.0)
+  ov.setAzimuthAndElevation(45,45.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
