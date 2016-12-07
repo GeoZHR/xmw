@@ -58,13 +58,15 @@ def main(args):
 def goTest():
   fx = readImage(fxfile)
   gvf = GradientVectorFlow()
+  gvf.setSmoothing(6)
+  gvf.setScale(0.2)
+  for i2 in range (n2):
+    fx[i2][n1-1] = 1
   g1,g2,gs = gvf.applyForGradient(1,fx)
-  plot(fx)#pngName+str(k))
-  ac2 = ActiveContour2(120,240,40)
-  ac2.updateSnake(1000,fd)
+  u1,u2 = gvf.applyForGVF(g1,g2,gs)
+  ac2 = ActiveContour2(n1,n2,140,200,100)
+  ac2.updateSnake(200,u1,u2)
   snake = ac2.getSnake()
-  plot(fx)#pngName+str(k))
-  #ac.releaseSnake(fpn,fnn,False)
   x1 = snake.getArrayX1()
   x2 = snake.getArrayX2()
   k1,k2=[],[]
@@ -73,7 +75,9 @@ def goTest():
     x2i = x2[j]
     k1.append(x1i)
     k2.append(x2i)
-  plot(fd,ap=[k1,k2],png=None)#pngName+str(k))
+  plot(fx)
+  plot(fx,v1=u1,v2=u2)
+  plot(fx,ap=[k1,k2],png=None)
 
 def goChannel():
   fx = readImage(fxfile)
@@ -408,7 +412,7 @@ def gain(x):
 gray = ColorMap.GRAY
 jet = ColorMap.JET
 
-def plot(f,xp=None,pp=None,ap=None,png=None): 
+def plot(f,xp=None,pp=None,ap=None,v1=None,v2=None,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation);
   #panel.setVInterval(0.2)
@@ -429,8 +433,26 @@ def plot(f,xp=None,pp=None,ap=None,png=None):
     ptv = panel.addPoints(ap[0],ap[1])
     ptv.setLineStyle(PointsView.Line.NONE)
     ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
-    ptv.setMarkColor(Color.YELLOW)
+    ptv.setMarkColor(Color.RED)
     ptv.setMarkSize(2.0)
+  if (v1 and v2):
+    x1 = zerofloat(2)
+    x2 = zerofloat(2)
+    dx1 = 10
+    dx2 = 10
+    scale = 10
+    for i2 in range(dx2,n2-dx2,dx2):
+      for i1 in range(dx1,n1-dx1,dx1):
+        x2[0] = (i2-v2[i2][i1]*scale)*d2+f2
+        x2[1] = (i2+v2[i2][i1]*scale)*d2+f2
+        x1[0] = (i1-v1[i2][i1]*scale)*d1+f1
+        x1[1] = (i1+v1[i2][i1]*scale)*d1+f1
+        pvu = panel.addPoints(x1,x2)
+        pvu.setLineWidth(4)
+        if (v1[i2][i1]<0):
+          pvu.setLineColor(Color.RED)
+        else:
+          pvu.setLineColor(Color.YELLOW)
   cb = panel.addColorBar();
   #cb.setInterval(0.2)
   cb.setLabel("Amplitude")
@@ -441,6 +463,7 @@ def plot(f,xp=None,pp=None,ap=None,png=None):
   frame.setTitle("normal vectors")
   frame.setVisible(True);
   frame.setSize(890,760)
+  frame.setSize(890,400)
   #frame.setSize(1190,760)
   frame.setFontSize(36)
   if pngDir and png:

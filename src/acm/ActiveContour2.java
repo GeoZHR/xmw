@@ -70,7 +70,7 @@ public class ActiveContour2 {
     return _snake;
   }
 
-  public ActiveContour2(float c1, float c2, float d) {
+  public ActiveContour2(int n1, int n2, float c1, float c2, float d) {
     _snake.c1=c1;
     _snake.c2=c2;
     _snake.size = 5;
@@ -82,7 +82,7 @@ public class ActiveContour2 {
     _snake.u2.clear();
     for (float x1i:x1) {_snake.x1.add(x1i);}
     for (float x2i:x2) {_snake.x2.add(x2i);}
-    resampleSnakeX();
+    resampleSnakeX(n1,n2);
   }
 
 
@@ -105,14 +105,14 @@ public class ActiveContour2 {
     //resampleSnakeX();
   }
 
-  public Snake updateSnake(int niter, float[][] fd) {
+  public Snake updateSnake(int niter, float[][] v1, float[][] v2) {
     for (int it=0; it<niter; it++) {
-      updateSnake(fd);
+      updateSnake(v1,v2);
     }
     return _snake;
   }
 
-  public void updateSnake(float[][] fd) {
+  public void updateSnake(float[][] v1, float[][] v2) {
     float[] x1 = _snake.getArrayX1();
     float[] x2 = _snake.getArrayX2();
     float[] u1 = _snake.getArrayU1();
@@ -122,20 +122,8 @@ public class ActiveContour2 {
     _snake.u1.clear();
     _snake.x2.clear();
     int nc = x1.length;
-    int n2 = fd.length;
-    int n1 = fd[0].length;
-    Sampling s1 = new Sampling(n1);
-    Sampling s2 = new Sampling(n2);
-    SincInterpolator si = new SincInterpolator();
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1);
-    float[][] g1 = new float[n2][n1];
-    float[][] g2 = new float[n2][n1];
-    rgf.apply10(fd,g1);
-    rgf.apply01(fd,g2);
-    float[][] gs = add(mul(g1,g1),mul(g2,g2));
-    gs = sqrt(gs);
-    g1 = div(g1,gs);
-    g2 = div(g2,gs);
+    int n2 = v1.length;
+    int n1 = v1[0].length;
     for (int ic=0; ic<nc; ++ic) {
       int ip = ic+1; if(ip==nc) ip=0;
       int im = ic-1; if(im<0)   im=nc-1;
@@ -156,22 +144,29 @@ public class ActiveContour2 {
       float fn2 = uas*u2i;
       float ft1 = ai1-fn1;
       float ft2 = ai2-fn2;
-      float g1i = si.interpolate(s1,s2,g1,x1i,x2i);
-      float g2i = si.interpolate(s1,s2,g2,x1i,x2i);
-      //float fdp = si.interpolate(s1,s2,fd,x1i+u1i,x2i+u2i);
-      //float fdm = si.interpolate(s1,s2,fd,x1i-u1i,x2i-u2i);
-      //float fpm = (fdp-fdm)*500;
-      float x1u = x1i+fn1+0.5f*ft1+g1i*0.5f;
-      float x2u = x2i+fn2+0.5f*ft2+g2i*0.5f;
+      int i1i = round(x1i);
+      int i2i = round(x2i);
+      i1i = min(i1i,n1-1);
+      i2i = min(i2i,n2-1);
+      i1i = max(i1i,0);
+      i2i = max(i2i,0);
+      float v1i = v1[i2i][i1i];
+      float v2i = v2[i2i][i1i];
+      float t1i = -v2i;
+      float t2i =  v1i;
+      float tui = t1i*u1i+t2i*u2i;
+      if(tui<0f){t1i=-t1i;t2i=-t2i;}
+      float x1u = x1i+fn1+ft1+4f*v1i+t1i;
+      float x2u = x2i+fn2+ft2+4f*v2i+t2i;
       _snake.x1.add(x1u);
       _snake.x2.add(x2u);
     }
-    resampleSnakeX();
+    resampleSnakeX(n1,n2);
     //setNormals();
   }
 
-  private void resampleSnakeX() {
-    resampleSnake();
+  private void resampleSnakeX(int n1, int n2) {
+    resampleSnake(n1,n2);
     /*
     if(removeBadPoints()){
       resampleSnake();
@@ -180,7 +175,7 @@ public class ActiveContour2 {
   }
 
 
-  private void resampleSnake() {
+  private void resampleSnake(int n1, int n2) {
     int np = _snake.size;
     float[] ds = new float[np+1];
     float[] x1 = new float[np+1];
@@ -212,7 +207,6 @@ public class ActiveContour2 {
     x1 = copy(k+1,x1);
     x2 = copy(k+1,x2);
     ds = copy(k+1,ds);
-
     double d = 1.0;
     double f = 0.00;
     double l = ds[k];
@@ -226,8 +220,14 @@ public class ActiveContour2 {
     _snake.x2.clear();
     for (int i=0; i<n; ++i) {
       float si = (float)sv[i];
-      _snake.x1.add(cx1.interpolate(si));
-      _snake.x2.add(cx2.interpolate(si));
+      float x1i = cx1.interpolate(si);
+      float x2i = cx2.interpolate(si);
+      x1i = min(x1i,n1-1);
+      x2i = min(x2i,n2-1);
+      x1i = max(x1i,   0);
+      x2i = max(x2i,   0);
+      _snake.x1.add(x1i);
+      _snake.x2.add(x2i);
     }
     _snake.u1.clear();
     _snake.u2.clear();

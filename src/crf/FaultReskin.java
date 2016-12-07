@@ -58,21 +58,12 @@ public class FaultReskin {
        w2[ic] = cell.getW2();
        w3[ic] = cell.getW3();
      }
-<<<<<<< HEAD
-     int b1 = min(k1);
-     int b2 = min(k2);
-     int b3 = min(k3);
-     int e1 = max(k1);
-     int e2 = max(k2);
-     int e3 = max(k3);
-=======
      int b1 = max(min(k1)-5,0);
      int b2 = max(min(k2)-5,0);
      int b3 = max(min(k3)-5,0);
      int e1 = min(max(k1)+5,n1-1);
      int e2 = min(max(k2)+5,n2-1);
      int e3 = min(max(k3)+5,n3-1);
->>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
      int m1 = e1-b1+1;
      int m2 = e2-b2+1;
      int m3 = e3-b3+1;
@@ -85,7 +76,6 @@ public class FaultReskin {
    return skinList.toArray(new FaultSkin[0]);
  }
 
-<<<<<<< HEAD
  public FaultSkin[] reskin(int b1, int b2, int b3, int size, float[][][] fls) {
    int n3 = fls.length;
    int n2 = fls[0].length;
@@ -94,16 +84,6 @@ public class FaultReskin {
    float[][][] fts = new float[n3][n2][n1];
    computeStrikeDip(fls,fps,fts);
    FaultSkinner fs = new FaultSkinner();
-=======
- public FaultSkin[] reskin(int b1, int b2, int b3, int size, float[][][] fl) {
-   int n3 = fl.length;
-   int n2 = fl[0].length;
-   int n1 = fl[0][0].length;
-   float[][][] fp = new float[n3][n2][n1];
-   float[][][] ft = new float[n3][n2][n1];
-   computeStrikeDip(fl,fp,ft);
-   FaultSkinner  fs = new FaultSkinner();
->>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
    fs.setGrowLikelihoods(0.1f,0.6f);
    fs.setMaxDeltaStrike(10);
    fs.setMaxPlanarDistance(0.2f);
