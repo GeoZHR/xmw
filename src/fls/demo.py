@@ -38,7 +38,7 @@ def goFls():
   rgf = RecursiveGaussianFilter(1)
   rgf.apply000(gx,gx)
   fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,20)
-  fls.setIterations(20,6,2)
+  fls.setIterations(100,6,2)
   xss = fls.updateLevelSet(6,3,abs(gx))
   ph1 = fls.getPhi()
   writeImage("phi",ph1)
