@@ -11,14 +11,11 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-<<<<<<< HEAD
-  #goAustralia()
-  goF3d()
-=======
-  goManba()
   #goAustralia()
   #goF3d()
->>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
+  #goManba()
+  #goAustralia()
+  #goF3d()
   #goHongliu()
   #goF3dUnc()
   #goJake()
@@ -26,7 +23,7 @@ def main(args):
   #goLulia()
   #goCranfield2007()
   #goCranfield2010()
-  #goSeamDepth()
+  goSeamDepth()
   #goSeamTime()
   #goF3dRef()
   #goF3dSeis()
@@ -35,8 +32,6 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-<<<<<<< HEAD
-=======
 def goManba():
   """
   ***************************************************************************
@@ -95,7 +90,6 @@ def goManba():
     gain(100,x)
     show3d(x,clip=max(x)/2)
 
->>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
 def goAustralia():
   firstLook = False # fast, does not read all trace headers
   secondLook = True # slow, must read all trace headers
@@ -159,10 +153,6 @@ def goWasson():
     plot23(si)
     plotXY(si)
   if writeImage:
-<<<<<<< HEAD
-=======
-    scale = 1.00
->>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
     scale = 1
     #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
@@ -171,10 +161,7 @@ def goWasson():
     x = readImage(datfile,n1,n2,n3)
     gain(100,x)
     show3d(x,clip=max(x)/2)
-<<<<<<< HEAD
-=======
     show3d(x,clip=1.0)
->>>>>>> 6ea9bbbfa87df0fda634cc68d475807cd23c239b
 
 def goParihaka():
   """

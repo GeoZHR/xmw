@@ -26,9 +26,36 @@ plotOnly = True
 
 def main(args):
   #goSaltLike()  # compute salt likelihoods
-  goSaltSurfer() # compute salt surfaces
+  #goSaltSurfer() # compute salt surfaces
+  goSnake()
 
-
+def goSnake():
+  gx = readImage(gxfile)
+  ac = ActiveContour3()
+  sm = ac.initialSnake(n1/2+10,n2/2,n3/2,20)
+  tg1 = sm.getTriangleGroup()
+  fx = zerofloat(n1,n2,n3)
+  ac.fakeField(n1/2,n2/2,n3/2,40,fx)
+  '''
+  gvf = GradientVectorFlow()
+  gvf.setScale(0.2)
+  g1,g2,g3,gs = gvf.applyForGradient(1,fx)
+  u1,u2,u3 = gvf.applyForGVF(g1,g2,g3,gs)
+  writeImage("v1",u1)
+  writeImage("v2",u2)
+  writeImage("v3",u3)
+  u1 = readImage("v1")
+  u2 = readImage("v2")
+  u3 = readImage("v3")
+  '''
+  u1 = fillfloat(1,n1,n2,n3)
+  u2 = fillfloat(0,n1,n2,n3)
+  u3 = fillfloat(0,n1,n2,n3)
+  ac.updateSnake(10,sm,u1,u2,u3)
+  tg2 = sm.getTriangleGroup()
+  plot3(fx,cmin=0,cmax=1.0,tg=tg1)
+  plot3(fx,cmin=0,cmax=1.0,tg=tg2)
+  #plot3(u1,cmin=min(u1),cmax=max(u1))
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -330,7 +357,7 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,fbs=None,smax=0.0,
+          xyz=None,cells=None,skins=None,fbs=None,tg=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
@@ -399,6 +426,21 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     mc = MarchingCubes(s1,s2,s3,fbs)
     ct = mc.getContour(0.0)
     tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.MAGENTA)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if tg:
     states = StateSet()
     cs = ColorState()
     cs.setColor(Color.MAGENTA)

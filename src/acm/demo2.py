@@ -59,25 +59,27 @@ def goTest():
   fx = readImage(fxfile)
   gvf = GradientVectorFlow()
   gvf.setSmoothing(6)
-  gvf.setScale(0.2)
+  gvf.setScale(0.1)
   for i2 in range (n2):
     fx[i2][n1-1] = 1
   g1,g2,gs = gvf.applyForGradient(1,fx)
   u1,u2 = gvf.applyForGVF(g1,g2,gs)
-  ac2 = ActiveContour2(n1,n2,140,200,100)
-  ac2.updateSnake(200,u1,u2)
+  ac2 = ActiveContour2(n1,n2,140,205,40)
   snake = ac2.getSnake()
-  x1 = snake.getArrayX1()
-  x2 = snake.getArrayX2()
-  k1,k2=[],[]
-  for j in range(len(x1)):
-    x1i = x1[j]
-    x2i = x2[j]
-    k1.append(x1i)
-    k2.append(x2i)
+  for k in range(20):
+    k1,k2=[],[]
+    x1 = snake.getArrayX1()
+    x2 = snake.getArrayX2()
+    for j in range(len(x1)):
+      x1i = x1[j]
+      x2i = x2[j]
+      if(x1i>1 and x1i<n1-2):
+       k1.append(x1i)
+       k2.append(x2i)
+    ac2.updateSnake(25,u1,u2)
+    plot(fx,ap=[k1,k2],png=None)#pngName+str(k))
   plot(fx)
   plot(fx,v1=u1,v2=u2)
-  plot(fx,ap=[k1,k2],png=None)
 
 def goChannel():
   fx = readImage(fxfile)
@@ -440,7 +442,7 @@ def plot(f,xp=None,pp=None,ap=None,v1=None,v2=None,png=None):
     x2 = zerofloat(2)
     dx1 = 10
     dx2 = 10
-    scale = 10
+    scale = 12
     for i2 in range(dx2,n2-dx2,dx2):
       for i1 in range(dx1,n1-dx1,dx1):
         x2[0] = (i2-v2[i2][i1]*scale)*d2+f2

@@ -26,9 +26,56 @@ plotOnly = True
 
 def main(args):
   #goSaltLike()  # compute salt likelihoods
-  goSaltSurfer() # compute salt surfaces
+  #goSaltSurfer() # compute salt surfaces
+  #goGVF()
+  goSnake()
 
+def goGVF():
+  gx = readImage(gxfile)
+  gvf = GradientVectorFlow()
+  gvf.setScale(0.2)
+  fx = zerofloat(n1,n2,n3)
+  rgf = RecursiveGaussianFilter(1)
+  rgf.apply000(gx,fx)
+  fx = abs(fx)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      fx[i3][i2][n1-2] = 1.0
+      fx[i3][i2][n1-1] = 1.0
+  g1,g2,g3,gs = gvf.applyForGradient(1,fx)
+  v1,v2,v3 = gvf.applyForGVF(g1,g2,g3,gs)
+  writeImage("v1",v1)
+  writeImage("v2",v2)
+  writeImage("v3",v3)
+  #u1 = readImage("v1")
+  #u2 = readImage("v2")
+  #u3 = readImage("v3")
+  plot3(fx)
+  plot3(v1,cmin=min(v1)/2,cmax=max(v1)/2)
 
+def goSnake():
+  gx = readImage(gxfile)
+  fx = readImage("sl")
+  v1 = readImage("v1")
+  v2 = readImage("v2")
+  v3 = readImage("v3")
+  '''
+  gvf = GradientVectorFlow()
+  for i3 in range(n3):
+    for i2 in range(n2):
+      fx[i3][i2][n1-2] = 1.0
+      fx[i3][i2][n1-3] = 1.0
+  v1,v2,v3,gs = gvf.applyForGradient(1,fx)
+  '''
+  am = ActiveMesh(2,211,390,70,20)
+  xyz1 = am.getTriGroup()
+  am.updateT(100,v1,v2,v3)
+  xyz2 = am.getTriGroup()
+  tg1 = TriangleGroup(True,xyz1)
+  tg2 = TriangleGroup(True,xyz2)
+  plot3(gx,tg=tg1)
+  plot3(gx,tg=tg2)
+  #plot3(u1,cmin=min(u1),cmax=max(u1))
 def goSaltLike():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -330,7 +377,7 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,fbs=None,smax=0.0,
+          xyz=None,cells=None,skins=None,fbs=None,tg=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
@@ -399,6 +446,21 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     mc = MarchingCubes(s1,s2,s3,fbs)
     ct = mc.getContour(0.0)
     tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.MAGENTA)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+  if tg:
     states = StateSet()
     cs = ColorState()
     cs.setColor(Color.MAGENTA)

@@ -319,4 +319,53 @@ public class SaltSurfer {
     return cellList.toArray(new FaultCell[0]);
   }
 
+
+  public float [][][] thin (
+    final float fmin,
+    final float[][][] fx, final float[][][] u1, 
+    final float[][][] u2, final float[][][] u3) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final Sampling s1 = new Sampling(n1);
+    final Sampling s2 = new Sampling(n2);
+    final Sampling s3 = new Sampling(n3);
+    final float[][][] fm = new float[n3][n2][n1];
+    final float[][][] fp = new float[n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+    for (int i2=0; i2<n2 ;++i2) {
+    for (int i1=0; i1<n1 ;++i1) {
+      float u1i = u1[i3][i2][i1];
+      float u2i = u2[i3][i2][i1];
+      float u3i = u3[i3][i2][i1];
+      float x1m = i1-u1i;
+      float x2m = i2-u2i;
+      float x3m = i3-u3i;
+      float x1p = i1+u1i;
+      float x2p = i2+u2i;
+      float x3p = i3+u3i;
+      fm[i3][i2][i1] = si.interpolate(s1,s2,s3,fx,x1m,x2m,x3m);
+      fp[i3][i2][i1] = si.interpolate(s1,s2,s3,fx,x1p,x2p,x3p);
+    }}}});
+    float[][][] st = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float u1i = u1[i3][i2][i1];
+      float fxi = fx[i3][i2][i1];
+      float fxm = fm[i3][i2][i1];
+      float fxp = fp[i3][i2][i1];
+      if (fxi>fxm && fxi>fxp && fxi>fmin && abs(u1i)<0.95f) {
+        st[i3][i2][i1] = fxi;
+        st[i3][i2][max(i1-1,0)] = fxi;
+      }
+    }}}
+    return st;
+  }
+
+
 }

@@ -158,6 +158,10 @@ public class ActiveContour2 {
       if(tui<0f){t1i=-t1i;t2i=-t2i;}
       float x1u = x1i+fn1+ft1+4f*v1i+t1i;
       float x2u = x2i+fn2+ft2+4f*v2i+t2i;
+      x1u = min(x1u,n1-1);
+      x2u = min(x2u,n2-1);
+      x1u = max(x1u,0);
+      x2u = max(x2u,0);
       _snake.x1.add(x1u);
       _snake.x2.add(x2u);
     }
@@ -261,48 +265,6 @@ public class ActiveContour2 {
       _snake.u1.add(-g2);
       _snake.u2.add(g1);
     }
-  }
-
-  private boolean removeBadPoints(Sampling s1, Sampling s2) {
-    int np = _snake.size;
-    int n1 = s1.getCount();
-    int n2 = s2.getCount();
-    int[] mp = new int[np];
-    int[][] mk = new int[n1][n2];
-    int[][] pk = new int[n1][n2];
-    float[] x1 = new float[np];
-    float[] x2 = new float[np];
-    for (int ip=0; ip<np; ++ip) {
-      float x1i = _snake.x1.get(ip);
-      float x2i = _snake.x2.get(ip);
-      x1[ip] = x1i;
-      x2[ip] = x2i;
-      int i1 = round(x1i);
-      int i2 = round(x2i);
-      if(i1<0)    {mp[ip]=1;continue;}
-      if(i2<0)    {mp[ip]=1;continue;}
-      if(i1>n1-1) {mp[ip]=1;continue;}
-      if(i2>n2-1) {mp[ip]=1;continue;}
-      if(mk[i2][i1]>=1){
-        int pp = pk[i2][i1];
-        mp[pp] = 1;
-        mp[ip] = 1;
-      }
-      pk[i2][i1] = ip;
-      mk[i2][i1] += 1;
-    }
-    int k = 0;
-    _snake.x1.clear();
-    _snake.x2.clear();
-    for (int ip=0; ip<np; ++ip) {
-      if(mp[ip]==1) {continue;}
-      _snake.x1.add(x1[ip]);
-      _snake.x2.add(x2[ip]);
-      k++;
-    }
-    _snake.size=k;
-    if(sum(mp)>0){return true;}
-    else{return false;}
   }
 
   private Snake _snake = new Snake();

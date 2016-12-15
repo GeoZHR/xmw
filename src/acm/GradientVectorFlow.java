@@ -73,7 +73,8 @@ public class GradientVectorFlow {
     float[][][] gs = new float[n3][n2][n1];
     RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(sigma);
     rgf.apply100(fx,g1);
-    rgf.apply001(fx,g2);
+    rgf.apply010(fx,g2);
+    rgf.apply001(fx,g3);
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
@@ -145,19 +146,6 @@ public class GradientVectorFlow {
     return r;
   }
 
-  public float[][] smooth(
-    double sigma, EigenTensors2 d, float[][] g) {
-    int n1 = g[0].length;
-    int n2 = g.length;
-    d.setEigenvalues(0.05f,1.00f);
-    float c = (float)(0.5*sigma*sigma);
-    float[][] h = new float[n2][n1];
-    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.apply(d,c,g,h);
-    return h;
-  }
-
-
 
   ////////////////////////////////////////////////////////////////
   //private
@@ -185,8 +173,8 @@ public class GradientVectorFlow {
     }
 
     private float _scale;
-    private float[][] _wp=null;
     private Smoother _smoother;
+    private float[][] _wp=null;
   }
 
   private static class A3 implements CgSolver.A {
@@ -207,8 +195,8 @@ public class GradientVectorFlow {
     }
 
     private float _scale;
-    private float[][][] _wp=null;
     private Smoother _smoother;
+    private float[][][] _wp=null;
   }
 
 
@@ -297,7 +285,7 @@ public class GradientVectorFlow {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = (wp!=null)?wp[i2][i1]:1.0f;
       float wps = wpi*wpi;
-      y[i2][i1] = -scale*y[i2][i1]-wps*x[i2][i1];
+      y[i2][i1] = scale*y[i2][i1]+wps*x[i2][i1];
     }}
   }
 
@@ -314,7 +302,7 @@ public class GradientVectorFlow {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
       float wps = wpi*wpi;
-      y[i3][i2][i1] = -scale*y[i3][i2][i1]-wps*x[i3][i2][i1];
+      y[i3][i2][i1] = scale*y[i3][i2][i1]+wps*x[i3][i2][i1];
     }}}
   }
 
@@ -378,7 +366,6 @@ public class GradientVectorFlow {
         y11[i1m] -= ya;
       }
     }
-
   }
 
   private static void makeRhs(float[][] wp, float[][] u, float[][] y) {
@@ -388,7 +375,7 @@ public class GradientVectorFlow {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = wp[i2][i1];
       float wps = wpi*wpi;
-      y[i2][i1] = -wps*u[i2][i1];
+      y[i2][i1] = wps*u[i2][i1];
     }}
   }
 
@@ -401,7 +388,7 @@ public class GradientVectorFlow {
     for (int i1=0; i1<n1; ++i1) {
       float wpi = wp[i3][i2][i1];
       float wps = wpi*wpi;
-      y[i3][i2][i1] = -wps*u[i3][i2][i1];
+      y[i3][i2][i1] = wps*u[i3][i2][i1];
     }}}
   }
 
