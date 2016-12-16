@@ -46,7 +46,14 @@ def main(args):
   #goNonlinearDiffusion()
   #goDiffusivity()
   #goStratigraphicOrientation()
-  goDiffusionTest()
+  #goDiffusionTest()
+  sc = readImage(scnfile)
+  sc = pow(sc,2.0)
+  sc = sub(sc,min(sc))
+  sc = div(sc,max(sc))
+  #plot3(sub(fx,gx),cmin=-0.5,cmax=0.5,clab="Amplitude",png="fgn")
+  plot3(sc,cmin=0.0,cmax=1.0,clab="Diffusivity",png="scn")
+
 def goDiffusionTest():
   fx = readImage(fxfile)
   sig1,sig2=4,2
