@@ -18,13 +18,9 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
-from stv  import *
-from uff  import *
-from acm  import*
-#from mef import *
 from util import *
-from slt import *
-from ipfx import *
+from stv import *
+from fls import *
 
 #############################################################################
 # Run the function main on the Swing thread

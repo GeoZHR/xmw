@@ -10,6 +10,8 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+import ipfx.*;
+
 /**
  * Compute gradient vector flow from a given image.
  * <p>
@@ -85,6 +87,43 @@ public class GradientVectorFlow {
     }}}
     return new float[][][][]{g1,g2,g3,gs};
   }
+
+
+  public float[][][][] getGradient(int n1, int n2, int n3, FaultCell[] fcs) {
+    float[][][] g1 = new float[n3][n2][n1];
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    float[][][] gs = fillfloat(0.1f,n1,n2,n3);
+    for (FaultCell fci:fcs) {
+      int[] im = fci.getIm();
+      int[] ip = fci.getIp();
+      float[] us = fci.getW();
+      int i1m = im[0]; 
+      int i2m = im[1];
+      int i3m = im[2];
+      int i1p = ip[0];
+      int i2p = ip[1];
+      int i3p = ip[2];
+      i2m = max(i2m,0);
+      i3m = max(i3m,0);
+      i2p = max(i2p,0);
+      i3p = max(i3p,0);
+      i2m = min(i2m,n2-1);
+      i3m = min(i3m,n3-1);
+      i2p = min(i2p,n2-1);
+      i3p = min(i3p,n3-1);
+      g1[i3m][i2m][i1m] = us[0];
+      g2[i3m][i2m][i1m] = us[1];
+      g3[i3m][i2m][i1m] = us[2];
+      g1[i3p][i2p][i1p] = us[0];
+      g2[i3p][i2p][i1p] = us[1];
+      g3[i3p][i2p][i1p] = us[2];
+      gs[i3m][i2m][i1m] = fci.getFl();
+      gs[i3p][i2p][i1p] = fci.getFl();
+    }
+    return new float[][][][]{g1,g2,g3,gs};
+  }
+
 
 
   public float[][][] applyForGVF(

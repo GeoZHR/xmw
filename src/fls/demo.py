@@ -1,95 +1,214 @@
 """
-Demo of surface reconstruction from fault cells/oriented points
-Author: Xinming Wu and Dave Hale, Colorado School of Mines
-Version: 2015.02.09
+Demo of salt likelihoods and salt boundaries
+Author: Xinming Wu, Colorado School of Mines
+Version: 2015.12.19
 """
 
-from fakeutils import *
+from utils import *
+
+setupForSubset("seam3d")
+setupForSubset("ch3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
-gxfile  = "gx" # input image (maybe after bilateral filtering)
-gsxfile = "gsx" # image after lsf with fault likelihoods
+gxfile  = "gs" # input image 
+gxfile  = "scn" # input image 
+slfile  = "sl" # salt likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
-p2file  = "p2" # inline slopes
-p3file  = "p3" # crossline slopes
-p2kfile = "p2k" # inline slopes (known)
-p3kfile = "p3k" # crossline slopes (known)
-flfile  = "fl" # fault likelihood
-fpfile  = "fp" # fault strike (phi)
-ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
-fptfile = "fpt" # fault strike thinned
-fttfile = "ftt" # fault dip thinned
-fs1file = "fs1" # fault slip (1st component)
-fs2file = "fs2" # fault slip (2nd component)
-fs3file = "fs3" # fault slip (3rd component)
-fskbase = "fsk" # fault skin (basename only)
+sffile  = "sf" # salt indicator function
+mkfile  = "mk" # mask file
+sfcfile  = "sfc" # salt indicator function with constraints
 
-# These parameters control the scan over fault strikes and dips.
-# See the class FaultScanner for more information.
-minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
-
-# These parameters control the construction of fault skins.
-# See the class FaultSkinner for more information.
-lowerLikelihood = 0.5
-upperLikelihood = 0.7
-minSkinSize = 3000
-
-# These parameters control the computation of fault dip slips.
-# See the class FaultSlipper for more information.
-minThrow = 0.01
-maxThrow = 15.0
-
-# Directory for saved png images. If None, png images will not be saved;
-# otherwise, must create the specified directory before running this script.
+pngDir = getPngDir()
+pngDir = "../../../png/fls/seam/3d/"
 pngDir = None
-#pngDir = "../../png/"
 
-# Processing begins here. When experimenting with one part of this demo, we
-# can comment out earlier parts that have already written results to files.
+plotOnly = True
+
 def main(args):
-  #goFakeData()
-  #goSlopes()
-  #goScan()
-  #goThin()
-  #goSkin()
-  #goPSS()
-  goSPS()
-def goSPS():
-  print "screened Poisson surface method ..."
+  #goFls()
+  goCh()
+
+def goCh():
   gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  fc = FaultSkin.getCells(sk)
-  sp = ScreenPoissonSurfer()
-  us = sp.setNormalsFromCells(n1,n2,n3,fc)
-  sf = sp.faultIndicator(us)
-  plot3(gx,cells=fc,png="cells")
-  plot3(gx,sf,cmin=min(sf),cmax=max(sf),cells=fc,fbs=sf,cmap=jetRamp(1.0),
-    clab="ScreenPoissonSurface",png="pss")
+  gx = pow(gx,2.0)
+  gx = sub(gx,min(gx))
+  gx = div(gx,max(gx))
+  gx = sub(1,gx)
+  c1 = 88
+  c2 = 353
+  c3 = 261
+  fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,10)
+  fls.setIterations(500,6,2)
+  #xss = fls.updateLevelSet(6,3,abs(gx))
+  #ph1 = fls.getPhi()
+  ph1 = readImage("phich")
+  #tg = fls.getTriangleGroup(75,95,ph1)
+  plot3(gx,cmin=0,cmax=1,png="seis")
+  plot3(ph1,cmin=1,cmax=3,png="seis")
+  #plot3(gx,cmin=0,cmax=1,tg=tg,png="seisSalt")
+
+def goFls():
+  gx = readImage(gxfile)
+  c1 = 186
+  c2 = 982
+  c3 = 215
+  c1 = 198
+  c2 = 580
+  c3 = 525
+  rgf = RecursiveGaussianFilter(1)
+  '''
+  rgf.apply000(gx,gx)
+  fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,20)
+  fls.setIterations(200,6,2)
+  xss = fls.updateLevelSet(6,3,abs(gx))
+  ph1 = fls.getPhi()
+  writeImage("phi",ph1)
+  '''
+  ph1 = readImage("phi1000")
+  rgf.apply000(ph1,ph1)
+  plot3(gx,png="seis")
+  plot3(gx,fbs=ph1,png="seisSalt")
+  #plot3(ph1)
+  print min(ph1)
+  print max(ph1)
+
+def goSaltLike():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ss = SaltScanner()
+    '''
+    lof = LocalOrientFilterP(4,2)
+    ets = lof.applyForTensors(gx)
+    ets.setEigenvalues(0.01,1.0,1.0)
+    ep = ss.applyForPlanar(200,ets,gx)
+    '''
+    ep = readImage(epfile)
+    lof = LocalOrientFilterP(12,8)
+    lof.applyForNormal(gx,u1,u2,u3)
+    sl = ss.saltLikelihood(8,ep,u1,u2,u3)
+    writeImage(epfile,ep)
+    writeImage(slfile,sl)
+  else:
+    ep = readImage(epfile)
+    sl = readImage(slfile)
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Planarity",png="ep")
+  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
+
+def goSaltSurfer():
+  gx = readImage(gxfile)
+  ep = readImage(epfile)
+  sl = readImage(slfile)
+  if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    g1 = zerofloat(n1,n2,n3)
+    g2 = zerofloat(n1,n2,n3)
+    g3 = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilterP(8,2)
+    lof.applyForNormal(ep,u1,u2,u3)
+    ss = SaltSurfer()
+    fc = ss.findPoints(0.3,sl,u1,u2,u3)
+    sf = readImage(sffile)
+    plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),png="points")
+    #plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),fbs=sf,png="pointsSf")
+    mul(u1,sl,g1)
+    mul(u2,sl,g2)
+    mul(u3,sl,g3)
+    sps = ScreenPoissonSurfer()
+    sps.setSmoothings(20,20,20)
+    mk = sps.getScreenMark(n1,n2,n3,fc)
+    sf = sps.saltIndicator(mk,g1,g2,g3)
+    writeImage(sffile,sf)
+    writeImage(mkfile,mk)
+  else:
+    sf = readImage(sffile)
+  print min(sf)
+  print max(sf)
+  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
+  plot3(sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=ColorMap.BLUE_WHITE_RED,
+        clab="Indicator function",png="sf")
+  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
+        clab="Indicator function",png="sfSeis")
+  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
+        clab="Indicator function",png="saltSf")
+
+def goSaltSurferC():
+  mk = readImage(mkfile)
+  gx = readImage(gxfile)
+  ep = readImage(epfile)
+  sl = readImage(slfile)
+  if not plotOnly:
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    g1 = zerofloat(n1,n2,n3)
+    g2 = zerofloat(n1,n2,n3)
+    g3 = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilterP(8,2)
+    lof.applyForNormal(gx,u1,u2,u3)
+    mul(u1,sl,g1)
+    mul(u2,sl,g2)
+    mul(u3,sl,g3)
+    sps = ScreenPoissonSurferC()
+    sps.setSmoothings(20,20,20)
+    mk = sps.getScreenMark(n1,n2,n3,fc)
+    sf = sps.saltIndicator(mk,k1,k2,k3,g1,g2,g3)
+    writeImage(sfcfile,sf)
+  else:
+    sf = readImage(sfcfile)
+  print min(sf)
+  print max(sf)
+  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
+  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
+        clab="Indicator function",png="sf")
+  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
+        clab="Indicator function",png="saltSf")
+
+def goSalt():
+  gx = readImage(gxfile)
+  ae = readImage("aet")#file)
+  ce = readImage("cet")#file)
+  ca = abs(sub(ce,ae))
+  cd = sub(ce,0.5)
+  ad = sub(ae,0.5)
+  plot3(gx,ca,cmin=0.01,cmax=max(ca)-0.1,cmap=jetRamp(1.0))#,fbs=cd,png="pss")
+  plot3(gx,ce,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),fbs=cd,png="pss")
+  plot3(gx,ae,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),fbs=ad,png="pss")
+
 
 def goPSS():
   print "point set surface method ..."
   gx = readImage(gxfile)
   sk = readSkins(fskbase)
   fc = FaultSkin.getCells(sk)
+  sn = SaltNormal()
+  xu = sn.applyForNormals(fc)
   ps = PointSetSurface()
-  sf = ps.findScalarField(n1,n2,n3,fc)
+  #sf = ps.findScalarField(n1,n2,n3,fc)
+  sf = ps.findScalarField(n1,n2,n3,xu)
+  print min(sf)
+  print max(sf)
+  plot3(sf,cmin=min(sf),cmax=max(sf))
   plot3(gx,cells=fc,png="cells")
   plot3(gx,sf,cmin=min(sf),cmax=max(sf),cells=fc,fbs=sf,cmap=jetRamp(1.0),
     clab="PointSetSurface",png="pss")
+
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 4 # number of planar faults
-  conjugate = True # if True, two large planar faults will intersect
-  conical = False # if True, may want to set nplanar to 0 (or not!)
+  nplanar = 0 # number of planar faults
+  conjugate = False # if True, two large planar faults will intersect
+  conical = True # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
@@ -211,6 +330,14 @@ def goSkin():
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
 
+def gain(x):
+  g = mul(x,x) 
+  ref = RecursiveExponentialFilter(100.0)
+  ref.apply1(g,g)
+  y = zerofloat(n1,n2,n3)
+  div(x,sqrt(g),y)
+  return y
+
 
 #############################################################################
 # graphics
@@ -223,6 +350,8 @@ def jetFillExceptMin(alpha):
   return ColorMap.setAlpha(ColorMap.JET,a)
 def jetRamp(alpha):
   return ColorMap.setAlpha(ColorMap.JET,rampfloat(0.0,alpha/256,256))
+def bwrRamp(alpha):
+  return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,rampfloat(0.0,alpha/256,256))
 def bwrFill(alpha):
   return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,alpha)
 def bwrNotch(alpha):
@@ -254,11 +383,15 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,fbs=None,smax=0.0,
+          xyz=None,cells=None,skins=None,tg=None, fbs=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
   n3 = len(f)
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -311,17 +444,36 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ms.setEmissiveBack(Color(0.0,0.0,0.5))
     ss.add(ms)
     cmap = ColorMap(0.0,1.0,ColorMap.JET)
-    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.5,cmap,cells,False)
+    xyz,uvw,rgb = FaultCell.getXyzUvwRgbForLikelihood(0.7,cmap,cells,False)
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
+  if tg:
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.MAGENTA)
+    #cs.setColor(Color.ORANGE)
+    #cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(True)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
   if fbs:
     mc = MarchingCubes(s1,s2,s3,fbs)
     ct = mc.getContour(0.0)
     tg = TriangleGroup(ct.i,ct.x,ct.u)
     states = StateSet()
     cs = ColorState()
-    cs.setColor(Color.CYAN)
+    cs.setColor(Color.MAGENTA)
+    #cs.setColor(Color.ORANGE)
+    #cs.setColor(Color.CYAN)
     states.add(cs)
     lms = LightModelState()
     lms.setTwoSide(True)
@@ -375,20 +527,21 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(95,5,51)
-  #ipg.setSlices(95,5,95)
+  ipg.setSlices(381,932,460)
   if cbar:
-    sf.setSize(837,700)
+    sf.setSize(987,700)
   else:
-    sf.setSize(700,700)
+    sf.setSize(850,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  ov.setAzimuthAndElevation(-55.0,25.0)
-  ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
-  ov.setScale(1.2)
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.6)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(0.0,0.05,-0.11))
+  ov.setAzimuthAndElevation(-108.0,25.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

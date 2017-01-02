@@ -98,12 +98,12 @@ def main(args):
   #goRescanX()
   #phaseShift()
   #goHsurfer()
-  #goTI()
+  goTI()
   #goSemblance()
   #goBallVote()
   #goSemblanceThin()
   #goSemblanceTv()
-  goVote()
+  #goVote()
   #voteScale()
 def voteScale():
   tv3 = TensorVoting3()
@@ -256,8 +256,8 @@ def goTI():
   fs.setMaxDeltaStrike(10)
   fs.setMaxPlanarDistance(0.5)
   fs.setMinSkinSize(minSkinSize)
-  #fcs = fs.findCells([fl,fp,ft])
-  fcs = FaultSkin.getCells(sk)
+  fcs = fs.findCells([fl,fp,ft])
+  #fcs = FaultSkin.getCells(sk)
   plot3(gx,skins=sk,png="oldSkins")
   fls = zerofloat(n1,n2,n3)
   cells=[]
@@ -267,13 +267,27 @@ def goTI():
     ks = cell.getI()
     ms = cell.getIm()
     ps = cell.getIp()
+    m1 = ms[0]
+    m2 = ms[1]
+    m3 = ms[2]
+    p1 = ps[0]
+    p2 = ps[1]
+    p3 = ps[2]
+    m2 = min(m2,n2-1)
+    p2 = min(p2,n2-1)
+    m3 = min(m3,n3-1)
+    p3 = min(p3,n3-1)
+    m2 = max(m2,0)
+    p2 = max(p2,0)
+    m3 = max(m3,0)
+    p3 = max(p3,0)
     fls[ks[2]][ks[1]][ks[0]] = cell.getFl()
-    fls[ms[2]][ms[1]][ms[0]] = cell.getFl()
-    fls[ps[2]][ps[1]][ps[0]] = cell.getFl()
+    fls[m3][m2][m1] = cell.getFl()
+    fls[p3][p2][p1] = cell.getFl()
   plot3(gx,fls,cmin=min(fls),cmax=max(fls),cmap=jetRamp(1.0),
     clab="Fault likelihood",png="sm")
   ti = TensorInterp()
-  ti.setParameters(80,5,0.4)
+  ti.setParameters(200,5,0.4)
   sm,u1,u2,u3 = ti.apply(n1,n2,n3,cells)
   plot3(gx,fl,cmin=min(fl),cmax=max(fl),cmap=jetRamp(1.0),
     clab="Fault likelihood (resampled)",png="fl")

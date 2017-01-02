@@ -77,7 +77,34 @@ def main(args):
   goHorizonExtraction()
   '''
   #goSubset()
-  goCfault()
+  #goCfault()
+  goGVF()
+def goGVF():
+  gx = readImage(gxfile)
+  fl = readImage(flfile)
+  fp = readImage(fpfile)
+  ft = readImage(ftfile)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.1)
+  fs.setMinSkinSize(minSkinSize)
+  cells = fs.findCells([fl,fp,ft])
+  plot3(gx,cells=cells,png="cells")
+  gvf = GradientVectorFlow()
+  gvf.setSmoothing(6)
+  gvf.setScale(0.01)
+  g1,g2,g3,gs = gvf.getGradient(n1,n2,n3,cells)
+  u1,u2,u3= gvf.applyForGVF(g1,g2,g3,gs)
+  sps = ScreenPoissonSurfer()
+  sps.setSmoothings(10,10,10)
+  sf = sps.saltIndicator(cells,u1,u2,u3)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,sf,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,sf,cmin=min(sf),cmax=max(sf),cmap=bwrRamp(1.0),
+      clab="Fault indicator",fbs=sf,png="fl")
 
 def goCfault():
   gx = readImage(gxfile)
@@ -518,6 +545,8 @@ def jetFillExceptMin(alpha):
   return ColorMap.setAlpha(ColorMap.JET,a)
 def jetRamp(alpha):
   return ColorMap.setAlpha(ColorMap.JET,rampfloat(0.0,alpha/256,256))
+def bwrRamp(alpha):
+  return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,rampfloat(0.0,alpha/256,256))
 def bwrFill(alpha):
   return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,alpha)
 def bwrNotch(alpha):
@@ -550,7 +579,7 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          links=False,curve=False,trace=False,htgs=None,png=None):
+          links=False,curve=False,trace=False,htgs=None,fbs=None,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -612,6 +641,25 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     qg = QuadGroup(xyz,uvw,rgb)
     qg.setStates(ss)
     sf.world.addChild(qg)
+  if fbs:
+    mc = MarchingCubes(s1,s2,s3,fbs)
+    ct = mc.getContour(0.0)
+    tg = TriangleGroup(ct.i,ct.x,ct.u)
+    states = StateSet()
+    cs = ColorState()
+    cs.setColor(Color.CYAN)
+    states.add(cs)
+    lms = LightModelState()
+    lms.setTwoSide(False)
+    states.add(lms)
+    ms = MaterialState()
+    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
+    ms.setSpecular(Color.WHITE)
+    ms.setShininess(100.0)
+    states.add(ms)
+    tg.setStates(states);
+    sf.world.addChild(tg)
+
   if htgs:
     for htg in htgs:
       sf.world.addChild(htg)
