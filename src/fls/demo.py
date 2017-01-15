@@ -56,20 +56,15 @@ def goCh():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilter(8,2)
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  '''
   lsf = LocalSlopeFinder(8,2,5);
   lsf.findSlopes(gx,p2,p3,ep)
   lsf = LocalSlopeFinder(2,2,5);
   lsf.findSlopes(gx,p2,p3)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
-  '''
   writeImage(epfile,ep)
 
 def goDls():
