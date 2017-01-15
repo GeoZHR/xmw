@@ -74,7 +74,7 @@ def goDls():
   ep = readImage(epfile)
   mu,lamda,alpha=0.2,2,50
   r,niter=3,1500
-  ls = LevelSet2(mu,labda,alpha,r,niter)
+  ls = LevelSet2(mu,lamda,alpha,r,niter)
   gxg = ls.toGrayIntegers(gx)
   p2g = ls.toGrayIntegers(p2)
   p3g = ls.toGrayIntegers(p3)
