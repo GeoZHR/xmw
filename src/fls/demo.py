@@ -6,7 +6,7 @@ Version: 2015.12.19
 
 from utils import *
 
-setupForSubset("ch3d")
+#setupForSubset("ch3d")
 setupForSubset("seam3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -89,6 +89,8 @@ def goDensity():
   plot1(c1,d1,d2)
 def goDls():
   gx = readImage(gxfile)
+  plot3(gx)
+  '''
   p2 = readImage(p2file)
   p3 = readImage(p3file)
   ep = readImage(epfile)
@@ -100,6 +102,7 @@ def goDls():
   c3 = []
   rs = [10,10,10]
   plot3(gx)
+  '''
 
 def goFls():
   gx = readImage(gxfile)
