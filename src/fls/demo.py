@@ -20,6 +20,7 @@ p3file  = "p3" # eigenvalue-derived planarity
 epfile  = "ep" # eigenvalue-derived planarity
 sffile  = "sf" # salt indicator function
 mkfile  = "mk" # mask file
+phdfile = "phd"
 sfcfile  = "sfc" # salt indicator function with constraints
 
 pngDir = getPngDir()
@@ -89,20 +90,20 @@ def goDensity():
   plot1(c1,d1,d2)
 def goDls():
   gx = readImage(gxfile)
-  plot3(gx)
-  '''
   p2 = readImage(p2file)
   p3 = readImage(p3file)
   ep = readImage(epfile)
   mu,lamda,alpha=0.2,2,50
   r,niter=3,200
   ls = LevelSet3(mu,lamda,alpha,r,niter)
-  c1 = []
-  c2 = []
-  c3 = []
-  rs = [10,10,10]
-  plot3(gx)
-  '''
+  c1 = [272,236,270,270]
+  c2 = [932,397,289,972]
+  c3 = [460,533,378,230]
+  rs = [ 10, 10, 10, 10]
+  ph = ls.initialLevelSet(n1,n2,n3,c1,c2,c3,rs,2)
+  ls.updateLevelSetPK(1.5,ep,[gx,p2,p3],ph)
+  writeImage(phdfile,ph)
+  #plot3(gx)
 
 def goFls():
   gx = readImage(gxfile)
