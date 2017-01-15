@@ -30,7 +30,7 @@ plotOnly = False
 
 def main(args):
   goSlopes()
-  #goDls()
+  goDls()
   #goFls()
   #goCh()
 
@@ -61,11 +61,11 @@ def goSlopes():
   ep = zerofloat(n1,n2,n3)
   lsf = LocalSlopeFinder(8,2,5);
   lsf.findSlopes(gx,p2,p3,ep)
-  lsf = LocalSlopeFinder(2,2,5);
-  lsf.findSlopes(gx,p2,p3)
+  writeImage(epfile,ep)
+  lsf = LocalSlopeFinder(2,1,5);
+  lsf.findSlopes(gx,p2,p3,ep)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
-  writeImage(epfile,ep)
 
 def goDls():
   gx = readImage(gxfile)
