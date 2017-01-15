@@ -1,0 +1,4 @@
+#!/bin/sh
+git rm -r --cached src/fls
+git commit -m "remove"
+git push origin master
