@@ -68,7 +68,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/skins/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -79,8 +79,8 @@ def main(args):
   #goThin()
   #goSkinTv()
   #goSmooth()
-  #goSlip()
-  goUnfault()
+  goSlip()
+  #goUnfault()
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
@@ -98,16 +98,8 @@ def main(args):
   #goSetFaultImages()
   #goStrikeMask()
   #goPointsCheck()
-<<<<<<< HEAD
   #goReskin()
-=======
   #goSkinDisplay()
-
-  gx = readImage(gxfile)
-  gc = gx[238]
-  gs = copy(300,1200,50,2475,gc)
-  writeImage("gx238",gs)
->>>>>>> 719aea5b525424830ee658ce281366a2c24d09e6
 
 def goReskin():
   sks = readSkins(fsktv)
@@ -551,7 +543,7 @@ def goSlip():
     #w2 = readImage(fw2file)
     #w3 = readImage(fw3file)
     #gw = readImage(gwfile)
-  plot3(gx,s1,cmin=0.1,cmax=25.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,s1,cmin=1.0,cmax=15.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
   '''
   plot3(gx,s1,cmin=0.0,cmax=30.0,cmap=jetFill(0.3),
@@ -574,10 +566,10 @@ def goUnfault():
     s1,s2,s3 = fsl.getDipSlips(sk,smark)
     w1,w2,w3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
     gw = fsl.unfault([w1,w2,w3],gx)
+    writeImage(gwfile,gw)
     writeImage(fw1file,w1)
     writeImage(fw2file,w2)
     writeImage(fw3file,w3)
-    writeImage(gwfile,gw)
   else:
     gw = readImage(gwfile)
   plot3(gx)
@@ -787,7 +779,7 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
-  ipg.setSlices(n1,376,308)
+  ipg.setSlices(n1,376,232)
   if cbar:
     sf.setSize(1037,700)
   else:
@@ -799,11 +791,11 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
+  ov.setScale(2.0)
   #ov.setScale(2.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,-0.00,-0.05))
-  ov.setAzimuthAndElevation(45.0,35.0)
+  ov.setAzimuthAndElevation(65.0,35.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
