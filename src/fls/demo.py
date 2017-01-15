@@ -29,7 +29,7 @@ pngDir = False
 plotOnly = False
 
 def main(args):
-  goSlopes()
+  #goSlopes()
   goDls()
   #goFls()
   #goCh()
