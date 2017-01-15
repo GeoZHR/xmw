@@ -83,15 +83,17 @@ public class LevelSet3 {
   }
 
   public void updateLevelSetPK(
-    final float sigma, final float[][][] el, final float[][][] gx, 
-    final float[][][] p2, final float[][][] phi) 
+    final float sigma, final float[][][] el, 
+    final float[][][][] gs, final float[][][] phi) 
   {
+    final int ns = gs.length;
     final int n3 = phi.length;
     final int n2 = phi[0].length;
     final int n1 = phi[0][0].length;
-    final float[][][] damp = density(0.6f,el,gx);
-    final float[][][] ddip = density(0.6f,el,p2);
-    balanceDensity(new float[][][][]{damp,ddip});
+    final float[][][][] ds = new float[ns][n3][n2][n1];
+    for (int is=0; is<ns; ++is)
+      ds[is] = density(0.6f,el,gs[is]);
+    balanceDensity(ds);
     for (int iter=0; iter<_niter; ++iter) {
       updateBand(_r,phi);
       if(iter%100==0) {
@@ -110,8 +112,8 @@ public class LevelSet3 {
           float distTerm = dps[i3][i2][i1]+phs[i3][i2][i1];
           float deltaPhi = delta(phi[i3][i2][i1],sigma)*_alpha;
           float ext = cvsi*_lamda;
-          ext += damp[i3][i2][i1];
-          ext += ddip[i3][i2][i1];
+          for (int is=0; is<ns; ++is)
+            ext += ds[is][i3][i2][i1];
           phi[i3][i2][i1] += _mu*distTerm+ext*deltaPhi;
         }}
       }});

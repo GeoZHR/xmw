@@ -67,7 +67,7 @@ def goSlopes():
   writeImage(p2file,p2)
   writeImage(p3file,p3)
 
-def goDls():
+def goDensity():
   gx = readImage(gxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
@@ -87,6 +87,19 @@ def goDls():
   plot1(c1,d1,d2)
   ls.density(0.6,ep,p3g,d1,d2)
   plot1(c1,d1,d2)
+def goDls():
+  gx = readImage(gxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  ep = readImage(epfile)
+  mu,lamda,alpha=0.2,2,50
+  r,niter=3,200
+  ls = LevelSet3(mu,lamda,alpha,r,niter)
+  c1 = []
+  c2 = []
+  c3 = []
+  rs = [10,10,10]
+  plot3(gx)
 
 def goFls():
   gx = readImage(gxfile)
