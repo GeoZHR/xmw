@@ -96,9 +96,7 @@ public class LevelSet3 {
     balanceDensity(ds);
     for (int iter=0; iter<_niter; ++iter) {
       updateBand(_r,phi);
-      if(iter%100==0) {
-        System.out.println("iter="+iter);
-      }
+      System.out.println("iter="+iter);
       final float[][][] phs = new float[n3][n2][n1];
       final float[][][] dps = new float[n3][n2][n1];
       final float[][][] cvs = new float[n3][n2][n1];
