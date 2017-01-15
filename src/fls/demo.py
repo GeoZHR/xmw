@@ -81,7 +81,7 @@ def goDls():
   d1 = fillfloat(0,256)
   d2 = fillfloat(0,256)
   c1 = Sampling(256)
-  ls.density(0.6,ep,pxg,d1,d2)
+  ls.density(0.6,ep,gxg,d1,d2)
   plot1(c1,d1,d2)
   ls.density(0.6,ep,p2g,d1,d2)
   plot1(c1,d1,d2)
