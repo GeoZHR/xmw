@@ -8,6 +8,7 @@ from utils import *
 
 #setupForSubset("ch3d")
 setupForSubset("seam3d")
+setupForSubset("seam3dSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -17,10 +18,15 @@ gxfile  = "gs" # seam3d input image
 slfile  = "sl" # salt likelihoods
 p2file  = "p2" # eigenvalue-derived planarity
 p3file  = "p3" # eigenvalue-derived planarity
+u1file  = "u1" # eigenvalue-derived planarity
+u2file  = "u2" # eigenvalue-derived planarity
+u3file  = "u3" # eigenvalue-derived planarity
+gafile  = "ga" # eigenvalue-derived planarity
 epfile  = "ep" # eigenvalue-derived planarity
 sffile  = "sf" # salt indicator function
 mkfile  = "mk" # mask file
 phdfile = "phd"
+phdxfile = "phdx"
 sfcfile  = "sfc" # salt indicator function with constraints
 
 pngDir = getPngDir()
@@ -30,8 +36,10 @@ pngDir = False
 plotOnly = False
 
 def main(args):
-  #goSlopes()
-  goDls()
+  goPlanarity()
+  #goDlsSub()
+  #goDensity()
+  #goFlsSub()
   #goFls()
   #goCh()
 
@@ -54,56 +62,96 @@ def goCh():
   plot3(ph1,cmin=1,cmax=3,png="seis")
   #plot3(gx,cmin=0,cmax=1,tg=tg,png="seisSalt")
 
-def goSlopes():
+def goPlanarity():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(8,2,5);
-  lsf.findSlopes(gx,p2,p3,ep)
+  lof = LocalOrientFilter(6,2,2)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
   writeImage(epfile,ep)
-  lsf = LocalSlopeFinder(2,1,5);
-  lsf.findSlopes(gx,p2,p3,ep)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
 
 def goDensity():
   gx = readImage(gxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  ep = readImage(epfile)
-  mu,lamda,alpha=0.2,2,50
-  r,niter=3,1500
-  ls = LevelSet3(mu,lamda,alpha,r,niter)
-  gxg = ls.toGrayIntegers(gx)
-  p2g = ls.toGrayIntegers(p2)
-  p3g = ls.toGrayIntegers(p3)
-  d1 = fillfloat(0,256)
-  d2 = fillfloat(0,256)
-  c1 = Sampling(256)
-  ls.density(0.6,ep,gxg,d1,d2)
-  plot1(c1,d1,d2)
-  ls.density(0.6,ep,p2g,d1,d2)
-  plot1(c1,d1,d2)
-  ls.density(0.6,ep,p3g,d1,d2)
-  plot1(c1,d1,d2)
+  rgf = RecursiveGaussianFilter(2)
+  rgf.apply000(gx,gx)
+  pa = zerofloat(n1,n2,n3)
+  FastLevelSet3.applyForInsAmp(gx,pa)
+  plot3(gx)
+  plot3(pa,cmin=min(pa),cmax=max(pa)/2)
+def goFlsSub():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    #p2 = readImage(p2file)
+    #p3 = readImage(p3file)
+    ga = readImage(gafile)
+    ep = readImage(epfile)
+    c1 = [287]
+    c2 = [307]
+    c3 = [460]
+    rs = [ 10]
+    fls = FastLevelSet3(n1,n2,n3,c1[0],c2[0],c3[0],rs[0])
+    dp = fls.density(0.5,ep,ga)
+    fls.setIterations(120,6,3)
+    fls.updateLevelSet(9,5,dp)
+    #ph = readImage(phdfile)
+    #fls.updateLevelSet(9,5,dp,ph)
+    ph = fls.getPhi()
+    writeImage(phdxfile,ph)
+  else:
+    ph = readImage(phdxfile)
+  #plot3(ph)
+  plot3(dp,cmin=0,cmax=1)
+  plot3(gx,fbs=ph,png="seisSalt")
+  #plot3(gx)
+
+def goDlsSub():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    mu,lamda,alpha=0.2,2,50
+    r,niter=3,20
+    ls = LevelSet3(mu,lamda,alpha,r,niter)
+    c1 = [287]
+    c2 = [307]
+    c3 = [460]
+    rs = [ 10]
+    ph = ls.initialLevelSet(n1,n2,n3,c1,c2,c3,rs,2)
+    ls.updateLevelSetPK(1.5,ep,[gx,p2,p3],ph)
+    writeImage(phdfile,ph)
+  else:
+    ph = readImage(phdfile)
+  #plot3(ph)
+  plot3(gx,fbs=ph,png="seisSalt")
+  plot3(gx)
+
 def goDls():
   gx = readImage(gxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  ep = readImage(epfile)
-  mu,lamda,alpha=0.2,2,50
-  r,niter=3,200
-  ls = LevelSet3(mu,lamda,alpha,r,niter)
-  c1 = [272,236,270,270]
-  c2 = [932,397,289,972]
-  c3 = [460,533,378,230]
-  rs = [ 10, 10, 10, 10]
-  ph = ls.initialLevelSet(n1,n2,n3,c1,c2,c3,rs,2)
-  ls.updateLevelSetPK(1.5,ep,[gx,p2,p3],ph)
-  writeImage(phdfile,ph)
-  #plot3(gx)
+  #gs = copy(n1,418,720,0,0,0,gx)
+  #writeImage("gs",gs)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    mu,lamda,alpha=0.2,2,50
+    r,niter=3,200
+    ls = LevelSet3(mu,lamda,alpha,r,niter)
+    c1 = [272,236,270,270]
+    c2 = [932,397,289,972]
+    c3 = [460,533,378,230]
+    rs = [ 10, 10, 10, 10]
+    ph = ls.initialLevelSet(n1,n2,n3,c1,c2,c3,rs,2)
+    ls.updateLevelSetPK(1.5,ep,[gx,p2,p3],ph)
+    writeImage(phdfile,ph)
+  else:
+    print 'text'
+  #plot3(ph)
+  #plot3(gx,fbs=ph,png="seisSalt")
+  plot3(gx)
 
 def goFls():
   gx = readImage(gxfile)
@@ -377,7 +425,7 @@ def goSkin():
 
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(100.0)
+  ref = RecursiveExponentialFilter(20.0)
   ref.apply1(g,g)
   y = zerofloat(n1,n2,n3)
   div(x,sqrt(g),y)
@@ -433,7 +481,6 @@ def plot1(s1,y1,y2,hlabel="Values",vlabel="Probability",png=None):
   pv1.setLineColor(Color.RED)
   pv1 = sp.addPoints(s1,y2)
   pv1.setLineColor(Color.BLUE)
-
   #sp.setVLimits(0.1,1.1)
   sp.setSize(800,800)
   sp.setHLabel(hlabel)
@@ -586,7 +633,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(381,932,460)
+  ipg.setSlices(579,932,400)
   if cbar:
     sf.setSize(987,700)
   else:

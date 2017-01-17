@@ -68,16 +68,52 @@ def main(args):
   #goSeamTest()
   #goSeam2dP()
   #goTensor()
-  #goSeam2d()
+  #goFls()
+  #goFlsP()
   #goDLS()
+  #goSaltPicker()
   goBand()
+def goSaltPicker():
+  gx = readImage(fxfile)
+  c1 = [65,270, 88, 60,134,200,282,168, 30, 250,386,260,360]
+  c2 = [ 0,160,300,530,310,350,815,858,770,1000,705,485,  0]
+  u1 = [-1, -1, -1, -1,  1, -1, -1, -1,  1,  -1,  1,  1,  1]
+  sp = SaltPicker2()
+  pa = sp.applyForInsAmp(gx)
+  xu = sp.initialBoundary(1,c1,c2,u1,pa)
+  plot(gx,cmin=-5,cmax=5,xp=[c1,c2],pp=[c1,c2])
+  plot(pa,cmin=0,cmax=2,xp=[xu[0],xu[1]])
+  plot(pa,cmin=0,cmax=2,xu=xu)
+  #bs = sp.bandSample(100,1,xu,pa)
+  bs = sp.refine(100,1,xu,pa)
+  plot(gx,cmin=-5,cmax=5,xp=[xu[0],xu[1]])
+  plot(bs,cmin=0.1,cmax=0.8)
+  opp = OptimalPathPicker(40,2.5)
+  ft = opp.applyTransform(bs)
+  m2 = len(bs)
+  m1 = len(bs[0])
+  wht = opp.applyForWeight(ft)
+  tms1 = zerofloat(m2,m1)
+  tms2 = zerofloat(m2,m1)
+  pik1 = opp.forwardPick(100,wht,tms1)
+  pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2)
+  x2 = zerofloat(m2)
+  for i2 in range(m2):
+    x2[i2]=i2
+  plot(bs,cmin=0.1,cmax=0.8,xp=[pik2,x2])
+
 def goBand():
   gx = readImage(fxfile)
   dp = readImage(dpfile)
   ph = readImage(phfile)
+  pa = zerofloat(n1,n2)
   ls = LevelSet2(0.2,2,10,3,1,1500)
+  #gx = gain(gx)
+  ls.applyForInsAmp(gx,pa)
+  plot(pa,cmin=0,cmax=2)
   #fb = ls.bandSample(50,ph,dp)
-  ps,bs = ls.refine(40,1.0,ph,gain(gx))
+  r,d=20,1.0
+  ps,bs = ls.refine(r,d,ph,pa)
   plot(gx,phi=ph)
   plot(gx,xp=ps[0])
   opp = OptimalPathPicker(20,1.0)
@@ -87,7 +123,7 @@ def goBand():
   wht = opp.applyForWeight(ft)
   tms1 = zerofloat(m2,m1)
   tms2 = zerofloat(m2,m1)
-  pik1 = opp.forwardPick(50,wht,tms1)
+  pik1 = opp.forwardPick(r,wht,tms1)
   pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2)
   x2 = zerofloat(m2)
   for i2 in range(m2):
@@ -109,9 +145,12 @@ def goDLS():
   d2 = fillfloat(0,256)
   gg = ls.toGrayIntegers(gx)
   pg = ls.toGrayIntegers(p2)
-  ls.density(0.6,el,pg,d1,d2)
+  ls.density(0.6,el,gg,d1,d2)
+  print sum(d1)
+  print sum(d2)
   c1 = Sampling(256)
   plot1(c1,d1,d2)
+  '''
   c1 = [250,250]
   c2 = [250,910]
   r1 = [20,20]
@@ -140,6 +179,7 @@ def goDLS():
   plot(damp,cmin=-1,cmax=2)
   print min(ddip)
   print min(damp)
+  '''
 def goTensor():
   gx = readImage(fxfile)
   u1 = zerofloat(n1,n2)
@@ -156,51 +196,57 @@ def goTensor():
   print min(gx)
   print max(gx)
 
-def goSeam2dP():
+def goFlsP():
   gx = readImage(fxfile)
-  plot(gx)
-  rgf = RecursiveGaussianFilter(2)
-  #rgf.apply00(gx,gx)
-  fx = abs(gx)
-  ft = copy(gx)
-  x1 = [220]
-  x2 = [900]
-  rs = [  5]
-  #fls = FastLevelSets2(n1,n2,x1,x2,rs)
-  fls = FastLevelSet2P(n1,n2,x1[0],x2[0],rs[0])
-  fls.setIterations(800,4,2)
-  fls.setEvolutionSpeed(0.35,0.6)
-  xss = fls.applySegments(6,3,fx,ft)
-  plot(gx,xs=[xss[0]],png=None)#pngName+str(k))
-  plot(gx,xs=[xss[1]],png=None)#pngName+str(k))
-  plot(fx,xs=[xss[1]],png=None)#pngName+str(k))
-def goSeam2d():
-  gx = readImage(fxfile)
+  p2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  ft = zerofloat(n1,n2)
+  lsf = LocalSlopeFinder(8,2,5)
+  lsf.findSlopes(gx,p2,el)
+  lsf = LocalSlopeFinder(2,1,5)
+  lsf.findSlopes(gx,p2)
   x1 = [220]
   x2 = [900]
   rs = [ 5]
-  #x1 = [120]
-  #x2 = [200]
-  #rs = [  5]
+  fls = FastLevelSet2P(n1,n2,x1,x2,rs)
+  fls.setIterations(550,6,2)
+  dp = fls.applyForDensity(0.4,el,[gx,p2])
+  plot(dp,cmin=-1,cmax=1)
+  xss = fls.applySegments(9,6,dp,ft)
+  plot(gx,xs=[xss[0]],png=None)#pngName+str(k))
+  plot(gx,xs=[xss[1]],png=None)#pngName+str(k))
+  plot(gx,xs=[xss[1]],png=None)#pngName+str(k))
 
+def goFls():
+  gx = readImage(fxfile)
+  p2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  lsf = LocalSlopeFinder(8,2,5)
+  lsf.findSlopes(gx,p2,el)
+  lsf = LocalSlopeFinder(2,1,5)
+  lsf.findSlopes(gx,p2)
+  x1 = [220]
+  x2 = [900]
+  rs = [ 5]
+  x1 = [110]
+  x2 = [450]
+  rs = [  5]
   gxs = FastLevelSets2.downSample(1,1,gx) 
+  els = FastLevelSets2.downSample(1,1,el) 
+  p2s = FastLevelSets2.downSample(1,1,p2) 
   m2 = len(gxs)
   m1 = len(gxs[0])
   fls = FastLevelSets2(m1,m2,x1,x2,rs)
   phi = zerofloat(m1,m2)
-  fx = gxs
-  #plot(gx)
   plot(gxs)
-  fls.setIterations(550,4,2)
-  xss = fls.applySegments(6,3,fx,phi)
-  #writeImage("phi",phi);
-  #phi = readImage("phi")
-  #fls.setIterations(20,4,2)
-  #xss = fls.applySegmentsX(6,3,fx,phi)
-  plot(fx,pp=xss[1][0],png=None)#pngName+str(k))
-  #plot(gxs,xs=[xss[0]],png=None)#pngName+str(k))
-  #plot(gx,xs=[xss[1]],png=None)#pngName+str(k))
-  #plot(fx,xs=[xss[1]],png=None)#pngName+str(k))
+  fls.setIterations(650,6,2)
+  xss = fls.applySegments(9,5,els,gxs,p2s,phi)
+  writeImage(phfile,phi)
+  rgf = RecursiveGaussianFilter(4)
+  rgf.apply00(phi,phi)
+  plot(phi)
+  plot(gxs,pp=xss[1][0],png=None)#pngName+str(k))
+  plot(gxs,phi=phi,png=None)#pngName+str(k))
 
 def goSeamTest():
   gx = readImage(fxfile)
@@ -591,7 +637,7 @@ def plotVectors(dl,dh,u1,u2,f):
  
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(5.0)
+  ref = RecursiveExponentialFilter(20.0)
   ref.apply1(g,g)
   y = zerofloat(n1,n2)
   div(x,sqrt(g),y)
@@ -616,7 +662,7 @@ def plot1(s1,y1,y2,hlabel="Values",vlabel="Probability",png=None):
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
-def plot(f,xp=None,pp=None,xs=None,phi=None,v1=None,v2=None,
+def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
         cmin=None,cmax=None,clab=None,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation);
@@ -635,16 +681,38 @@ def plot(f,xp=None,pp=None,xs=None,phi=None,v1=None,v2=None,
     cv = panel.addContours(phi)
     cv.setContours([0])
     cv.setLineColor(Color.RED)
+    cv.setLineWidth(1.0)
   if xp:
     ptv = panel.addPoints(xp[0],xp[1])
     ptv.setLineColor(Color.RED)
     ptv.setLineWidth(1.0)
+  if xu:
+    np = len(xu[0])
+    ptv1 = panel.addPoints(xu[0],xu[1])
+    ptv1.setLineColor(Color.RED)
+    ptv1.setLineWidth(1.0)
+    for ip in range(np):
+      x1c = xu[0][ip]
+      x2c = xu[1][ip]
+      u1c = xu[2][ip]
+      u2c = xu[3][ip]
+      x1m = x1c-u1c*50
+      x2m = x2c-u2c*50
+      x1p = x1c+u1c*50
+      x2p = x2c+u2c*50
+      x1s = [x1m,x1c,x1p]
+      x2s = [x2m,x2c,x2p]
+      ptv2 = panel.addPoints(x1s,x2s)
+      ptv2.setLineColor(Color.BLUE)
+      ptv2.setLineWidth(1.0)
   if pp:
     ptv = panel.addPoints(pp[0],pp[1])
     ptv.setLineStyle(PointsView.Line.NONE)
-    ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
+    #ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
+    ptv.setMarkStyle(PointsView.Mark.CROSS)
     ptv.setMarkColor(Color.RED)
-    ptv.setMarkSize(2.0)
+    ptv.setMarkSize(6.0)
+    ptv.setLineWidth(3.0)
   if xs:
     for ip in range(len(xs)):
       ptv = panel.addPoints(xs[ip][0],xs[ip][1])
@@ -670,22 +738,19 @@ def plot(f,xp=None,pp=None,xs=None,phi=None,v1=None,v2=None,
           pvu.setLineColor(Color.RED)
         else:
           pvu.setLineColor(Color.YELLOW)
-  cb = panel.addColorBar();
   #cb.setInterval(0.2)
   if(clab):
+    cb = panel.addColorBar();
     cb.setLabel(clab)
-  else:
-    cb.setLabel("Amplitude")
   panel.setColorBarWidthMinimum(130)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
-  frame.setTitle("normal vectors")
   frame.setVisible(True);
   frame.setSize(890,760)
   frame.setSize(890,400)
   #frame.setSize(1190,760)
-  frame.setFontSize(36)
+  frame.setFontSize(24)
   if pngDir and png:
     frame.paintToPng(300,3.333,pngDir+png+".png")
 

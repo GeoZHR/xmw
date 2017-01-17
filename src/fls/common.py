@@ -18,6 +18,7 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from sso import *
 from util import *
 from stv import *
 from fls import *

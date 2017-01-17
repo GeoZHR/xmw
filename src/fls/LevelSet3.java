@@ -259,31 +259,34 @@ public class LevelSet3 {
 
   public void density(float f, float[][][] fx, 
     int[][][] gx, float[] p1, float[] p2) {
-    float c1 = 0f;
-    float c2 = 0f;
+    double c1 = 0f;
+    double c2 = 0f;
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
+    double[] p1s = new double[256];
+    double[] p2s = new double[256];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       int gxi = gx[i3][i2][i1];
       float fxi = fx[i3][i2][i1];
       if(fxi<f) {
-        c1 += 1f;
-        p1[gxi] += 1f;
-      } else {
-        c2 += 1f;
-        p2[gxi] += 1f;
+        c1 += 1.0; p1s[gxi] += 1.0;
+      } else { 
+        c2 += 1.0; p2s[gxi] += 1.0;
       }
     }}}
-    div(p1,c1,p1);
-    div(p2,c2,p2);
+    div(p1s,c1,p1s);
+    div(p2s,c2,p2s);
+    for (int ip=0; ip<256; ++ip) {
+      p1[ip] = (float)p1s[ip];
+      p2[ip] = (float)p2s[ip];
+    }
     RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
     rgf.apply0(p1,p1);
     rgf.apply0(p2,p2);
   }
-
 
 
   public float[][] density(

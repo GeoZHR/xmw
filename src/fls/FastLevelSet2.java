@@ -13,6 +13,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.mesh.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+import pik.*;
 import util.*;
 
 /**
@@ -151,6 +152,226 @@ public class FastLevelSet2 {
     _smoothIters = smoothIters;
   }
 
+  public void updateLevelSet(int gw, double sigma, 
+    float[][] el, float[][] fx, float[][] p2) {
+    _gWindow = gw;
+    createGaussFilter(gw,sigma);
+    float[][] damp = density(0.6f,el,fx);
+    float[][] ddip = density(0.6f,el,p2);
+    float[][][] dps = new float[][][]{damp,ddip};
+    balanceDensity(dps);
+    updateEvolutionSpeed(dps); 
+    for (int iter=0; iter<_outerIters; iter++) {
+      if(iter%50==0) System.out.println("iter="+iter);
+      boolean converged = cycleOne(dps);
+      cycleTwo();
+      if(converged){break;}
+    }
+  }
+
+  public float[][][][] refine(int r, float d, float[][] ph, float[][] fx) {
+    int n2 = ph.length;
+    int n1 = ph[0].length;
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    float[][] g1 = new float[n2][n1];
+    float[][] g2 = new float[n2][n1];
+    RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(8.0);
+    rgf1.apply00(ph,ph);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    rgf.apply1X(ph,g1);
+    rgf.applyX1(ph,g2);
+    ContourFinder cf = new ContourFinder();
+    ContourFinder.Contour ct = cf.findContour(0,s1,s2,ph);
+    float[][][] ps = ct.getCoords();
+    int nc = ps.length;
+    float[][][] bs = bandSample(r,d,ps,ph,g1,g2,fx);
+    SincInterpolator si = new SincInterpolator();
+    for (int ic=0; ic<nc; ++ic) {
+      int m2 = bs[ic].length;
+      int m1 = bs[ic][0].length;
+      sub(bs[ic],min(bs[ic]),bs[ic]);
+      div(bs[ic],max(bs[ic]),bs[ic]);
+      OptimalPathPicker opp = new OptimalPathPicker(20,1.0f);
+      float[][] ft = opp.applyTransform(bs[ic]);
+      float[][] wht = opp.applyForWeight(ft);
+      float[][] tms1 = zerofloat(m2,m1);
+      float[][] tms2 = zerofloat(m2,m1);
+      float[] pik1 = opp.forwardPick(r,wht,tms1);
+      float[] pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2);
+      int np = ps[ic][0].length;
+      float[] x1s = ps[ic][0];
+      float[] x2s = ps[ic][1];
+      for (int ip=0; ip<np; ++ip) {
+        float x1i = x1s[ip];
+        float x2i = x2s[ip];
+        float g1i = si.interpolate(s1,s2,g1,x1i,x2i);
+        float g2i = si.interpolate(s1,s2,g2,x1i,x2i);
+        float gsi = sqrt(g1i*g1i+g2i*g2i);
+        g1i /= gsi;
+        g2i /= gsi;
+        x1s[ip] = x1i+g1i*(pik2[ip]-r)*d;
+        x2s[ip] = x2i+g2i*(pik2[ip]-r)*d;
+      }
+    }
+
+    /*
+    bs = bandSample(r,d,ps,ph,g1,g2,fx);
+    for (int ic=0; ic<nc; ++ic) {
+      int m2 = bs[ic].length;
+      int m1 = bs[ic][0].length;
+      sub(bs[ic],min(bs[ic]),bs[ic]);
+      div(bs[ic],max(bs[ic]),bs[ic]);
+      OptimalPathPicker opp = new OptimalPathPicker(20,10f);
+      float[][] ft = opp.applyTransform(bs[ic]);
+      float[][] wht = opp.applyForWeight(ft);
+      float[][] tms1 = zerofloat(m2,m1);
+      float[][] tms2 = zerofloat(m2,m1);
+      float[] pik1 = opp.forwardPick(r,wht,tms1);
+      float[] pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2);
+      int np = ps[ic][0].length;
+      float[] x1s = ps[ic][0];
+      float[] x2s = ps[ic][1];
+      for (int ip=0; ip<np; ++ip) {
+        float x1i = x1s[ip];
+        float x2i = x2s[ip];
+        float g1i = si.interpolate(s1,s2,g1,x1i,x2i);
+        float g2i = si.interpolate(s1,s2,g2,x1i,x2i);
+        float gsi = sqrt(g1i*g1i+g2i*g2i);
+        g1i /= gsi;
+        g2i /= gsi;
+        x1s[ip] = x1i+g1i*(pik2[ip]-r)*d;
+        x2s[ip] = x2i+g2i*(pik2[ip]-r)*d;
+      }
+    }
+    */
+    return new float[][][][]{ps,bs};
+  }
+
+    public float[][][] bandSample(
+    int r, float d, float[][][] ps, float[][] ph, 
+    float[][] g1, float[][] g2, float[][] fx) {
+    int n2 = ph.length;
+    int n1 = ph[0].length;
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    int nc = ps.length;
+    float[][][] fbs = new float[nc][][];
+    SincInterpolator si = new SincInterpolator();
+    for (int ic=0; ic<nc; ++ic) {
+      float[] x1s = ps[ic][0];
+      float[] x2s = ps[ic][1];
+      int np = x1s.length;
+      fbs[ic] = new float[np][2*r+1];
+      for (int ip=0; ip<np; ++ip) {
+        float x1i = x1s[ip];
+        float x2i = x2s[ip];
+        float g1i = si.interpolate(s1,s2,g1,x1i,x2i);
+        float g2i = si.interpolate(s1,s2,g2,x1i,x2i);
+        float gsi = sqrt(g1i*g1i+g2i*g2i);
+        g1i /= gsi;
+        g2i /= gsi;
+        fbs[ic][ip][r] = si.interpolate(s1,s2,fx,x1i,x2i);
+        for (int ir=1; ir<=r; ++ir) {
+          float y1i = x1i+g1i*ir*d;
+          float y2i = x2i+g2i*ir*d;
+          float phi = si.interpolate(s1,s2,ph,y1i,y2i);
+          float fxi = si.interpolate(s1,s2,fx,y1i,y2i);
+          fbs[ic][ip][ir+r]=fxi;
+          //if (phi>0f){fbs[ic][ip][ir+r]=fxi;}
+          //else {fbs[ic][ip][ir+r]=-10f;}
+        }
+        for (int ir=-r; ir<=-1; ++ir) {
+          float y1i = x1i+g1i*ir*d;
+          float y2i = x2i+g2i*ir*d;
+          float phi = si.interpolate(s1,s2,ph,y1i,y2i);
+          float fxi = si.interpolate(s1,s2,fx,y1i,y2i);
+          fbs[ic][ip][ir+r]=fxi;
+          //if (phi<0f){fbs[ic][ip][ir+r]=fxi;}
+          //else {fbs[ic][ip][ir+r]=-10f;}
+        }
+      }
+    }
+    return fbs;
+  }
+
+
+
+  private void balanceDensity(float[][][] ds) {
+    int n3 = ds.length;
+    int n2 = ds[0].length;
+    int n1 = ds[0][0].length;
+    float[] sc = new float[n3];
+    float[] sd = new float[n3];
+    for (int i3=0; i3<n3; ++i3) {
+      float[][] d3 = ds[i3];
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        if(d3[i2][i1]<0f) {
+          sc[i3] += 1f;
+          sd[i3] += abs(d3[i2][i1]);
+        }
+      }}
+    }
+    div(sd,sc,sd);
+    float sdmax = max(sd);
+    for (int i3=0; i3<n3; ++i3) {
+      float sci = sdmax/sd[i3];
+      mul(ds[i3],sci,ds[i3]);
+    }
+
+  }
+
+
+  public float[][] density(
+    float f, float[][] fx, float[][] gx) 
+  {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[] p1 = new float[256];
+    float[] p2 = new float[256];
+    float[][] dp = new float[n2][n1];
+    int[][] gg = toGrayIntegers(gx);
+    density(f,fx,gg,p1,p2);
+    for (int i2=1; i2<n2-1; ++i2) {
+    for (int i1=1; i1<n1-1; ++i1) {
+      int ggi = gg[i2][i1];
+      float di = log(p2[ggi])-log(p1[ggi]);
+      if(Float.isNaN(di)) {continue;}
+      if(Float.isInfinite(di)) {continue;}
+      dp[i2][i1] = di;
+    }}
+    return dp;
+  }
+
+  public void density(float f, float[][] fx, 
+    int[][] gx, float[] p1, float[] p2) {
+    float c1 = 0f;
+    float c2 = 0f;
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      int gxi = gx[i2][i1];
+      float fxi = fx[i2][i1];
+      if(fxi<f) {
+        c1 += 1f;
+        p1[gxi] += 1f;
+      } else {
+        c2 += 1f;
+        p2[gxi] += 1f;
+      }
+    }}
+    div(p1,c1,p1);
+    div(p2,c2,p2);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
+    rgf.apply0(p1,p1);
+    rgf.apply0(p2,p2);
+  }
+
+
+
+
   public void updateLevelSet(int gw, double sigma, float[][] fx) {
     _gWindow = gw;
     createGaussFilter(gw,sigma);
@@ -249,8 +470,8 @@ public class FastLevelSet2 {
   private int _n2;
   private byte[][] _phi;
   private int _gWindow;
-  private byte[][] _gauss;
-  private int _gaussThreshold;
+  private float[][] _gauss;
+  private float _gaussThreshold;
   private float _sout=0f,_sin=0f;
   private float[][] _pin = new float[4][256];
   private float[][] _pout = new float[4][256];
@@ -329,23 +550,22 @@ public class FastLevelSet2 {
 	protected void createGaussFilter(int gw, double sigma) {
 		int m2 = 2*gw+1;
 		int m1 = 2*gw+1;
-		int gfScale = 0;
+		float gfScale = 0f;
     double sigmas = 1.0/(sigma*sigma);
 		// Rough heuristic: scale by number of elements in filter
-		double scale1 = m1*m2;
-    _gauss = new byte[m2][m1];
+    _gauss = new float[m2][m1];
 		// In theory could just calculate 1/8th and duplicate instead
 		for (int i2=0; i2<m2; ++i2) {
       double d2 = i2-gw;
 			for (int i1=0; i1<m1; ++i1) {
         double d1 = i1-gw;
 				double ds = d2*d2+d1*d1;
-				double gf = sigmas*Math.exp(-0.5*sigmas*ds)*scale1;
-        _gauss[i2][i1]=(byte)gf;
+				float gf = (float)(sigmas*Math.exp(-0.5*sigmas*ds));
+        _gauss[i2][i1]=gf;
 				gfScale += gf;
 			}
 		}
-		_gaussThreshold = gfScale/2;
+		_gaussThreshold = gfScale/2f;
 	}
 
 	/**
@@ -518,14 +738,10 @@ public class FastLevelSet2 {
     for (Point pi:_lin) {
       int p1i = pi.p1;
       int p2i = pi.p2;
-      float pin =0f;
-      float pout =0f;
-      for (int i3=0; i3<n3; ++i3) {
-        float fxi = fx[i3][p2i][p1i];
-        pin += log(getGaussianDensity(fxi,_muin[i3],_sigin[i3]));
-        pout += log(getGaussianDensity(fxi,_muout[i3],_sigout[i3]));
-      }
-      if (pout-pin>0f)
+      float ext = 0f;
+      for (int i3=0; i3<n3; ++i3)
+        ext += fx[i3][p2i][p1i];
+      if (ext>0f)
         pi.setEvolutionSpeed(-1);
       else
         pi.setEvolutionSpeed(0);
@@ -533,14 +749,10 @@ public class FastLevelSet2 {
     for (Point pi:_lout) {
       int p1i = pi.p1;
       int p2i = pi.p2;
-      float pin =0f;
-      float pout =0f;
-      for (int i3=0; i3<n3; ++i3) {
-        float fxi = fx[i3][p2i][p1i];
-        pin += log(getGaussianDensity(fxi,_muin[i3],_sigin[i3]));
-        pout += log(getGaussianDensity(fxi,_muout[i3],_sigout[i3]));
-      }
-      if (pin-pout>0f)
+      float ext = 0f;
+      for (int i3=0; i3<n3; ++i3)
+        ext += fx[i3][p2i][p1i];
+      if (ext<0f)
         pi.setEvolutionSpeed(1);
       else
         pi.setEvolutionSpeed(0);
@@ -613,7 +825,7 @@ public class FastLevelSet2 {
 		int d1m = max(-gw,-p1);
 		int d2p = min(gw+1,_n2-p2);
 		int d1p = min(gw+1,_n1-p1);
-		int f = 0;
+		float f = 0f;
 		for(int d2=d2m; d2<d2p; ++d2) {
 		for(int d1=d1m; d1<d1p; ++d1) {
 			if (_phi[p2+d2][p1+d1]< 0) 
@@ -832,8 +1044,8 @@ public class FastLevelSet2 {
   public class Point {
 	  public int p1; //1st coordinate
 	  public int p2; //2nd coordinate
-    public int fe; //evolution speed
-    public int fs; //smooth speed
+    public float fe; //evolution speed
+    public float fs; //smooth speed
 	  /**
 	   * Constructor
 	   * @param p1 The 1st coordinate
@@ -844,10 +1056,10 @@ public class FastLevelSet2 {
 	  	this.p2 = p2;
 	  }
 
-    public void setEvolutionSpeed(int fe) {
+    public void setEvolutionSpeed(float fe) {
       this.fe = fe;
     }
-    public void setSmoothSpeed(int fs) {
+    public void setSmoothSpeed(float fs) {
       this.fs = fs;
     }
   }

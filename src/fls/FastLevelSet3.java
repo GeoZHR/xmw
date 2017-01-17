@@ -14,6 +14,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import stv.*;
+import sso.*;
 
 /**
  * 2D fast level set method.
@@ -194,20 +195,51 @@ public class FastLevelSet3 {
     _smoothIters = smoothIters;
   }
 
-  public void updateLevelSet(int gw, double sigma, float[][][] fx) {
+  public void updateLevelSet(int gw, double sigma, float[][][] dp) {
     _gWindow = gw;
     createGaussFilter(gw,sigma);
-    updateEvolutionSpeed(fx);
+    //updateEvolutionSpeed(fx);
     for (int iter=0; iter<_outerIters; iter++) {
       System.out.println("iter="+iter);
-      //System.out.println("nout="+_lout.size());
-      //boolean converged = cycleOne(fx);
+      //boolean converged = cycleOne(dp);
       //cycleTwo();
-      cycleOneX(fx);
+      cycleOneX(dp);
       cycleTwoX();
       //if(converged){break;}
     }
   }
+
+  public void updateLevelSet(int gw, double sigma, float[][][] dp, float[][][] ph) {
+    _gWindow = gw;
+    createGaussFilter(gw,sigma);
+    initialize(ph);
+    //updateEvolutionSpeed(fx);
+    for (int iter=0; iter<_outerIters; iter++) {
+      System.out.println("iter="+iter);
+      boolean converged = cycleOne(dp);
+      cycleTwo();
+      //cycleOneX(fx);
+      //cycleTwoX();
+      //if(converged){break;}
+    }
+  }
+
+  public void initialize(float[][][] ph) {
+    _n3 = ph.length;
+    _n2 = ph[0].length;
+    _n1 = ph[0][0].length;
+    _phi = fillbyte((byte)3,_n1,_n2,_n3);
+    for (int i3=0; i3<_n3; i3++) {
+    for (int i2=0; i2<_n2; i2++) {
+    for (int i1=0; i1<_n1; i1++) {
+      float phi = ph[i3][i2][i1];
+      _phi[i3][i2][i1] = (byte)phi;
+      if(phi==-1) _lin.add(new Point(i1,i2,i3));
+      if(phi== 1) _lout.add(new Point(i1,i2,i3));
+    }}}
+  }
+
+
 
   public float[][][] getPhi() {
     float[][][] phi = new float[_n3][_n2][_n1];
@@ -243,6 +275,268 @@ public class FastLevelSet3 {
     }}
   }
 
+  public float[][][][] applyForDip(float sig1, float sig2, float[][][] fx) {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length; 
+    final int n1 = fx[0][0].length; 
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = new float[n3][n2][n1];
+    float[][][] u3 = new float[n3][n2][n1];
+    float[][][] p2 = new float[n3][n2][n1];
+    float[][][] p3 = new float[n3][n2][n1];
+    float p2min = -5;
+    float p3min = -5;
+    float p2max =  5;
+    float p3max =  5;
+    LocalOrientFilter lof = new LocalOrientFilter(sig1,sig2,sig2);
+    lof.applyForNormal(fx,u1,u2,u3);
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float u1i = u1[i3][i2][i1];
+          float u2i = u2[i3][i2][i1];
+          float u3i = u3[i3][i2][i1];
+          if (-u2i<p2min*u1i) u2i = -p2min*u1i;
+          if (-u2i>p2max*u1i) u2i = -p2max*u1i;
+          if (-u3i<p3min*u1i) u3i = -p3min*u1i;
+          if (-u3i>p3max*u1i) u3i = -p3max*u1i;
+          if (u1i==0.0f) {
+            p2[i3][i2][i1] = (u2i<0.0f)?p2max:p2min;
+            p3[i3][i2][i1] = (u3i<0.0f)?p3max:p3min;
+          } else {
+            p2[i3][i2][i1] = -u2i/u1i;
+            p3[i3][i2][i1] = -u3i/u1i;
+          }
+        }
+      }
+    }
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
+    float[][][] g1 = new float[n3][n2][n1];
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    rgf.apply100(p2,g1);
+    rgf.apply010(p2,g2);
+    rgf.apply001(p2,g3);
+    g1 = mul(g1,u1);
+    g2 = mul(g2,u2);
+    g3 = mul(g3,u3);
+    p2 = add(g1,g2);
+    p2 = add(g3,p2);
+
+    rgf.apply100(p3,g1);
+    rgf.apply010(p3,g2);
+    rgf.apply001(p3,g3);
+    g1 = mul(g1,u1);
+    g2 = mul(g2,u2);
+    g3 = mul(g3,u3);
+    p3 = add(g1,g2);
+    p3 = add(g3,p3);
+    return new float[][][][]{p2,p3};
+  }
+
+  public void applyForInsAttributes(
+    final float[][][] fx, final float[][][] pa, 
+    final float[][][] ph, final float[][][] pf){
+    final int n3 = fx.length;
+    final int n2 = fx[0].length; 
+    final int n1 = fx[0][0].length; 
+    final float[][][] f1 = pa;
+    final float[][][] f2 = ph;
+    final float[][][] f3 = pf;
+    HilbertTransform ht = new HilbertTransform(5,5);
+    ht.applyInFrequency(fx,f1,f2,f3);
+    final float pi = (float)(Math.PI);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+      for (int i2=0; i2<n2; i2++){
+        float[] pf32 = pf[i3][i2];
+        float[] ph32 = ph[i3][i2];
+        float[] pa32 = pa[i3][i2];
+        float[] fx32 = fx[i3][i2];
+        float[] f132 = f1[i3][i2];
+        float[] f232 = f1[i3][i2];
+        float[] f332 = f1[i3][i2];
+        for (int i1=0; i1<n1; i1++){
+          float f1i = f132[i1];
+          float f2i = f232[i1];
+          float f3i = f332[i1];
+          float fxr = fx32[i1];
+          float phi = -atan2(f1i,fxr);
+          float pai = sqrt(fxr*fxr+f1i*f1i+f2i*f2i+f3i*f3i);
+          if(Float.isInfinite(phi)||Float.isNaN(phi)){
+            ph32[i1] = 0f;
+          } else { ph32[i1] = phi; }
+          if(Float.isInfinite(pai)||Float.isNaN(pai)){
+            pa32[i1] = 0f;
+          } else { pa32[i1] = pai; }
+
+        }
+        for (int i1=1; i1<n1; i1++){
+          float dpi = ph32[i1]-ph32[i1-1];
+          if(dpi<-pi) {dpi+=2*pi;}
+          if(dpi> pi) {dpi-=2*pi;}
+          pf32[i1] = abs(dpi);
+        }
+      }
+    }}); 
+  }
+
+
+  static public void applyForInsAmp(
+    final float[][][] fx, final float[][][] pa){
+    final int n3 = fx.length;
+    final int n2 = fx[0].length; 
+    final int n1 = fx[0][0].length; 
+    final HilbertTransformFilter hbt = new HilbertTransformFilter();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+      for (int i2=0; i2<n2; i2++){
+        float[] pa32 = pa[i3][i2];
+        float[] fx32 = fx[i3][i2];
+        float[] fi = new float[n1];
+        hbt.apply(n1,fx32,fi);
+        for (int i1=0; i1<n1; i1++){
+          float fxi = fi[i1];
+          float fxr = fx32[i1];
+          float pai = sqrt(fxr*fxr+fxi*fxi);
+          if(Float.isInfinite(pai)||Float.isNaN(pai)){
+            pa32[i1] = 0f;
+          } else { pa32[i1] = pai; }
+        }
+      }
+    }}); 
+  }
+
+  public void applyForU1(
+    float sig1, float sig2, final float[][][] fx, final float[][][] u1){
+    final int n3 = fx.length;
+    final int n2 = fx[0].length; 
+    final int n1 = fx[0][0].length; 
+    float[][][] ut = new float[n3][n2][n1];
+    LocalOrientFilter lof = new LocalOrientFilter(sig1,sig2,sig2);
+    lof.applyForNormal(fx,u1,ut,ut);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1);
+    zero(ut);
+    float[][][] g1 = ut;
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    rgf.apply100(u1,g1);
+    rgf.apply010(u1,g2);
+    rgf.apply001(u1,g3);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+      for (int i2=0; i2<n2; i2++){
+        float[] g132 = g1[i3][i2];
+        float[] g232 = g2[i3][i2];
+        float[] g332 = g3[i3][i2];
+        for (int i1=0; i1<n1; i1++){
+          float g1i = g132[i1];
+          float g2i = g232[i1];
+          float g3i = g332[i1];
+          u1[i3][i2][i1] = sqrt(g1i*g1i+g2i*g2i+g3i*g3i);
+        }
+      }
+    }}); 
+  }
+
+
+
+
+  public float[][][] applyForTextureDensity(
+    float sigma1, float sigma2, float ev, float[][][] ep, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    RecursiveGaussianFilter rgfGradient = new RecursiveGaussianFilter(1);
+    float[][][] g1 = new float[n3][n2][n1];
+    float[][][] g2 = new float[n3][n2][n1];
+    float[][][] g3 = new float[n3][n2][n1];
+    rgfGradient.apply100(gx,g1);
+    rgfGradient.apply010(gx,g2);
+    rgfGradient.apply001(gx,g3);
+    /*
+    float[][][] g11 = g1;
+    float[][][] g22 = g2;
+    float[][][] g33 = g3;
+    float[][][] g12 = new float[n3][n2][n1];
+    float[][][] g13 = new float[n3][n2][n1];
+    float[][][] g23 = new float[n3][n2][n1];
+    computeGradientProducts(g1,g2,g3,g11,g12,g13,g22,g23,g33);
+    float[][][] h = new float[n3][n2][n1];
+    float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+    RecursiveGaussianFilter rgfSmoother1 = new RecursiveGaussianFilter(sigma1);
+    RecursiveGaussianFilter rgfSmoother2 = new RecursiveGaussianFilter(sigma2);
+    RecursiveGaussianFilter rgfSmoother3 = new RecursiveGaussianFilter(sigma2);
+    for (float[][][] g:gs) {
+      rgfSmoother1.apply0XX(g,h);
+      rgfSmoother2.applyX0X(h,g);
+      rgfSmoother3.applyXX0(g,h);
+      copy(h,g);
+    }
+    gs = new float[][][][]{g11,g22,g33,g12,g23,g13};
+    */
+    float[][][][] gs = new float[][][][]{gx,g1,g2,g3};
+    return applyForDensity(ev,ep,gs);
+  }
+
+  private void computeGradientProducts(
+    final float[][][] g1, final float[][][] g2, final float[][][] g3,
+    final float[][][] g11, final float[][][] g12, final float[][][] g13,
+    final float[][][] g22, final float[][][] g23, final float[][][] g33)
+  {
+    final int n1 = g1[0][0].length;
+    final int n2 = g1[0].length;
+    final int n3 = g1.length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        for (int i2=0; i2<n2; ++i2) {
+          float[] g1i = g1[i3][i2];
+          float[] g2i = g2[i3][i2];
+          float[] g3i = g3[i3][i2];
+          float[] g11i = g11[i3][i2];
+          float[] g12i = g12[i3][i2];
+          float[] g13i = g13[i3][i2];
+          float[] g22i = g22[i3][i2];
+          float[] g23i = g23[i3][i2];
+          float[] g33i = g33[i3][i2];
+          for (int i1=0; i1<n1; ++i1) {
+            float g1ii = g1i[i1];
+            float g2ii = g2i[i1];
+            float g3ii = g3i[i1];
+            g11i[i1] = g1ii*g1ii;
+            g22i[i1] = g2ii*g2ii;
+            g33i[i1] = g3ii*g3ii;
+            g12i[i1] = g1ii*g2ii;
+            g13i[i1] = g1ii*g3ii;
+            g23i[i1] = g2ii*g3ii;
+          }
+        }
+      }
+    });
+  }
+
+
+
+  public float[][][] applyForDensity(
+    float ev, float[][][] ep, float[][][][] gs) {
+    int n4 = gs.length;
+    int n3 = gs[0].length;
+    int n2 = gs[0][0].length;
+    int n1 = gs[0][0][0].length;
+    float[][][][] dps = new float[n4][n3][n2][n1];
+    for (int i4=0; i4<n4; ++i4)
+      dps[i4] = density(ev,ep,gs[i4]);
+    if(n4>1) balanceDensity(dps);
+    float[][][] dp = new float[n3][n2][n1];
+    for (int i4=1; i4<n4; ++i4)
+    for (int i3=0; i3<n3; ++i3)
+    for (int i2=0; i2<n2; ++i2)
+    for (int i1=0; i1<n1; ++i1)
+      dp[i3][i2][i1] += dps[i4][i3][i2][i1];
+    return dp;
+  }
+
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private
@@ -251,8 +545,8 @@ public class FastLevelSet3 {
   private int _n3;
   private byte[][][] _phi;
   private int _gWindow;
-  private byte[][][] _gauss;
-  private int _gaussThreshold;
+  private float[][][] _gauss;
+  private float _gaussThreshold;
   private int _outerIters = 100;
   private int _speedIters = 10;
   private int _smoothIters = 5;
@@ -265,8 +559,129 @@ public class FastLevelSet3 {
   LinkedList<Sample>[] _linsAdd;
   LinkedList<Sample>[] _loutsAdd;
 
+  public int[][][] toGrayIntegers(float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    int[][][] gx = new int[n3][n2][n1];
+    fx = sub(fx,min(fx));
+    float fmax = 255f/max(fx);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gx[i3][i2][i1] = round(fx[i3][i2][i1]*fmax);
+    }}}
+    return gx;
+  }
+
+  private void balanceDensity(float[][][][] ds) {
+    int n4 = ds.length;
+    int n3 = ds[0].length;
+    int n2 = ds[0][0].length;
+    int n1 = ds[0][0][0].length;
+    float[] sc = new float[n4];
+    float[] sd = new float[n4];
+    for (int i4=0; i4<n4; ++i4) {
+      float[][][] d4 = ds[i4];
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        if(d4[i3][i2][i1]<0f) {
+          sc[i4] += 1f;
+          sd[i4] += abs(d4[i3][i2][i1]);
+        }
+      }}}
+    }
+    div(sd,sc,sd);
+    float sdmax = max(sd);
+    for (int i4=0; i4<n4; ++i4) {
+      float sci = sdmax/sd[i4];
+      mul(ds[i4],sci,ds[i4]);
+    }
+
+  }
+
+  public void densityX(
+    float f, float[][][] fx, float[][][] gx) 
+  {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[] p1 = new float[256];
+    float[] p2 = new float[256];
+    int[][][] gg = toGrayIntegers(gx);
+    density(f,fx,gg,p1,p2);
+    for (int i3=1; i3<n3-1; ++i3) {
+    for (int i2=1; i2<n2-1; ++i2) {
+    for (int i1=1; i1<n1-1; ++i1) {
+      int ggi = gg[i3][i2][i1];
+      float di = log(p2[ggi])-log(p1[ggi]);
+      if(Float.isNaN(di)) {continue;}
+      if(Float.isInfinite(di)) {continue;}
+      gx[i3][i2][i1] = di;
+    }}}
+  }
+
+
+  public float[][][] density(
+    float f, float[][][] fx, float[][][] gx) 
+  {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[] p1 = new float[256];
+    float[] p2 = new float[256];
+    float[][][] dp = new float[n3][n2][n1];
+    int[][][] gg = toGrayIntegers(gx);
+    density(f,fx,gg,p1,p2);
+    for (int i3=1; i3<n3-1; ++i3) {
+    for (int i2=1; i2<n2-1; ++i2) {
+    for (int i1=1; i1<n1-1; ++i1) {
+      int ggi = gg[i3][i2][i1];
+      float di = log(p2[ggi])-log(p1[ggi]);
+      if(Float.isNaN(di)) {continue;}
+      if(Float.isInfinite(di)) {continue;}
+      dp[i3][i2][i1] = di;
+    }}}
+    return dp;
+  }
+
+  public void density(float f, float[][][] fx, 
+    int[][][] gx, float[] p1, float[] p2) {
+    double c1 = 0f;
+    double c2 = 0f;
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    double[] p1s = new double[256];
+    double[] p2s = new double[256];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      int gxi = gx[i3][i2][i1];
+      float fxi = fx[i3][i2][i1];
+      if(fxi<f) {
+        c1 += 1.0; p1s[gxi] += 1.0;
+      } else { 
+        c2 += 1.0; p2s[gxi] += 1.0;
+      }
+    }}}
+    div(p1s,c1,p1s);
+    div(p2s,c2,p2s);
+    for (int ip=0; ip<256; ++ip) {
+      p1[ip] = (float)p1s[ip];
+      p2[ip] = (float)p2s[ip];
+    }
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
+    rgf.apply0(p1,p1);
+    rgf.apply0(p2,p2);
+  }
+
+
+
+
   private void cycleOneX(final float[][][] fx) {
-    for (int iter=0; iter<_smoothIters; iter++) {
+    for (int iter=0; iter<_speedIters; iter++) {
       Parallel.loop(0,_n3,3,new Parallel.LoopInt() { // i1 = 0, 2, 4, ...
       public void compute(int i3) {
         switchInSlice3(i3,_louts[i3].iterator(),fx[i3]);
@@ -446,17 +861,18 @@ public class FastLevelSet3 {
       Sample sp = louti.next();
       int i1 = sp.p1;
       int i2 = sp.p2;
-      if(fx3[i2][i1]<0.3f){switchIn(i3,louti,sp);}
-      /*
-      if (sp.ct<30) {
-        if(fx3[i2][i1]<0.4f){switchIn(i3,louti,sp);}
-        else {sp.ct+=1;}
-      } else {
-        louti.remove();
-      }
-      */
+      if(fx3[i2][i1]<0f){switchIn(i3,louti,sp);}
     }
   }
+  private void switchOutSlice3(int i3, Iterator<Sample>lini,float[][] fx3) {
+    while(lini.hasNext()) {
+      Sample sp = lini.next();
+      int i1 = sp.p1;
+      int i2 = sp.p2;
+      if(fx3[i2][i1]>0f){switchOut(i3,lini,sp);}
+    }
+  }
+
 
   private void switchInSlice3(int i3, Iterator<Sample>louti) {
     while(louti.hasNext()) {
@@ -464,28 +880,6 @@ public class FastLevelSet3 {
       int i1 = sp.p1;
       int i2 = sp.p2;
       if(smoothSpeed(i1,i2,i3)>_gaussThreshold){switchIn(i3,louti,sp);}
-      /*
-      if (sp.ct<30) {
-        if(smoothSpeed(i1,i2,i3)>_gaussThreshold){switchIn(i3,louti,sp);}
-      }
-      */
-    }
-  }
-
-  private void switchOutSlice3(int i3, Iterator<Sample>lini,float[][] fx3) {
-    while(lini.hasNext()) {
-      Sample sp = lini.next();
-      int i1 = sp.p1;
-      int i2 = sp.p2;
-      if(fx3[i2][i1]>1.3f){switchOut(i3,lini,sp);}
-      /*
-      if (sp.ct<30) {
-        if(fx3[i2][i1]>0.4f){switchOut(i3,lini,sp);}
-        else {sp.ct +=1;}
-      } else {
-        lini.remove();
-      }
-      */
     }
   }
 
@@ -495,23 +889,21 @@ public class FastLevelSet3 {
       int i1 = sp.p1;
       int i2 = sp.p2;
       if(smoothSpeed(i1,i2,i3)<_gaussThreshold){switchOut(i3,lini,sp);}
-      /*
-      if(sp.ct<30) {
-        if(smoothSpeed(i1,i2,i3)<_gaussThreshold){switchOut(i3,lini,sp);}
-      }
-      */
     }
   }
 
 
-  private boolean cycleOne(float[][][] fx) {
+  private boolean cycleOne(float[][][] dp) {
     boolean converged = false;
     for (int iter=0; iter<_speedIters; iter++) {
       //outward evolution
       Iterator<Point> louti = _lout.iterator();
       while(louti.hasNext()) {
         Point pi = louti.next();
-        if(pi.fe>0) {switchIn(louti,pi);}
+        int p1 = pi.p1;
+        int p2 = pi.p2;
+        int p3 = pi.p3;
+        if(dp[p3][p2][p1]<0f) {switchIn(louti,pi);}
       }
       _lout.addAll(0,_loutAdd);
       _loutAdd.clear();
@@ -520,15 +912,16 @@ public class FastLevelSet3 {
       Iterator<Point> lini = _lin.iterator();
       while(lini.hasNext()) {
         Point pi = lini.next();
-        if(pi.fe<0) {switchOut(lini,pi);}
+        int p1 = pi.p1;
+        int p2 = pi.p2;
+        int p3 = pi.p3;
+        if(dp[p3][p2][p1]>0f) {switchOut(lini,pi);}
       }
       _lin.addAll(0,_linAdd);
       _linAdd.clear();
       cleanLout();
-      //update evolution speed and check convergence
-      updateEvolutionSpeed(fx); 
-      converged = checkConvergence();
-      if(converged) {break;}
+      //converged = checkConvergence();
+      //if(converged) {break;}
     }
     return converged;
   }
@@ -564,12 +957,11 @@ public class FastLevelSet3 {
 		int m3 = 2*gw+1;
 		int m2 = 2*gw+1;
 		int m1 = 2*gw+1;
-		int gfScale = 0;
+		float gfScale = 0;
     double sigmas = 1.0/(sigma*sigma);
     double sigmat = sigmas/sigma;
 		// Rough heuristic: scale by number of elements in filter
-		double scale1 = m1*m2*m3;
-    _gauss = new byte[m3][m2][m1];
+    _gauss = new float[m3][m2][m1];
 		// In theory could just calculate 1/8th and duplicate instead
 		for (int i3=0; i3<m3; ++i3) {
       double d3  = i3-gw;
@@ -578,8 +970,8 @@ public class FastLevelSet3 {
 			for (int i1=0; i1<m1; ++i1) {
         double d1  = i1-gw;
 				double ds = d3*d3+d2*d2+d1*d1;
-				double gf = sigmat*exp(-0.5*sigmas*ds)*scale1;
-        _gauss[i3][i2][i1]=(byte)gf;
+				float gf = (float)(sigmat*exp(-0.5*sigmas*ds));
+        _gauss[i3][i2][i1]=gf;
 				gfScale += gf;
 			}
 		}}
@@ -648,7 +1040,7 @@ public class FastLevelSet3 {
 		int d1p = min(gw+1,_n1-p1);
 		int d2p = min(gw+1,_n2-p2);
 		int d3p = min(gw+1,_n3-p3);
-		int f = 0;
+		float f = 0;
 		for(int d3=d3m; d3<d3p; ++d3) {
 		for(int d2=d2m; d2<d2p; ++d2) {
 		for(int d1=d1m; d1<d1p; ++d1) {
@@ -667,7 +1059,7 @@ public class FastLevelSet3 {
 		int d1p = min(gw+1,_n1-p1);
 		int d2p = min(gw+1,_n2-p2);
 		int d3p = min(gw+1,_n3-p3);
-		int f = 0;
+		float f = 0f;
 		for(int d3=d3m; d3<d3p; ++d3) {
 		for(int d2=d2m; d2<d2p; ++d2) {
 		for(int d1=d1m; d1<d1p; ++d1) {
@@ -1021,8 +1413,8 @@ public class FastLevelSet3 {
 	  public int p1; //1st coordinate
 	  public int p2; //2nd coordinate
 	  public int p3; //2nd coordinate
-    public int fe; //evolution speed
-    public int fs; //smooth speed
+    public float fe; //evolution speed
+    public float fs; //smooth speed
 	  /**
 	   * Constructor
 	   * @param p1 The 1st coordinate
@@ -1034,10 +1426,10 @@ public class FastLevelSet3 {
 	  	this.p3 = p3;
 	  }
 
-    public void setEvolutionSpeed(int fe) {
+    public void setEvolutionSpeed(float fe) {
       this.fe = fe;
     }
-    public void setSmoothSpeed(int fs) {
+    public void setSmoothSpeed(float fs) {
       this.fs = fs;
     }
   }

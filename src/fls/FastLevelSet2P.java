@@ -8,6 +8,7 @@ package fls;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -50,6 +51,34 @@ public class FastLevelSet2P {
       _loutsAdd[i2].clear();
     }
     _phi = fillbyte((byte)3,n1,n2);
+    initialize(c1,c2,r);
+  }
+
+  public FastLevelSet2P(int n1, int n2,int[] c1, int[] c2, int[] r) {
+    _n1 = n1;
+    _n2 = n2;
+    _lins  = new LinkedList[n2];
+    _louts = new LinkedList[n2];
+    _linsAdd  = new LinkedList[n2];
+    _loutsAdd = new LinkedList[n2];
+    for (int i2=0; i2<n2; ++i2) {
+      _lins[i2] = new LinkedList<Sample>();
+      _louts[i2] = new LinkedList<Sample>();
+      _linsAdd[i2] = new LinkedList<Sample>();
+      _loutsAdd[i2] = new LinkedList<Sample>();
+      _lins[i2].clear();
+      _louts[i2].clear();
+      _linsAdd[i2].clear();
+      _loutsAdd[i2].clear();
+    }
+    int np = c1.length;
+    _phi = fillbyte((byte)3,n1,n2);
+    for (int ip=0; ip<np; ++ip)
+      initialize(c1[ip],c2[ip],r[ip]);
+  }
+
+
+  private void initialize(int c1, int c2, int r) {
     int b1 = c1-r;
     int e1 = c1+r;
     int b2 = c2-r;
@@ -92,6 +121,7 @@ public class FastLevelSet2P {
       _lins[b2].add(new Sample(i1));
       _lins[e2].add(new Sample(i1));
     }
+
   }
 
   /**
@@ -106,21 +136,33 @@ public class FastLevelSet2P {
     _smoothIters = smoothIters;
   }
 
-  public void setEvolutionSpeed(float sf, float sb) {
-    _sf = sf;
-    _sb = sb;
+
+  public float[][] applyForDensity(float ev, float[][] el, float[][][] gs) {
+    int n3 = gs.length;
+    int n2 = gs[0].length;
+    int n1 = gs[0][0].length;
+    float[][][] dps = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3)
+      dps[i3] = density(ev,el,gs[i3]);
+    balanceDensity(dps);
+    float[][] dp = new float[n2][n1];
+    for (int i3=0; i3<n3; ++i3)
+    for (int i2=0; i2<n2; ++i2)
+    for (int i1=0; i1<n1; ++i1)
+      dp[i2][i1] += dps[i3][i2][i1];
+    return dp;
   }
 
   public float[][][] applySegments(
-    int gw, float sigma, final float[][] fx, final float[][] ft) {
-    final int n2 = fx.length;
-    final int n1 = fx[0].length;
-    final float[][] fc = copy(ft);
+    int gw, float sigma, float[][] dp, float[][] ft) {
+    int n2 = ft.length;
+    int n1 = ft[0].length;
+    float[][] fc = copy(ft);
     zero(ft);
     add(ft,4,ft);
-    final float[][][] xs = new float[2][2][];
+    float[][][] xs = new float[2][2][];
     xs[0] = getLout();
-    updateLevelSet(gw,sigma,fx);
+    updateLevelSet(gw,sigma,dp);
     xs[1] = getLout();
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
@@ -145,12 +187,12 @@ public class FastLevelSet2P {
     return new float[][]{copy(k,0,x1),copy(k,0,x2)};
   }
 
-  public void updateLevelSet(int gw, double sigma, float[][] fx) {
+  public void updateLevelSet(int gw, double sigma, float[][] dp) {
     _gWindow = gw;
     createGaussFilter(gw,sigma);
     for (int iter=0; iter<_outerIters; iter++) {
-      System.out.println("iter="+iter);
-      cycleOne(fx);
+      if(iter%50==0) System.out.println("iter="+iter);
+      cycleOne(dp);
       cycleTwo();
       //if(converged){break;}
     }
@@ -176,6 +218,93 @@ public class FastLevelSet2P {
     }}
   }
 
+  private void balanceDensity(float[][][] ds) {
+    int n3 = ds.length;
+    int n2 = ds[0].length;
+    int n1 = ds[0][0].length;
+    float[] sc = new float[n3];
+    float[] sd = new float[n3];
+    for (int i3=0; i3<n3; ++i3) {
+      float[][] d3 = ds[i3];
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        if(d3[i2][i1]<0f) {
+          sc[i3] += 1f;
+          sd[i3] += abs(d3[i2][i1]);
+        }
+      }}
+    }
+    div(sd,sc,sd);
+    float sdmax = max(sd);
+    for (int i3=0; i3<n3; ++i3) {
+      float sci = sdmax/sd[i3];
+      mul(ds[i3],sci,ds[i3]);
+    }
+
+  }
+
+
+  public float[][] density(
+    float f, float[][] fx, float[][] gx) 
+  {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[] p1 = new float[256];
+    float[] p2 = new float[256];
+    float[][] dp = new float[n2][n1];
+    int[][] gg = toGrayIntegers(gx);
+    density(f,fx,gg,p1,p2);
+    for (int i2=1; i2<n2-1; ++i2) {
+    for (int i1=1; i1<n1-1; ++i1) {
+      int ggi = gg[i2][i1];
+      float di = log(p2[ggi])-log(p1[ggi]);
+      if(Float.isNaN(di)) {continue;}
+      if(Float.isInfinite(di)) {continue;}
+      dp[i2][i1] = di;
+    }}
+    return dp;
+  }
+
+  public void density(float f, float[][] fx, 
+    int[][] gx, float[] p1, float[] p2) {
+    float c1 = 0f;
+    float c2 = 0f;
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      int gxi = gx[i2][i1];
+      float fxi = fx[i2][i1];
+      if(fxi<f) {
+        c1 += 1f;
+        p1[gxi] += 1f;
+      } else {
+        c2 += 1f;
+        p2[gxi] += 1f;
+      }
+    }}
+    div(p1,c1,p1);
+    div(p2,c2,p2);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
+    rgf.apply0(p1,p1);
+    rgf.apply0(p2,p2);
+  }
+
+  private int[][] toGrayIntegers(float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    int[][] gx = new int[n2][n1];
+    fx = sub(fx,min(fx));
+    float fmax = 255f/max(fx);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gx[i2][i1] = round(fx[i2][i1]*fmax);
+    }}
+    return gx;
+  }
+
+
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private
@@ -188,8 +317,6 @@ public class FastLevelSet2P {
   private int _outerIters = 100;
   private int _speedIters = 10;
   private int _smoothIters = 5;
-  private float _sf=0.5f;
-  private float _sb=0.5f;
   LinkedList<Sample>[] _lins;
   LinkedList<Sample>[] _louts;// = (ArrayList<Sample>[])new ArrayList[];
   LinkedList<Sample>[] _linsAdd;
@@ -358,7 +485,7 @@ public class FastLevelSet2P {
     while(louti.hasNext()) {
       Sample sp = louti.next();
       int i1 = sp.p1;
-      if(fx2[i1]<_sf){switchIn(i2,louti,sp);}
+      if(fx2[i1]<0){switchIn(i2,louti,sp);}
     }
   }
 
@@ -374,7 +501,7 @@ public class FastLevelSet2P {
     while(lini.hasNext()) {
       Sample sp = lini.next();
       int i1 = sp.p1;
-      if(fx2[i1]>_sb){switchOut(i2,lini,sp);}
+      if(fx2[i1]>0){switchOut(i2,lini,sp);}
     }
   }
 
