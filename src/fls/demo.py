@@ -22,6 +22,7 @@ u1file  = "u1" # eigenvalue-derived planarity
 u2file  = "u2" # eigenvalue-derived planarity
 u3file  = "u3" # eigenvalue-derived planarity
 gefile  = "ge" # eigenvalue-derived planarity
+dpfile  = "dp" # eigenvalue-derived planarity
 epfile  = "ep" # eigenvalue-derived planarity
 sffile  = "sf" # salt indicator function
 mkfile  = "mk" # mask file
