@@ -68,6 +68,27 @@ public class LevelSet2 {
     return phi;
   }
 
+  public void applyForInsAmp(
+    final float[][] fx, final float[][] pa){
+    final int n2 = fx.length;
+    final int n1 = fx[0].length; 
+    final HilbertTransformFilter hbt = new HilbertTransformFilter();
+    Parallel.loop(n2,new Parallel.LoopInt() {
+      public void compute(int i2) {
+      float[] fi = new float[n1];
+      hbt.apply(n1,fx[i2],fi);
+      for (int i1=0; i1<n1; i1++){
+        float fxi = fi[i1];
+        float fxr = fx[i2][i1];
+        float pai = sqrt(fxr*fxr+fxi*fxi);
+        if(Float.isInfinite(pai)||Float.isNaN(pai)){
+          pa[i2][i1] = 0f;
+        } else { pa[i2][i1] = pai; }
+      }
+    }}); 
+  }
+
+
   public int[][] toGrayIntegers(float[][] fx) {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -244,13 +265,13 @@ public class LevelSet2 {
     ContourFinder.Contour ct = cf.findContour(0,s1,s2,ph);
     float[][][] ps = ct.getCoords();
     int nc = ps.length;
-    float[][][] bs = bandSample(r,d,ps,ph,g1,g2,fx);
+    float[][] fn = sub(fx,min(fx));
+    div(fn,max(fn),fn);
+    float[][][] bs = bandSample(r,d,ps,ph,g1,g2,fn);
     SincInterpolator si = new SincInterpolator();
     for (int ic=0; ic<nc; ++ic) {
       int m2 = bs[ic].length;
       int m1 = bs[ic][0].length;
-      sub(bs[ic],min(bs[ic]),bs[ic]);
-      div(bs[ic],max(bs[ic]),bs[ic]);
       OptimalPathPicker opp = new OptimalPathPicker(20,1.0f);
       float[][] ft = opp.applyTransform(bs[ic]);
       float[][] wht = opp.applyForWeight(ft);
@@ -319,6 +340,10 @@ public class LevelSet2 {
     int nc = ps.length;
     float[][][] fbs = new float[nc][][];
     SincInterpolator si = new SincInterpolator();
+    float sig=20f;
+    float pi = (float)Math.PI;
+    float sigs = sig*sig;
+    float gaus = 1f/sqrt(2f*sigs*pi);
     for (int ic=0; ic<nc; ++ic) {
       float[] x1s = ps[ic][0];
       float[] x2s = ps[ic][1];
@@ -332,26 +357,37 @@ public class LevelSet2 {
         float gsi = sqrt(g1i*g1i+g2i*g2i);
         g1i /= gsi;
         g2i /= gsi;
-        fbs[ic][ip][r] = si.interpolate(s1,s2,fx,x1i,x2i);
+        fbs[ic][ip][r] = si.interpolate(s1,s2,fx,x1i,x2i)*gaus;
         for (int ir=1; ir<=r; ++ir) {
-          float y1i = x1i+g1i*ir*d;
-          float y2i = x2i+g2i*ir*d;
-          float phi = si.interpolate(s1,s2,ph,y1i,y2i);
+          float ird = ir*d;
+          float y1i = x1i+g1i*ird;
+          float y2i = x2i+g2i*ird;
           float fxi = si.interpolate(s1,s2,fx,y1i,y2i);
-          fbs[ic][ip][ir+r]=fxi;
-          //if (phi>0f){fbs[ic][ip][ir+r]=fxi;}
-          //else {fbs[ic][ip][ir+r]=-10f;}
+          float g1r = si.interpolate(s1,s2,g1,y1i,y2i);
+          float g2r = si.interpolate(s1,s2,g2,y1i,y2i);
+          float gui = exp(-0.5f*ird*ird/sigs);
+          fxi *= gui*gaus;
+          //fbs[ic][ip][ir+r]=fxi;
+          if (g1i*g1r+g2i*g2r>0f){fbs[ic][ip][ir+r]=fxi;}
+          else {fbs[ic][ip][ir+r]=0f;}
         }
         for (int ir=-r; ir<=-1; ++ir) {
-          float y1i = x1i+g1i*ir*d;
-          float y2i = x2i+g2i*ir*d;
-          float phi = si.interpolate(s1,s2,ph,y1i,y2i);
+          float ird = ir*d;
+          float y1i = x1i+g1i*ird;
+          float y2i = x2i+g2i*ird;
+          //float phi = si.interpolate(s1,s2,ph,y1i,y2i);
           float fxi = si.interpolate(s1,s2,fx,y1i,y2i);
-          fbs[ic][ip][ir+r]=fxi;
-          //if (phi<0f){fbs[ic][ip][ir+r]=fxi;}
-          //else {fbs[ic][ip][ir+r]=-10f;}
+          float g1r = si.interpolate(s1,s2,g1,y1i,y2i);
+          float g2r = si.interpolate(s1,s2,g2,y1i,y2i);
+          float gui = exp(-0.5f*ird*ird/sigs);
+          fxi *= gui*gaus;
+          //fbs[ic][ip][ir+r]=fxi;
+          if (g1i*g1r+g2i*g2r>0f){fbs[ic][ip][ir+r]=fxi;}
+          else {fbs[ic][ip][ir+r]=0f;}
         }
       }
+      sub(fbs[ic],min(fbs[ic]),fbs[ic]);
+      div(fbs[ic],max(fbs[ic]),fbs[ic]);
     }
     return fbs;
   }

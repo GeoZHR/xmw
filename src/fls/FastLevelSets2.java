@@ -79,6 +79,32 @@ public class FastLevelSets2 {
   }
 
   public float[][][][] applySegments(
+    int gw, float sigma, final float[][] el, 
+    final float[][] fx, final float[][] p2, final float[][] ph) {
+    final int np = _c1.length;
+    final int n2 = fx.length;
+    final int n1 = fx[0].length;
+    zero(ph);
+    add(ph,3,ph);
+    final float[][][][] xs = new float[2][np][2][];
+    Parallel.loop(np,new Parallel.LoopInt() {
+    public void compute(int ip) {
+      System.out.println("ip="+ip);
+      FastLevelSet2 ls = new FastLevelSet2(n1,n2,_c1[ip],_c2[ip],_r[ip]);
+      xs[0][ip] = ls.getLout();
+      ls.setIterations(_outerIters,_speedIters,_smoothIters);
+      ls.updateLevelSet(gw,sigma,el,fx,p2);
+      xs[1][ip] = ls.getLout();
+      float[][] phi = ls.getPhi();
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        if(phi[i2][i1]<=1) {ph[i2][i1] = phi[i2][i1];}
+      }}
+    }});
+    return xs;
+  }
+
+  public float[][][][] applySegments(
     int gw, float sigma, final float[][] fx, final float[][] ph) {
     final int np = _c1.length;
     final int n2 = fx.length;
