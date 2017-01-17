@@ -21,11 +21,11 @@ p3file  = "p3" # eigenvalue-derived planarity
 u1file  = "u1" # eigenvalue-derived planarity
 u2file  = "u2" # eigenvalue-derived planarity
 u3file  = "u3" # eigenvalue-derived planarity
-gafile  = "ga" # eigenvalue-derived planarity
+gefile  = "ge" # eigenvalue-derived planarity
 epfile  = "ep" # eigenvalue-derived planarity
 sffile  = "sf" # salt indicator function
 mkfile  = "mk" # mask file
-phdfile = "phd"
+phfile  = "ph"
 phdxfile = "phdx"
 sfcfile  = "sfc" # salt indicator function with constraints
 
@@ -36,9 +36,10 @@ pngDir = False
 plotOnly = False
 
 def main(args):
-  goPlanarity()
+  #goPlanarity()
   #goDlsSub()
-  #goDensity()
+  goEnvelope()
+  goDensity()
   #goFlsSub()
   #goFls()
   #goCh()
@@ -73,39 +74,46 @@ def goPlanarity():
   lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
   writeImage(epfile,ep)
 
-def goDensity():
+def goEnvelope():
   gx = readImage(gxfile)
   rgf = RecursiveGaussianFilter(2)
   rgf.apply000(gx,gx)
-  pa = zerofloat(n1,n2,n3)
-  FastLevelSet3.applyForInsAmp(gx,pa)
+  ge = zerofloat(n1,n2,n3)
+  FastLevelSet3.applyForInsAmp(gx,ge)
+  writeImage(gefile,ge)
   plot3(gx)
-  plot3(pa,cmin=min(pa),cmax=max(pa)/2)
+  plot3(pa,cmin=min(ge),cmax=max(ge)/2)
+def goDensity():
+  ge = readImage(gefile)
+  ep = readImage(epfile)
+  c1 = [287]
+  c2 = [307]
+  c3 = [460]
+  rs = [ 10]
+  fls = FastLevelSet3(n1,n2,n3,c1[0],c2[0],c3[0],rs[0])
+  dp = fls.density(0.5,ep,ge)
+  writeImage(dpfile,dp)
+  plot3(gx)
+  plot3(dp,cmin=0,cmax=1)
 def goFlsSub():
   gx = readImage(gxfile)
   if not plotOnly:
-    #p2 = readImage(p2file)
-    #p3 = readImage(p3file)
-    ga = readImage(gafile)
+    ge = readImage(gefile)
     ep = readImage(epfile)
     c1 = [287]
     c2 = [307]
     c3 = [460]
     rs = [ 10]
     fls = FastLevelSet3(n1,n2,n3,c1[0],c2[0],c3[0],rs[0])
-    dp = fls.density(0.5,ep,ga)
+    dp = fls.density(0.5,ep,ge)
     fls.setIterations(120,6,3)
     fls.updateLevelSet(9,5,dp)
-    #ph = readImage(phdfile)
-    #fls.updateLevelSet(9,5,dp,ph)
     ph = fls.getPhi()
-    writeImage(phdxfile,ph)
+    writeImage(phfile,ph)
   else:
-    ph = readImage(phdxfile)
-  #plot3(ph)
+    ph = readImage(phfile)
   plot3(dp,cmin=0,cmax=1)
   plot3(gx,fbs=ph,png="seisSalt")
-  #plot3(gx)
 
 def goDlsSub():
   gx = readImage(gxfile)

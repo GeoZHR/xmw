@@ -92,7 +92,9 @@ def goSlopeVector():
   #flt = pow(flt,0.5)
   #et = pow(et,0.5)
   plot(et,cmin=0.01,cmax=1,cint=1.0,label="Amplitude",png="fxv")
+  plot(el,cmap=ColorMap.JET,cmin=0.01,cmax=0.4,cint=1.0,label="Amplitude",png="fxv")
   plot(es,cmap=ColorMap.JET,cmin=0.01,cmax=0.4,cint=1.0,label="Amplitude",png="fxv")
+  '''
   #plot(fx,et,cmap=jetFillExceptMin(1.0),cmin=0.01,cmax=1,cint=1.0)
   plot(fx,flt,cmap=jetFillExceptMin(1.0),cmin=0.01,cmax=1.0,cint=1.0)
   ets = EigenTensors2(u1,u2,au,av)
@@ -112,6 +114,7 @@ def goSlopeVector():
   ft = foe.thin(0.15,fl)
   plot(fl,cmap=ColorMap.JET,cmin=0.01,cmax=0.6,cint=1.0,label="Amplitude",png="fxv")
   plot(fx,ft,cmap=jetFillExceptMin(1.0),cmin=0.01,cmax=0.6,cint=1.0)
+  '''
 
 def goLinearDiffusion():
   fx = readImage(fxfile)
