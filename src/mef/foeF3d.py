@@ -107,6 +107,7 @@ def goFaultSemblance():
   lsf = LocalSmoothingFilter()
   sn = zerofloat(n1,n2,n3)
   sd = zerofloat(n1,n2,n3)
+  '''
   lsf.apply(ets,4,gx,sn) 
   sn = pow(sn,2)
   fs = pow(gx,2)
@@ -119,11 +120,16 @@ def goFaultSemblance():
   fl = pow(fl,6)
   fl = sub(1,fl)
   flt = foe.thin(0.15,fl)
+  '''
+  lsf.apply(etf,80,sem,sd) 
   plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
+  plot3(gx,sd,cmin=0.1,cmax=0.6,cmap=jetRamp(1.0),clab="Semblance")
+  '''
   plot3(gx,fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0),
         clab="Fault-oriented semblance",png="efa")
   plot3(gx,semt,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
   plot3(gx,flt,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Fault-oriented semblance")
+  '''
 
 
 
