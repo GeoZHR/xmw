@@ -82,7 +82,7 @@ def goEnvelope():
   FastLevelSet3.applyForInsAmp(gx,ge)
   writeImage(gefile,ge)
   plot3(gx)
-  plot3(pa,cmin=min(ge),cmax=max(ge)/2)
+  plot3(ge,cmin=min(ge),cmax=max(ge)/2)
 def goDensity():
   ge = readImage(gefile)
   ep = readImage(epfile)
