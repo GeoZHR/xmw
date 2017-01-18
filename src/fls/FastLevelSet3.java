@@ -38,7 +38,7 @@ public class FastLevelSet3 {
    * @param r  the radius.
    */
   public FastLevelSet3(int n1, int n2, int n3, 
-    int c1, int c2, int c3, int r) 
+    int[] c1, int[] c2, int[] c3, int[] r) 
   {
     _n1 = n1;
     _n2 = n2;
@@ -58,6 +58,12 @@ public class FastLevelSet3 {
       _loutsAdd[i3].clear();
     }
     _phi = fillbyte((byte)3,n1,n2,n3);
+    int np = c1.length;
+    for (int ip=0; ip<np; ++ip)
+      initialize(c1[ip],c2[ip],c3[ip],r[ip]);
+  }
+
+  public void initialize(int c1, int c2, int c3, int r) {
     int b1 = c1-r;
     int e1 = c1+r;
     int b2 = c2-r;
@@ -150,6 +156,7 @@ public class FastLevelSet3 {
     }}
   }
 
+
   static public float[][][] downSample(int d1, int d2, int d3, float[][][] fx) {
     int m1 = 0;
     int m2 = 0;
@@ -209,7 +216,8 @@ public class FastLevelSet3 {
     }
   }
 
-  public void updateLevelSet(int gw, double sigma, float[][][] dp, float[][][] ph) {
+  public void updateLevelSet(
+    int gw, double sigma, float[][][] dp, float[][][] ph) {
     _gWindow = gw;
     createGaussFilter(gw,sigma);
     initialize(ph);

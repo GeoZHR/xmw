@@ -39,9 +39,9 @@ plotOnly = False
 def main(args):
   #goPlanarity()
   #goDlsSub()
-  goEnvelope()
-  goDensity()
-  #goFlsSub()
+  #goEnvelope()
+  #goDensity()
+  goFlsSub()
   #goFls()
   #goCh()
 
@@ -87,27 +87,28 @@ def goEnvelope():
 def goDensity():
   ge = readImage(gefile)
   ep = readImage(epfile)
-  c1 = [287]
-  c2 = [307]
-  c3 = [460]
-  rs = [ 10]
+  c1 = [133,235]
+  c2 = [384,978]
+  c3 = [400,266]
+  rs = [ 10, 10]
   fls = FastLevelSet3(n1,n2,n3,c1[0],c2[0],c3[0],rs[0])
   dp = fls.density(0.5,ep,ge)
   writeImage(dpfile,dp)
-  plot3(gx)
-  plot3(dp,cmin=0,cmax=1)
+  plot3(ge,cmin=min(ge),cmax=max(ge)/2)
+  plot3(dp,cmin=0.001,cmax=1)
 def goFlsSub():
   gx = readImage(gxfile)
   if not plotOnly:
-    ge = readImage(gefile)
-    ep = readImage(epfile)
-    c1 = [287]
-    c2 = [307]
-    c3 = [460]
-    rs = [ 10]
-    fls = FastLevelSet3(n1,n2,n3,c1[0],c2[0],c3[0],rs[0])
-    dp = fls.density(0.5,ep,ge)
-    fls.setIterations(120,6,3)
+    dp = readImage(dpfile)
+    #ge = readImage(gefile)
+    #ep = readImage(epfile)
+    c1 = [133,235]
+    c2 = [384,978]
+    c3 = [400,266]
+    rs = [ 10, 10]
+    fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,rs)
+    #dp = fls.density(0.5,ep,ge)
+    fls.setIterations(20,6,3)
     fls.updateLevelSet(9,5,dp)
     ph = fls.getPhi()
     writeImage(phfile,ph)
