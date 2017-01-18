@@ -108,13 +108,14 @@ def goFlsSub():
     rs = [ 10, 10]
     fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,rs)
     #dp = fls.density(0.5,ep,ge)
-    fls.setIterations(20,6,3)
+    fls.setIterations(120,6,3)
     fls.updateLevelSet(9,5,dp)
     ph = fls.getPhi()
     writeImage(phfile,ph)
   else:
     ph = readImage(phfile)
-  plot3(dp,cmin=0,cmax=1)
+    #dp = readImage(dpfile)
+  #plot3(dp,cmin=0,cmax=1)
   plot3(gx,fbs=ph,png="seisSalt")
 
 def goDlsSub():
