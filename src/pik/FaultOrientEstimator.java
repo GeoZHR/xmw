@@ -15,6 +15,7 @@ limitations under the License.
 package pik;
 
 import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.util.Check;
 import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import java.util.*;
@@ -143,6 +144,23 @@ public class FaultOrientEstimator {
       }
     }}}
     return ft;
+  }
+
+  public float[][][] faultStrikeFromNormalVector(
+    float[][][] u1, float[][][] u2, float[][][] u3) {
+    int n3 = u1.length;
+    int n2 = u1[0].length;
+    int n1 = u1[0][0].length;
+    float[][][] phi = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float u1i = -u1[i3][i2][i1];
+      float u2i = -u2[i3][i2][i1];
+      float u3i = -u3[i3][i2][i1];
+      phi[i3][i2][i1] = faultStrikeFromNormalVector(u1i,u2i,u3i);
+    }}}
+    return phi;
   }
 
 
@@ -511,6 +529,49 @@ public class FaultOrientEstimator {
       }
     });
   }
+
+
+  /**
+   * Returns fault strike angle for specified fault normal vector.
+   * The components w2 and w3 must not both be zero; that is, the
+   * fault plane cannot be horizontal.
+   * @param u1 1st component of fault normal vector.
+   * @param u2 2nd component of fault normal vector.
+   * @param u3 3rd component of fault normal vector.
+   * @return fault strike angle, in degrees.
+   */
+  public static float faultStrikeFromNormalVector(
+      float u1, float u2, float u3) {
+    Check.argument(u2!=0.0f || u3!=0.0f,"normal vector is not vertical");
+    return range360(toDegrees(atan2(-u3,u2)));
+  }
+
+  /**
+   * Returns fault dip angle for specified fault normal vector.
+   * @param w1 1st component of fault normal vector.
+   * @param w2 2nd component of fault normal vector.
+   * @param w3 3rd component of fault normal vector.
+   * @return fault dip angle, in degrees.
+   */
+  public static float faultDipFromNormalVector(float u1, float u2, float u3) {
+    return toDegrees(acos(-u1));
+  }
+
+  /**
+   * Returns angle in range [0,360] degrees.
+   * @param phi angle, in degrees.
+   * @return angle in range [0,360] degrees.
+   */
+  public static float range360(double phi) {
+    while (phi<0.0)
+      phi += 360.0;
+    while (phi>=360.0)
+      phi -= 360.0;
+    return (float)phi;
+  }
+
+
+
 
   ///////////////////////////////////////////////////////////////////////////
   // private
