@@ -116,6 +116,7 @@ def goFlsSub():
     ph = readImage(phfile)
     #dp = readImage(dpfile)
   #plot3(dp,cmin=0,cmax=1)
+  plot3(gx)
   plot3(gx,fbs=ph,png="seisSalt")
 
 def goDlsSub():
