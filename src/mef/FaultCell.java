@@ -111,6 +111,15 @@ public class FaultCell implements Serializable {
     return new float[]{v1,v2,v3};
   }
 
+  public void setNum(float num) {
+    this.num = num;
+  }
+
+  public void setDen(float den) {
+    this.den = den;
+  }
+
+
   public int getM1() {
     return i1;
   }
@@ -369,6 +378,22 @@ public class FaultCell implements Serializable {
   }
 
   /**
+   * Gets the 2nd component of the normal vector for this cell.
+   * @return the 2nd component.
+   */
+  public float getV2() {
+    return v2;
+  }
+
+  /**
+   * Gets the 3rd component of the normal vector for this cell.
+   * @return the 3rd component.
+   */
+  public float getV3() {
+    return v3;
+  }
+
+  /**
    * Returns an array of packed (x,y,z) coordinates for a fault curve.
    * The fault curve is everywhere tangent to fault dip, and contains the
    * point for this cell. Returned coordinates are in above-to-below order.
@@ -508,7 +533,7 @@ public class FaultCell implements Serializable {
   float w11,w12,w13,w22,w23,w33;
   float u11,u12,u13,u22,u23,u33;
   float v11,v12,v13,v22,v23,v33;
-  FaultCell ca,cb,cl,cr; // nabors above, below, left and right
+  public FaultCell ca,cb,cl,cr; // nabors above, below, left and right
   FaultSkin skin; // if not null, the skin to which this cell belongs
   int i2m,i2p; // sample indices i2 for minus and plus sides of cell
   int i3m,i3p; // sample indices i3 for minus and plus sides of cell
@@ -517,15 +542,18 @@ public class FaultCell implements Serializable {
   float s1,s2,s3; // fault dip-slip vector
   float r1,r2,r3; // fault dip-slip vector
   float t1,t2,t3; // fault dip-slip vector
+  public float num = 0f;
+  public float den = 0f;
+  public float flr = 0f;
   boolean interp;
   boolean notUsed;
   boolean intersect;
   boolean needInterp;
 
-  interface Get1 { public float get(FaultCell cell); }
-  interface GetN { public float[] get(FaultCell cell); }
-  interface Set1 { public void set(FaultCell cell, float value); }
-  interface SetN { public void set(FaultCell cell, float[] values); }
+  public interface Get1 { public float get(FaultCell cell); }
+  public interface GetN { public float[] get(FaultCell cell); }
+  public interface Set1 { public void set(FaultCell cell, float value); }
+  public interface SetN { public void set(FaultCell cell, float[] values); }
 
   public FaultCell(float x1, float x2, float x3, float fl, float fp, float ft) {
     set(x1,x2,x3,fl,fp,ft);
