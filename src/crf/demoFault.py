@@ -45,6 +45,9 @@ fpsfile = "fps"
 hl1file = "hl1"
 hu1file = "hu1"
 hm1file = "hm1"
+u1file = "u1"
+u2file = "u2"
+u3file = "u3"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -74,6 +77,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goPlanar()
+  goSeisNormal()
   #goMask()
   #goFaultScan()
   #goThin()
@@ -81,7 +85,7 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
-  goFaultImages()
+  #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
   #goFaultPointsScale()
@@ -100,6 +104,17 @@ def main(args):
   #goPointsCheck()
   #goReskin()
   #goSkinDisplay()
+
+def goSeisNormal():
+  fx = readImage(gsxfile)
+  lof = LocalOrientFilter(4,2,2)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  lof.applyForNormals(fx,u1,u2,u3)
+  writeImage(u1file,u1)
+  writeImage(u2file,u2)
+  writeImage(u3file,u3)
 
 def goReskin():
   sks = readSkins(fsktv)
