@@ -31,7 +31,6 @@ def main(args):
   #goNwc()
   #goShengwen()
   #goPoseidon()
-<<<<<<< HEAD
   #goParihaka()
   #goTj()
   #goBag()

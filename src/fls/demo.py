@@ -7,10 +7,7 @@ Version: 2015.12.19
 from utils import *
 
 #setupForSubset("ch3d")
-<<<<<<< HEAD
 #setupForSubset("seam3d")
-=======
->>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 setupForSubset("seam3dSub")
 setupForSubset("seam3d")
 s1,s2,s3 = getSamplings()
@@ -41,14 +38,11 @@ pngDir = getPngDir()
 pngDir = "../../../png/fls/seam/3d/"
 pngDir = False
 
-<<<<<<< HEAD
 plotOnly = False
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
 sigmaPhi,sigmaTheta = 4,20
-=======
 plotOnly = True
->>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 
 def main(args):
   #goPlanarity()
@@ -58,7 +52,6 @@ def main(args):
   #goFlsSub()
   #goFls()
   #goCh()
-<<<<<<< HEAD
   #goSlopes()
   goSmooth()
 

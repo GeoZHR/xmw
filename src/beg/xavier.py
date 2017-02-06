@@ -50,7 +50,6 @@ def main(args):
   #goCoherence()
   #goCoherenceEnhance()
   #goSemblance()
-<<<<<<< HEAD
   #gx = readImage(gxfile)
   #plot3(gx)
   goWriteAsciiHorizons()
@@ -66,14 +65,6 @@ def goWriteAsciiHorizons():
   for ip in range(10):
     name = seisDir+"horizon"+str(ip)+".xyz"
     hp.writeAsciiHorizon(name,ha[ip])
-=======
-  gx = readImage(gxfile)
-  gs = zerofloat(n1,n3)
-  for i3 in range(n3):
-    gs[i3] = gx[i3][666]
-  writeImage("gx666",gs)
-  plot3(gx)
->>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 def goNonlinearDiffusion():
   gx = readImage(gxfile)
   if not plotOnly:
