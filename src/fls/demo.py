@@ -7,8 +7,12 @@ Version: 2015.12.19
 from utils import *
 
 #setupForSubset("ch3d")
+<<<<<<< HEAD
 #setupForSubset("seam3d")
+=======
+>>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 setupForSubset("seam3dSub")
+setupForSubset("seam3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
@@ -37,10 +41,14 @@ pngDir = getPngDir()
 pngDir = "../../../png/fls/seam/3d/"
 pngDir = False
 
+<<<<<<< HEAD
 plotOnly = False
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
 sigmaPhi,sigmaTheta = 4,20
+=======
+plotOnly = True
+>>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 
 def main(args):
   #goPlanarity()
@@ -50,6 +58,7 @@ def main(args):
   #goFlsSub()
   #goFls()
   #goCh()
+<<<<<<< HEAD
   #goSlopes()
   goSmooth()
 
@@ -115,6 +124,8 @@ def goScan():
       clab="Fault dip (degrees)",png="ft")
 
 
+=======
+>>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 def goCh():
   gx = readImage(gxfile)
   gx = pow(gx,2.0)
@@ -150,19 +161,19 @@ def goPlanarity():
 
 def goEnvelope():
   gx = readImage(gxfile)
-  rgf = RecursiveGaussianFilter(2)
+  rgf = RecursiveGaussianFilter(1)
   rgf.apply000(gx,gx)
   ge = zerofloat(n1,n2,n3)
   FastLevelSet3.applyForInsAmp(gx,ge)
-  writeImage(gefile,ge)
-  plot3(gx)
+  #writeImage(gefile,ge)
+  plot3(gx,cmin=min(gx)/2,cmax=max(gx)/2)
   plot3(ge,cmin=min(ge),cmax=max(ge)/2)
 def goDensity():
   ge = readImage(gefile)
   ep = readImage(epfile)
-  c1 = [133,235]
-  c2 = [384,978]
-  c3 = [400,266]
+  c1 = [133,250]
+  c2 = [384,888]
+  c3 = [400,390]
   rs = [ 10, 10]
   fls = FastLevelSet3(n1,n2,n3,c1[0],c2[0],c3[0],rs[0])
   dp = fls.density(0.5,ep,ge)
@@ -187,8 +198,8 @@ def goFlsSub():
     writeImage(phfile,ph)
   else:
     ph = readImage(phfile)
-    #dp = readImage(dpfile)
-  #plot3(dp,cmin=0,cmax=1)
+    dp = readImage(dpfile)
+  plot3(dp,cmin=0,cmax=1)
   plot3(gx)
   plot3(gx,fbs=ph,png="seisSalt")
 

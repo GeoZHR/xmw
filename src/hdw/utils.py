@@ -9,6 +9,7 @@ from common import *
 # Internal constants
 
 _datdir = "../../../data/seis/pik/"
+_datdir = "../../../data/seis/hdw/"
 _pngdir = "../../../png/pik/"
 
 #############################################################################
@@ -47,17 +48,78 @@ def setupForSubset(name):
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
     n3,d3,f3 = 1,1,1
     s3 = Sampling(n3,d3,f3)
-  elif name=="fd2":
-    """ fd2 """
-    print "setupForSubset: fd2"
+  elif name=="nwc1":
+    """ nwc1 """
+    print "setupForSubset: nwc1"
     pngDir = _pngdir+"fd/"
-    seismicDir = _datdir+"fd/"
-    n1,n2 = 442,951
+    seismicDir = _datdir+"nwc/"
+    n1,n2 = 651,601
     d1,d2 = 1.0,1.0 
     f1,f2 = 0.0,0.0
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
     n3,d3,f3 = 1,1,1
     s3 = Sampling(n3,d3,f3)
+  elif name=="nwc2":
+    """ nwc1 """
+    print "setupForSubset: nwc1"
+    pngDir = _pngdir+"fd/"
+    seismicDir = _datdir+"nwc/"
+    n1,n2 = 651,401
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="fd2":
+    """ fd2 """
+    print "setupForSubset: fd2"
+    pngDir = _pngdir+"fd/"
+    seismicDir = _datdir+"fd/"
+    #n1,n2 = 442,951
+    n1,n2 = 202,600
+    n1,n2 = 447,951
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="bahamas":
+    """ fd2 """
+    print "setupForSubset: bahamas"
+    pngDir = _pngdir+"bahamas/"
+    seismicDir = _datdir+"bahamas/"
+    #n1,n2 = 442,951
+    n1,n2 = 280,4320
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+
+  elif name=="lulia":
+    """ lulia """
+    print "setupForSubset: lulia"
+    pngDir = _pngdir+"lulia/"
+    seismicDir = _datdir+"lulia/"
+    n1,n2 = 876,780
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+
+  elif name=="tp2":
+    """ pt2 """
+    print "setupForSubset: tp2"
+    pngDir = _pngdir+"fd/"
+    seismicDir = "../../../data/seis/tpd/"
+    n1,n2 = 251,337
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+
   elif name=="dgb":
     """ dgb """
     print "setupForSubset: dgb"

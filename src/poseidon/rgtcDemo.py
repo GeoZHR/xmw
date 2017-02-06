@@ -25,7 +25,7 @@ from poseidon import *
 from util import *
 
 # Names and descriptions of image files used below.
-gxfile  = "gx" # input image
+gxfile  = "gxfull" # input image
 gtfile  = "gt" # RGT volume
 grfile  = "gr" # resampled RGT volume
 ghfile  = "gh" # horizon volume
@@ -39,6 +39,7 @@ epmfile  = "epm" # eigenvalue-derived planarity
 
 #s1 = Sampling(241,1,0)
 s1 = Sampling(120,1,0) #copy(120,n2,n3,40,0,0,gx)
+s1 = Sampling(311,1,0)
 s2 = Sampling(1399,1,0)
 s3 = Sampling(923,1,0)
 
@@ -47,7 +48,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 
 pngDir = "../../../png/poseidon/sub/"
-seismicDir = "../../../data/seis/poseidon/sub/"
+seismicDir = "../../../data/seis/poseidon/"
 #pngDir = "../../../png/dgb/subset/"
 #seismicDir = "../../../data/seis/dgb/subset/"
 #pngDir = None
@@ -79,7 +80,7 @@ def main(args):
   #goFlatten()
   #goFlattenC()
   gx = readImage(gxfile)
-  plot3(gx)
+  plot3(gx,cmin=min(gx)/10,cmax=max(gx)/10)
 
 
 def goSlopes():

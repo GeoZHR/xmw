@@ -31,6 +31,7 @@ def main(args):
   #goNwc()
   #goShengwen()
   #goPoseidon()
+<<<<<<< HEAD
   #goParihaka()
   #goTj()
   #goBag()
@@ -110,6 +111,10 @@ def goBag():
     show3d(xs,clip=max(xs)/10)
 
 
+=======
+  goParihaka()
+  #goTj()
+>>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 def goTj():
   """
   ***************************************************************************
@@ -358,6 +363,7 @@ def goParihaka():
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,1167,4200,5325,1735,2657
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -372,6 +378,7 @@ def goParihaka():
     scale = 1.00
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
+  '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     gain(100,x)
@@ -734,7 +741,7 @@ def goSeamDepth():
   '''
   firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
-  writeImage = False # reads all traces, writes an image
+  writeImage = True# reads all traces, writes an image
   showImage = True # displays the image
   basedir = "../../../data/seis/seam/depth/"
   sgyfile = basedir+"SEAM_Interpretation_Challenge_1_Depth.sgy"
@@ -742,7 +749,6 @@ def goSeamDepth():
   #i1min,i1max,i2min,i2max,i3min,i3max = 0,750,1499,8507,1499,7505
   i1min,i1max,i2min,i2max,i3min,i3max = 0,750,0,1168,0,1001
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
-  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -757,11 +763,10 @@ def goSeamDepth():
     scale = 1.00
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,6,6)
   si.close()
-  '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
-    gain(100,x)
-    writeImageX("x352",x[352])
+    #gain(100,x)
+    #writeImageX("x352",x[352])
     show3d(x,clip=max(x)/5)
 
 def goSeamTime():
@@ -803,6 +808,7 @@ def goSeamTime():
   #i1min,i1max,i2min,i2max,i3min,i3max = 0,850,1499,8507,1499,7505
   i1min,i1max,i2min,i2max,i3min,i3max = 0,850,0,1168,0,1001
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -817,6 +823,7 @@ def goSeamTime():
     scale = 1.00
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,6,6)
   si.close()
+  '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     gain(100,x)
@@ -1688,7 +1695,7 @@ def goF3d():
   '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
-    writeImageX("fx126.dat",x[126])
+    writeImageX("fx172.dat",x[172])
     show3d(x,clip=max(x)/10)
 
 def writeImageX(basename,image):

@@ -10,18 +10,59 @@ from utils2d import *
 #setupForSubset("fake")
 #setupForSubset("tccs")
 setupForSubset("sigmoid")
+setupForSubset("benxin")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 f1,f2 = s1.getFirst(),s2.getFirst()
 d1,d2 = s1.getDelta(),s2.getDelta()
 
-pngDir = getPngDir()
 pngDir = None
+pngDir = getPngDir()
 
+label1,label2 = None,None
 gxfile = "gx" # for pnz/tccs data
 
 def main(args):
-  goDw()
+  #goDw()
+  goWarp()
+
+def goWarp():
+  global nrms,esmooth,usmooth,shiftMax
+  nrms = 0.0
+  esmooth = 2
+  usmooth = 1.0
+  strainMax1 = 0.25
+  strainMax2 = 0.25
+  esmooth = 0
+  shiftMax = 120
+  shift = shiftMax
+  mlag = 2*shift
+  
+  uclips = (0,shift*2)
+  uclips = (0,120)
+  dw = DynamicWarping(0,mlag)
+  dw.setStrainMax(strainMax1,strainMax2)
+  dw.setErrorSmoothing(esmooth)
+  f = readImage("501")
+  g = readImage("502")
+  n1,n2 = s1.count,s2.count
+  f = gain(f)
+  g = gain(g)
+  print min(f)
+  print max(f)
+  fclips = (-.0005,.0005)
+  fclips = (-.5,.5)
+  plot2X(f,g,fclips,label="Amplitude",png="fg")
+  if esmooth==0:
+    dw.setShiftSmoothing(usmooth,0.0)
+  else:
+    dw.setShiftSmoothing(usmooth)
+  u = dw.findShifts(f,g)
+  h = dw.applyShifts(u,g)
+  print max(u)
+  plot2X(h,sub(f,h),fclips,label="Amplitude",png="hd")
+  plot2X(u,u,uclips,label="Shift (samples)",png="uu")
+  writeImage("shifts",u)
 def goDw():
   fx = getFault()
   ux = getUnconformity()
@@ -671,7 +712,7 @@ def plotVectors(dl,dh,u1,u2,f):
  
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(10.0)
+  ref = RecursiveExponentialFilter(100.0)
   ref.apply1(g,g)
   y = zerofloat(n1,n2)
   div(x,sqrt(g),y)
@@ -690,6 +731,43 @@ def jetRamp(alpha):
   return ColorMap.setAlpha(ColorMap.HUE_BLUE_TO_RED,rampfloat(0.0,alpha/256,256))
 def grayRamp(alpha):
   return ColorMap.setAlpha(ColorMap.GRAY,rampfloat(0.0,alpha/256,256))
+
+def plot2X(f,g,clips=None,label=None,png=None):
+  width,height,cbwm = 1095,815,145
+  n1,n2 = len(f[0]),len(f)
+  global s1,s2
+  if s1==None: s1 = Sampling(n1,1.0,0.0)
+  if s2==None: s2 = Sampling(n2,1.0,0.0)
+  panel = PlotPanel(1,2,PlotPanel.Orientation.X1DOWN_X2RIGHT)
+  panel.mosaic.setWidthTileSpacing(10);
+  pv0 = panel.addPixels(0,0,s1,s2,f)
+  pv1 = panel.addPixels(0,1,s1,s2,g)
+  pv0.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pv1.setInterpolation(PixelsView.Interpolation.NEAREST)
+  if clips:
+    pv0.setClips(clips[0],clips[1])
+    pv1.setClips(clips[0],clips[1])
+  panel.addColorBar()
+  if label:
+    panel.addColorBar(label)
+  panel.setVLabel(0,label1)
+  panel.setHLabel(0,label2)
+  panel.setHLabel(1,label2)
+  panel.setColorBarWidthMinimum(cbwm)
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(Color(0xfd,0xfe,0xff)) # easy to make transparent
+  frame.setFontSizeForPrint(8,240)
+  frame.setSize(width,height)
+  frame.setVisible(True)
+  if png and pngDir:
+    if nrms>0.0:
+      png += "n"
+    if shiftMax<10:
+      png += "0"+str(int(shiftMax))
+    else:
+      png += str(int(shiftMax))
+    frame.paintToPng(720,3.3,pngDir+"/"+png+".png")
 
 def plot2(f,cmap=ColorMap.GRAY,cmin=None,cmax=None,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT # for pnz data

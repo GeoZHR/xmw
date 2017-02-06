@@ -46,6 +46,10 @@ def setupForSubset(name):
     print "setupForDataset: bahamas"
     seismicDir = _datdir+"xavier/bahamas/"
     #n1,n2,n3 = 200,2359,4320 #gs
+<<<<<<< HEAD
+=======
+    n1,n2,n3 = 280,2359,4320 #gx
+>>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
     #n1,n2,n3 = 120,2359,4320 #gxc
     n1,n2,n3 = 280,2359,4320 #gx
     d1,d2,d3 = 1.0,1.0,1.0 

@@ -26,7 +26,7 @@ import pik.*;
 public class SaltPicker2 {
 
   public float[][] initialBoundary(
-    float d, float[] c1, float[] c2, float[] u1, float[][] pa) 
+    float d, float[] c1, float[] c2, float[][] pa) 
   {
     int nc = c1.length;
     ArrayList<Float> x1a = new ArrayList<Float>();
@@ -43,10 +43,6 @@ public class SaltPicker2 {
       float dxc = sqrt(dx1*dx1+dx2*dx2);
       float u1i =  dx2/dxc;
       float u2i = -dx1/dxc;
-      if (u1[ic]*u1i<0) {
-        u1i = -u1i;
-        u2i = -u2i;
-      }
       u1a.add(u1i); 
       u2a.add(u2i);
       x1a.add(c1[ic-1]);
@@ -90,7 +86,7 @@ public class SaltPicker2 {
     float[][] bs = bandSample(r,d,xu,fx);
     int m2 = bs.length;
     int m1 = bs[0].length;
-    OptimalPathPicker opp = new OptimalPathPicker(40,2.5f);
+    OptimalPathPicker opp = new OptimalPathPicker(40,2.0f);
     float[][] ft = opp.applyTransform(bs);
     float[][] wht = opp.applyForWeight(ft);
     float[][] tms1 = zerofloat(m2,m1);
@@ -106,7 +102,6 @@ public class SaltPicker2 {
     }
     return bs;
   }
-
 
   public float[][] bandSample(
     int r, float d, float[][] xu, float[][] fx) {
