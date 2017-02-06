@@ -9,6 +9,7 @@ pngDir = None
 pngDir = "../../../png/beg/xavier/bahamas/"
 
 gxfile = "gxc"
+gxfile = "gx"
 p2file = "p2"
 p3file = "p3"
 p2sfile = "p2s"
@@ -42,12 +43,17 @@ def main(args):
   #goSlopes()
   #goHorizonS()
   #goHorizonX()
-  goSlices()
+  #goSlices()
   #goNonlinearDiffusion()
   #goCoherence()
   #goCoherenceEnhance()
   #goSemblance()
-
+  gx = readImage(gxfile)
+  gs = zerofloat(n1,n3)
+  for i3 in range(n3):
+    gs[i3] = gx[i3][666]
+  writeImage("gx666",gs)
+  plot3(gx)
 def goNonlinearDiffusion():
   gx = readImage(gxfile)
   if not plotOnly:

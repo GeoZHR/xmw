@@ -54,6 +54,17 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
     f1,f2 = 0.0,0.0 # = 0.000,0.000,0.000
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+  elif name=="benxin":
+    """ benxin """
+    print "setupForSubset: benxin"
+    pngDir = _pngdir+"benxin/"
+    seismicDir = _datdir+"benxin/"
+    n1,n2 = 1501,201
+    d1,d2 = 1.0,1.0 
+    #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
+    f1,f2 = 0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+
 
   elif name=="fake":
     """ fake """

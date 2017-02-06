@@ -1,34 +1,17 @@
-import sys
+from utils2 import *
 
-from java.awt import *
-from java.io import *
-from java.lang import *
-from javax.swing import *
-
-from edu.mines.jtk.awt import *
-from edu.mines.jtk.dsp import *
-from edu.mines.jtk.io import *
-from edu.mines.jtk.interp import *
-from edu.mines.jtk.mosaic import *
-from edu.mines.jtk.util import *
-from edu.mines.jtk.util.ArrayMath import *
-
-from acm import *
-from pik import *
-from fls import *
+setupForSubset("seam2dSub2")
+s1,s2 = getSamplings()
+n1,n2 = s1.count,s2.count
 
 pngDir = None
-pngDir = "../../../png/acm/"
-
-seismicDir = "../../../data/seis/acm/"
-seismicDir = "../../../data/seis/slt/seam/2d/"
-seismicDir = "../../../data/seis/slt/2d/sub1/"
-seismicDir = "../../../data/seis/fls/seam/2d/"
+pngDir = "../../../png/fls/seam/2d/"
 
 fxfile = "st"
 fxfile = "seam2"
 fxfile = "st"
 fxfile = "gx366"
+fxfile = "gx1046"
 phfile = "phi"
 dpfile = "damp"
 #fxfile = "f3d267"
@@ -39,18 +22,6 @@ f2file = "f2"
 u1file = "u1"
 u2file = "u2"
 #ffile = "tp73"
-f1,f2 = 0,0
-d1,d2 = 1,1
-n1,n2 = 251,357
-n1,n2 = 500,500
-n1,n2 = 400,400
-n1,n2 = 751,1169
-n1,n2 = 162,461
-n1,n2 = 580,1169
-#n1,n2 = 140,350
-#n1,n2 = 100,101
-s1 = Sampling(n1,d1,f1)
-s2 = Sampling(n2,d2,f2)
 
 def main(args):
   #goGVF()
@@ -70,9 +41,63 @@ def main(args):
   #goTensor()
   #goFls()
   #goFlsP()
-  #goDLS()
+  #goDLSP()
   #goSaltPicker()
-  goBand()
+  #goBand()
+  #goTF()
+  goSaltPickerSub2()
+def goSaltPickerSub2():
+  gx = readImage(fxfile)
+  c1 = [390,210,260, 30,285,270,460,280,350,315,400,450]
+  c2 = [  0,260,600,820,945,860,720,440,300,180,135,  0]
+  sp = SaltPicker2()
+  pa = sp.applyForInsAmp(gx)
+  xu = sp.initialBoundary(1,c1,c2,pa)
+  plot(gx,cmin=-2,cmax=2,xp=[c1,c2],pp=[c1,c2])
+  plot(pa,cmin=0,cmax=2,xp=[xu[0],xu[1]])
+  plot(pa,cmin=0,cmax=2,xu=xu)
+  #bs = sp.bandSample(100,1,xu,pa)
+  bs = sp.refine(65,1,xu,pa)
+  plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
+  opp = OptimalPathPicker(40,2.0)
+  ft = opp.applyTransform(bs)
+  m2,m1 = len(bs),len(bs[0])
+  wht = opp.applyForWeight(ft)
+  tms1 = zerofloat(m2,m1)
+  tms2 = zerofloat(m2,m1)
+  pik1 = opp.forwardPick(100,wht,tms1)
+  pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2)
+  x2 = zerofloat(m2)
+  for i2 in range(m2):
+    x2[i2]=i2
+  plot(bs,cmin=0.01,cmax=0.5,w1=200,w2=2400)
+  plot(bs,cmin=0.01,cmax=0.5,xp=[pik2,x2],w1=200,w2=2400)
+
+def goTF():
+  gx = readImage(fxfile)
+  gs = gain(gx)
+  plot(gx,cmin=min(gx)/2,cmax=max(gx)/2)
+  plot(gs,cmin=min(gs)/2,cmax=max(gs)/2)
+  '''
+
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  es = zerofloat(n1,n2)
+  lof = LocalOrientFilter(4,2)
+  lof.applyForNormalLinear(pr,u1,u2,el)
+  ets = lof.applyForTensors(pr)
+  ets.setEigenvalues(0.05,1.0)
+  ss = SaltScanner()
+  es = ss.applyForLinear(4,ets,pr)
+  plot(es,cmin=0.5,cmax=0.6)
+  plot(el,cmin=0.5,cmax=0.6)
+  '''
+
+def lowpass(f3db,f):
+  bf = ButterworthFilter(f3db,6,ButterworthFilter.Type.LOW_PASS)
+  bf.applyForwardReverse(f,f)
+
 def goSaltPicker():
   gx = readImage(fxfile)
   c1 = [65,270, 88, 60,134,200,282,168, 30, 250,386,260,360]
@@ -102,6 +127,34 @@ def goSaltPicker():
     x2[i2]=i2
   plot(bs,cmin=0.1,cmax=0.8,xp=[pik2,x2])
 
+
+  '''
+  sb = zerofloat(n1,n2)
+  np = len(xu[0])
+  for ip in range(np):
+    i1 = round(xu[0][ip])
+    i2 = round(xu[1][ip])
+    sb[i2][i1] = 1
+  c1 = [250]
+  c2 = [300]
+  r1 = [2]
+  r2 = [2]
+  mu,lamda,alpha = 0.2,5,-3
+  ls = LevelSet2(mu,lamda,alpha,3,1,2500)
+  sb = ls.toGrayFloats(sb)
+  rgf = RecursiveGaussianFilter(4)
+  rgf.apply00(sb,sb)
+  gs = div(1,add(1,mul(sb,sb)))
+  plot(sb)
+  ph = ls.initialLevelSet(n1,n2,c1,c2,r1,r2,2)
+  ph0 = copy(ph)
+  ls.updateLevelSetP(1.5,gs,ph)
+  plot(gx,phi=ph0)
+  plot(gx,phi=ph)
+  plot(ph,cmin=-2,cmax=2)
+  '''
+
+
 def goBand():
   gx = readImage(fxfile)
   dp = readImage(dpfile)
@@ -114,8 +167,8 @@ def goBand():
   #fb = ls.bandSample(50,ph,dp)
   r,d=20,1.0
   ps,bs = ls.refine(r,d,ph,pa)
-  plot(gx,phi=ph)
-  plot(gx,xp=ps[0])
+  plot(gx,phi=ph,png="salt")
+  plot(gx,xp=ps[0],png="saltRefined")
   opp = OptimalPathPicker(20,1.0)
   ft = opp.applyTransform(bs[0])
   m2 = len(bs[0])
@@ -130,6 +183,25 @@ def goBand():
     x2[i2]=i2
   plot(bs[0],cmin=0.1,cmax=0.8,xp=[pik2,x2])
 
+def goDLSP():
+  gx = readImage(fxfile)
+  c1 = [140]
+  c2 = [200]
+  r1 = [2]
+  r2 = [2]
+  mu,lamda,alpha = 0.2,5,-3
+  ls = LevelSet2(mu,lamda,alpha,3,1,450)
+  gx = ls.toGrayFloats(gx)
+  rgf = RecursiveGaussianFilter(2)
+  rgf.apply00(gx,gx)
+  gs = div(10,add(1,mul(gx,gx)))
+  plot(gx)
+  ph = ls.initialLevelSet(n1,n2,c1,c2,r1,r2,2)
+  ph0 = copy(ph)
+  ls.updateLevelSetP(1.5,gs,ph)
+  plot(gx,phi=ph0)
+  plot(gx,phi=ph)
+  plot(ph,cmin=-2,cmax=2)
 
 def goDLS():
   gx = readImage(fxfile)
@@ -637,11 +709,21 @@ def plotVectors(dl,dh,u1,u2,f):
  
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(20.0)
+  ref = RecursiveExponentialFilter(50.0)
   ref.apply1(g,g)
   y = zerofloat(n1,n2)
   div(x,sqrt(g),y)
   return y
+
+
+def smooth(sig1,sig2,sigs,x):
+  lof = LocalOrientFilter(sig1,sig2)
+  ets = lof.applyForTensors(x)
+  ets.setEigenvalues(0.001,1.0)
+  lsf = LocalSmoothingFilter()
+  g = zerofloat(n1,n2)
+  lsf.apply(ets,sigs,x,g)
+  return g
 
 #############################################################################
 # graphics
@@ -662,15 +744,20 @@ def plot1(s1,y1,y2,hlabel="Values",vlabel="Probability",png=None):
   if png and pngDir:
     sp.paintToPng(300,7.0,pngDir+png+".png")
 
+
 def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
-        cmin=None,cmax=None,clab=None,png=None): 
+        cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation);
   #panel.setVInterval(0.2)
-  s2 = Sampling(len(f))
-  s1 = Sampling(len(f[0]))
+  n2 = len(f)
+  n1 = len(f[0])
+  s2 = Sampling(n2)
+  s1 = Sampling(n1)
+  panel.setHLimits(0,0,n2-1)
+  panel.setVLimits(0,0,n1-1)
   pxv = panel.addPixels(0,0,s1,s2,f);
-  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
   pxv.setColorModel(ColorMap.GRAY)
   if cmin and cmax:
     pxv.setClips(cmin,cmax)
@@ -683,9 +770,9 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
     cv.setLineColor(Color.RED)
     cv.setLineWidth(1.0)
   if xp:
-    ptv = panel.addPoints(xp[0],xp[1])
+    ptv = panel.addPoints(0,0,xp[0],xp[1])
     ptv.setLineColor(Color.RED)
-    ptv.setLineWidth(1.0)
+    ptv.setLineWidth(2.0)
   if xu:
     np = len(xu[0])
     ptv1 = panel.addPoints(xu[0],xu[1])
@@ -696,14 +783,14 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
       x2c = xu[1][ip]
       u1c = xu[2][ip]
       u2c = xu[3][ip]
-      x1m = x1c-u1c*50
-      x2m = x2c-u2c*50
-      x1p = x1c+u1c*50
-      x2p = x2c+u2c*50
+      x1m = x1c-u1c*65
+      x2m = x2c-u2c*65
+      x1p = x1c+u1c*65
+      x2p = x2c+u2c*65
       x1s = [x1m,x1c,x1p]
       x2s = [x2m,x2c,x2p]
       ptv2 = panel.addPoints(x1s,x2s)
-      ptv2.setLineColor(Color.BLUE)
+      ptv2.setLineColor(Color.YELLOW)
       ptv2.setLineWidth(1.0)
   if pp:
     ptv = panel.addPoints(pp[0],pp[1])
@@ -720,25 +807,6 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
       ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
       ptv.setMarkColor(Color.RED)
       ptv.setMarkSize(2.0)
-  if (v1 and v2):
-    x1 = zerofloat(2)
-    x2 = zerofloat(2)
-    dx1 = 10
-    dx2 = 10
-    scale = 12
-    for i2 in range(dx2,n2-dx2,dx2):
-      for i1 in range(dx1,n1-dx1,dx1):
-        x2[0] = (i2-v2[i2][i1]*scale)*d2+f2
-        x2[1] = (i2+v2[i2][i1]*scale)*d2+f2
-        x1[0] = (i1-v1[i2][i1]*scale)*d1+f1
-        x1[1] = (i1+v1[i2][i1]*scale)*d1+f1
-        pvu = panel.addPoints(x1,x2)
-        pvu.setLineWidth(4)
-        if (v1[i2][i1]<0):
-          pvu.setLineColor(Color.RED)
-        else:
-          pvu.setLineColor(Color.YELLOW)
-  #cb.setInterval(0.2)
   if(clab):
     cb = panel.addColorBar();
     cb.setLabel(clab)
@@ -747,10 +815,13 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   frame.setVisible(True);
-  frame.setSize(890,760)
-  frame.setSize(890,400)
+  if w1 and w2:
+    frame.setSize(w2,w1)
+  else:
+    frame.setSize(900,550)
+
   #frame.setSize(1190,760)
-  frame.setFontSize(24)
+  frame.setFontSize(18)
   if pngDir and png:
     frame.paintToPng(300,3.333,pngDir+png+".png")
 
@@ -856,24 +927,6 @@ def makePointSets(cmap,f,x1,x2):
     il += 1
   return fs,x1s,x2s
 
-#############################################################################
-# utilities
-
-def readImage(name):
-  fileName = seismicDir+name+".dat"
-  n1,n2 = s1.count,s2.count
-  image = zerofloat(n1,n2)
-  ais = ArrayInputStream(fileName)
-  ais.readFloats(image)
-  ais.close()
-  return image
-
-def writeImage(name,image):
-  fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)
-  aos.writeFloats(image)
-  aos.close()
-  return image
 
 #############################################################################
 # Run the function main on the Swing thread

@@ -88,6 +88,35 @@ public class LevelSet2 {
     }}); 
   }
 
+  static public void applyTF(
+    final int nf, final float fmin, final float fmax, final int[] ks,
+    final float[][][] fx, final float[][][] pr){
+    final int n3 = fx.length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        applyTF(nf,fmin,fmax,ks,fx[i3],pr[i3]);
+      }
+    }); 
+  }
+
+  static public void applyTF(
+    final int nf, final float fmin, final float fmax, final int[] ks,
+    final float[][] fx, final float[][] pr){
+    final int n2 = fx.length;
+    final int n1 = fx[0].length; 
+    final Sampling st = new Sampling(n1,0.004,0.0);
+    final Sampling sf = MorletTransform.frequencySampling(nf,fmin,fmax);
+    final MorletTransform mt = new MorletTransform(st,sf);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+      public void compute(int i2) {
+        float[][][] fi = mt.apply(fx[i2]);
+        for (int ik:ks) {
+          for (int i1=0; i1<n1; ++i1)
+            pr[i2][i1] += fi[0][ik][i1];
+        }
+      }
+    }); 
+  }
 
   public int[][] toGrayIntegers(float[][] fx) {
     int n2 = fx.length;
@@ -101,6 +130,20 @@ public class LevelSet2 {
     }}
     return gx;
   }
+
+  public float[][] toGrayFloats(float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] gx = new float[n2][n1];
+    fx = sub(fx,min(fx));
+    float fmax = 255f/max(fx);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gx[i2][i1] = round(fx[i2][i1]*fmax);
+    }}
+    return gx;
+  }
+
 
   public float[][] applyForEdge(float sigma, float[][] fx) {
     int n2 = fx.length;

@@ -589,6 +589,47 @@ public class WellLog {
     return null;
   }
 
+  public int countValidValues(String curve) {
+    int nv = 0;
+    float[] vs = getCurve(curve);
+    for (float vi:vs) {
+      if (vi!=NULL_VALUE)
+        nv++;
+    }
+    return nv;
+
+  }
+
+  static public float[][][] getArray(WellLog[] ws) {
+    int nw = ws.length;
+    float zmin = FLT_MAX;
+    float zmax = FLT_MIN;
+    float dz = ws[0].z[1]-ws[0].z[0];
+    for (int iw=0; iw<nw; ++iw) {
+      float[] zs = ws[iw].z;
+      int nz = zs.length;
+      float zb = ws[iw].z[0];
+      float ze = ws[iw].z[nz-1];
+      if(zb<zmin) zmin=zb;
+      if(ze>zmax) zmax=ze;
+    }
+    int nz = round((zmax-zmin)/dz)+1;
+    float[][] da = new float[nw][nz];
+    float[][] xs = new float[2][nw];
+    for (int iw=0; iw<nw; ++iw) {
+      float[] zs = ws[iw].z;
+      float[] ds = ws[iw].getCurve("den");
+      int ns = zs.length;
+      xs[0][iw] = ws[iw].x2[0];
+      xs[1][iw] = ws[iw].x3[0];
+      for (int is=0; is<ns; ++is) {
+        int iz = round((zs[is]-zmin)/dz);
+        da[iw][iz] = ds[is];
+      }
+    }
+    return new float[][][]{da,xs};
+  }
+
   /**
    * Applies a despking filter to all curves for this log.
    * Any null values are ignored and remain null during despiking.
