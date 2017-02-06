@@ -20,6 +20,7 @@ from edu.mines.jtk.util.ArrayMath import *
 
 from sso import *
 from util import *
+from slt import *
 from stv import *
 from fls import *
 

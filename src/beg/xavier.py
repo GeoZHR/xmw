@@ -1,14 +1,17 @@
 from utils import *
 #setupForSubset("bpSub1")
 setupForSubset("bahamas")
+#setupForSubset("wasson")
 #setupForSubset("australia")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 pngDir = None
 pngDir = "../../../png/beg/xavier/bahamas/"
+seisDir = getSeismicDir()
 
 gxfile = "gxc"
+gxfile = "gx"
 p2file = "p2"
 p3file = "p3"
 p2sfile = "p2s"
@@ -42,12 +45,26 @@ def main(args):
   #goSlopes()
   #goHorizonS()
   #goHorizonX()
-  goSlices()
+  #goSlices()
   #goNonlinearDiffusion()
   #goCoherence()
   #goCoherenceEnhance()
   #goSemblance()
-
+  #gx = readImage(gxfile)
+  #plot3(gx)
+  goWriteAsciiHorizons()
+def goWriteAsciiHorizons():
+  ns = 50
+  hs = readHorizons(ns,hvsfile)
+  hp = Helper()
+  d1 = 13.123
+  f1 = 13.123
+  c1 = Sampling(n1,d1,f1)
+  c2 = Sampling(n2,1,2000)
+  ha = hp.convertToAsciiHorizons(c1,c2,6400,-1,hs)
+  for ip in range(10):
+    name = seisDir+"horizon"+str(ip)+".xyz"
+    hp.writeAsciiHorizon(name,ha[ip])
 def goNonlinearDiffusion():
   gx = readImage(gxfile)
   if not plotOnly:

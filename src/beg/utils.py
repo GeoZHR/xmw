@@ -45,12 +45,12 @@ def setupForSubset(name):
   elif name=="bahamas":
     print "setupForDataset: bahamas"
     seismicDir = _datdir+"xavier/bahamas/"
-    #n1,n2,n3 = 280,2359,4320 #gx
-    n1,n2,n3 = 200,2359,4320 #gs
+    #n1,n2,n3 = 200,2359,4320 #gs
     #n1,n2,n3 = 120,2359,4320 #gxc
+    n1,n2,n3 = 280,2359,4320 #gx
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
-    #f1,f2,f3 = 100,0.0,0.0 (sample,trace,trace)
+    #f1,f2,f3 = 100,2000,6400 (sample,trace,trace)
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="wasson":
     print "setupForDataset: bahamas"
@@ -251,6 +251,18 @@ def writeImage(name,image):
   aos.writeFloats(image)
   aos.close()
   return image
+
+def writeAscii(name,image):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  fileName = seismicDir+name+".xyz"
+  hp = Helpler()
+  hp.writeAsciHorizon(name,image)
+  return image
+
 def writeImageL(name,image):
   """ 
   Writes an image to a file with specified name.

@@ -7,14 +7,14 @@ Version: 2015.12.19
 from utils import *
 
 #setupForSubset("ch3d")
-setupForSubset("seam3d")
+#setupForSubset("seam3d")
 setupForSubset("seam3dSub")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "scn" # ch3d input image 
-gxfile  = "gs" # seam3d input image 
+gxfile  = "gxs" # seam3d input image 
 slfile  = "sl" # salt likelihoods
 p2file  = "p2" # eigenvalue-derived planarity
 p3file  = "p3" # eigenvalue-derived planarity
@@ -29,21 +29,91 @@ mkfile  = "mk" # mask file
 phfile  = "ph"
 phdxfile = "phdx"
 sfcfile  = "sfc" # salt indicator function with constraints
+flfile  = "fl" # fault likelihood
+fpfile  = "fp" # fault strike (phi)
+ftfile  = "ft" # fault dip (theta)
 
 pngDir = getPngDir()
 pngDir = "../../../png/fls/seam/3d/"
 pngDir = False
 
 plotOnly = False
+minPhi,maxPhi = 0,360
+minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 4,20
 
 def main(args):
   #goPlanarity()
   #goDlsSub()
   #goEnvelope()
   #goDensity()
-  goFlsSub()
+  #goFlsSub()
   #goFls()
   #goCh()
+  #goSlopes()
+  goSmooth()
+
+def goSmooth():
+  gx = readImage(gxfile)
+  gs = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilterP(12,8)
+  ets = lof.applyForTensors(gx)
+  ets.setEigenvalues(0.5,1,1)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,20,gx,gs)
+  plot3(gx,clab="Amplitude",png="gx")
+  plot3(gs,clab="Amplitude",png="gx")
+  gxe = zerofloat(n1,n2,n3)
+  gse = zerofloat(n1,n2,n3)
+  FastLevelSet3.applyForInsAmp(gx,gxe)
+  FastLevelSet3.applyForInsAmp(gs,gse)
+  plot3(gxe,cmin=0,cmax=1)
+  plot3(gse,cmin=0,cmax=1)
+
+def goSlopes():
+  print "goSlopes ..."
+  gx = readImage(gxfile)
+  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  print "p2  min =",min(p2)," max =",max(p2)
+  print "p3  min =",min(p3)," max =",max(p3)
+  print "ep min =",min(ep)," max =",max(ep)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+        clab="Planarity")
+
+def goScan():
+  print "goScan ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    gx = FaultScanner.taper(10,0,0,gx)
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(fpfile,fp)
+    writeImage(ftfile,ft)
+  else:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+
 
 def goCh():
   gx = readImage(gxfile)
@@ -65,15 +135,18 @@ def goCh():
   #plot3(gx,cmin=0,cmax=1,tg=tg,png="seisSalt")
 
 def goPlanarity():
-  print "goSlopes ..."
+  print "goPlanarity ..."
   gx = readImage(gxfile)
   u1 = zerofloat(n1,n2,n3)
   u2 = zerofloat(n1,n2,n3)
   u3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilter(6,2,2)
+  lof = LocalOrientFilter(2,1,1)
   lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  writeImage(epfile,ep)
+  #writeImage(epfile,ep)
+  plot3(gx)
+  plot3(u1,cmin=0,cmax=0.8)
+  plot3(ep,cmin=0,cmax=0.8)
 
 def goEnvelope():
   gx = readImage(gxfile)
@@ -102,13 +175,13 @@ def goFlsSub():
     dp = readImage(dpfile)
     #ge = readImage(gefile)
     #ep = readImage(epfile)
-    c1 = [133,235]
-    c2 = [384,978]
-    c3 = [400,266]
+    c1 = [133,250]
+    c2 = [384,888]
+    c3 = [400,390]
     rs = [ 10, 10]
     fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,rs)
     #dp = fls.density(0.5,ep,ge)
-    fls.setIterations(120,6,3)
+    fls.setIterations(180,6,3)
     fls.updateLevelSet(9,5,dp)
     ph = fls.getPhi()
     writeImage(phfile,ph)

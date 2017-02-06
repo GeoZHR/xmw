@@ -1,10 +1,46 @@
 package beg;
 
+import edu.mines.jtk.dsp.*;
 import util.*;
 import ipfx.*;
+import java.io.*;
 
 public class Helper {
 
+  public void writeAsciiHorizon(String name, float[][] hz) throws IOException  {
+    int n3 = hz.length;
+    int n2 = hz[0].length;
+    PrintWriter writer = new PrintWriter(name,"UTF-8");
+    for (int i2= 0; i2<n2; i2++) {
+      String row = String.valueOf(hz[0][i2])+"  ";
+      for (int i3= 1; i3<n3; i3++) {
+        row += String.valueOf(hz[i3][i2])+"  ";
+      }
+      writer.println(row);
+    }
+    writer.close();
+  }
+
+  public float[][][] convertToAsciiHorizons(
+    Sampling s1, Sampling s2, float f3, float d3, float[][][] hs) 
+  {
+    int ns = hs.length;
+    int n3 = hs[0].length;
+    int n2 = hs[0][0].length;
+    float d1 = (float)s1.getDelta();
+    float f1 = (float)s1.getFirst();
+    float[][][] ha = new float[ns][3][n2*n3];
+    for (int is=0; is<ns; ++is) {
+      int ik = 0;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      ha[is][0][ik] = f3+i3*d3;
+      ha[is][1][ik] = (float)s2.getValue(i2);
+      ha[is][2][ik] = hs[is][i3][i2]*d1+f1;
+      ik++;
+    }}}
+    return ha;
+  }
   public void setWeights(FaultSkin[] skins, float[][][] wp) {
     int n3 = wp.length;
     int n2 = wp[0].length;

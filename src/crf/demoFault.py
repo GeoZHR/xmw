@@ -68,7 +68,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/nathan/sub8/skins/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -79,9 +79,9 @@ def main(args):
   #goThin()
   #goSkinTv()
   #goSmooth()
-  goSlip()
+  #goSlip()
   #goUnfault()
-  #goFaultImages()
+  goFaultImages()
   #goSurfaces()
   #goFaultPoints()
   #goFaultPointsScale()
@@ -577,21 +577,22 @@ def goUnfault():
 
 
 def goFaultImages():
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
+  gx = readImage(gsxfile)
   if not plotOnly:
     fl = fillfloat(-0.01,n1,n2,n3)
     fp = fillfloat(-0.01,n1,n2,n3)
     ft = fillfloat(-0.01,n1,n2,n3)
-    skins = readSkins(fsktv)
+    skins = readSkins(fsrbase)
     fsx = FaultSkinnerX()
-    fsx.getFlpt(3000,skins,fl,fp,ft)
+    fsx.getFlpt(200,skins,fl,fp,ft)
     hp = Helper()
     hp.rotateX(26,fp)
     hp.rotate(90,fp)
     hp.convert(fp)
-    writeImage(fltvfile,fl)
-    writeImage(fptvfile,fp)
-    writeImage(fttvfile,ft)
+    #writeImage(fltvfile,fl)
+    #writeImage(fptvfile,fp)
+    #writeImage(fttvfile,ft)
   else:
     #fl = readImage(fltvfile)
     #ft = readImage(fttvfile)
@@ -602,7 +603,10 @@ def goFaultImages():
   plot3(gx,ft,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   '''
+  fpt = readImage(fptvfile)
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
 def goResetSurfaces():

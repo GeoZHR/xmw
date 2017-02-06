@@ -869,7 +869,7 @@ public class FastLevelSet3 {
       Sample sp = louti.next();
       int i1 = sp.p1;
       int i2 = sp.p2;
-      if(fx3[i2][i1]<-0.3f){switchIn(i3,louti,sp);}
+      if(fx3[i2][i1]<-0.5f){switchIn(i3,louti,sp);}
     }
   }
   private void switchOutSlice3(int i3, Iterator<Sample>lini,float[][] fx3) {
@@ -877,7 +877,7 @@ public class FastLevelSet3 {
       Sample sp = lini.next();
       int i1 = sp.p1;
       int i2 = sp.p2;
-      if(fx3[i2][i1]>0.3f){switchOut(i3,lini,sp);}
+      if(fx3[i2][i1]>0.5f){switchOut(i3,lini,sp);}
     }
   }
 

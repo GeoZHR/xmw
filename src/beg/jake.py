@@ -117,8 +117,10 @@ def main(args):
   #goFlatten()
   #goResults()
   fw = readImage("gx")
+  '''
   fs = copy(n1,800,n3,0,800,0,fw)
   writeImage("fxsub",fs)
+  '''
   print min(fw)
   print max(fw)
   plot3(fw,cmin=-1,cmax=1)
