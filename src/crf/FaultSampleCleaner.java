@@ -24,10 +24,19 @@ import mef.*;
 public class FaultSampleCleaner {
 
   public void recomputeLikelihoods(
+    FaultSkin[] skins, float[][][] fx, 
+    float[][][] u1, float[][][] u2, float[][][] u3) 
+  {
+    for (FaultSkin skin:skins) {
+      recomputeLikelihoods(skin,fx,u1,u2,u3);
+    }
+  }
+
+  public void recomputeLikelihoods(
     FaultSkin skin, float[][][] fx, 
     float[][][] u1, float[][][] u2, float[][][] u3) 
   {
-    int nsmooth = 4;
+    int nsmooth = 1;
     computeNumAndDen(fx, u1, u2, u3, skin);
     smoothNumAndDen(nsmooth,skin);
     computeLikelihoods(skin);
@@ -35,7 +44,10 @@ public class FaultSampleCleaner {
 
   private void computeLikelihoods(FaultSkin skin) {
     for (FaultCell cell:skin) {
-      cell.flr = cell.num/cell.den;
+      //cell.flr = cell.num/cell.den;
+      cell.setFl(cell.num/cell.den);
+      System.out.println("num="+cell.num);
+      System.out.println("den="+cell.den);
     }
 
   }
@@ -60,9 +72,12 @@ public class FaultSampleCleaner {
 
   void smoothN(FaultCell.GetN getter, FaultCell.SetN setter, FaultSkin skin) {
     int nval = 2;
-    float[] vals = new float[nval];
+    FaultCell[] cells = skin.getCells();
+    int nc = cells.length;
+    float[][] vals = new float[nc][nval];
     FaultCell[] cellNabors = new FaultCell[4];
-    for (FaultCell cell:skin) {
+    for (int ic=0; ic<nc; ++ic) {
+      FaultCell cell = cells[ic];
       float[] valsCell = getter.get(cell);
       cellNabors[0] = cell.ca;
       cellNabors[1] = cell.cb;
@@ -72,10 +87,12 @@ public class FaultSampleCleaner {
         if (cellNabor!=null) {
           float[] valsNabor = getter.get(cellNabor);
           for (int ival=0; ival<nval; ++ival)
-            vals[ival] += valsCell[ival]+valsNabor[ival];
+            vals[ic][ival] += valsCell[ival]+valsNabor[ival];
         }
       }
-      setter.set(cell,vals);
+    }
+    for (int ic=0; ic<nc; ++ic) {
+      setter.set(cells[ic],vals[ic]);
     }
   }
 
@@ -99,12 +116,16 @@ public class FaultSampleCleaner {
       float w3 = cell.getW3();
       float d2 =  cell.getV3()*offset;
       float d3 = -cell.getV2()*offset;
-      float u1m = imageValueAt(x1,x2-d2,x3-d3,u1);
-      float u2m = imageValueAt(x1,x2-d2,x3-d3,u2);
-      float u3m = imageValueAt(x1,x2-d2,x3-d3,u3);
-      float u1p = imageValueAt(x1,x2+d2,x3+d3,u1);
-      float u2p = imageValueAt(x1,x2+d2,x3+d3,u2);
-      float u3p = imageValueAt(x1,x2+d2,x3+d3,u3);
+      float x2p = x2+d2;
+      float x3p = x3+d3;
+      float x2m = x2-d2;
+      float x3m = x3-d3;
+      float u1m = imageValueAt(x1,x2m,x3m,u1);
+      float u2m = imageValueAt(x1,x2m,x3m,u2);
+      float u3m = imageValueAt(x1,x2m,x3m,u3);
+      float u1p = imageValueAt(x1,x2p,x3p,u1);
+      float u2p = imageValueAt(x1,x2p,x3p,u2);
+      float u3p = imageValueAt(x1,x2p,x3p,u3);
       float num = 0f;
       float den = 0f;
       for (float d=1; d<3; d++) {
@@ -116,12 +137,12 @@ public class FaultSampleCleaner {
         float v3m = -v3p;
         float vup = v1p*u1p+v2p*u2p+v3p*u3p;
         float vum = v1m*u1m+v2m*u2m+v3m*u3m;
-        float p1p = v1p-vup*u1p;
-        float p2p = v2p-vup*u2p;
-        float p3p = v3p-vup*u3p;
-        float p1m = v1m-vum*u1m;
-        float p2m = v2m-vum*u2m;
-        float p3m = v3m-vum*u3m;
+        float p1p = v1p-vup*u1p+x1;
+        float p2p = v2p-vup*u2p+x2p;
+        float p3p = v3p-vup*u3p+x3p;
+        float p1m = v1m-vum*u1m+x1;
+        float p2m = v2m-vum*u2m+x2m;
+        float p3m = v3m-vum*u3m+x3m;
         float fxp = si.interpolate(s1,s2,s3,fx,p1p,p2p,p3p);
         float fxm = si.interpolate(s1,s2,s3,fx,p1m,p2m,p3m);
         num += (fxp+fxm);

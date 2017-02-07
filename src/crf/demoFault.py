@@ -77,7 +77,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goPlanar()
-  goSeisNormal()
+  #goSeisNormal()
   #goMask()
   #goFaultScan()
   #goThin()
@@ -104,6 +104,17 @@ def main(args):
   #goPointsCheck()
   #goReskin()
   #goSkinDisplay()
+  goSampleClean()
+def goSampleClean():
+  fx = readImage(gsxfile)
+  u1 = readImage(u1file)
+  u2 = readImage(u2file)
+  u3 = readImage(u3file)
+  sk = readSkins("fsp")
+  plot3x(fx,skins=sk,cmin=0.0,cmax=0.6)
+  fs = FaultSampleCleaner()
+  fs.recomputeLikelihoods(sk,fx,u1,u2,u3)
+  plot3x(fx,skins=sk,cmin=0.0,cmax=0.6)
 
 def goSeisNormal():
   fx = readImage(gsxfile)
@@ -111,7 +122,7 @@ def goSeisNormal():
   u1 = zerofloat(n1,n2,n3)
   u2 = zerofloat(n1,n2,n3)
   u3 = zerofloat(n1,n2,n3)
-  lof.applyForNormals(fx,u1,u2,u3)
+  lof.applyForNormal(fx,u1,u2,u3)
   writeImage(u1file,u1)
   writeImage(u2file,u2)
   writeImage(u3file,u3)
