@@ -109,11 +109,17 @@ def goSampleClean():
   fx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  sk = readSkins("fsp")
-  plot3x(fx,skins=sk,cmin=0.0,cmax=0.6)
+  sk = readSkins("fsr")
+  plot3x(fx,cmin=-1,cmax=1)
+  #plot3x(fx,skins=sk,cmin=-1,cmax=1)
   fs = FaultSampleCleaner()
   fs.recomputeLikelihoods(sk,fx,p2,p3)
-  plot3x(fx,skins=sk,cmin=0.0,cmax=0.6)
+  #plot3x(fx,skins=sk,cmin=-1,cmax=1)
+  fl = zerofloat(n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFl(200,sk,fl)
+  plot3(fx,fl,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood")
 
 def goSeisNormal():
   fx = readImage(gsxfile)

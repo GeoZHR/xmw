@@ -20,15 +20,19 @@ import mef.*;
 public class FaultSampleCleaner {
 
   public void recomputeLikelihoods(
-    FaultSkin[] skins, float[][][] fx, float[][][] p2, float[][][] p3) {
-    float[][][][] snd = semblanceNumDen(fx,p2,p3);
-    for (FaultSkin skin:skins) {
-      recomputeLikelihoods(skin,snd);
-    }
+    final FaultSkin[] skins, final float[][][] fx, 
+    final float[][][] p2, final float[][][] p3) {
+    final int ns = skins.length;
+    final float[][][][] snd = semblanceNumDen(fx,p2,p3);
+    loop(ns,new LoopInt() {
+      public void compute(int is) {
+        recomputeLikelihoods(skins[is],snd);
+      }
+    });
   }
 
   public void recomputeLikelihoods(FaultSkin skin, float[][][][] snd) {
-    int nsmooth = 1;
+    int nsmooth = 100;
     setNumAndDen(skin,snd);
     smoothNumAndDen(nsmooth,skin);
     computeLikelihoods(skin);
@@ -48,10 +52,12 @@ public class FaultSampleCleaner {
 
   private void computeLikelihoods(FaultSkin skin) {
     for (FaultCell cell:skin) {
-      //cell.flr = cell.num/cell.den;
-      cell.setFl(cell.num/cell.den);
-      System.out.println("num="+cell.num);
-      System.out.println("den="+cell.den);
+      float sm = cell.num/cell.den;
+      sm *= sm;
+      sm *= sm;
+      sm *= sm;
+      float fl = 1f-sm;
+      cell.setFl(fl);
     }
 
   }
@@ -82,17 +88,23 @@ public class FaultSampleCleaner {
     FaultCell[] cellNabors = new FaultCell[4];
     for (int ic=0; ic<nc; ++ic) {
       FaultCell cell = cells[ic];
-      float[] valsCell = getter.get(cell);
+      vals[ic] = getter.get(cell);
       cellNabors[0] = cell.ca;
       cellNabors[1] = cell.cb;
       cellNabors[2] = cell.cl;
       cellNabors[3] = cell.cr;
+      float cnt = 1f;
       for (FaultCell cellNabor:cellNabors) {
         if (cellNabor!=null) {
+          cnt++;
           float[] valsNabor = getter.get(cellNabor);
           for (int ival=0; ival<nval; ++ival)
-            vals[ic][ival] += valsCell[ival]+valsNabor[ival];
+            vals[ic][ival] += valsNabor[ival];
         }
+      }
+      if (cnt>1) {
+        vals[ic][0] /= cnt;
+        vals[ic][1] /= cnt;
       }
     }
     for (int ic=0; ic<nc; ++ic) {
@@ -102,14 +114,16 @@ public class FaultSampleCleaner {
 
 
     // Computes fault semblance numerators and denominators.
-  private static float[][][][] semblanceNumDen(
-    final float[][][] p2, final float[][][] p3, final float[][][] f) 
-  {
-    final int n1 = f[0][0].length;
-    final int n2 = f[0].length;
-    final int n3 = f.length;
-    final float[][][] sn = new float[n3][n2][n1];
-    final float[][][] sd = new float[n3][n2][n1];
+  private static float[][][][] semblanceNumDen(final float[][][] f) {
+    int n3 = f.length;
+    int n2 = f[0].length;
+    int n1 = f[0][0].length;
+
+    LocalOrientFilter lof = new LocalOrientFilter(8,2,2);
+    EigenTensors ets = lof.applyForTensors(f);
+    float[][][] sn = new float[n3][n2][n1];
+    float[][][] sd = new float[n3][n2][n1];
+
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     loop(n3,new LoopInt() {
