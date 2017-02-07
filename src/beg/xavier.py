@@ -58,7 +58,7 @@ def goWriteAsciiHorizons():
   hs = readHorizons(ns,hvsfile)
   hp = Helper()
   d1 = 13.123
-  f1 = 13.123
+  f1 = 100*d1
   c1 = Sampling(n1,d1,f1)
   c2 = Sampling(n2,1,2000)
   ha = hp.convertToAsciiHorizons(c1,c2,6400,-1,hs)

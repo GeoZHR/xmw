@@ -35,9 +35,9 @@ maxThrow = 30.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 plotOnly = False
 pngDir = "../../../png/ssr/shapping/"
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -46,9 +46,9 @@ def main(args):
   #goThin()
   #goFaultCurve()
   #goFaultThrow()
-  #goUnfault()
+  goUnfault()
   #goTensors()
-  goVelocity()
+  #goVelocity()
   #goShapping()
 def goScan():
   print "goScan ..."
@@ -167,7 +167,9 @@ def goFaultThrow():
   plot2(s1,s2,gx)
   plot2(s1,s2,gs)
   plot2(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
-  plot2(s1,s2,gx,g=mul(fst,4),cmin=minThrow,cmax=maxThrow,
+  print min(fst)
+  print max(fst)
+  plot2(s1,s2,gx,g=mul(fst,1),cmin=0.1,cmax=25,
         cmap=jetFillExceptMin(1.0),label="Fault throw (ms)",png="fst")
   smark = -999.999
   p1,p2 = fcr.getDipSlips(n1,n2,cc,smark)

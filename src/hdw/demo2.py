@@ -16,8 +16,8 @@ setupForSubset("nwc1")
 setupForSubset("nwc2")
 setupForSubset("lulia")
 setupForSubset("fd2")
-setupForSubset("tp2")
 setupForSubset("bahamas")
+setupForSubset("tp2")
 #setupForSubset("dgb")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -37,8 +37,8 @@ fxfile = "gx569" #
 fxfile = "fxx582" # 
 fxfile = "gx286" # 
 fxfile = "fx172" # 
-fxfile = "tp73s" # 
 fxfile = "gx666" # 
+fxfile = "tp73s" # 
 fxsfile = "fxs" # 
 gxfile = "gx" # 
 ls1file = "ls1" # 
@@ -55,9 +55,37 @@ def main(args):
   #timeMark()
   #goPick()
   #goFlatten()
-  goDw()
+  #goDw()
+  goTpd()
   #goDipPick()
-  #applystructureorientedsmoothing
+def goTpd():
+  dl = 50
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  fs = zerofloat(n1,n2)
+  lof = LocalOrientFilter(2,1)
+  ets = lof.applyForTensors(fx)
+  lsf = LocalSmoothingFilter()
+  ets.setEigenvalues(0.05,1.0)
+  dp = DynamicPicking(-dl,dl)
+  lsfp = LocalSlopeFinder(16,2,5) 
+  p = zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsfp.findSlopes(fx,p,el);
+  rgf = RecursiveGaussianFilterP(2)
+  #fs = gain(fs)
+  #lsf.apply(ets,10,fx,fs)
+  dp.setGate(-1,1)
+  dp.setWeights(1.0,0.2);
+  gx = zerofloat(n1,n2)
+  us = zerofloat(n2,n1)
+  ut = zerofloat(n2,n1)
+  for k1 in range(30,n1,8):
+    es = dp.pickThrough(k1,30,dl,el,p,fx,us)
+    es = dp.trackDip(k1,p,ut)
+  plot2(s1,s2,fx,u=us,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.RED)
+  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.RED)
+
 def goDipPick():
   dl = 50
   fx = readImage(fxfile)
