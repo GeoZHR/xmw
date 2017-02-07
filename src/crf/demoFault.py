@@ -107,13 +107,12 @@ def main(args):
   goSampleClean()
 def goSampleClean():
   fx = readImage(gsxfile)
-  u1 = readImage(u1file)
-  u2 = readImage(u2file)
-  u3 = readImage(u3file)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
   sk = readSkins("fsp")
   plot3x(fx,skins=sk,cmin=0.0,cmax=0.6)
   fs = FaultSampleCleaner()
-  fs.recomputeLikelihoods(sk,fx,u1,u2,u3)
+  fs.recomputeLikelihoods(sk,fx,p2,p3)
   plot3x(fx,skins=sk,cmin=0.0,cmax=0.6)
 
 def goSeisNormal():
