@@ -145,6 +145,18 @@ def writeImage(name,image):
   aos.close()
   return image
 
+def writeImageM(name,image):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  fileName = seismicDir+name+".rsf@"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+
 #############################################################################
 # read/write fault skins
 

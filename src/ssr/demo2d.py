@@ -45,8 +45,8 @@ def main(args):
   #goScan()
   #goThin()
   #goFaultCurve()
-  #goFaultThrow()
-  goUnfault()
+  goFaultThrow()
+  #goUnfault()
   #goTensors()
   #goVelocity()
   #goShapping()
@@ -162,6 +162,10 @@ def goFaultThrow():
   fcr.computeThrow(cc,minThrow,maxThrow)
   fst = zerofloat(n1,n2)
   FaultCurve.getFsImage(cc,fst)
+  fd = fillfloat(-1,n1,n2)
+  FaultCurve.getSlipImage(cc,fd)
+  writeImage("seis",gx)
+  writeImage("slip",fd)
   print min(fst)
   print max(fst)
   plot2(s1,s2,gx)
@@ -170,6 +174,8 @@ def goFaultThrow():
   print min(fst)
   print max(fst)
   plot2(s1,s2,gx,g=mul(fst,1),cmin=0.1,cmax=25,
+        cmap=jetFillExceptMin(1.0),label="Fault throw (ms)",png="fst")
+  plot2(s1,s2,gx,g=mul(fd,1),cmin=0.1,cmax=25,
         cmap=jetFillExceptMin(1.0),label="Fault throw (ms)",png="fst")
   smark = -999.999
   p1,p2 = fcr.getDipSlips(n1,n2,cc,smark)

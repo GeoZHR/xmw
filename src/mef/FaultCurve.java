@@ -97,6 +97,16 @@ public class FaultCurve implements Iterable<FaultPoint>,Serializable {
     }}
   }
 
+  public static void getSlipImage(FaultCurve[] curves, float[][] fd) {
+    for (FaultCurve curve:curves) {
+    for (FaultPoint point:curve) {
+      int i1 = point.i1;
+      int i2 = point.i2;
+      fd[i2][i1]  = point.s1/point.s2;
+    }}
+  }
+
+
 
 
   /**
