@@ -113,11 +113,12 @@ def goSampleClean():
   plot3x(fx,cmin=-1,cmax=1)
   #plot3x(fx,skins=sk,cmin=-1,cmax=1)
   fs = FaultSampleCleaner()
-  fs.recomputeLikelihoods(sk,fx,p2,p3)
+  fs.recomputeLikelihoods(sk,fx)
   #plot3x(fx,skins=sk,cmin=-1,cmax=1)
   fl = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(200,sk,fl)
+  writeImage("flr",fl)
   plot3(fx,fl,cmin=0.1,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood")
 
@@ -173,7 +174,7 @@ def goFaultsAndSurfs():
   hpr.mergeU1AndTop(round(s2.getFirst()),spm,hm1)
   writeImage(hm1file,hm1)
   '''
-  gx = readImage(gxfile)
+  gx = readImage(gsxfile)
   fpt = readImage(fptmfile)
   #ft = readImage(fttvfile)
   fv = 180

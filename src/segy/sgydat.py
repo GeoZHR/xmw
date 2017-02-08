@@ -11,7 +11,7 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-  goAustralia()
+  #goAustralia()
   #goF3d()
   #goManba()
   #goAustralia()
@@ -33,7 +33,7 @@ def main(args):
   #goPoseidon()
   #goParihaka()
   #goTj()
-  #goBag()
+  goBag()
 def goBag():
   """
   ***************************************************************************
@@ -101,19 +101,15 @@ def goBag():
     m3 = n3-860
     m2 = n2-4000
     x = readImage(subfile,n1,m2,m3)
-    xs = copy(800,490,500,127,0,30,x)
+    #xs = copy(800,490,500,127,0,30,x)
     #xs = copy(n1,m2,m3,0,4000,860,x)
     print m2
     print m3
-    writeImageX(subfile,xs)
+    #writeImageX(subfile,xs)
     #gain(100,x)
-    show3d(xs,clip=max(xs)/10)
+    show3d(x,clip=max(x)/10)
+    #show3d(xs,clip=max(xs)/10)
 
-
-=======
-  goParihaka()
-  #goTj()
->>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 def goTj():
   """
   ***************************************************************************

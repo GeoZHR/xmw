@@ -11,7 +11,7 @@ pngDir = "../../../png/beg/xavier/bahamas/"
 seisDir = getSeismicDir()
 
 gxfile = "gxc"
-gxfile = "gx"
+gxfile = "gxfull"
 p2file = "p2"
 p3file = "p3"
 p2sfile = "p2s"
@@ -62,7 +62,7 @@ def goWriteAsciiHorizons():
   c1 = Sampling(n1,d1,f1)
   c2 = Sampling(n2,1,2000)
   ha = hp.convertToAsciiHorizons(c1,c2,6400,-1,hs)
-  for ip in range(10):
+  for ip in range(ns):
     name = seisDir+"horizon"+str(ip)+".xyz"
     hp.writeAsciiHorizon(name,ha[ip])
 def goNonlinearDiffusion():

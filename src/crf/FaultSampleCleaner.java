@@ -53,8 +53,6 @@ public class FaultSampleCleaner {
     for (FaultCell cell:skin) {
       float sm = cell.num/cell.den;
       sm *= sm;
-      sm *= sm;
-      sm *= sm;
       float fl = 1f-sm;
       cell.setFl(fl);
     }
@@ -123,8 +121,8 @@ public class FaultSampleCleaner {
     EigenTensors3 ets = lof.applyForTensors(f);
     ets.setEigenvalues(0.05f,1.0f,1.0f);
     LocalSmoothingFilter lsf = new LocalSmoothingFilter();
-    lsf.apply(ets,8,f,sn);
-    lsf.apply(ets,8,mul(f,f),sd);
+    lsf.apply(ets,2,f,sn);
+    lsf.apply(ets,2,mul(f,f),sd);
     mul(sn,sn,sn);
     return new float[][][][]{sn,sd};
   }
