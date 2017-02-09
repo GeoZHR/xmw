@@ -82,11 +82,13 @@ public class SaltPicker2 {
     }
   }
 
-  public float[][] refine(int r, float d, float[][] xu, float[][] fx) {
+  public float[][] refine(
+    int r, float d, int w, float a, float[][] xu, float[][] fx) 
+  {
     float[][] bs = bandSample(r,d,xu,fx);
     int m2 = bs.length;
     int m1 = bs[0].length;
-    OptimalPathPicker opp = new OptimalPathPicker(40,2.0f);
+    OptimalPathPicker opp = new OptimalPathPicker(w,a);
     float[][] ft = opp.applyTransform(bs);
     float[][] wht = opp.applyForWeight(ft);
     float[][] tms1 = zerofloat(m2,m1);

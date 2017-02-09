@@ -8,9 +8,7 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/slt/"
-_datdir = "../../../data/seis/fls/seam/"
-_datdir = "../../../data/seis/fls/"
+_datdir = "../../../data/seis/"
 
 #############################################################################
 # Setup
@@ -19,99 +17,71 @@ def setupForSubset(name):
   Setup for a specified directory includes:
     seismic directory
     samplings s1,s2,s3
-  Example: setupForSubset("s1")
+  Example: setupForSubset("hongliu")
   """
-  global pngDir
   global seismicDir
+  global welllogDir
   global s1,s2,s3
   global n1,n2,n3
   global sz,sl,sc
   global nz,nl,nc
-  global pngDir
-  if name=="3d":
-    print "setupForSubset: 3d"
-    seismicDir = _datdir+"3d/"
-    pngDir = "../../../png/slt/3d/"
-    n1,n2,n3 = 242,611,591
+  if name=="cr2d":
+    print "setupForSubset: costa rica"
+    seismicDir = _datdir+"beg/nathan/sub8/2d/"
+    n1,n2,n3 = 601,3675,201
     d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,1500
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="nathan":
+    print "setupForDataset: nathan"
+    seismicDir = _datdir+"nathan/"
+    n1,n2,n3 = 601,4974,660
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    f1,f2,f3 = 0.000,0.000,0.000
-    #f1,f2,f3 = 220,340,0
+    #f1,f2,f3 = 0.000,5400,10744
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="seam3d":
-    print "setupForSubset: seam 3d"
-    seismicDir = _datdir+"3d/"
-    pngDir = "../../../png/fls/seam/3d/"
-    #n1,n2,n3 = 751,1169,1002
-    n1,n2,n3 = 580,1169,1002
+  elif name=="nathanSub1":
+    print "setupForSubset: nathanSub1"
+    seismicDir = _datdir+"nathan/sub1/"
+    n1,n2,n3 = 400,800,550
     d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    f1,f2,f3 = 0.000,0.000,0.000
-    #f1,f2,f3 = 220,740,350
+    #f1,f2,f3 = 0.000,5400,10744
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="seam3dSub":
-    print "setupForSubset: seam 3d subset"
-    seismicDir = _datdir+"3dSub/"
-    pngDir = "../../../png/fls/seam/3d/"
-    #n1,n2,n3 = 751,1169,1002
-    n1,n2,n3 = 580,1169,466
-    n1,n2,n3 = 580,400,166
-    n1,n2,n3 = 580,1000,466
+  elif name=="nathanSub2":
+    print "setupForSubset: nathanSub2"
+    seismicDir = _datdir+"nathan/sub2/"
+    n1,n2,n3 = 601,1838,550  #fx=gx(:,0:2:end,:)
     d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    f1,f2,f3 = 0.000,0.000,0.000
-    #f1,f2,f3 = 220,740,350
+    #f1,f2,f3 = 0.000,5400,10744
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="bag":
-    print "setupForSubset: subset of bag"
-    seismicDir = _datdir+"bag/3d/"
-    pngDir = "../../../png/fls/bag/3d/"
-    #n1,n2,n3 = 751,1169,1002
-    n1,n2,n3 = 850,550,850
+  elif name=="nathanSub3":
+    print "setupForSubset: nathanSub3"
+    seismicDir = _datdir+"nathan/sub3/"
+    n1,n2,n3 = 601,3675,550  #fx = copy(n1,3675,550,0,1100,60,fx)
     d1,d2,d3 = 1.0,1.0,1.0 
-    f1,f2,f3 = 0.000,0.000,0.000
-    #f1,f2,f3 = 100,2160,50
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-
-  elif name=="ch3d":
-    print "setupForSubset: channel 3d"
-    seismicDir = "../../../data/seis/ad/fed/3d/"
-    pngDir = "../../../png/fls/seam/3d/"
-    #n1,n2,n3 = 751,1169,1002
-    n1,n2,n3 = 180,880,500
-    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    f1,f2,f3 = 0.000,0.000,0.000
-    #f1,f2,f3 = 220,740,350
+    #f1,f2,f3 = 0.000,5400,10744
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
-  elif name=="2dSub1":
-    print "setupForSubset: 2d"
-    seismicDir = _datdir+"2d/sub1/"
-    pngDir = "../../../png/slt/2d/sub1/"
-    n1,n2 = 162,461  #copy(n1-80,n2-150,80,150)
-    d1,d2 = 0.004,0.025 # (s,km,km)
-    f1,f2 = 0.004+80*d1,150*d2
-    #d1,d2 = 1.00,1.0
-    #f1,f2 = 0.00,0.0
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
-  elif name=="2dSub2":
-    print "setupForSubset: 2d"
-    seismicDir = _datdir+"2d/sub2/"
-    pngDir = "../../../png/slt/2d/sub2/"
-    #n1,n2 = 296,1941
-    n1,n2 = 162,461  #copy(n1-80,n2-150,80,150)
-    d1,d2 = 0.004,0.025 # (s,km,km)
-    f1,f2 = 0.004+80*d1,0*d2
-    #f1,f2 = 220,340
-    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
-  elif name=="seam2d":
-    print "setupForSubset: seam2d"
-    seismicDir = _datdir+"2d/"
-    pngDir = "../../../png/slt/2d/sub2/"
-    n1,n2,n3=751,1002,1002
-    n1,n2,n3=400,400,1002
-    f1,f2,f3=0,0,0
-    d1,d2,d3=1,1,1
+  elif name=="nathanSub5":
+    print "setupForSubset: nathanSub5"
+    seismicDir = _datdir+"nathan/sub5/"
+    n1,n2,n3 = 601,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
+    #n1,n2,n3 = 300,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
+    #n1,n2,n3 = 400,3675,825  #fx = copy(n1,3675,550,0,1100,60,fx)
+    #n1,n2,n3 = 355,3675,825  #fx = copy(355,3675,550,150,0,0,fx) horizon extraction
+    #n1,n2,n3 = 601,1400,825  #fx = copy(n1,3675,550,0,1100,60,fx) middle faults
+    #n1,n2,n3 = 500,3675,825  #fx = copy(500,n2,n3,0,0,0,fx) gxfault
+    #n1,n2,n3 = 500,500,500  #fx = copy(n1,500,500,0,1500,150,gxfault) gxsmall
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 0.000,5400,10744
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   else:
     print "unrecognized subset:",name
@@ -123,23 +93,20 @@ def getSamplings():
 def getSeismicDir():
   return seismicDir
 
-def getPngDir():
-  return pngDir
-
 #############################################################################
 # read/write images
-
-def readImage2d(name):
+def readHorizon(name):
   """ 
   Reads an image from a file with specified name.
   name: base name of image file; e.g., "tpsz"
   """
   fileName = seismicDir+name+".dat"
-  image = zerofloat(n1,n2)
+  image = zerofloat(n2,n3)
   ais = ArrayInputStream(fileName)
   ais.readFloats(image)
   ais.close()
   return image
+
 
 def readImage(name):
   """ 
@@ -153,6 +120,19 @@ def readImage(name):
   ais.close()
   return image
 
+def readImage2D(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)#,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+
 def writeImage(name,image):
   """ 
   Writes an image to a file with specified name.
@@ -160,7 +140,19 @@ def writeImage(name,image):
   image: the image
   """
   fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)
+  aos = ArrayOutputStream(fileName)#,ByteOrder.LITTLE_ENDIAN)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+
+def writeImageM(name,image):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  fileName = seismicDir+name+".rsf@"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image
@@ -169,11 +161,11 @@ def writeImage(name,image):
 # read/write fault skins
 
 def skinName(basename,index):
-  return basename+("%03i"%(index))
+  return basename+("%05i"%(index))
 def skinIndex(basename,fileName):
   assert fileName.startswith(basename)
   i = len(basename)
-  return int(fileName[i:i+3])
+  return int(fileName[i:i+5])
 
 def listAllSkinFiles(basename):
   """ Lists all skins with specified basename, sorted by index. """

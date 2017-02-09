@@ -3,13 +3,13 @@ Demonstrate velocity estimation
 Author: Xinming Wu, Colorado School of Mines
 Version: 2016.07.20
 """
-from utils import *
-setupForSubset("shapping")
+from utils2 import *
+setupForSubset("cr2d")
 s1,s2,s3= getSamplings()
 n1,n2= s1.count,s2.count
 
 # Names and descriptions of image files used below.
-gxfile  = "gx" # migrated image 
+gxfile  = "gx568" # migrated image 
 smfile  = "sm" # migrated image 
 pkfile  = "pk" # picked velocity 
 epfile  = "ep" # eigenvalue-derived planarity
@@ -42,10 +42,10 @@ pngDir = None
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goScan()
+  goScan()
   #goThin()
   #goFaultCurve()
-  goFaultThrow()
+  #goFaultThrow()
   #goUnfault()
   #goTensors()
   #goVelocity()
@@ -65,12 +65,10 @@ def goScan():
   else:
     fl = readImage2D(n1,n2,flfile)
     ft = readImage2D(n1,n2,ftfile)
-  '''
   plot2(s1,s2,gx,g=fl,cmin=0.20,cmax=1,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
   plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
       label="Fault dip (degrees)",png="ft")
-  '''
 
 def goThin():
   print "goThin ..."

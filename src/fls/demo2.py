@@ -1,17 +1,20 @@
 from utils2 import *
 
 setupForSubset("seam2dSub2")
+setupForSubset("bag2d")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 
 pngDir = None
-pngDir = "../../../png/fls/seam/2d/"
+pngDir = "../../../png/fls/bag/2d/"
 
 fxfile = "st"
 fxfile = "seam2"
 fxfile = "st"
 fxfile = "gx366"
-fxfile = "gx1046"
+fxfile = "gx1046" #seam2dsub2
+fxfile = "gs" #bag2d
+fxfile = "gs4370" #seam2dsub2
 phfile = "phi"
 dpfile = "damp"
 #fxfile = "f3d267"
@@ -45,7 +48,45 @@ def main(args):
   #goSaltPicker()
   #goBand()
   #goTF()
-  goSaltPickerSub2()
+  #goSaltPickerSub2()
+  goBag2d()
+def goBag2d():
+  gx = readImage(fxfile)
+  gx = gain(gx)
+  c1 = [145,130,250,220,410,250,450, 330, 720,600,812,520,620,400,135]
+  c2 = [  0,110,380,500,660,780,880,1128,1080,900,731,285,240,  0,  0]
+  sp = SaltPicker2()
+  pa = sp.applyForInsAmp(gx)
+  pm = max(pa)/2
+  for i1 in range(n1):
+    pa[0   ][i1] = pm
+    pa[n2-1][i1] = pm
+  xu = sp.initialBoundary(1,c1,c2,pa)
+  plot(gx,cmin=-2,cmax=2,png="seis")
+  plot(gx,cmin=-2,cmax=2,pp=[c1,c2],png="initial")
+  plot(pa,cmin=0,cmax=2,xp=[xu[0],xu[1]])
+  plot(pa,cmin=0,cmax=2,xu=xu)
+  bs = sp.refine(95,1,40,2,xu,pa)
+  plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]],png="final")
+  opp = OptimalPathPicker(40,2)
+  lof = LocalOrientFilter(4,2)
+  ets = lof.applyForTensors(bs)
+  ets.setEigenvalues(0.001,1.0)
+  lsf = LocalSmoothingFilter()
+  #lsf.apply(ets,40,bs,bs)
+  ft = opp.applyTransform(bs)
+  m2,m1 = len(bs),len(bs[0])
+  wht = opp.applyForWeight(ft)
+  tms1 = zerofloat(m2,m1)
+  tms2 = zerofloat(m2,m1)
+  pik1 = opp.forwardPick(100,wht,tms1)
+  pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2)
+  x2 = zerofloat(m2)
+  for i2 in range(m2):
+    x2[i2]=i2
+  plot(bs,cmin=0.01,cmax=0.5,w1=200,w2=2400)
+  plot(bs,cmin=0.01,cmax=0.5,xp=[pik2,x2],w1=200,w2=2400)
+
 def goSaltPickerSub2():
   gx = readImage(fxfile)
   c1 = [390,210,260, 30,285,270,460,280,350,315,400,450]
@@ -757,7 +798,8 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
   panel.setHLimits(0,0,n2-1)
   panel.setVLimits(0,0,n1-1)
   pxv = panel.addPixels(0,0,s1,s2,f);
-  pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  #pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
   pxv.setColorModel(ColorMap.GRAY)
   if cmin and cmax:
     pxv.setClips(cmin,cmax)
@@ -793,13 +835,16 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
       ptv2.setLineColor(Color.YELLOW)
       ptv2.setLineWidth(1.0)
   if pp:
-    ptv = panel.addPoints(pp[0],pp[1])
-    ptv.setLineStyle(PointsView.Line.NONE)
+    ptvl = panel.addPoints(0,0,pp[0],pp[1])
+    ptvl.setLineColor(Color.RED)
+    ptvl.setLineWidth(2.0)
+    ptvp = panel.addPoints(0,0,pp[0],pp[1])
+    ptvp.setLineStyle(PointsView.Line.NONE)
     #ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
-    ptv.setMarkStyle(PointsView.Mark.CROSS)
-    ptv.setMarkColor(Color.RED)
-    ptv.setMarkSize(6.0)
-    ptv.setLineWidth(3.0)
+    ptvp.setMarkStyle(PointsView.Mark.CROSS)
+    ptvp.setMarkColor(Color.RED)
+    ptvp.setMarkSize(6.0)
+    ptvp.setLineWidth(3.0)
   if xs:
     for ip in range(len(xs)):
       ptv = panel.addPoints(xs[ip][0],xs[ip][1])
@@ -818,7 +863,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
   if w1 and w2:
     frame.setSize(w2,w1)
   else:
-    frame.setSize(900,550)
+    frame.setSize(n2,round(n1*0.65))
 
   #frame.setSize(1190,760)
   frame.setFontSize(18)
