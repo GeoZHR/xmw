@@ -32,8 +32,8 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-  #goTj()
-  goBag()
+  goTj()
+  #goBag()
 def goBag():
   """
   ***************************************************************************

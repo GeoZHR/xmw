@@ -6,6 +6,7 @@ Version: 2014.07.17
 
 from pnzutils import *
 from tjutils import *
+setupForSubset("cact")
 setupForSubset("hz25")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
