@@ -12,6 +12,58 @@ import util.*;
 
 public class Helper {
 
+  public void applyTF(
+    final int nf, final float fmin, final float fmax, final int[] ks,
+    final float[][][] fx, final float[][][] pr){
+    final int n3 = fx.length;
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+        System.out.println("i3="+i3);
+        applyTFS(nf,fmin,fmax,ks,fx[i3],pr[i3]);
+      }
+    }); 
+  }
+
+  public void applyTFS(
+    int nf, float fmin, float fmax, int[] ks,
+    float[][] fx, float[][] pr){
+    int n2 = fx.length;
+    int n1 = fx[0].length; 
+    Sampling st = new Sampling(n1,0.004,0.0);
+    Sampling sf = MorletTransform.frequencySampling(nf,fmin,fmax);
+    MorletTransform mt = new MorletTransform(st,sf);
+    for (int i2=0; i2<n2; ++i2) {
+      float[][][] fi = mt.apply(fx[i2]);
+      for (int ik:ks) {
+        for (int i1=0; i1<n1; ++i1)
+          pr[i2][i1] += fi[0][ik][i1];
+      }
+    }
+    float nk = ks.length;
+    div(pr,nk,pr);
+  }
+
+
+  public void applyTFP(
+    final int nf, final float fmin, final float fmax, final int[] ks,
+    final float[][] fx, final float[][] pr){
+    final int n2 = fx.length;
+    final int n1 = fx[0].length; 
+    final Sampling st = new Sampling(n1,0.004,0.0);
+    final Sampling sf = MorletTransform.frequencySampling(nf,fmin,fmax);
+    final MorletTransform mt = new MorletTransform(st,sf);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+      public void compute(int i2) {
+        float[][][] fi = mt.apply(fx[i2]);
+        for (int ik:ks) {
+          for (int i1=0; i1<n1; ++i1)
+            pr[i2][i1] += fi[0][ik][i1];
+        }
+      }
+    }); 
+    float nk = ks.length;
+    div(pr,nk,pr);
+  }
 
   public void checkPoints(float[][] fps, float[][][] fpm) {
     int np = fps[0].length;

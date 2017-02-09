@@ -10,6 +10,8 @@ n1,n2= s1.count,s2.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx568" # migrated image 
+gxfile  = "gf" # migrated image 
+gffile  = "gf"
 smfile  = "sm" # migrated image 
 pkfile  = "pk" # picked velocity 
 epfile  = "ep" # eigenvalue-derived planarity
@@ -21,14 +23,14 @@ fttfile = "ftt" # fault dip thinned
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minTheta,maxTheta = 75,85
+minTheta,maxTheta = 65,85
 sigmaTheta = 40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.75
+lowerLikelihood = 0.55
 upperLikelihood = 0.85
-minSize = 100
+minSize = 50
 
 minThrow = 0.0
 maxThrow = 25.0
@@ -42,14 +44,28 @@ pngDir = None
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  #goMolet()
   goScan()
   #goThin()
-  #goFaultCurve()
+  goFaultCurve()
   #goFaultThrow()
   #goUnfault()
   #goTensors()
   #goVelocity()
   #goShapping()
+def goMolet():
+  gx = readImage2D(n1,n2,gxfile)
+  hp = Helper()
+  nf,fmin,fmax=100,1,100
+  ff,df,nk = 60,1,40
+  ks = rampint(ff,df,nk)
+  gf = zerofloat(n1,n2)
+  hp.applyTF(nf,fmin,fmax,ks,gx,gf)
+  gf = gain(gf)
+  plot2(s1,s2,gx)
+  plot2(s1,s2,gf)
+  writeImage(gffile,gf)
+
 def goScan():
   print "goScan ..."
   gx = readImage2D(n1,n2,gxfile)
@@ -65,10 +81,12 @@ def goScan():
   else:
     fl = readImage2D(n1,n2,flfile)
     ft = readImage2D(n1,n2,ftfile)
+  '''
   plot2(s1,s2,gx,g=fl,cmin=0.20,cmax=1,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
   plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
       label="Fault dip (degrees)",png="ft")
+  '''
 
 def goThin():
   print "goThin ..."
@@ -96,9 +114,6 @@ def goFaultCurve():
   gx = readImage2D(n1,n2,gxfile)
   fl = readImage2D(n1,n2,flfile)
   ft = readImage2D(n1,n2,ftfile)
-  for i2 in range(n2):
-    for i1 in range(70):
-      fl[i2][i1] = 0.01
   fc = FaultCurver()
   fc.setMinCurveSize(minSize)
   fc.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
@@ -414,8 +429,8 @@ def frame2Teapot(panel,png=None):
   #frame.setFontSizeForPrint(8,240)
   #frame.setSize(1240,774)
   #frame.setFontSizeForSlide(1.0,0.9)
-  frame.setFontSize(24)
-  frame.setSize(450+80,700)
+  frame.setFontSize(12)
+  frame.setSize(n2/2,n1)
   frame.setVisible(True)
   if png and pngDir:
     frame.paintToPng(400,3.2,pngDir+png+".png")
