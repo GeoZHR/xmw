@@ -97,16 +97,21 @@ def goBag():
   si.close()
   '''
   if showImage:
-    #x = readImage(datfile,n1,n2,n3)
-    m3 = n3-860
-    m2 = n2-4000
-    x = readImage(subfile,n1,m2,m3)
-    #xs = copy(800,490,500,127,0,30,x)
+    x = readImage(datfile,n1,n2,n3)
+    #m3 = n3-860
+    #m2 = n2-4000
+    #x = readImage(subfile,n1,m2,m3)
+    #xs = copy(950,800,900,0,2160,0,x)
     #xs = copy(n1,m2,m3,0,4000,860,x)
-    print m2
-    print m3
+    #print m2
+    #print m3
     #writeImageX(subfile,xs)
     #gain(100,x)
+    fname = basedir+"gx4370.dat"
+    xs = zerofloat(n1,n3)
+    for i3 in range(n3):
+      xs[i3] = x[i3][4370]
+    writeImageX(fname,xs)
     show3d(x,clip=max(x)/10)
     #show3d(xs,clip=max(xs)/10)
 

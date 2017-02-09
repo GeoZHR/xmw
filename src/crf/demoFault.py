@@ -97,14 +97,14 @@ def main(args):
   #goRosePlotsN()
   #goRosePlotsNScale()
   #goResetSurfaces()
-  #goFaultsAndSurfs()
+  goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
   #goPointsCheck()
   #goReskin()
   #goSkinDisplay()
-  goSampleClean()
+  #goSampleClean()
 def goSampleClean():
   fx = readImage(gsxfile)
   p2 = readImage(p2file)
@@ -174,15 +174,22 @@ def goFaultsAndSurfs():
   hpr.mergeU1AndTop(round(s2.getFirst()),spm,hm1)
   writeImage(hm1file,hm1)
   '''
-  gx = readImage(gsxfile)
-  fpt = readImage(fptmfile)
+  gx = readImage(gxfile)
+  writeImage("gx568",gx[568])
+  #fpt = readImage(fptmfile)
+  '''
+  fpt = readImage(fptvfile)
   #ft = readImage(fttvfile)
+  flr = readImage("flr")
+  fsc = FaultSampleCleaner()
+  fsc.mask(0.2,-0.01,flr,fpt)
   fv = 180
   hpr.horizonToImage(fv,div(hu1,5),fpt)
   hpr.horizonToImage(fv,div(hm1,5),fpt)
   hpr.horizonToImage(fv,div(hl1,5),fpt)
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
+  '''
 
 
 def goFaultDensity():

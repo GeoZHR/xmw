@@ -30,6 +30,20 @@ public class FaultSampleCleaner {
     });
   }
 
+  public void mask(float flMin, float fpMark, float[][][] fl, float[][][] fp) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fli = fl[i3][i2][i1];
+      if(fli<flMin) {
+        fp[i3][i2][i1] = fpMark;
+      }
+    }}}
+  }
+
   public void recomputeLikelihoods(FaultSkin skin, float[][][][] snd) {
     int nsmooth = 50;
     setNumAndDen(skin,snd);
