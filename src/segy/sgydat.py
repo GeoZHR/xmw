@@ -32,8 +32,89 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-  goTj()
+  #goTj()
   #goBag()
+  goCurt()
+def goCurt():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = /data/seis/f3d/f3draw.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 699003060
+  number of traces = 600515
+  format = 3 (2-byte two's complement integer)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   300, i2max =  1250 (inline indices)
+    i3min =   100, i3max =   750 (crossline indices)
+    xmin =  605.416700, xmax =  629.576300 (x coordinates, in km)
+    ymin = 6073.556400, ymax = 6090.463200 (y coordinates, in km)
+  grid sampling:
+    n1 =   462 (number of samples per trace)
+    n2 =   951 (number of traces in inline direction)
+    n3 =   651 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.025000 (inline sampling interval, in km)
+    d3 = 0.024999 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   300, i3min =   100, x =  605.835500, y = 6073.556400
+    i2max =  1250, i3min =   100, x =  629.576300, y = 6074.219900
+    i2min =   300, i3max =   750, x =  605.381800, y = 6089.799700
+    i2max =  1250, i3max =   750, x =  629.122600, y = 6090.463200
+  grid azimuth: 88.40 degrees
+  ****** end of SEG-Y file info ******
+  good subset with no dead traces
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
+  n1,n2,n3 = 462,951,591
+  ***************************************************************************
+  """
+  firstLook = True # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
+  #basedir = "../../../data/seis/cgg/"
+  basedir = "/RCRL/DATA/xinming/Curt3D/"
+  sgyfile = basedir+"FILE_000001.sgy"
+  datfile = basedir+"gx.dat"
+  subfile = basedir+"gxs.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1799,4091,20636,2451,6671
+  #i1min,i1max,i2min,i2max,i3min,i3max = 0,1799,4091,4636,2451,2671
+  n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min)/3,1+(i3max-i3min)/2
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1
+    #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,3,2)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    #m3 = n3-860
+    #m2 = n2-4000
+    #x = readImage(subfile,n1,m2,m3)
+    #xs = copy(950,800,900,0,2160,0,x)
+    #xs = copy(n1,m2,m3,0,4000,860,x)
+    #print m2
+    #print m3
+    #writeImageX(subfile,xs)
+    #gain(100,x)
+    fname = basedir+"gx4370.dat"
+    xs = zerofloat(n1,n3)
+    for i3 in range(n3):
+      xs[i3] = x[i3][4370]
+    writeImageX(fname,xs)
+    show3d(x,clip=max(x)/10)
+    #show3d(xs,clip=max(xs)/10)
+
 def goBag():
   """
   ***************************************************************************
