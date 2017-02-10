@@ -25,7 +25,7 @@ from beg import *
 from hv import *
 from he import *
 from crf import *
-from nwc import *
+from tj import *
 
 #############################################################################
 # Run the function main on the Swing thread

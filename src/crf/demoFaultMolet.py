@@ -78,8 +78,8 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goMolet()
-  goPlanar()
-  goMask()
+  #goPlanar()
+  #goMask()
   goFaultScan()
   #goThin()
   #goSkinTv()

@@ -62,9 +62,9 @@ sigmaPhi,sigmaTheta = 8,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.02
-upperLikelihood = 0.6
-minSkinSize = 2000
+lowerLikelihood = 0.05
+upperLikelihood = 0.4
+minSkinSize = 500
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -76,7 +76,7 @@ maxThrow = 30.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -84,8 +84,8 @@ def main(args):
   #goDisplay()
   #goSlopes()
   #goScan()
-  goThin()
-  #goSkin()
+  #goThin()
+  goSkin()
   #goSkinTv()
   #goReskin()
   #goSkinMerge()
@@ -302,8 +302,6 @@ def goSkinTv():
     fsx.setMaxPlanarDistance(0.2)
     fsk = readSkins(fskbase)
     fr = FaultReskin()
-    sks = fr.reskin(160,350,fsk[0])
-    fsk[0] = sks[0]
     fcs = FaultSkin.getCells(fsk)
     cells = []
     for ic in range(0,len(fcs),4):
@@ -325,11 +323,6 @@ def goSkin():
     fp = readImage(fpfile)
     ft = readImage(ftfile)
     fs = FaultSkinner()
-    zm = ZeroMask(0.1,1,1,1,gx)
-    zero,tiny=0.0,0.01
-    zm.setValue(zero,fl)
-    zm.setValue(zero,fp)
-    zm.setValue(zero,ft)
     fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fs.setMaxDeltaStrike(10)
     fs.setMaxPlanarDistance(0.2)
@@ -339,9 +332,8 @@ def goSkin():
     for skin in skins:
       skin.smoothCellNormals(4)
     fd = FaultDisplay()
-    skins = fd.getLowerFaults(350,skins)
-    plot3(gx,skins=skins)
-  '''
+    #skins = fd.getLowerFaults(350,skins)
+    #plot3(gx,skins=skins)
     #sk = fd.reskin(160,350,skins[1])
     #plot3(gx,skins=sk)
     #skins[1] = sk[1]
@@ -352,16 +344,18 @@ def goSkin():
     writeSkins(fskbase,skins)
   else:
     skins = readSkins(fskbase)
+  #plot3(gx,cells=cells)
+  plot3(gx,skins=skins)
+  for iskin,skin in enumerate(skins):
+    plot3(gx,skins=[skin],clab="skin"+str(iskin))
+
+  '''
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
   plot3(gx,skins=skins)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  k = 0
-  for skin in skins:
-    plot3(gx,skins=[skins[k]],clab=str(k))
-    k = k+1
   '''
 def goSkinMerge():
   gx = readImage(gxfile)
