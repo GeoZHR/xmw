@@ -9,6 +9,7 @@ package fls;
 import java.util.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import pik.*;
 
@@ -25,9 +26,7 @@ import pik.*;
 
 public class SaltPicker2 {
 
-  public float[][] initialBoundary(
-    float d, float[] c1, float[] c2, float[][] pa) 
-  {
+  public float[][] initialBoundary(float d, float[] c1, float[] c2) {
     int nc = c1.length;
     ArrayList<Float> x1a = new ArrayList<Float>();
     ArrayList<Float> x2a = new ArrayList<Float>();
@@ -45,8 +44,8 @@ public class SaltPicker2 {
       float u2i = -dx1/dxc;
       u1a.add(u1i); 
       u2a.add(u2i);
-      x1a.add(c1[ic-1]);
-      x2a.add(c2[ic-1]);
+      x1a.add(x1p);
+      x2a.add(x2p);
       for (float di=d; di<dxc; di+=d) {
         float x1i = x1p+dx1*di/dxc;
         float x2i = x2p+dx2*di/dxc;
@@ -66,6 +65,14 @@ public class SaltPicker2 {
     return xus;
   }
 
+  private void smooth(float sig, float[] xu) {
+    RecursiveExponentialFilter.Edges edges =
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sig);
+    ref.setEdges(edges);
+    ref.apply1(xu,xu);
+  }
+
   private void smooth(float sig, float[][] xu) {
     int np = xu[0].length;
     RecursiveExponentialFilter.Edges edges =
@@ -80,6 +87,68 @@ public class SaltPicker2 {
       xu[2][ip] = u1i*usa;
       xu[3][ip] = u2i*usa;
     }
+  }
+
+  public float[][] regridBoundary(float d, float[] x1, float[] x2) {
+    int np = x1.length;
+    x1[np-1] = x1[0];
+    x2[np-1] = x2[0];
+    int k = 0;
+    float[] ds = new float[np];
+    for (int ip=1; ip<np; ++ip) {
+      float x1i = x1[ip];
+      float x2i = x2[ip];
+      float x1m = x1[ip-1];
+      float x2m = x2[ip-1];
+      float dx1 = x1i-x1m;
+      float dx2 = x2i-x2m;
+      float dsi = sqrt(dx1*dx1+dx2*dx2);
+      if(dsi>0.0f) {
+        k++;
+        x1[k] = x1i;
+        x2[k] = x2i;
+        ds[k] = ds[ip-1]+dsi;
+      }
+    }
+    x1 = copy(k+1,x1);
+    x2 = copy(k+1,x2);
+    ds = copy(k+1,ds);
+    double l = ds[k];
+    int n = (int)round(l/d);
+    Sampling ss = new Sampling(n,d,0);
+    double[] sv = ss.getValues();
+    CubicInterpolator cx1 = new CubicInterpolator(ds,x1);
+    CubicInterpolator cx2 = new CubicInterpolator(ds,x2);
+    float[] x1n = new float[n];
+    float[] x2n = new float[n];
+    float[] u1n = new float[n];
+    float[] u2n = new float[n];
+    for (int i=0; i<n; ++i) {
+      float si = (float)sv[i];
+      x1n[i] = cx1.interpolate(si);
+      x2n[i] = cx2.interpolate(si);
+    }
+    for (int i=0; i<n; ++i) {
+      int ip = i+1; if(ip==n) ip=0;
+      int im = i-1; if(im<0)  im=n-1;
+      float g1 = x1n[ip]-x1n[im];
+      float g2 = x2n[ip]-x2n[im];
+      float gs = sqrt(g1*g1+g2*g2);
+      if(gs>0.0f){g1/=gs;g2/=gs;}
+      u1n[i] = -g2;
+      u2n[i] =  g1;
+    }
+    return new float[][]{x1n,x2n,u1n,u2n};
+  }
+
+
+  public float[][] pickNext(
+    int r, float d, int w, float a, float[] x1, float[] x2, float[][] fx) {
+    smooth(10,x1);
+    smooth(10,x2);
+    float[][] xu = regridBoundary(1f,x1,x2);
+    float[][] bs = refine(r,d,w,a,xu,fx);
+    return xu;
   }
 
   public float[][] refine(

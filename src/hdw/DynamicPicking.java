@@ -18,6 +18,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import util.*;
+import vec.*;
 
 /**
  * Dynamic warping of sequences and images.
@@ -556,7 +557,6 @@ public class DynamicPicking {
     float[][] p, float[][] u, float[][][] es) {
     int n2 = p.length;
     System.out.println("i1="+i1);
-    _emin = -1000000f;
     float[][] ef1 = fillfloat(_emin,_nl,n2);
     accumulateBackwardDip(i1,dl,el,p,ef1);
     forwardtrackK(i1,_lmax,p,ef1,u[i1]);
@@ -582,6 +582,383 @@ public class DynamicPicking {
       es[i2][i1] = ef1[i2];
     return es;
   }
+
+  public void refine(float[][] fx, float[][] us) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    DynamicWarping dw = new DynamicWarping(-10,10);
+    dw.setStrainMax(0.25,0.5);
+    dw.setErrorSmoothing(3);
+    float[][] gx = flattenWithHorizons(us,fx);
+    //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(4);
+    //rgf.applyX0(gx,gx);
+    float[][] gr = new float[n2][n1];
+    for (int i2=0; i2<n2; ++i2)
+      gr[i2] = gx[0];
+    float[][] ux = dw.findShifts(gr,gx);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      us[i1][i2] += ux[i2][i1];
+    }}
+  }
+
+  public float[][] pick(
+    int sigma, int dl, float strain, int[] ks, 
+    float[][] p, float[][] f, float[][][] ds) {
+    int ns = ks.length;
+    int n2 = f.length;
+    float[][] u = new float[ns][n2];
+    //float[][][] ds = new float[n2][ns][_nl];
+    accumulateForward2(sigma,dl,ks,p,f,ds);
+    smooth1(strain,ds);
+    pick(dl,ks,ds,u);
+    return u;
+  }
+
+  private void pick(final int dl, final int[] ks, 
+    final float[][][] d, final float[][] u) {
+    int n2 = d.length;
+    int ns = d[0].length;
+    Parallel.loop(ns,new Parallel.LoopInt() {
+      public void compute(int is) {
+      float[][] d1 = new float[n2][_nl];
+      for (int i2=0; i2<n2; ++i2)
+        d1[i2] = d[i2][is];
+      backtrack(d1,u[is]);
+      add(u[is],ks[is]-dl,u[is]);
+    }});
+  }
+
+  private void backtrack(float[][] d, float[] u) {
+    int n2 = d.length;
+    int nl = d[0].length;
+    int nlm = nl-1;
+    int ilp = 0;
+    float dmax = d[n2-1][0];
+    for (int il=0; il<nl; ++il) {
+      float di = d[n2-1][il];
+      if (di>dmax) {ilp = il; dmax = di;}
+    }
+    u[n2-1] = ilp;
+    for (int i2=n2-2; i2>=0; i2--) {
+      float[] d2 = d[i2];
+      int ilm = ilp;
+      int klm = ilm-1;//_dm;
+      int klp = ilm+1;//_dp;
+      if(klm<0){klm=0;} if(klm>nlm) {klm=nlm;}
+      if(klp<0){klp=0;} if(klp>nlm) {klp=nlm;}
+      ilp = klm; dmax = d2[klm];
+      for (int kl=klm+1; kl<=klp; ++kl) {
+        float dk = d[i2][kl];
+        if (dk>dmax) {dmax=dk;ilp = kl;}
+      }
+      u[i2] = ilp;
+    }
+  }
+
+  private void accumulateForward2(
+    final int sigma, final int dl, final int[] ks, 
+    final float[][] p, final float[][] f, final float[][][] ds) {
+    final int n2 = f.length;
+    final int ns = ks.length;
+    Parallel.loop(ns,new Parallel.LoopInt() {
+      public void compute(int is) {
+      System.out.println("is="+is);
+      float[][] d1 = fillfloat(-_lmax*10,_nl,n2);
+      accumulateForward2(ks[is],sigma,dl,p,f,d1);
+      //accumulateForwardDip(ks[is],dl,p,p,d1);
+      for (int i2=0; i2<n2; ++i2)
+        ds[i2][is] = d1[i2];
+    }});
+
+  }
+
+  public void accumulateForward2(
+    int i1, int sigma, int dl, 
+    float[][] p, float[][] f, float[][] d) {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    int ilb = 0;
+    int ile = 2*_lmax;
+    int nl  = 2*_lmax+1;
+    d[0][_lmax] = 1f;
+    int[][] lsk = new int[n2][nl];
+    float[][] ps = new float[n2][nl];
+    ps[0][_lmax] = p[0][i1];
+    //int gw = 50;
+    //float[] g = gaussainScale(gw);
+    for (int il=0; il<nl; il++)
+      lsk[0][il] = il;
+    for (int i2=1; i2<n2; i2++) {
+      int i2m = i2-1;
+      float[] d2 = d[i2m];
+      float[] p2 = p[i2];
+      float[] ps2 = ps[i2];
+      float[] ps2m = ps[i2m];
+      ilb = max(_lmax-i2,0);
+      ile = min(_lmax+i2,nl-1);
+      for (int il=ilb; il<=ile; ++il) {
+        int ih = i1+il-_lmax;
+        ih = max(ih,0);
+        ih = min(ih,n1-1);
+        int ilm = il;
+        int klm = ilm+_dm; 
+        int klp = ilm+_dp; 
+        float[] f2 = f[i2];
+        if(klm<ilb){klm=ilb;} if(klm>ile) {klm=ile;}
+        if(klp<ilb){klp=ilb;} if(klp>ile) {klp=ile;}
+        int klt = klm; 
+        float dmax = d2[klm];
+        for (int kl = klm; kl<=klp; ++kl) {
+          float dk = d[i2m][kl];
+          if (dk>dmax) {dmax=dk;klt=kl;}
+        }
+        lsk[i2][il] = klt;
+        ps2[il] = ps2m[klt]+p2[ih];
+        int ml = il;
+        int ke = min(i2,300);
+        float cs = 0f;
+        for (int k=0; k<ke; k++) {
+          ml = lsk[i2-k][ml];
+          int hm = i1+ml-_lmax;
+          hm = max(hm,0);
+          hm = min(hm,n1-1);
+          if(k%2==0) {
+            cs += correlate(sigma,ih,hm,f2,f[i2-k-1]);
+          }
+        }
+        d[i2][il] = dmax+_c1*cs-_c2*abs(il-_lmax-ps2[il]);
+      }
+    }
+  }
+
+  private void smooth1(final float strain, final float[][][] ds) {
+    final int n2 = ds.length;
+    final int ns = ds[0].length;
+    final int b = (int)ceil(1.0/strain);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+      public void compute(int i2) {
+      float[][] d2 = ds[i2];
+      float[][] ef = new float[ns][_nl];
+      float[][] er = new float[ns][_nl];
+      accumulateForward1(b,d2,ef);
+      accumulateBackward1(b,d2,er);
+      for (int is=0; is<ns; ++is)
+        for (int il=0; il<_nl; ++il)
+          d2[is][il] = ef[is][il]+er[is][il]-d2[is][il];
+          //d2[is][il] = er[is][il];
+    }});
+  }
+
+
+  private void accumulateForward1(int b, float[][] e, float[][] d) {
+    int nl = e[0].length;
+    int ni = e.length;
+    int nlm1 = nl-1;
+    int nim1 = ni-1;
+    int ib = 0;
+    int ie = ni;
+    int is = 1;
+    for (int il=0; il<nl; ++il)
+      d[ib][il] = e[ib][il];
+    for (int ii=ib+1; ii!=ie; ii+=is) {
+      int ji = max(0,min(nim1,ii-is));
+      int jb = max(0,min(nim1,ii-is*b));
+      for (int il=0; il<nl; ++il) {
+        //int ilm1 = il-1; if (ilm1<0) ilm1 = 0;
+        int ilp1 = il+1; if (ilp1==nl) ilp1 = nlm1;
+        float di = d[ji][il  ];
+        float dp = d[jb][ilp1];
+        //float dm = d[jb][ilm1];
+        for (int kb=ji; kb!=jb; kb-=is) {
+          dp += e[kb][ilp1];
+        }
+        //d[ii][il] = max3(dm,di,dp)+e[ii][il];
+        d[ii][il] = max(dp,di)+e[ii][il];
+      }
+    }
+  }
+
+  private void accumulateBackward1(int b, float[][] e, float[][] d) {
+    int nl = e[0].length;
+    int ni = e.length;
+    //int nlm1 = nl-1;
+    int nim1 = ni-1;
+    int ib = nim1;
+    int ie = -1;
+    int is = -1;
+    for (int il=0; il<nl; ++il)
+      d[ib][il] = e[ib][il];
+    for (int ii=ib-1; ii!=ie; ii+=is) {
+      int ji = max(0,min(nim1,ii-is));
+      int jb = max(0,min(nim1,ii-is*b));
+      for (int il=0; il<nl; ++il) {
+        int ilm1 = il-1; if (ilm1==-1) ilm1 = 0;
+        //int ilp1 = il+1; if (ilp1>=nl) ilp1 = nlm1;
+        float dm = d[jb][ilm1];
+        float di = d[ji][il  ];
+        //float dp = d[jb][ilp1];
+        for (int kb=ji; kb!=jb; kb-=is) {
+          dm += e[kb][ilm1];
+        }
+        //d[ii][il] = max3(dm,di,dp)+e[ii][il];
+        d[ii][il] = max(dm,di)+e[ii][il];
+      }
+    }
+  }
+
+  public float[][] flattenWithHorizons(float[][] hs, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] gx = new float[n2][n1];
+    Sampling s1 = new Sampling(n1);
+    SincInterpolator si = new SincInterpolator();
+    for (int i2=0; i2<n2; ++i2) {
+      float[] fx2 = fx[i2];
+      float[] gx2 = gx[i2];
+    for (int i1=0; i1<n1; ++i1) {
+      gx2[i1]=si.interpolate(s1,fx2,hs[i1][i2]);
+    }}
+    return gx;
+  }
+
+  public void smoothHorizons(float sig, float[][] el, float[][] hs) {
+    final int ns = hs.length;
+    Parallel.loop(ns,new Parallel.LoopInt() {
+      public void compute(int is) {
+        smoothHorizon(sig,el,hs[is]);
+    }});
+
+  }
+
+  public void smoothHorizon(float sig, float[][] el, float[] hz) {
+    int n2 = hz.length; 
+    float[] b = new float[n2];
+    float[] r = new float[n2];
+    float[] w = new float[n2];
+    makeRhsWeights(hz,el,b,w);
+    VecArrayFloat1 vb = new VecArrayFloat1(b);
+    VecArrayFloat1 vr = new VecArrayFloat1(r);
+    Smoother1 smoother1 = new Smoother1(sig);
+    A1 a1 = new A1(smoother1,w);
+    CgSolver cs = new CgSolver(0.001,200);
+    smoother1.applyTranspose(b);
+    cs.solve(a1,vb,vr);
+    copy(r,hz);
+  }
+
+    // Conjugate-gradient operators.
+  private static class A1 implements CgSolver.A {
+    A1(Smoother1 s1, float[] wp) 
+    {
+      _s1 = s1;
+      _wp = wp;
+      float n1 = wp.length;
+      _sc = sum(wp)/(n1);
+    }
+    public void apply(Vec vx, Vec vy) {
+      VecArrayFloat1 v1x = (VecArrayFloat1)vx;
+      VecArrayFloat1 v1y = (VecArrayFloat1)vy;
+      float[] x = v1x.getArray();
+      float[] y = v1y.getArray();
+      float[] z = copy(x);
+      v1y.zero();
+      _s1.apply(z);
+      addAndScale(-_sc,z,y);
+      applyLhs(_wp,z,y);
+      _s1.applyTranspose(y);
+      addAndScale( _sc,x,y);
+    }
+    private float _sc;
+    private Smoother1 _s1;
+    private float[] _wp;
+  }
+
+  private void makeRhsWeights(
+    float[] hz, float[][] el, float[] b, float[] w) 
+  {
+    int n2 = el.length;
+    int n1 = el[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+      int k1 = round(hz[i2]);
+      k1 = max(0,k1);
+      k1 = min(n1-1,k1);
+      float w1i = el[i2][k1];
+      float wsi = w1i*w1i;
+      b[i2] = hz[i2]*wsi;
+      w[i2] = wsi;
+    }
+  }
+
+  private static void addAndScale(float sc, float[] x, float[] y) {
+    int n1 = x.length;
+    for (int i1=0; i1<n1; ++i1) {
+      y[i1] += sc*x[i1];
+    }
+  }
+
+  private static void smooth1(float sigma, float[] w, float[] x) {
+    if (sigma<1.0f)
+      return;
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(sigma,w,x,x);
+    /*
+    RecursiveExponentialFilter.Edges edges =
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.setEdges(edges);
+    ref.apply(x,x);
+    */
+  }
+
+
+  private static void smooth1(float sigma, float[] x) {
+    if (sigma<1.0f)
+      return;
+    RecursiveExponentialFilter.Edges edges =
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.setEdges(edges);
+    ref.apply(x,x);
+  }
+
+
+  private static class Smoother1 {
+    public Smoother1(float sigma) {
+      _sigma = sigma;
+    }
+    public void apply(float[] x) {
+      smooth1(_sigma,x);
+    }
+    public void applyTranspose(float[] x) {
+      smooth1(_sigma,x);
+    }
+    private float _sigma;
+  }
+
+  private static class Smoother1X {
+    public Smoother1X(float sigma, float[] w) {
+      _sigma = sigma;
+      _w = w;
+    }
+    public void apply(float[] x) {
+      smooth1(_sigma,_w,x);
+    }
+    public void applyTranspose(float[] x) {
+      smooth1(_sigma,_w,x);
+    }
+    private float _sigma;
+    private float[] _w;
+  }
+
+
+
+  private static void applyLhs(float[] wp, float[] x, float[] y) {
+    int n1 = wp.length;
+    for (int i1=0; i1<n1; ++i1)
+      y[i1] += wp[i1]*x[i1];
+  }
+
 
   public float[][][] pickThrough(int i1,
     int sigma, int dl, float[][] el, 
@@ -675,6 +1052,7 @@ public class DynamicPicking {
   }
 
 
+
   private void backtrackK(
     int i1, int lmax, float[][] p, float[][] d, float[] u) 
   {
@@ -691,8 +1069,8 @@ public class DynamicPicking {
     u[n2-1] = ilp;
     for (int i2=n2-2; i2>=0; i2--) {
       float[] d2 = d[i2];
-      int ih = i1+ilp-lmax;
-      if(ih<0||ih>n1-1){continue;}
+      //int ih = i1+ilp-lmax;
+      //if(ih<0||ih>n1-1){continue;}
       int ilm = ilp;
       int klm = ilm-1;//_dm;
       int klp = ilm+1;//_dp;
@@ -878,7 +1256,7 @@ public class DynamicPicking {
   public void accumulateForward2T(
     int i1, int sigma, int dl, float[][] el, float[][] p, 
     float[][] f, float[][] d) {
-    float[][] mk = findPeakAndThrough(f);
+    //float[][] mk = findPeakAndThrough(f);
     int n2 = el.length;
     int n1 = el[0].length;
     int ilb = 0;
@@ -888,8 +1266,8 @@ public class DynamicPicking {
     int[][] lsk = new int[n2][nl];
     float[][] ps = new float[n2][nl];
     ps[0][_lmax] = p[0][i1];
-    int gw = 50;
-    float[] g = gaussainScale(gw);
+    //int gw = 50;
+    //float[] g = gaussainScale(gw);
     for (int il=0; il<nl; il++)
       lsk[0][il] = il;
     for (int i2=1; i2<n2; i2++) {
@@ -918,9 +1296,8 @@ public class DynamicPicking {
         lsk[i2][il] = klt;
         ps2[il] = ps2m[klt]+p2[ih];
         int ml = il;
-        int ke = min(i2,60);
+        int ke = min(i2,200);
         float cs = 0f;
-        int c = 0;
         for (int k=0; k<ke; k++) {
           ml = lsk[i2-k][ml];
           int hm = i1+ml-_lmax;
@@ -1072,7 +1449,7 @@ public class DynamicPicking {
     int nl  = 2*_lmax+1;
     d[0][_lmax] = 1f;
     int[][] lsk = new int[n2][nl];
-    int gw = n2;
+    int gw = 100;
     float[] g = gaussainScale(gw);
     for (int il=0; il<nl; il++)
       lsk[0][il] = il;
@@ -1083,7 +1460,7 @@ public class DynamicPicking {
         int ih = i1+il-_lmax;
         if(ih<0) {continue;}
         if(ih>=n1) {continue;}
-        if(f[i2][ih]<0&&el[i2][ih]>0.95f) {continue;}
+        //if(f[i2][ih]<0&&el[i2][ih]>0.6f) {continue;}
         float[] f2 = f[i2];
         int ilm = il;
         int klm = ilm+_dm; 
@@ -1131,7 +1508,6 @@ public class DynamicPicking {
     int dgp = min(g1+d,n1-1)-g1;
     int dm = min(dfm,dgm);
     int dp = min(dfp,dgp);
-    int ns= dp+dm+1;
     float ff = 0f;
     float gg = 0f;
     float fg = 0f;
@@ -1143,6 +1519,8 @@ public class DynamicPicking {
       gg += gi*gi;
     }
     float cx =(fg*fg)/(ff*gg);
+    if(Float.isNaN(cx)) cx=0;
+    if(Float.isInfinite(cx)) cx=0;
     return cx;
   }
 

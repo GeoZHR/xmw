@@ -53,7 +53,7 @@ def main(args):
 def goBag2d():
   gx = readImage(fxfile)
   gx = gain(gx)
-  c1 = [145,130,250,220,410,250,450, 330, 720,600,812,520,620,400,135]
+  c1 = [145,130,250,220,410,250,450, 330, 720,600,812,520,620,400,145]
   c2 = [  0,110,380,500,660,780,880,1128,1080,900,731,285,240,  0,  0]
   sp = SaltPicker2()
   pa = sp.applyForInsAmp(gx)
@@ -61,7 +61,8 @@ def goBag2d():
   for i1 in range(n1):
     pa[0   ][i1] = pm
     pa[n2-1][i1] = pm
-  xu = sp.initialBoundary(1,c1,c2,pa)
+  #xu = sp.initialBoundary(1,c1,c2)
+  xu = sp.regridBoundary(1,[c1,c2])
   plot(gx,cmin=-2,cmax=2,png="seis")
   plot(gx,cmin=-2,cmax=2,pp=[c1,c2],png="initial")
   plot(pa,cmin=0,cmax=2,xp=[xu[0],xu[1]])
@@ -69,11 +70,6 @@ def goBag2d():
   bs = sp.refine(95,1,40,2,xu,pa)
   plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]],png="final")
   opp = OptimalPathPicker(40,2)
-  lof = LocalOrientFilter(4,2)
-  ets = lof.applyForTensors(bs)
-  ets.setEigenvalues(0.001,1.0)
-  lsf = LocalSmoothingFilter()
-  #lsf.apply(ets,40,bs,bs)
   ft = opp.applyTransform(bs)
   m2,m1 = len(bs),len(bs[0])
   wht = opp.applyForWeight(ft)

@@ -7,85 +7,187 @@ Version: 2016.06.01
 
 
 from utils import * 
-#setupForSubset("semblance")
-#setupForSubset("channel")
-#setupForSubset("surface")
-#setupForSubset("env")
-#setupForSubset("semblance3d")
-setupForSubset("nwc1")
-setupForSubset("nwc2")
-setupForSubset("lulia")
-setupForSubset("fd2")
-setupForSubset("bahamas")
-setupForSubset("tp2")
+#setupForSubset("nwc1")
+#setupForSubset("nwc2")
+#setupForSubset("lulia")
+#setupForSubset("bahamas")
+#setupForSubset("fd2")
+#setupForSubset("curt")
+#setupForSubset("curt2")
+#setupForSubset("tp2")
 #setupForSubset("dgb")
-s1,s2,s3 = getSamplings()
-n1,n2,n3 = s1.count,s2.count,s3.count
-f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
-d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
+#s1,s2,s3 = getSamplings()
+#n1,n2,n3 = s1.count,s2.count,s3.count
+#f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
+#d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 
 
 #############################################################################
-semfile = "avoscnb" # input semblance image
-pikfile = "avopikb" # picked path using Sergey's method
-chfile = "channel"  # input seismic horizon slice with channels
-slfile = "sl" # 3D salt likelihood image
-fxfile = "f3d75s" # 
 fxfile = "gx" # 
 fxfile = "gx185" # 
 fxfile = "gx569" # 
 fxfile = "fxx582" # 
 fxfile = "gx286" # 
-fxfile = "fx172" # 
 fxfile = "gx666" # 
+fxfile = "fx172" # 
+fxfile = "gxsb" # 
+fxfile = "gxsb2" # 
 fxfile = "tp73s" # 
 fxsfile = "fxs" # 
 gxfile = "gx" # 
 ls1file = "ls1" # 
 ls2file = "ls2" # 
+hsfile = "hs"
+elfile = "el"
 p2file = "p2" # seismic slopes
 p3file = "p3" # seismic slopes
-pngDir = getPngDir()
+#pngDir = getPngDir()
 pngDir = None
 plotOnly = False
 
 def main(args):
-  #goCorrelation()
-  #goHorizonPik()
-  #timeMark()
-  #goPick()
-  #goFlatten()
-  #goDw()
-  goTpd()
-  #goDipPick()
-def goTpd():
-  dl = 50
+  #goTpd()
+  #goCurt2()
+  goCurt1()
+def goCurt():
+  setupForSubset("curt")
+  fxfile = "gxsb" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 60
+  nl = 2*dl+1
+  gx = readImage(fxfile)
+  fx = zerofloat(n1,n2)
+  for i2 in range(n2):
+    fx[i2] = gx[n2-i2-1]
+  fs = copy(210,n2,0,0,fx)
+  writeImage("gxsb1",fs)
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
+def goCurt1():
+  setupForSubset("curt1")
+  fxfile = "gxsb1" # fx = copy(210,3000,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 55
+  nl = 2*dl+1
   fx = readImage(fxfile)
   fx = gain(fx)
-  fs = zerofloat(n1,n2)
-  lof = LocalOrientFilter(2,1)
-  ets = lof.applyForTensors(fx)
-  lsf = LocalSmoothingFilter()
-  ets.setEigenvalues(0.05,1.0)
   dp = DynamicPicking(-dl,dl)
-  lsfp = LocalSlopeFinder(16,2,5) 
-  p = zerofloat(n1,n2)
-  el= zerofloat(n1,n2)
-  lsfp.findSlopes(fx,p,el);
-  rgf = RecursiveGaussianFilterP(2)
-  #fs = gain(fs)
-  #lsf.apply(ets,10,fx,fs)
-  dp.setGate(-1,1)
-  dp.setWeights(1.0,0.2);
-  gx = zerofloat(n1,n2)
-  us = zerofloat(n2,n1)
-  ut = zerofloat(n2,n1)
-  for k1 in range(30,n1,8):
-    es = dp.pickThrough(k1,30,dl,el,p,fx,us)
-    es = dp.trackDip(k1,p,ut)
-  plot2(s1,s2,fx,u=us,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.RED)
-  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.RED)
+  if not plotOnly:
+    lsf = LocalSlopeFinder(4,2,5) 
+    p = zerofloat(n1,n2)
+    el= zerofloat(n1,n2)
+    lsf.findSlopes(fx,p,el);
+    dp.setGate(-1,1)
+    dp.setWeights(1.0,0.2);
+    gx = zerofloat(n1,n2)
+    us = zerofloat(n2,n1)
+    ks = rampint(0,1,n1)
+    ds = zerofloat(nl,n1,n2)
+    us = dp.pick(30,dl,0.4,ks,p,fx,ds)
+    writeImage(hsfile,us)
+    writeImage(elfile,el)
+  else:
+    us = readImageX(n2,n1,hsfile)
+    el = readImage(elfile)
+  dp.smoothHorizons(8,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(8,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(4,el,us)
+  gx=dp.flattenWithHorizons(us,fx)
+  cmin = min(fx)*0.6
+  cmax = max(fx)*0.6
+  plot2(s1,s2,fx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,gx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,fx,u=us,cmin=cmin,cmax=cmax,color=Color.RED)
+  #plot2(s1,s2,fx,u=uss,cmin=cmin,cmax=cmax,color=Color.RED)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
 
+
+def goCurt2():
+  setupForSubset("curt2")
+  fxfile = "gxsb2" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 30
+  nl = 2*dl+1
+  fx = readImage(fxfile) #fs = copy(230,3200,280,0,fx)
+  fx = gain(fx)
+  dp = DynamicPicking(-dl,dl)
+  if not plotOnly:
+    lsf = LocalSlopeFinder(4,2,5) 
+    p = zerofloat(n1,n2)
+    el= zerofloat(n1,n2)
+    lsf.findSlopes(fx,p,el);
+    dp.setGate(-1,1)
+    dp.setWeights(1.0,0.2);
+    gx = zerofloat(n1,n2)
+    us = zerofloat(n2,n1)
+    ks = rampint(0,1,n1)
+    ds = zerofloat(nl,n1,n2)
+    us = dp.pick(30,dl,0.2,ks,p,fx,ds)
+    writeImage(hsfile,us)
+    writeImage(elfile,el)
+  else:
+    us = readImageX(n2,n1,hsfile)
+    el = readImage(elfile)
+  dp.smoothHorizons(8,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(8,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(4,el,us)
+  gx=dp.flattenWithHorizons(us,fx)
+  cmin = min(fx)*0.6
+  cmax = max(fx)*0.6
+  plot2(s1,s2,fx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,gx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,fx,u=us,cmin=cmin,cmax=cmax,color=Color.RED)
+  #plot2(s1,s2,fx,u=uss,cmin=cmin,cmax=cmax,color=Color.RED)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
+
+def goTpd():
+  setupForSubset("tp2")
+  fxfile = "tp73s" # 
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 50
+  nl = 2*dl+1
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  dp = DynamicPicking(-dl,dl)
+  if not plotOnly:
+    lsf = LocalSlopeFinder(8,2,5) 
+    p = zerofloat(n1,n2)
+    el= zerofloat(n1,n2)
+    lsf.findSlopes(fx,p,el);
+    dp.setGate(-1,1)
+    dp.setWeights(1.0,0.1);
+    gx = zerofloat(n1,n2)
+    us = zerofloat(n2,n1)
+    ut = zerofloat(n2,n1)
+    ks = rampint(0,1,n1)
+    ds = zerofloat(nl,n1,n2)
+    us = dp.pick(30,dl,0.1,ks,p,fx,ds)
+    writeImage(hsfile,us)
+    writeImage(elfile,el)
+  else:
+    us = readImageX(n2,n1,hsfile)
+    el = readImage(elfile)
+    el = pow(el,0)
+  hw,vw=n2,round(n1*2.5)
+  dp.smoothHorizons(2,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(2,el,us)
+  gx=dp.flattenWithHorizons(us,fx)
+  plot2(s1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=us,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  #plot2(s1,s2,fx,u=uss,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
 def goDipPick():
   dl = 50
   fx = readImage(fxfile)
@@ -139,7 +241,7 @@ def goDw():
   #fs = gain(fs)
   lsf.apply(ets,10,fx,fs)
   dp.setGate(-1,1)
-  dp.setWeights(1.0,0.1);
+  dp.setWeights(1.0,0.2);
   gx = zerofloat(n1,n2)
   us = zerofloat(n2,n1)
   ut = zerofloat(n2,n1)
@@ -553,6 +655,8 @@ def goHorizon():
   plot3(gx,surf=u,png="saltSl")
 
 def gain(x):
+  n2 = len(x)
+  n1 = len(x[0])
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(5.0)
   ref.apply1(g,g)
@@ -710,8 +814,9 @@ def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 
-def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=30,hint=40,
-          cmin=0.0,cmax=0.0,cmap=ColorMap.GRAY,color=Color.RED,title=None,perc=None,png=None):
+def plot2(s1,s2,c,u=None,vint=30,hint=200,hw=None,vw=None,
+          cmin=0.0,cmax=0.0,cmap=ColorMap.GRAY,color=Color.RED,
+          title=None,perc=None,png=None):
   n2 = s2.getCount()
   n1 = s1.getCount()
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
@@ -732,29 +837,14 @@ def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=30,hint=40,
   if u:
     nu = len(u)
     x2 = rampfloat(0,1,n2)
-    for iu in range(0,nu,1):
+    cp = ColorMap(0,nu-1,ColorMap.PRISM)
+    for iu in range(0,nu,10):
       uv = panel.addPoints(0,0,u[iu],x2)
-      uv.setLineColor(color)
-      uv.setLineWidth(2)
-  if us:
-    colors = [Color.RED,Color.GREEN,Color.BLUE]
-    for k in range(len(us)):
-      sk = ss[k]
-      uk = copy(ss[k].getCount(),0,us[k])
-      uv = panel.addPoints(0,0,sk,uk)
-      uv.setLineColor(colors[k])
-      #uv.setLineColor(Color.WHITE)
-      uv.setLineStyle(PointsView.Line.DASH)
-      uv.setLineWidth(3)
-  if cps and css:
-    colors = [Color.RED,Color.GREEN,Color.BLUE]
-    for k in range(len(cps)):
-      pv = panel.addPoints(0,0,cps[k],css[k])
-      pv.setMarkColor(colors[k])
-      #uv.setLineColor(Color.WHITE)
-      pv.setLineStyle(PointsView.Line.NONE)
-      pv.setMarkStyle(PointsView.Mark.FILLED_SQUARE)
-      pv.setMarkSize(8)
+      uv.setLineColor(cp.getColor(iu))
+      uv.setLineWidth(2.5)
+    uv = panel.addPoints(0,0,u[nu-1],x2)
+    uv.setLineColor(cp.getColor(nu-1))
+    uv.setLineWidth(2.5)
   #panel.addColorBar()
   frame = PlotFrame(panel)
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
@@ -762,7 +852,10 @@ def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=30,hint=40,
   #frame.setFontSizeForPrint(8,240)
   #frame.setSize(470,1000)
   frame.setFontSize(12)
-  frame.setSize(n2*1,round(n1*2.5))
+  if hw and vw:
+    frame.setSize(hw,vw)
+  else:
+    frame.setSize(round(n2*0.4),round(n1*2))
   frame.setVisible(True)
   if png and pngDir:
     png += "n"+str(int(10*nrms))

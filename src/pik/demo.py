@@ -10,9 +10,10 @@ from utils import *
 #setupForSubset("semblance")
 #setupForSubset("channel")
 #setupForSubset("surface")
-setupForSubset("env")
+#setupForSubset("env")
 #setupForSubset("semblance3d")
-setupForSubset("xue")
+#setupForSubset("xue")
+setupForSubset("scan")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
@@ -45,7 +46,8 @@ def main(args):
   #goSemblance3d() 
   #goEnv3d() 
   #goSlices()
-  goCorrelation()
+  #goCorrelation()
+  goScan()
   #goTimeMarker()
 def goTimeMarker():
   gx = readImage3D("gx")
@@ -75,6 +77,49 @@ def goTimeMarker():
   plot3(t2,cmin=0,cmax=max(t2),cmap=ColorMap.JET)
   plot3(ts,cmin=0,cmax=0.1,cmap=ColorMap.JET)
 
+def goScan():
+  '''
+  fx = readImage1L(fxfile)
+  gx = readImage1L(gxfile)
+  ls = readImage2L(lsfile)
+  '''
+  lc = readImage2L(n1,n2,"scan")
+  opp = OptimalPathPicker(3,1)
+  #lc = pow(lc,2)
+  lc = sub(lc,min(lc))
+  lc = div(lc,max(lc))
+  wht = opp.applyForWeight(lc)
+  tms1 = zerofloat(n1,n2)
+  tms2 = zerofloat(n1,n2)
+  tmsd = zerofloat(n1,n2)
+  pik1 = opp.forwardPick(n2-1,wht,tms1)
+  #plot2(s1,sl,tms1,vint=200,hint=10,cmin=min(tms1),cmax=max(tms1))
+  pik2 = opp.backwardPick(round(pik1[n1-1]),wht,tms2)
+  pik3 = opp.applyForPath(80,10,lc)
+  #pik2 = opp.backwardPick(40,wht,tms2)
+  #plot2(s1,sl,tms2,vint=200,hint=10,cmin=min(tms2),cmax=max(tms2))
+  tmss = add(tms1,tms2)
+  tmss = div(1,tmss)
+  tmss = sub(tmss,min(tmss))
+  tmss = div(tmss,max(tmss))
+  print min(tmss)
+  pik = zerofloat(n1)
+  for i1 in range(n1):
+    k2 = 0
+    lcm = lc[0][i1]
+    for i2 in range(n2):
+      if (lc[i2][i1]>lcm):
+        k2 = i2
+        lcm = lc[i2][i1]
+    pik[i1] = k2
+  #plot2(s1,sl,lc,vint=200,hint=10,cmin=min(lc),cmax=max(lc))
+  #plot2(s1,sl,tmss,vint=200,hint=10,cmin=max(tmss)-0.1,cmax=max(tmss))
+  plot2(s1,s2,lc,u=pik,vint=200,hint=10,cmin=0.0,cmax=1.0,color=Color.RED)
+  plot2(s1,s2,lc,u=pik1,vint=200,hint=10,cmin=0.0,cmax=1.0,color=Color.RED)
+  plot2(s1,s2,lc,u=pik2,vint=200,hint=10,cmin=0.0,cmax=1.0,color=Color.WHITE)
+  #plot2(s1,s2,lc,u=pik3,vint=200,hint=10,cmin=0.1,cmax=0.8)
+  #plot2(s1,s2,ls,vint=0,hint=.2,cmin=min(ls),cmax=max(ls))
+
 def goCorrelation():
   '''
   fx = readImage1L(fxfile)
@@ -86,7 +131,7 @@ def goCorrelation():
   gx = fxs[6]
   tp = LocalCorrelationFilter.Type.SYMMETRIC
   wd = LocalCorrelationFilter.Window.GAUSSIAN
-  lcf = LocalCorrelationFilter(tp,wd,20)
+  lcf = LocalCorrelationFilter(tp,wd,10)
   lcf.setInputs(fx,gx)
   nl = 81
   lc = zerofloat(n1,nl)
@@ -101,19 +146,20 @@ def goCorrelation():
   tms1 = zerofloat(n1,nl)
   tms2 = zerofloat(n1,nl)
   tmsd = zerofloat(n1,nl)
-  pik1 = opp.forwardPick(40,wht,tms1)
-  plot2(s1,sl,tms1,vint=200,hint=10,cmin=min(tms1),cmax=max(tms1))
-  #pik2 = opp.backwardPick(round(pik1[n1-1]),wht,tms2)
-  pik2 = opp.backwardPick(40,wht,tms2)
-  plot2(s1,sl,tms2,vint=200,hint=10,cmin=min(tms2),cmax=max(tms2))
+  pik1 = opp.forwardPick(80,wht,tms1)
+  #plot2(s1,sl,tms1,vint=200,hint=10,cmin=min(tms1),cmax=max(tms1))
+  pik2 = opp.backwardPick(round(pik1[n1-1]),wht,tms2)
+  #pik2 = opp.backwardPick(40,wht,tms2)
+  #plot2(s1,sl,tms2,vint=200,hint=10,cmin=min(tms2),cmax=max(tms2))
   tmss = add(tms1,tms2)
   tmss = div(1,tmss)
   tmss = sub(tmss,min(tmss))
   tmss = div(tmss,max(tmss))
   print min(tmss)
-  plot2(s1,sl,lc,vint=200,hint=10,cmin=min(lc),cmax=max(lc))
-  plot2(s1,sl,tmss,vint=200,hint=10,cmin=max(tmss)-0.1,cmax=max(tmss))
+  #plot2(s1,sl,lc,vint=200,hint=10,cmin=min(lc),cmax=max(lc))
+  #plot2(s1,sl,tmss,vint=200,hint=10,cmin=max(tmss)-0.1,cmax=max(tmss))
   plot2(s1,sl,lc,u=pik1,vint=200,hint=10,cmin=0.2,cmax=1.0)
+  plot2(s1,sl,lc,u=pik2,vint=200,hint=10,cmin=0.2,cmax=1.0)
   #plot2(s1,s2,ls,vint=0,hint=.2,cmin=min(ls),cmax=max(ls))
 
 def goAbSemblancePik():
@@ -485,7 +531,7 @@ def hueFillExceptMin(alpha):
 
 backgroundColor = Color.WHITE
 def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
-          cmin=0.0,cmax=0.0,cmap=ColorMap.JET,title=None,perc=None,png=None):
+          cmin=0.0,cmax=0.0,color=Color.RED,cmap=ColorMap.JET,title=None,perc=None,png=None):
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
           #PlotPanel.AxesPlacement.NONE)
   panel.setHLimits(0,s2.first,s2.last)
@@ -495,7 +541,7 @@ def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
   if title:
     panel.addTitle(title)
   cv = panel.addPixels(0,0,s1,s2,c)
-  cv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  cv.setInterpolation(PixelsView.Interpolation.NEAREST)
   cv.setColorModel(cmap)
   if perc:
     cv.setPercentiles(100-perc,perc)
@@ -503,7 +549,7 @@ def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
     cv.setClips(cmin,cmax)
   if u:
     uv = panel.addPoints(0,0,s1,u)
-    uv.setLineColor(Color.WHITE)
+    uv.setLineColor(color)
     uv.setLineWidth(2)
   if us:
     colors = [Color.RED,Color.GREEN,Color.BLUE]
@@ -524,14 +570,14 @@ def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
       pv.setLineStyle(PointsView.Line.NONE)
       pv.setMarkStyle(PointsView.Mark.FILLED_SQUARE)
       pv.setMarkSize(8)
-  panel.addColorBar()
+  #panel.addColorBar()
   frame = PlotFrame(panel)
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   frame.setBackground(backgroundColor)
   #frame.setFontSizeForPrint(8,240)
   #frame.setSize(470,1000)
   frame.setFontSize(6)
-  frame.setSize(n2*50,n1)
+  frame.setSize(n2*5,n1)
   frame.setVisible(True)
   if png and pngDir:
     png += "n"+str(int(10*nrms))

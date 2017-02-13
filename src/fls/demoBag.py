@@ -49,8 +49,37 @@ def main(args):
   #goCh()
   #goSlopes()
   #goSmooth()
-  gx = readImage(gxfile)
-  plot3(gx,cmin=-max(gx)/10,cmax=max(gx)/10)
+  goPik()
+def goPik():
+  fx = readImage(gxfile)
+  lof =  LocalOrientFilter(8,2)
+  ets = lof.applyForTensors(fx)
+  ets.setEigenvalues(0.1,1,1)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,10,fx,fx)
+  writeImage("gs",fx)
+  # pick the first slice
+  gx = fx[442]
+  c1 = [660,144, 96,526,559,659,612,660]
+  c2 = [390,326,120, 60,202,259,328,390]
+  sp = SaltPicker2()
+  pa = sp.applyForInsAmp(gx)
+  pm = max(pa)/2
+  for i1 in range(n1):
+    pa[0   ][i1] = pm
+    pa[n2-1][i1] = pm
+  xu = sp.initialBoundary(1,c1,c2)
+  #xu = sp.regridBoundary(1,[c1,c2])
+  plot(gx,cmin=-2,cmax=2)
+  plot(gx,cmin=-2,cmax=2,pp=[c1,c2])
+  bs = sp.refine(95,2,40,1,xu,pa)
+  plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
+  for i3 in range(443,400,-1):
+    gn = fx[i3]
+    pa = sp.applyForInsAmp(gn)
+    xu = sp.pickNext(50,1,20,1,xu[0],xu[1],pa)
+    if(i3%2==0):
+      plot(gn,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
 
 def goSmooth():
   gx = readImage(gxfile)
@@ -557,6 +586,90 @@ def addColorBar(frame,clab=None,cint=None):
 
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
+
+def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
+        cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  panel = PlotPanel(1,1,orientation);
+  #panel.setVInterval(0.2)
+  n2 = len(f)
+  n1 = len(f[0])
+  s2 = Sampling(n2)
+  s1 = Sampling(n1)
+  panel.setHLimits(0,0,n2-1)
+  panel.setVLimits(0,0,n1-1)
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  #pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pxv.setColorModel(ColorMap.GRAY)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  else:
+    pxv.setClips(min(f),max(f))
+  #panel.setTitle("normal vectors")
+  if phi:
+    cv = panel.addContours(phi)
+    cv.setContours([0])
+    cv.setLineColor(Color.RED)
+    cv.setLineWidth(1.0)
+  if xp:
+    ptv = panel.addPoints(0,0,xp[0],xp[1])
+    ptv.setLineColor(Color.RED)
+    ptv.setLineWidth(2.0)
+  if xu:
+    np = len(xu[0])
+    ptv1 = panel.addPoints(xu[0],xu[1])
+    ptv1.setLineColor(Color.RED)
+    ptv1.setLineWidth(1.0)
+    for ip in range(np):
+      x1c = xu[0][ip]
+      x2c = xu[1][ip]
+      u1c = xu[2][ip]
+      u2c = xu[3][ip]
+      x1m = x1c-u1c*65
+      x2m = x2c-u2c*65
+      x1p = x1c+u1c*65
+      x2p = x2c+u2c*65
+      x1s = [x1m,x1c,x1p]
+      x2s = [x2m,x2c,x2p]
+      ptv2 = panel.addPoints(x1s,x2s)
+      ptv2.setLineColor(Color.YELLOW)
+      ptv2.setLineWidth(1.0)
+  if pp:
+    ptvl = panel.addPoints(0,0,pp[0],pp[1])
+    ptvl.setLineColor(Color.RED)
+    ptvl.setLineWidth(2.0)
+    ptvp = panel.addPoints(0,0,pp[0],pp[1])
+    ptvp.setLineStyle(PointsView.Line.NONE)
+    #ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
+    ptvp.setMarkStyle(PointsView.Mark.CROSS)
+    ptvp.setMarkColor(Color.RED)
+    ptvp.setMarkSize(6.0)
+    ptvp.setLineWidth(3.0)
+  if xs:
+    for ip in range(len(xs)):
+      ptv = panel.addPoints(xs[ip][0],xs[ip][1])
+      ptv.setLineStyle(PointsView.Line.NONE)
+      ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
+      ptv.setMarkColor(Color.RED)
+      ptv.setMarkSize(2.0)
+  if(clab):
+    cb = panel.addColorBar();
+    cb.setLabel(clab)
+  panel.setColorBarWidthMinimum(130)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  frame.setVisible(True);
+  if w1 and w2:
+    frame.setSize(w2,w1)
+  else:
+    frame.setSize(n2,round(n1*0.65))
+
+  #frame.setSize(1190,760)
+  frame.setFontSize(18)
+  if pngDir and png:
+    frame.paintToPng(300,3.333,pngDir+png+".png")
 
 def plot1(s1,y1,y2,hlabel="Values",vlabel="Probability",png=None):
   sp = SimplePlot(SimplePlot.Origin.LOWER_LEFT)
