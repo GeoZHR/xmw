@@ -1152,6 +1152,8 @@ public class SegyImage {
       int[] hi = new int[240/4]; // 240-byte trace header as 4-byte ints
       System.out.print("reading "+_ntrace+" trace headers ");
       for (int itrace=0; itrace<_ntrace; ++itrace) {
+        if (itrace%5000==0)
+          System.out.println("itrace="+itrace);
         if ((itrace%(_ntrace/10))==0) {
           int perc = (int)(itrace*100.0/_ntrace);
           System.out.print(".");
