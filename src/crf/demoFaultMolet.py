@@ -378,7 +378,7 @@ def goFaultScan():
   ft = readImage(ftfile)
   flt,fpt,ftt=fe.thin(flpt)
   writeImage(fltfile,flt)
-  writeImage(fptfile,ftt)
+    + 'writeImage(fptfile,ftt)'
   writeImage(fttfile,ftt)
   plot3(gx)
   plot3(ep,cmin=0.1,cmax=0.9)
