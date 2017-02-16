@@ -6,7 +6,7 @@ Version: 2016.06.01
 """
 
 
-from utils import * 
+from utils2 import * 
 #setupForSubset("nwc1")
 #setupForSubset("nwc2")
 #setupForSubset("lulia")
@@ -35,6 +35,10 @@ fxfile = "gxsb2" #
 fxfile = "tp73s" # 
 fxsfile = "fxs" # 
 gxfile = "gx" # 
+flfile = "fl" # 
+ftfile = "ft" # 
+fltfile = "flt" # 
+fttfile = "ftt" # 
 ls1file = "ls1" # 
 ls2file = "ls2" # 
 hsfile = "hs"
@@ -44,11 +48,46 @@ p3file = "p3" # seismic slopes
 #pngDir = getPngDir()
 pngDir = None
 plotOnly = False
+minTheta,maxTheta = 75,85
+sigmaTheta = 40
+
+# These parameters control the construction of fault skins.
+# See the class FaultSkinner for more information.
+lowerLikelihood = 0.25
+upperLikelihood = 0.55
+minSize = 50
 
 def main(args):
   #goTpd()
+  #goCurt1()
   #goCurt2()
-  goCurt1()
+  #goTpdFlatten()
+  #goCurt1Flatten()
+  #goLulia()
+  #goLuliaFlatten()
+  #goCurt2Flatten()
+  goCurt3Flatten()
+  #goFd()
+  #goFdFlatten()
+def goFaultScan(gx):
+  print "goScan ..."
+  n2 = len(gx)
+  n1 = len(gx[0])
+  s1 = Sampling(n1)
+  s2 = Sampling(n2)
+  if not plotOnly:
+    gx = FaultScanner2.taper(10,0,gx)
+    fs = FaultScanner2(sigmaTheta)
+    sig1,sig2,smooth=16.0,2.0,4.0
+    fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(ftfile,ft)
+  else:
+    fl = readImage(flfile)
+    ft = readImage(ftfile)
+
 def goCurt():
   setupForSubset("curt")
   fxfile = "gxsb" # fx = copy(230,2700,280,1300,fx)
@@ -63,6 +102,54 @@ def goCurt():
   fs = copy(210,n2,0,0,fx)
   writeImage("gxsb1",fs)
   plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
+
+def goLulia():
+  setupForSubset("lulia")
+  fxfile = "gx286" 
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  fx = readImage(fxfile)
+  fx = copy(360,n2,0,0,fx)
+  n1 = 360 
+  s1 = Sampling(n1)
+  dl = 150
+  nl = 2*dl+1
+  fx = gain(fx)
+  dp = DynamicPicking(-dl,dl)
+  if not plotOnly:
+    lsf = LocalSlopeFinder(8,2,5) 
+    p = zerofloat(n1,n2)
+    el= zerofloat(n1,n2)
+    lsf.findSlopes(fx,p,el);
+    dp.setGate(-1,1)
+    dp.setWeights(1.0,0.2);
+    gx = zerofloat(n1,n2)
+    us = zerofloat(n2,n1)
+    ks = rampint(0,1,n1)
+    ds = zerofloat(nl,n1,n2)
+    us = dp.pick(25,dl,0.5,ks,p,fx,ds)
+    writeImage(hsfile,us)
+    writeImage(elfile,el)
+  else:
+    us = readImageX(n2,n1,hsfile)
+    el = readImage(elfile)
+  '''
+  dp.smoothHorizons(8,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(8,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(4,el,us)
+  '''
+  gx=dp.flattenWithHorizons(us,fx)
+  cmin = min(fx)*0.6
+  cmax = max(fx)*0.6
+  plot2(s1,s2,fx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,gx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,fx,u=us,cmin=cmin,cmax=cmax,color=Color.RED)
+  #plot2(s1,s2,fx,u=uss,cmin=cmin,cmax=cmax,color=Color.RED)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
+
 def goCurt1():
   setupForSubset("curt1")
   fxfile = "gxsb1" # fx = copy(210,3000,280,1300,fx)
@@ -74,7 +161,7 @@ def goCurt1():
   fx = gain(fx)
   dp = DynamicPicking(-dl,dl)
   if not plotOnly:
-    lsf = LocalSlopeFinder(4,2,5) 
+    lsf = LocalSlopeFinder(8,2,5) 
     p = zerofloat(n1,n2)
     el= zerofloat(n1,n2)
     lsf.findSlopes(fx,p,el);
@@ -84,7 +171,7 @@ def goCurt1():
     us = zerofloat(n2,n1)
     ks = rampint(0,1,n1)
     ds = zerofloat(nl,n1,n2)
-    us = dp.pick(30,dl,0.4,ks,p,fx,ds)
+    us = dp.pick(25,dl,0.5,ks,p,fx,ds)
     writeImage(hsfile,us)
     writeImage(elfile,el)
   else:
@@ -103,7 +190,7 @@ def goCurt1():
   plot2(s1,s2,fx,u=us,cmin=cmin,cmax=cmax,color=Color.RED)
   #plot2(s1,s2,fx,u=uss,cmin=cmin,cmax=cmax,color=Color.RED)
   #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
-  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
+  plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
 
 
 def goCurt2():
@@ -115,7 +202,28 @@ def goCurt2():
   nl = 2*dl+1
   fx = readImage(fxfile) #fs = copy(230,3200,280,0,fx)
   fx = gain(fx)
+  lsf = LocalSlopeFinder(4,2,5) 
+  p2= zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,el);
   dp = DynamicPicking(-dl,dl)
+  ux = zerofloat(n1,n2)
+  ut = zerofloat(n2,n1)
+  gx = dp.flatten(p2,fx,ux)
+  cmin = min(fx)*0.6
+  cmax = max(fx)*0.6
+  for i2 in range(n2): 
+    for i1 in range(n1): 
+      ut[i1][i2] = ux[i2][i1]
+  us = copy(ut)
+  dp.smoothHorizons(8,el,us)
+  gs=dp.flattenWithHorizons(us,fx)
+  plot2(s1,s2,fx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,gx,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,gs,cmin=cmin,cmax=cmax)
+  plot2(s1,s2,fx,u=ut,cmin=cmin,cmax=cmax,color=Color.RED)
+  plot2(s1,s2,fx,u=us,cmin=cmin,cmax=cmax,color=Color.RED)
+  '''
   if not plotOnly:
     lsf = LocalSlopeFinder(4,2,5) 
     p = zerofloat(n1,n2)
@@ -128,8 +236,8 @@ def goCurt2():
     ks = rampint(0,1,n1)
     ds = zerofloat(nl,n1,n2)
     us = dp.pick(30,dl,0.2,ks,p,fx,ds)
-    writeImage(hsfile,us)
-    writeImage(elfile,el)
+    #writeImage(hsfile,us)
+    #writeImage(elfile,el)
   else:
     us = readImageX(n2,n1,hsfile)
     el = readImage(elfile)
@@ -145,6 +253,284 @@ def goCurt2():
   plot2(s1,s2,gx,cmin=cmin,cmax=cmax)
   plot2(s1,s2,fx,u=us,cmin=cmin,cmax=cmax,color=Color.RED)
   #plot2(s1,s2,fx,u=uss,cmin=cmin,cmax=cmax,color=Color.RED)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
+  '''
+  dp = DynamicPicking(-dl,dl)
+def goFdFlatten():
+  setupForSubset("fd2")
+  fxfile = "fx172" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  fx = readImage(fxfile)
+  fx = copy(260,800,20,0,fx)
+  n1 = 260
+  n2 = 800
+  s1 = Sampling(n1)
+  s2 = Sampling(n2)
+  dl = 50
+  fx = gain(fx)
+  lsf = LocalSlopeFinder(4,1,5) 
+  p2= zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,el);
+  df = DynamicFlattener2(-dl,dl)
+  df.setStrainMax(1.0)
+  df.setWindow(1,10)
+  #df.setErrorExponent(4)
+  df.setShiftSmoothing(1)
+  fs = copy(fx)
+  rgf = RecursiveGaussianFilterP(2)
+  #rgf.apply00(fx,fs)
+  ux = zerofloat(n1,n2)
+  gx = df.flatten(el,p2,fs,ux)
+  ut = zerofloat(n2,n1)
+  for i2 in range(n2): 
+    for i1 in range(n1): 
+      ut[i1][i2] = ux[i2][i1]
+  dp = DynamicPicking(-dl,dl)
+  gx = dp.flattenWithHorizons(ut,fx)
+  hw,vw=n2*2,round(n1*2.5)
+  plot2(s1,s2,fx,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=ut,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+
+def goLuliaFlatten():
+  setupForSubset("lulia")
+  fxfile = "gx286" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  fx = readImage(fxfile)
+  fx = copy(360,n2,0,0,fx)
+  n1 = 360
+  s1 = Sampling(n1)
+  dl = 150
+  fx = gain(fx)
+  lsf = LocalSlopeFinder(8,2,5) 
+  p2= zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,el);
+  df = DynamicFlattener2(-dl,dl)
+  df.setStrainMax(0.2)
+  df.setWindow(200)
+  df.setShiftSmoothing(1)
+  rgf = RecursiveGaussianFilterP(1)
+  #rgf.apply00(fx,fx)
+  ux = zerofloat(n1,n2)
+  gx = df.flatten(el,fx,ux)
+  ut = zerofloat(n2,n1)
+  for i2 in range(n2): 
+    for i1 in range(n1): 
+      ut[i1][i2] = ux[i2][i1]
+  hw,vw=n2,round(n1*2.5)
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2)
+
+def goCurt1Flatten():
+  setupForSubset("curt1")
+  fxfile = "gxsb1" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 55
+  fx = readImage(fxfile)
+  '''
+  fx = zerofloat(n1,n2)
+  for i2 in range(n2):
+    fx[i2] = gx[n2-i2-1]
+  '''
+  fx = gain(fx)
+  lsf = LocalSlopeFinder(8,2,5) 
+  p2= zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,el);
+  df = DynamicFlattener2(-dl,dl)
+  df.setStrainMax(0.5)
+  df.setWindow(2,200)
+  df.setShiftSmoothing(1)
+  df.setErrorSmoothing(3)
+  rgf = RecursiveGaussianFilterP(1)
+  rgf.apply00(fx,fx)
+  ux = zerofloat(n1,n2)
+  gx = df.flatten(el,p2,fx,ux)
+  ut = zerofloat(n2,n1)
+  for i2 in range(n2): 
+    for i1 in range(n1): 
+      ut[i1][i2] = ux[i2][i1]
+  hw,vw=n2,round(n1*2.5)
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2)
+
+def goCurt2Flatten():
+  setupForSubset("curt2")
+  fxfile = "gxsb2" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 40
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  #goFaultScan(fx)
+  #goFaultThin(fx)
+  #goFaultCurve(fx)
+  lsf = LocalSlopeFinder(8,2,5) 
+  p2= zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,el);
+  df = DynamicFlattener2(-dl,dl)
+  df.setStrainMax(0.2)
+  df.setWindow(2,200)
+  df.setErrorSmoothing(3)
+  df.setShiftSmoothing(1)
+  ux = zerofloat(n1,n2)
+  fs = zerofloat(n1,n2)
+  rgf = RecursiveGaussianFilterP(2)
+  rgf.apply00(fx,fs)
+  fl = readImage(flfile)
+  gx = df.flatten(fl,p2,fs,ux)
+  ut = zerofloat(n2,n1)
+  for i2 in range(n2): 
+    for i1 in range(n1): 
+      ut[i1][i2] = ux[i2][i1]
+  #df.refine(fx,ut)
+  gh = df.flattenWithHorizons(ut,fx)
+  dp = DynamicPicking(-dl,dl)
+  rgf = RecursiveGaussianFilterP(2)
+  u2 = zerofloat(n2,n1)
+  rgf.applyX1(ut,u2)
+  fl = pow(fl,8)
+  #dp.smoothHorizons(8,sub(1,fl),ut)
+  hw,vw=n2,round(n1*2.5)
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gh,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2)
+
+def goCurt3Flatten():
+  setupForSubset("curt3")
+  fxfile = "fx400" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 40
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  #goFaultScan(fx)
+  #goFaultThin(fx)
+  #goFaultCurve(fx)
+  lsf = LocalSlopeFinder(8,2,5) 
+  p2= zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,el);
+  df = DynamicFlattener2(-dl,dl)
+  df.setStrainMax(0.2)
+  df.setWindow(2,200)
+  df.setErrorSmoothing(3)
+  df.setShiftSmoothing(1)
+  ux = zerofloat(n1,n2)
+  fs = zerofloat(n1,n2)
+  rgf = RecursiveGaussianFilterP(2)
+  rgf.apply00(fx,fs)
+  gx = df.flatten(el,p2,fs,ux)
+  ut = zerofloat(n2,n1)
+  for i2 in range(n2): 
+    for i1 in range(n1): 
+      ut[i1][i2] = ux[i2][i1]
+  #df.refine(fx,ut)
+  gh = df.flattenWithHorizons(ut,fx)
+  dp = DynamicPicking(-dl,dl)
+  rgf = RecursiveGaussianFilterP(2)
+  u2 = zerofloat(n2,n1)
+  rgf.applyX1(ut,u2)
+  hw,vw=n2,round(n1*2.5)
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gh,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2)
+
+
+def goTpdFlatten():
+  setupForSubset("tp2")
+  fxfile = "tp73s" # 
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 60
+  fx = readImage(fxfile)
+  fx = gain(fx)
+  goFaultScan(fx)
+  lsf = LocalSlopeFinder(8,2,5) 
+  p2= zerofloat(n1,n2)
+  el= zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,el);
+  df = DynamicFlattener2(-dl,dl)
+  df.setStrainMax(0.2)
+  df.setWindow(1,200)
+  df.setErrorSmoothing(3)
+  df.setShiftSmoothing(1)
+  rgf = RecursiveGaussianFilterP(1)
+  #rgf.apply00(fx,fx)
+  ux = zerofloat(n1,n2)
+  fl = readImage(flfile)
+  gx = df.flatten(fl,p2,fx,ux)
+  ut = zerofloat(n2,n1)
+  for i2 in range(n2): 
+    for i1 in range(n1): 
+      ut[i1][i2] = ux[i2][i1]
+  hw,vw=n2,round(n1*2.5)
+  plot2(s1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=ut,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  #plot2(s1,s2,fx,u=uss,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
+
+def goFd():
+  setupForSubset("fd2")
+  fxfile = "fx172" # fx = copy(230,2700,280,1300,fx)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  fx = readImage(fxfile)
+  fx = copy(160,400,240,0,fx)
+  n1 = 160
+  n2 = 400
+  s1 = Sampling(n1)
+  s2 = Sampling(n2)
+  dl = 30
+  nl = 2*dl+1
+  fx = gain(fx)
+  dp = DynamicPicking(-dl,dl)
+  if not plotOnly:
+    lsf = LocalSlopeFinder(8,2,5) 
+    p = zerofloat(n1,n2)
+    el= zerofloat(n1,n2)
+    lsf.findSlopes(fx,p,el);
+    dp.setGate(-1,1)
+    dp.setWeights(1.0,0.1);
+    gx = zerofloat(n1,n2)
+    us = zerofloat(n2,n1)
+    ut = zerofloat(n2,n1)
+    ks = rampint(0,1,n1)
+    ds = zerofloat(nl,n1,n2)
+    fs = zerofloat(n1,n2)
+    rgf = RecursiveGaussianFilterP(2)
+    rgf.apply00(fx,fs)
+    us = dp.pick(30,dl,1.0,ks,p,fs,ds)
+    writeImage(hsfile,us)
+    writeImage(elfile,el)
+  else:
+    us = readImageX(n2,n1,hsfile)
+    el = readImage(elfile)
+    el = pow(el,0)
+  hw,vw=n2,round(n1*2.5)
+  '''
+  dp.smoothHorizons(2,el,us)
+  dp.refine(fx,us)
+  dp.smoothHorizons(2,el,us)
+  '''
+  gx=dp.flattenWithHorizons(us,fx)
+  plot2(s1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=us,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  #plot2(s1,s2,fx,u=uss,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
   #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
   #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
 
@@ -178,9 +564,11 @@ def goTpd():
     el = readImage(elfile)
     el = pow(el,0)
   hw,vw=n2,round(n1*2.5)
+  '''
   dp.smoothHorizons(2,el,us)
   dp.refine(fx,us)
   dp.smoothHorizons(2,el,us)
+  '''
   gx=dp.flattenWithHorizons(us,fx)
   plot2(s1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
   plot2(s1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
@@ -781,6 +1169,58 @@ def hueFillExceptMin(alpha):
 
 
 backgroundColor = Color.WHITE
+
+def plot2f(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
+  n2 = len(f)
+  n1 = len(f[0])
+  f1,f2 = s1.getFirst(),s2.getFirst()
+  d1,d2 = s1.getDelta(),s2.getDelta()
+  panel = panel2Teapot()
+  panel.setHInterval(1.0)
+  panel.setVInterval(1.0)
+  panel.setHLabel("Lateral position (km)")
+  panel.setVLabel("Time (s)")
+  #panel.setHInterval(100.0)
+  #panel.setVInterval(100.0)
+  #panel.setHLabel("Pixel")
+  #panel.setVLabel("Pixel")
+  if label:
+    panel.addColorBar(label)
+  else:
+    panel.addColorBar()
+  panel.setColorBarWidthMinimum(80)
+  pv = panel.addPixels(s1,s2,f)
+  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  pv.setColorModel(ColorMap.GRAY)
+  pv.setClips(-2,2)
+  if g:
+    pv = panel.addPixels(s1,s2,g)
+    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    pv.setColorModel(cmap)
+    if label:
+      panel.addColorBar(label)
+    else:
+      panel.addColorBar()
+  if cmin and cmax:
+    pv.setClips(cmin,cmax)
+  frame2Teapot(panel,png)
+def panel2Teapot():
+  panel = PlotPanel(1,1,
+    PlotPanel.Orientation.X1DOWN_X2RIGHT)#,PlotPanel.AxesPlacement.NONE)
+  return panel
+def frame2Teapot(panel,png=None):
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  #frame.setFontSizeForPrint(8,240)
+  #frame.setSize(1240,774)
+  #frame.setFontSizeForSlide(1.0,0.9)
+  frame.setFontSize(24)
+  frame.setSize(450+80,700)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(400,3.2,pngDir+png+".png")
+  return frame
+
 
 def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
         label=None,neareast=False,png=None): 

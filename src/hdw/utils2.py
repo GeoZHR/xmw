@@ -9,7 +9,7 @@ from common import *
 # Internal constants
 
 _datdir = "../../../data/seis/pik/"
-_datdir = "../../../data/seis/"
+_datdir = "../../../data/seis/hdw/"
 _pngdir = "../../../png/pik/"
 
 #############################################################################
@@ -80,6 +80,18 @@ def setupForSubset(name):
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
     n3,d3,f3 = 1,1,1
     s3 = Sampling(n3,d3,f3)
+  elif name=="curt3":
+    """ curt """
+    print "setupForSubset: curt3"
+    pngDir = _pngdir+"curt3/"
+    seismicDir = _datdir+"curt3/"
+    n1,n2 = 751,1000 # f1,f2=580,1240
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+
   elif name=="nwc1":
     """ nwc1 """
     print "setupForSubset: nwc1"

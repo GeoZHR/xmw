@@ -115,6 +115,21 @@ public class FaultCurver {
     return points(flt);
   }
 
+  public FaultPoint[] points(float[][] flt, float[][] ftt) {
+    int n2 = flt.length;
+    int n1 = flt[0].length;
+    ArrayList<FaultPoint> pointList = new ArrayList<FaultPoint>();
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(flt[i2][i1]>0) {
+        FaultPoint point = new FaultPoint(i1,i2,flt[i2][i1],ftt[i2][i1]);
+        pointList.add(point);
+      }
+    }}
+    return pointList.toArray(new FaultPoint[0]);
+  }
+
+
 
   /**
    * Returns an array of curves comprised of specified points. Some points may be

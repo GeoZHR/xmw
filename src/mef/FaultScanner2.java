@@ -426,7 +426,7 @@ public class FaultScanner2 {
         float fi = 1.0f-st;
         if (fi>f[i2][i1]) {
           f[i2][i1] = fi;
-          t[i2][i1] = ti;
+          t[i2][i1] = -ti;
         }
       }}
     }
@@ -453,7 +453,7 @@ public class FaultScanner2 {
         float fi = 1.0f-st;
         if (fi>f[i2][i1]) {
           f[i2][i1] = fi;
-          t[i2][i1] = -ti;
+          t[i2][i1] = ti;
         }
       }}
     }

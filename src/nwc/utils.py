@@ -33,6 +33,34 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,400,1500
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="nwc2d":
+    print "setupForSubset: nwc"
+    seismicDir = _datdir+"nwc/"
+    n1,n2,n3 = 651,601,401
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    f1,f2,f3 = 0.000,400,1500
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="lulia":
+    """ lulia """
+    print "setupForSubset: lulia"
+    seismicDir = _datdir+"hdw/lulia/"
+    n1,n2 = 400,780
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="curt2":
+    """ curt """
+    print "setupForSubset: curt2"
+    seismicDir = _datdir+"hdw/curt2/"
+    n1,n2 = 230,2700 # f1,f2=580,1240
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
   elif name=="nathan":
     print "setupForDataset: nathan"
     seismicDir = _datdir+"nathan/"
@@ -159,6 +187,17 @@ def readImage(name):
   ais.readFloats(image)
   ais.close()
   return image
+def readImage2D(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 def writeImage(name,image):
   """ 
@@ -171,6 +210,19 @@ def writeImage(name,image):
   aos.writeFloats(image)
   aos.close()
   return image
+
+def writeImageM(name,image):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  fileName = seismicDir+name+".rsf@"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+
 
 #############################################################################
 # read/write fault skins

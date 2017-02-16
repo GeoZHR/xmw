@@ -34,6 +34,14 @@ public class FaultPoint implements Serializable {
     return fl;
   }
 
+  public float getX1() {
+    return x1;
+  }
+  public float getX2() {
+    return x2;
+  }
+
+
   public void setFl(float fl) {
     this.fl = fl;
   }
@@ -100,8 +108,12 @@ public class FaultPoint implements Serializable {
     this.ft = ft;
     i1 = round(x1);
     i2 = round(x2);
-    float[] u = faultDipVectorFromDip(ft);
-    float[] w = faultNormalVectorFromDip(ft);
+    float[] u = faultDipVectorFromDip(abs(ft));
+    float[] w = faultNormalVectorFromDip(abs(ft));
+    if(ft>0) {
+      w[1] = -w[1];
+      u[1] = -u[1];
+    }
     u1 = u[0]; u2 = u[1]; us = 1.0f/u1;
     w1 = w[0]; w2 = w[1]; 
 

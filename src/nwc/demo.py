@@ -79,7 +79,7 @@ maxThrow = 30.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -97,6 +97,7 @@ def main(args):
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
+  goCleanFaultImages()
   #gx = readImage(gxfile)
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
@@ -505,10 +506,9 @@ def goFaultImages():
     writeImage(fptfile,fpt)
     writeImage(fttfile,ftt)
   else:
-    #flt = readImage(fltfile)
+    flt = readImage(fltfile)
     fpt = readImage(fptfile)
-    #ftt = readImage(fttfile)
-  '''
+    ftt = readImage(fttfile)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
@@ -516,6 +516,27 @@ def goFaultImages():
   '''
   plot3(gx,fpt,cmin=0,cmax=180,cmap=jetFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=20,png="fpt")
+  '''
+def goCleanFaultImages():
+  gx = readImage(gxfile)
+  fd = FaultDisplay()
+  skins = readSkins(fskr)
+  flt = fillfloat(-0.001,n1,n2,n3)
+  fpt = fillfloat(-0.001,n1,n2,n3)
+  ftt = fillfloat(-0.001,n1,n2,n3)
+  fd = FaultDisplay()
+  fd.getFlt(skins,gx,flt)
+  fd.getFtt(skins,gx,ftt)
+  ft = readImage(ftfile)
+  gw = readImage("fws1")
+  gw = gain(gw)
+  plot3(gw)
+  writeImage("fltc",flt)
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+
 def goSmooth():
   print "goSmooth ..."
   flstop = 0.1
@@ -876,6 +897,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,-0.15,-0.01))
   ov.setAzimuthAndElevation(225.0,40.0)
+  ov.setAzimuthAndElevation(255.0,40.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:

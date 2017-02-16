@@ -222,7 +222,7 @@ def readImage(basename):
   Reads an image from a file with specified basename
   """
   fileName = seismicDir+basename+".dat"
-  image = zerofloat(n1,n2)
+  image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName)
   ais.readFloats(image)
   ais.close()

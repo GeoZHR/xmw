@@ -82,7 +82,7 @@ public class FaultCorrelater {
     int lmin = (int)smin;
     int lmax = (int)smax;
     DynamicWarping dw = new DynamicWarping(lmin,lmax);
-    dw.setStrainMax(0.25,0.25); // TODO: always 0.25? goes with 4 below?
+    dw.setStrainMax(0.25); // TODO: always 0.25? goes with 4 below?
     computeAlignmentErrors(curve,lmin,lmax,_offset,_gs);
     extrapolateAlignmentErrors(lmin,lmax,cab);
     computeShifts(dw,cab);
@@ -259,6 +259,7 @@ public class FaultCorrelater {
       // Offset vector d.
       float d1 = 0.0f;
       float d2 = _offset;
+      if(point.ft<0) d2=-d2;
 
       // Reflector slopes at point x-d.
       float p2 = imageValueAt(x1-d1,x2-d2,_p2);
@@ -296,6 +297,7 @@ public class FaultCorrelater {
       // Offset vector d.
       d1 = 0.0f;
       d2 =  _offset;
+      if(point.ft<0) d2=-d2;
 
       // Reflector slopes at point y+d.
       p2 = imageValueAt(y1+d1,y2+d2,_p2);
@@ -438,6 +440,7 @@ public class FaultCorrelater {
 
     // Errors for lag zero.
     float d2 =  offset;
+    if(point.ft<0) d2=-offset;
     float y1 = point.x1, y2 = point.x2;
     float fm = imageValueAt(y1,y2-d2,f);
     float gp = imageValueAt(y1,y2+d2,f);
@@ -452,6 +455,8 @@ public class FaultCorrelater {
         y[0] = y1; y[1] = y2;
         ca = ca.walkUpDipFrom(y);
         y1 = y[0]; y2 = y[1];
+        d2 = offset;
+        if(ca.ft<0) d2=-offset;
         gp = imageValueAt(y1,y2+d2,f);
         empl = emp[lag0-ilag] = alignmentError(fm,gp);
       } else {
@@ -468,6 +473,8 @@ public class FaultCorrelater {
         y[0] = y1; y[1] = y2;
         cb = cb.walkDownDipFrom(y);
         y1 = y[0]; y2 = y[1];
+        d2 = offset;
+        if(cb.ft<0) d2=-offset;
         gp = imageValueAt(y1,y2+d2,f);
         empl = emp[lag0+ilag] = alignmentError(fm,gp);
       } else {
@@ -552,8 +559,8 @@ public class FaultCorrelater {
 
 
   private static float alignmentError(float f, float g) {
-    float fmg = f-g;
-    return fmg*fmg;
+    float fmg = abs(f-g);
+    return pow(fmg,2f);
   }
 
 
