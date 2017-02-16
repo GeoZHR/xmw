@@ -69,14 +69,14 @@ minSkinSize = 500
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 30.0
+maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -85,7 +85,7 @@ def main(args):
   #goSlopes()
   #goScan()
   #goThin()
-  goSkin()
+  #goSkin()
   #goSkinTv()
   #goReskin()
   #goSkinMerge()
@@ -99,6 +99,7 @@ def main(args):
   #plot3(gx,skins=sk)
   #goTest()
   #goFlatten()
+  goRefine()
   '''
   gu1 = readImage(gtfile)
   gu2 = readImage(gufile)
@@ -360,7 +361,7 @@ def goSkin():
 def goSkinMerge():
   gx = readImage(gxfile)
   if not plotOnly:
-    skins = readSkins(fsktv)
+    skins = readSkins(fskbase)
     fsc = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fsc.makePhiSampling(minPhi,maxPhi)
     st = fsc.makeThetaSampling(minTheta,maxTheta)
@@ -372,46 +373,49 @@ def goSkinMerge():
     fs.setMinSkinSize(minSkinSize)
 
     fr = FaultReskin()
-    sks1 = [skins[5 ]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
+    sks1 = [skins[0],skins[2],skins[3],skins[5]] 
     cells = FaultSkin.getCells(sks1)
     fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
     div(fl,max(fl),fl)
     cells = fs.findCells([fl,fp,ft])
-    skt = fs.findSkins(cells)
-    skins[5] = skt[0]
+    skt1 = fs.findSkins(cells)
 
-    sks2 = [skins[1 ],skins[3]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
+    cells = FaultSkin.getCells(skt1)
+    fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
+    div(fl,max(fl),fl)
+    cells = fs.findCells([fl,fp,ft])
+    skt1 = fs.findSkins(cells)
+
+
+    sks2 = [skins[1]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks2)
     fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
     div(fl,max(fl),fl)
     cells = fs.findCells([fl,fp,ft])
-    skt = fs.findSkins(cells)
-    skins[1] = skt[0]
-    skins[3] = skt[0]
+    skt2 = fs.findSkins(cells)
 
-    sks3 = [skins[7 ],skins[9]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
+    sks3 = [skins[4]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks3)
     fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
     div(fl,max(fl),fl)
     cells = fs.findCells([fl,fp,ft])
-    skt = fs.findSkins(cells)
-    skins[7] = skt[0]
-    skins[9] = skt[0]
+    skt3 = fs.findSkins(cells)
 
-    sks4 = [skins[11],skins[6]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
+
+    sks4 = [skins[6]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
     cells = FaultSkin.getCells(sks4)
     fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
     div(fl,max(fl),fl)
     cells = fs.findCells([fl,fp,ft])
-    skt = fs.findSkins(cells)
-    skins[6] = skt[0]
-    skins[11] = skt[0]
+    skt4 = fs.findSkins(cells)
+
+    skrs = [skt1[0],skt2[0],skt3[0],skt4[0]]
 
     removeAllSkinFiles(fskr)
-    writeSkins(fskr,skins)
+    writeSkins(fskr,skrs)
   else:
-    skins = readSkins(fskr)
-  plot3(gx,skins=skins)
+    skrs = readSkins(fskr)
+  plot3(gx,skins=skrs)
 
 
 def goReskin(): 
@@ -519,7 +523,7 @@ def goSmooth():
   p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(gsxfile,gsx)
-  #plot3(gsx,png="gsx")
+  plot3(gsx,png="gsx")
 
 def goSlip():
   print "goSlip ..."
@@ -528,7 +532,7 @@ def goSlip():
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fskbase)
+    skins = readSkins(fskr)
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error
@@ -541,8 +545,8 @@ def goSlip():
     fsk.setMinMaxThrow(minThrow,maxThrow)
     #skins = fsk.reskin(skins)
     print ", after =",len(skins)
-    #removeAllSkinFiles(fslbase)
-    #writeSkins(fslbase,skins)
+    removeAllSkinFiles(fslbase)
+    writeSkins(fslbase,skins)
     smark = -999.999
     #s1,s2,s3 = fsl.getDipSlips(skins,smark)
     #s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
@@ -554,11 +558,11 @@ def goSlip():
     writeImage(fs3file,s3)
     '''
   else:
-    gw = readImage(gwfile)
+    #gw = readImage(gwfile)
     #s1 = readImage(fs1file)
     skins = readSkins(fslbase)
-    skinr = readSkins(fskr)
-  plot3(gx,skins=skins,smax=30.0)
+    #skinr = readSkins(fskr)
+  plot3(gx,skins=skins,smax=maxThrow)
   #plot3(gx,skins=skinr)
   '''
   plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
@@ -599,9 +603,9 @@ def goUnfaultS():
     writeImage(sw2file,t2)
     writeImage(sw3file,t3)
   else :
-    gw = readImage(gwfile)
-    #fw = readImage(fwsfile)
-    fw = readImage("fwt")
+    #gw = readImage(gwfile)
+    fw = readImage(fwsfile)
+    #fw = readImage("fwt")
   fw = gain(fw)
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
@@ -621,17 +625,12 @@ def goUnfaultS():
         clab="Crossline shift (samples)",png="gxs3i")
   '''
 def goFlatten():
-  fx = readImage("fws1")
+  fx = readImage(fwsfile)
   p2 = zerofloat(n1,n2,n3)
   p3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(4.0,2.0)
+  lsf = LocalSlopeFinder(2.0,1.0)
   lsf.findSlopes(fx,p2,p3,ep);
-  zm = ZeroMask(0.10,1,1,1,fx)
-  zero,tiny=0.0,0.001
-  zm.setValue(zero,p2)
-  zm.setValue(zero,p3)
-  zm.setValue(tiny,ep)
   ep = pow(ep,4)
   fl = Flattener3()
   fl.setIterations(0.01,300)
@@ -644,6 +643,25 @@ def goFlatten():
   gt = gain(gt)
   plot3(fx)
   plot3(gt)
+
+def goRefine():
+  gt = readImage(gtfile)
+  gr = zerofloat(n1,n2,n3)
+  g0 = gt[0][0]
+  for i3 in range(n3):
+    for i2 in range(n2):
+      gr[i3][i2] = g0
+  gt = gain(gt)
+  gr = gain(gr)
+  plot3(gr)
+  dw = DynamicWarping(-10,10)
+  dw.setStrainMax(0.25,0.25,0.25)
+  dw.setErrorSmoothing(3)
+  dw.setShiftSmoothing(1)
+  us = dw.findShifts(gr,gt)
+  gr = dw.applyShifts(us,gt)
+  plot3(gt)
+  plot3(gr)
 
 
 def like(x):

@@ -72,16 +72,19 @@ def goCurt():
   showImage = True # displays the image
   basedir = "../../../data/seis/beg/xavier/curt3d/"
   sgyfile = basedir+"FILE2.sgy"
-  #datfile = basedir+"gx.dat"
+  datfile = basedir+"gx.dat"
   datfile1 = basedir+"gxb.dat"
   datfile2 = basedir+"gxe.dat"
+  datfileSub = basedir+"gxs.dat"
   #i2min = 11982, i2max = 33190 (inline indices)
   #i3min = 12976, i3max = 14300 (crossline indices)
   i1min,i1max,i2min,i2max,i3min,i3max = 0,2250,11982,33190,12976,14300
   i1min,i1max,i2min,i2max,i3min,i3max = 450,1200,11982+7200,11982+14000,12976,14300
-  i1min,i1max,i2min,i2max,i3min1,i3max1 = 0,2250,11982,33190,12976,12976
-  i1min,i1max,i2min,i2max,i3min2,i3max2 = 0,2250,11982,33190,14300,14300
-  n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min),1+(i3max1-i3min1)
+  #i1min,i1max,i2min,i2max,i3min1,i3max1 = 0,2250,11982,33190,12976,12976
+  #i1min,i1max,i2min,i2max,i3min2,i3max2 = 0,2250,11982,33190,14300,14300
+  #n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min),1+(i3max1-i3min1)
+  n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min),1+(i3max-i3min)
+  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -97,8 +100,12 @@ def goCurt():
     si.writeFloats(datfile1,scale,i1min,i1max,i2min,i2max,i3min1,i3max1,1,1)
     si.writeFloats(datfile2,scale,i1min,i1max,i2min,i2max,i3min2,i3max2,1,1)
   si.close()
+  '''
   if showImage:
-    show3d(x,clip=max(x)/10)
+    x = readImage(datfile,n1,n2,n3)
+    xs = copy(n1,1000,1000,0,3260,324,x)
+    writeImageX(datfileSub,xs)
+    show3d(xs,clip=max(xs)/10)
 
 def goBag():
   """
