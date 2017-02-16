@@ -37,12 +37,35 @@ def setupForSubset(name):
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
-  elif name=="xue":
-    """ xue """
-    print "setupForSubset: xue"
-    pngDir = _pngdir+"xue/"
-    seismicDir = _datdir+"xue/"
-    n1,n2 = 1251,7
+  elif name=="curt":
+    """ curt """
+    print "setupForSubset: curt"
+    pngDir = _pngdir+"curt/"
+    seismicDir = _datdir+"curt/"
+    n1,n2 = 2251,21209
+    n1,n2 = 510,4000 # f1,f2=580,1240
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="curt1":
+    """ curt """
+    print "setupForSubset: curt1"
+    pngDir = _pngdir+"curt1/"
+    seismicDir = _datdir+"curt1/"
+    n1,n2 = 210,3000 # f1,f2=580,1240
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="curt2":
+    """ curt """
+    print "setupForSubset: curt2"
+    pngDir = _pngdir+"curt2/"
+    seismicDir = _datdir+"curt2/"
+    n1,n2 = 230,2700 # f1,f2=580,1240
     d1,d2 = 1.0,1.0 
     f1,f2 = 0.0,0.0
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
@@ -195,6 +218,18 @@ def readImage(basename):
   ais.readFloats(image)
   ais.close()
   return image
+
+def readImageX(m1,m2,basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(m1,m2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 
 def readImage3D(basename):
   """ 

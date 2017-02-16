@@ -47,6 +47,18 @@ def setupForSubset(name):
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
     n3,d3,f3 = 1,1,1
     s3 = Sampling(n3,d3,f3)
+  elif name=="scan":
+    """ xue """
+    print "setupForSubset: scan"
+    pngDir = _pngdir+"scan/"
+    seismicDir = _datdir+"scan/"
+    n1,n2 = 1000,101
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+
   elif name=="fd2":
     """ fd2 """
     print "setupForSubset: fd2"

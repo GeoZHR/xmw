@@ -7,12 +7,12 @@ Version: 2016.06.01
 
 
 from utils import * 
-#setupForSubset("semblance")
+setupForSubset("semblance")
 #setupForSubset("channel")
 #setupForSubset("surface")
 #setupForSubset("env")
 #setupForSubset("semblance3d")
-setupForSubset("fd2")
+#setupForSubset("fd2")
 #setupForSubset("dgb")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -41,7 +41,8 @@ plotOnly = False
 def main(args):
   #goCorrelation()
   #goHorizonPik()
-  timeMark()
+  #timeMark()
+  goAbSemblancePik()
 def timeMark():
   fx = readImage(fxfile)
   fx = gain(fx)

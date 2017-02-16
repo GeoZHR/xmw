@@ -10,7 +10,7 @@ import util.*;
 
 
 /**
- * Local similarity attribute
+ * Optimal path picking
  * @author Xinming Wu 
  * @version 2016.03.23
  */
