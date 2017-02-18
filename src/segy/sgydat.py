@@ -33,8 +33,8 @@ def main(args):
   #goPoseidon()
   #goParihaka()
   #goTj()
-  #goBag()
-  goCurt()
+  goBag()
+  #goCurt()
 def goCurt():
   """
   ***************************************************************************
@@ -144,7 +144,7 @@ def goBag():
   firstLook = False # fast, does not read all trace headers
   secondLook = True # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
-  showImage = False # displays the image
+  showImage = True # displays the image
   basedir = "../../../data/seis/cgg/"
   sgyfile = basedir+"prsdm.sgy"
   datfile = basedir+"gx.dat"
@@ -152,6 +152,7 @@ def goBag():
   i1min,i1max,i2min,i2max,i3min,i3max = 0,1799,4091,20636,2451,6671
   #i1min,i1max,i2min,i2max,i3min,i3max = 0,1799,4091,4636,2451,2671
   n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min)/3,1+(i3max-i3min)/2
+  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -167,6 +168,7 @@ def goBag():
     #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,3,2)
   si.close()
+  '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     #m3 = n3-860
@@ -178,11 +180,13 @@ def goBag():
     #print m3
     #writeImageX(subfile,xs)
     #gain(100,x)
+    '''
     fname = basedir+"gx4370.dat"
     xs = zerofloat(n1,n3)
     for i3 in range(n3):
       xs[i3] = x[i3][4370]
     writeImageX(fname,xs)
+    '''
     show3d(x,clip=max(x)/10)
     #show3d(xs,clip=max(xs)/10)
 
