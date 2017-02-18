@@ -28,10 +28,12 @@ def setupForSubset(name):
   if name=="cact":
     print "setupForSubset: cact"
     seismicDir = _datdir+"cact/"
-    n1,n2,n3 = 512,1077,323
+    #n1,n2,n3 = 512,1077,323
+    n1,n2,n3 = 447,1077,323
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.008,0.008 # (s,km,km)
-    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    f1,f2,f3 = 65,624,2878 # = 0.000,0.000,0.000
+    f1,f2,f3 = 65,0,0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="hz25":
     print "setupForSubset: hz25"
