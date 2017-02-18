@@ -15,11 +15,12 @@ gwfile  = "gw" # input image (maybe after bilateral filtering)
 hxfile  = "horizon"
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
-wpfile  = "wp" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
 p3file  = "p3" # crossline slopes
-p2kfile = "p2k" # inline slopes (known)
-p3kfile = "p3k" # crossline slopes (known)
+epffile  = "epf" # eigenvalue-derived planarity
+p2ffile  = "p2f" # inline slopes
+p3ffile  = "p3f" # crossline slopes
+
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
@@ -53,6 +54,7 @@ u3file = "u3" # third component of normal
 smfile = "sm"
 cmfile = "cm"
 clfile = "cl"
+hvsfile = "hvs"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -99,22 +101,77 @@ def main(args):
   #plot3(gx,skins=sk)
   #goTest()
   #goFlatten()
-  goRefine()
+  #goSfd()
+  #goDp()
+  #goRefine()
+  #goFlattenSlopes()
+  goHorizon()
+def goFlattenSlopes():
+  fx = readImage(fwsfile)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
+  lsf = LocalSlopeFinder(sigma1,sigma2,sigma3,pmax)
+  lsf.findSlopes(fx,p2,p3,ep)
+  writeImage(p2ffile,p2)
+  writeImage(p3ffile,p3)
+  writeImage(epffile,ep)
+
+def goSfd():
+  fx = readImage(fwsfile)
+  plot3(fx)
+  ep = zerofloat(n1,n2,n3)
+  fs = zerofloat(n1,n2,n3)
+  rgf = RecursiveGaussianFilterP(2)
+  rgf.apply000(fx,fs)
+  df = DynamicFlattener(-15,40)
+  df.setStrainMax(0.2)
+  df.setWindow(1,300)
+  df.setGate(2)
+  df.setShiftSmoothing(1)
+  df.setErrorSmoothing(3)
+  ux = zerofloat(n1,n2,n3)
+  gx = df.flattenIL(0,0,ep,fx,fs,ux)
+  plot3(fx)
+  plot3(gx)
+def goHorizon():
+  ns = 100
+  gx = readImage(fwsfile)
+  if not plotOnly:
+    p2 = readImage(p2ffile)
+    p3 = readImage(p3ffile)
+    wp = readImage(epffile)
+    wp = pow(wp,6)
+    c1 = rampfloat(65,1,ns)
+    c2 = fillfloat(round(n2/2),ns)
+    c3 = fillfloat(round(n3/2),ns)
+    hv = HorizonVolume()
+    hv.setCG(0.01,100)
+    hv.setExternalIterations(12)
+    hs = hv.applyForHorizonVolume(c1,c2,c3,wp,p2,p3)
+    writeImage(hvsfile,hs)
+  else:
+    hs = readHorizons(ns,hvsfile)
+  hs = sub(hs,65)
+  df = DynamicFlattener(-10,10)
+  gg = df.flattenWithHorizonsX(hs,copy(ns,n2,n3,65,0,0,gx))
+  plot3(gx)
+  plot3(gg)
   '''
-  gu1 = readImage(gtfile)
-  gu2 = readImage(gufile)
-  zm = ZeroMask(0.10,1,1,1,gu2)
-  gu1 = gain(gu1)
-  gu2 = gain(gu2)
-  zero,tiny=0.0,0.01
-  zm.setValue(zero,gu2)
-  plot3(gu1)
-  plot3(gu2)
+  sd = SurfaceDisplay()
+  has = zerofloat(n2,n3,ns)
+  for ih in range(ns):
+    has[ih] = sd.amplitudeOnHorizon(hs[ih],eps)
+  has = pow(has,2)
+  has = sub(has,min(has))
+  has = div(has,max(has))
+  writeImage("hast",has)
+  #has = readHorizons(ns,hasfile)
+  for ih in range(10,20,1):
+    title = "Slice "+str(ih)
+    plot2(s2,s3,has[ih],cmin=0.2,cmax=1.0,title=title,png=title)
   '''
-  #goResults()
-  #goSlices()
-  #goChannel()
-  #goReskinx()
 def goReskinx():
   print n1
   print n2
@@ -626,26 +683,47 @@ def goUnfaultS():
   '''
 def goFlatten():
   fx = readImage(fwsfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(2.0,1.0)
-  lsf.findSlopes(fx,p2,p3,ep);
-  ep = pow(ep,4)
-  fl = Flattener3()
-  fl.setIterations(0.01,300)
-  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-  gt = fm.flatten(fx)
-  writeImage(gtfile,gt)
-  #writeImage(gufile,gt)
-  gt = readImage(gtfile)
   fx = gain(fx)
-  gt = gain(gt)
+  if not plotOnly:
+    p2 = zerofloat(n1,n2,n3)
+    p3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lsf = LocalSlopeFinder(4.0,1.0)
+    lsf.findSlopes(fx,p2,p3,ep);
+    ep = pow(ep,6)
+    fl = Flattener3()
+    fl.setIterations(0.01,200)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+    gt = fm.flatten(fx)
+    writeImage("gt",gt)
+  else:
+    gt = readImage(gtfile)
   plot3(fx)
   plot3(gt)
 
+def goDp():
+  gx = readImage(fwsfile)
+  gx = gain(gx)
+  gp = zerofloat(n1,n2,n3)
+  gr = gx[0][0]
+  lmin = -10
+  lmax =  10
+  for i3 in range(1):
+    print i3
+    for i2 in range(n2):
+      dp = DynamicWarping(lmin,lmax)
+      dp.setStrainMax(0.25)
+      dp.setShiftSmoothing(1)
+      gi = gx[i3][i2]
+      ui = dp.findShifts(gr,gi)
+      gp[i3][i2] = dp.applyShifts(ui,gi)
+      lmin = round(min(ui))-20
+      lmax = round(max(ui))+20
+  plot3(gp)
+  plot3(gx)
 def goRefine():
-  gt = readImage(gtfile)
+  n1 = 260
+  gt = readImage(n1,n2,n3,"gts")
   gr = zerofloat(n1,n2,n3)
   g0 = gt[0][0]
   for i3 in range(n3):
@@ -751,7 +829,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-2.0,2.0)
+      ipg.setClips(-3.0,3.0)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)

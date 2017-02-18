@@ -144,6 +144,17 @@ def getSeismicDir():
 
 #############################################################################
 # read/write images
+def readHorizons(ns,name):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n2,n3,ns)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 def readHorizon(name):
   """ 
   Reads an image from a file with specified name.
@@ -158,6 +169,17 @@ def readHorizon(name):
 
 
 def readImage(name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+def readImageX(n1,n2,n3,name):
   """ 
   Reads an image from a file with specified name.
   name: base name of image file; e.g., "tpsz"

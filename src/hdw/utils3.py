@@ -43,6 +43,7 @@ def setupForSubset(name):
     pngDir = _pngdir+"curt/"
     seismicDir = _datdir+"beg/xavier/curt/3d/"
     n1,n2,n3 = 751,1000,1000
+    n1,n2,n3 = 400,500,500 #gs = copy(400,500,500,70,500,500,gx)
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)

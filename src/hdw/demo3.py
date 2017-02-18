@@ -15,7 +15,7 @@ d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 
 
 #############################################################################
-fxfile = "gxs" # 
+fxfile = "gxss" # 
 flfile = "fl" # 
 ftfile = "ft" # 
 fltfile = "flt" # 
@@ -27,13 +27,37 @@ pngDir = None
 plotOnly = False
 
 def main(args):
-  goSeis()
+  goFlatten()
 
-def goSeis():
+def goFlatten():
   fx = readImage(fxfile)
-  writeImage("fx400",fx[400])
-  fx = gain(fx)
+  #lsf = LocalSlopeFinder(8,2,2,5)
+  #p2 = zerofloat(n1,n2,n3)
+  #p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  #lsf.findSlopes(fx,p2,p3,ep)
+  rgf = RecursiveGaussianFilterP(1)
+  rgf.apply000(fx,fx)
+  df = DynamicFlattener(-10,30)
+  df.setStrainMax(0.25)
+  df.setWindow(3,100)
+  df.setGate(5)
+  df.setShiftSmoothing(1)
+  df.setErrorSmoothing(3)
+  ux = zerofloat(n1,n2,n3)
+  gx = df.flattenXL(0,0,ep,fx,ux)
   plot3(fx)
+  plot3(gx)
+  '''
+  n2 = 1000
+  n3 = 1000
+  ws = fillfloat(1,n2,n3)
+  dk = Dijkstra(ws)
+  dt = zerofloat(n2*n3)
+  pd = zeroint(n2*n3)
+  dk.apply(0,dt,pd)
+  dk.printPath(n3,pd,0,n2*n3-1)
+  '''
 
 def gain(x):
   g = mul(x,x) 
@@ -377,7 +401,7 @@ def plot3c(c,s,u,cmin=0.0,cmax=0.0,png=None):
     #png += "s"+str(int(10*strainMax))
     frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
 
-def plot3(f,g=None,k2=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+def plot3(f,g=None,k2=0,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,fbs=None,surf=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
