@@ -20,7 +20,7 @@ def main(args):
   #goF3dUnc()
   #goJake()
   #goNathan()
-  #goLulia()
+  goLulia()
   #goCranfield2007()
   #goCranfield2010()
   #goSeamDepth()
@@ -34,7 +34,7 @@ def main(args):
   #goParihaka()
   #goTj()
   #goBag()
-  goCurt()
+  #goCurt()
 def goCurt():
   """
   ***************************************************************************
@@ -1052,6 +1052,7 @@ def goLulia():
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,875,9700,10830,12200,13490
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -1066,6 +1067,7 @@ def goLulia():
     scale = 1.00
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
+  '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     show3d(x,clip=max(x))

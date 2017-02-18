@@ -17,56 +17,15 @@ package hdw;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+import vec.*;
+import util.*;
 
 /**
- * Dynamic warping of sequences and images.
- * <p>
- * For sequences f and g, dynamic warping finds a sequence of 
- * shifts u such that f[i1] ~ g[i1+u[i1]], subject to a bound b1 
- * on strain, the rate at which the shifts u[i1] vary with sample 
- * index i1.
- * <p>
- * An increasing u[i1] = u[i1-1] + 1 implies that, between indices
- * i1-1 and i1, g[i1] is a stretched version of f[i1] ~ g[i1+u[i1]].
- * For, in this case, values in f for indices i1 and i1-1 are one 
- * sample apart, but corresponding values in g are two samples 
- * apart, which implies stretching by 100%. Likewise, a decreasing 
- * u[i1] = u[i1-1] - 1 implies squeezing by 100%.
- * <p>
- * In practice, 100% strain (stretching or squeezing) may be extreme.
- * Therefore, the upper bound on strain may be smaller than one. For 
- * example, if the bound b1 = 0.5, then |u[i1]-u[i1-1]| &le; 0.5.
- * <p>
- * For 2D images f and g, dynamic warping finds a 2D array of shifts
- * u[i2][i1] such that f[i2][i1] ~ g[i2][i1+u[i2][i1]], subject to 
- * bounds b1 and b2 on strains, the rates at which shifts u[i2][i1] 
- * vary with samples indices i1 and i2, respectively.
- * <p>
- * For 3D images f and g, dynamic warping finds a 3D array of shifts
- * u[i3][i2][i1] in a similar way. However, finding shifts for 3D 
- * images may require an excessive amount of memory. Dynamic image 
- * warping requires a temporary array of nlag*nsample floats, where 
- * the number of lags nlag = 1+shiftMax-shiftMin and nsample is the 
- * number of image samples. For 3D images, the product nlag*nsample 
- * is likely to be too large for the temporary array to fit in random-
- * access memory (RAM). In this case, shifts u are obtained by blending 
- * together shifts computed from overlapping subsets of the 3D image.
- * <p>
- * Estimated shifts u can be smoothed, and the extent of smoothing 
- * along each dimension is inversely proportional to the strain limit 
- * for that dimension. These extents can be scaled by specified factors 
- * for more or less smoothing. The default scale factors are zero, for 
- * no smoothing.
- * <p>
- * This class provides numerous methods, but typical applications
- * require only several of these, usually only the methods that find
- * and apply shifts. The many other methods are provided only for 
- * atypical applications and research.
- *
- * @author Dave Hale, Colorado School of Mines
- * @version 2012.07.05
+ * Seismic flattening with dynamic warping.
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2017.02.16
  */
-public class DynamicFlattener2 {
+public class DynamicFlattener {
 
   /**
    * The method used to extrapolate alignment errors.
@@ -103,13 +62,17 @@ public class DynamicFlattener2 {
    * @param shiftMin lower bound on shift u.
    * @param shiftMax upper bound on shift u.
    */
-  public DynamicFlattener2(int shiftMin, int shiftMax) {
+  public DynamicFlattener(int shiftMin, int shiftMax) {
     Check.argument(shiftMax-shiftMin>1,"shiftMax-shiftMin>1");
     _lmin = shiftMin;
     _lmax = shiftMax;
     _nl = 1+_lmax-_lmin;
     _si = new SincInterpolator();
     _extrap = ErrorExtrapolation.NEAREST;
+  }
+
+  public void setGate(int ud) {
+    _ud = ud;
   }
 
   public void setShiftMax(int shiftMin, int shiftMax) {
@@ -245,36 +208,6 @@ public class DynamicFlattener2 {
     updateSmoothingFilters();
   }
 
-  /**
-   * Sets the size and overlap of windows used for 3D image warping.
-   * Window size determines the amount of memory required to store
-   * a temporary array[l3][l2][n1][nl] of floats used to compute
-   * shifts. Here, nl is the number of lags and n1, l2 and l3 are 
-   * the numbers of samples in the 1st, 2nd and 3rd dimensions of 
-   * 3D image subsets. Let n1, n2 and n3 denote numbers of samples 
-   * for all three dimensions of a complete 3D image. Typically, 
-   * l2&lt;n2 and l3&lt;n3, because insufficient memory is available 
-   * for a temporary array of nl*n1*n2*n3 floats. 
-   * <p>
-   * Image subsets overlap in the 2nd and 3rd dimensions by specified 
-   * fractions f2 and f3, which must be less than one. Because window 
-   * sizes are integers, the actual overlap be greater than (but never 
-   * less than) these fractions.
-   * <p>
-   * Default window sizes are 50 samples; default overlap fractions 
-   * are 0.5, which corresponds to 50% overlap in both dimensions.
-   * @param l2 length of window in 2nd dimension.
-   * @param l3 length of window in 3rd dimension.
-   * @param f2 fraction of window overlap in 2nd dimension.
-   * @param f3 fraction of window overlap in 3rd dimension.
-   */
-  public void setWindowSizeAndOverlap(int l2, int l3, double f2, double f3) {
-    _owl2 = l2;
-    _owl3 = l3;
-    _owf2 = f2;
-    _owf3 = f3;
-  }
-
   public void setWindow(int d, int wind) {
     _dw = d;
     _wind = wind;
@@ -359,8 +292,46 @@ public class DynamicFlattener2 {
     smoothShifts(u,u);
   }
 
+  public float[][][] flattenXL(int p2, int p3, float[][][] el, 
+    float[][][] fx, float[][][] ux) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] gx = new float[n3][n2][n1];
+    final int[] ct = new int[1];
+    final float[][] fx2 = new float[n3][n1];
+    final float[][] el2 = new float[n3][n1];
+    final float[][] ux2 = new float[n3][n1];
+    for (int i3=0; i3<n3; ++i3) {
+      fx2[i3] = fx[i3][0];
+      el2[i3] = el[i3][0];
+    }
+    float[][] gx2 = flatten(el2,fx2,ux2);
+    for (int i3=0; i3<n3; ++i3) {
+      ux[i3][0] = ux2[i3];
+      fx[i3][0] = gx2[i3];
+    }
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      ct[0] += 1;
+      System.out.println(ct[0]*100f/n3+"% done...");
+      gx[i3]=flatten(el[i3],fx[i3],ux[i3]);
+    }});
+    float[][][] hs = new float[n1][n3][n2];
+    float[][][] h3 = new float[n1][n3][n2];
+    float[][][] h2 = new float[n1][n3][n2];
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
+    rgf.applyX1X(hs,h3);
+    rgf.applyXX1(hs,h2);
+    float[][][] hd = add(abs(h2),abs(h3));
+    return flattenWithHorizons(ux,fx);
+    //return gx;
+  }
+
+
   public float[][] flatten(
-    float[][] el, float[][] p2, float[][] fx, float[][] ux) 
+    float[][] el, float[][] fx, float[][] ux) 
   {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -368,50 +339,44 @@ public class DynamicFlattener2 {
     gx[0] = fx[0];
     float[] up = findShifts(fx[0],fx[1]);
     gx[1] = applyShifts(up,fx[1]);
-    float[] ps = new float[n1];
     for (int i1=0; i1<n1; ++i1) {
-      ux[0][i1] = i1;
-      float xp = up[i1]+i1;
-      ux[1][i1] =  xp;
-      int kp = round(xp);
-      kp = max(kp,0);
-      kp = min(kp,n1-1);
-      ps[i1] = p2[0][i1]+p2[1][kp];
+      if(ux[0][i1]==0f) ux[0][i1] = i1;
+      ux[1][i1] = up[i1]+i1;
     }
     for (int i2=2; i2<n2; ++i2) {
-      if(i2%10==0) {
-        System.out.println("i2="+i2);
-      }
       float mk = 0f;
       float[][] e2 = fillfloat(mk,_nl,n1);
-      computeErrors(i2,ps,up,el[i2],gx,fx[i2],e2);
-      float emax = max(e2);
-      for (int i1=0; i1<n1; ++i1) 
-      for (int il=0; il<_nl; ++il) 
-        if(e2[i1][il]==mk) 
-          e2[i1][il] = emax;
-      normalizeErrors(e2);
-      for (int is=0; is<_esmooth; ++is)
-        smoothErrors(e2,e2);
-      float[][] d = accumulateForward(e2);
-      backtrackReverse(d,e2,up);
-      smoothShifts(up,up);
-      int umin = round(min(up))-20;
-      int umax = round(max(up))+20;
-      setShiftMax(umin,umax);
+      computeErrors(i2,up,el[i2],gx,fx[i2],e2);
+      findShifts(mk,e2,up);
+      //int umin = round(min(up))-20;
+      //int umax = round(max(up))+20;
+      //setShiftMax(umin,umax);
       gx[i2] = applyShifts(up,fx[i2]);
       for (int i1=0; i1<n1; ++i1) {
         float xp = up[i1]+i1;
         ux[i2][i1] =  xp;
-        int kp = round(xp);
-        kp = max(kp,0);
-        kp = min(kp,n1-1);
-        ps[i1] += p2[i2][kp];
       }
     }
     return gx;
+  }
+
+  private void findShifts(float mk, float[][] e2, float[] up) {
+    int n1 = e2.length;
+    float emax = max(e2);
+    for (int i1=0; i1<n1; ++i1) 
+    for (int il=0; il<_nl; ++il) 
+      if(e2[i1][il]==mk) 
+        e2[i1][il] = emax;
+    normalizeErrors(e2);
+    for (int is=0; is<_esmooth; ++is)
+      smoothErrors(e2,e2);
+    float[][] d = accumulateForward(e2);
+    backtrackReverse(d,e2,up);
+    smoothShifts(up,up);
 
   }
+
+
 
   public void refine(float[][] fx, float[][] us) {
     int n2 = fx.length;
@@ -446,6 +411,144 @@ public class DynamicFlattener2 {
     }}
     return gx;
   }
+
+  public float[][][] flattenWithHorizons(float[][][] ux, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][][] gx = new float[n3][n2][n1];
+    Sampling s1 = new Sampling(n1);
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float[] fx32 = fx[i3][i2];
+      float[] gx32 = gx[i3][i2];
+    for (int i1=0; i1<n1; ++i1) {
+      gx32[i1]=si.interpolate(s1,fx32,ux[i3][i2][i1]);
+    }}}
+    return gx;
+  }
+
+
+
+  public void smoothHorizon(float sig, float[][] el, float[][] hz) {
+    int n2 = hz.length; 
+    int n1 = hz[0].length; 
+    float[][] b = new float[n2][n1];
+    float[][] r = new float[n2][n1];
+    float[][] w = new float[n2][n1];
+    makeRhsWeights(hz,el,b,w);
+    VecArrayFloat2 vb = new VecArrayFloat2(b);
+    VecArrayFloat2 vr = new VecArrayFloat2(r);
+    Smoother2 smoother2 = new Smoother2(sig,sig);
+    A2 a2 = new A2(smoother2,w);
+    CgSolver cs = new CgSolver(0.001,200);
+    smoother2.applyTranspose(b);
+    cs.solve(a2,vb,vr);
+    copy(r,hz);
+  }
+
+    // Conjugate-gradient operators.
+  private static class A2 implements CgSolver.A {
+    A2(Smoother2 s2, float[][] wp) 
+    {
+      _s2 = s2;
+      _wp = wp;
+      float n2 = wp.length;
+      float n1 = wp[0].length;
+      _sc = sum(wp)/(n1*n2);
+    }
+    public void apply(Vec vx, Vec vy) {
+      VecArrayFloat2 v2x = (VecArrayFloat2)vx;
+      VecArrayFloat2 v2y = (VecArrayFloat2)vy;
+      float[][] x = v2x.getArray();
+      float[][] y = v2y.getArray();
+      float[][] z = copy(x);
+      v2y.zero();
+      _s2.apply(z);
+      addAndScale(-_sc,z,y);
+      applyLhs(_wp,z,y);
+      _s2.applyTranspose(y);
+      addAndScale( _sc,x,y);
+    }
+    private float _sc;
+    private Smoother2 _s2;
+    private float[][] _wp;
+  }
+
+  private void makeRhsWeights(
+    float[][] hz, float[][] el, float[][] b, float[][] w) 
+  {
+    int n2 = el.length;
+    int n1 = el[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float wi = el[i2][i1];
+      float ws = wi*wi;
+      b[i2][i1] = hz[i2][i1]*ws;
+      w[i2][i1] = ws;
+    }}
+  }
+
+  private static void addAndScale(float sc, float[][] x, float[][] y) {
+    int n2 = x.length;
+    int n1 = x[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      y[i2][i1] += sc*x[i2][i1];
+    }}
+  }
+    // Smoother used as a preconditioner. After smoothing, enforces zero-shift
+  // boundary conditions at top and bottom.
+  private static class Smoother2 {
+    public Smoother2(float sigma1, float sigma2) {
+      _sigma1 = sigma1;
+      _sigma2 = sigma2;
+    }
+    public void apply(float[][] x) {
+      smooth2(_sigma2,x);
+      smooth1(_sigma1,x);
+    }
+    public void applyTranspose(float[][] x) {
+      smooth1(_sigma1,x);
+      smooth2(_sigma2,x);
+    }
+    private float _sigma1,_sigma2;
+  }
+
+
+  // Smoothing for dimension 2.
+  private static void smooth1(float sigma, float[][] x) {
+    if (sigma<1.0f)
+      return;
+    RecursiveExponentialFilter.Edges edges =
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.setEdges(edges);
+    ref.apply1(x,x);
+  }
+
+
+  // Smoothing for dimension 2.
+  private static void smooth2(float sigma, float[][] x) {
+    if (sigma<1.0f)
+      return;
+    RecursiveExponentialFilter.Edges edges =
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.setEdges(edges);
+    ref.apply2(x,x);
+  }
+
+
+
+  private static void applyLhs(float[] wp, float[] x, float[] y) {
+    int n1 = wp.length;
+    for (int i1=0; i1<n1; ++i1)
+      y[i1] += wp[i1]*x[i1];
+  }
+
+
 
 
 
@@ -1206,6 +1309,7 @@ public class DynamicFlattener2 {
   private int _lmin,_lmax; // min,max lags
   private int _dw=2;
   private int _wind=100;
+  private int _ud=2;
   private ErrorExtrapolation _extrap; // method for error extrapolation
   private float _epow = 2; // exponent used for alignment errors |f-g|^e
   private int _esmooth = 0; // number of nonlinear smoothings of errors
@@ -1245,7 +1349,7 @@ public class DynamicFlattener2 {
    * @param e output array[ni][nl] of alignment errors.
    */
   private void computeErrors(
-    int m2, float[] ps, float[] u, float[] el, 
+    int m2, float[] u, float[] el, 
     float[][] f, float[] g, float[][] e) {
     int n1 = g.length;
     int nl = _nl;
@@ -1271,24 +1375,20 @@ public class DynamicFlattener2 {
     // Compute errors where indices are in bounds for both f and g.
     int d2 = _dw;
     int i2b = max(0,m2-_wind*d2);
-    int n2 = m2-i2b;
-    //float sc = 1f/n2;
     for (int i1=0; i1<n1; ++i1) {
       int illo = max(0,   -_lmin-i1); // see notes
       int ilhi = min(nl,n1-_lmin-i1); // above
       int ui = round(u[i1]);
-      int du = 2;
       //if(el[i1]<0.9f) du = 20;
-      int lb = ui-du-_lmin;
-      int le = ui+du-_lmin+1;
+      int lb = ui-_ud-_lmin;
+      int le = ui+_ud-_lmin+1;
       illo = max(illo,lb);
       ilhi = min(ilhi,le);
       for (int il=illo,j1=i1+il+_lmin; il<ilhi; ++il,++j1) {
         float ei = 0f;
         for (int i2=i2b; i2<m2; i2+=d2)
           ei += error(f[i2][i1],g[j1]);
-        e[i1][il] = ei;//+0.01f*abs(j1-i1-ps[i1]);//*el[i1];
-        //e[i1][il] = sc*ei+0.005f*abs(2*ux[m2][i1]-ux[m2m][i1]-j1);
+        e[i1][il] = ei;
         if (average) {
           eavg[il] += ei;
           navg[il] += 1;

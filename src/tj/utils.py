@@ -168,6 +168,17 @@ def readImage(name):
   ais.readFloats(image)
   ais.close()
   return image
+def readImageX(n1,n2,n3,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 def writeImage(name,image):
   """ 

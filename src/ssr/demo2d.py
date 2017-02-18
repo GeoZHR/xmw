@@ -31,7 +31,7 @@ upperLikelihood = 0.85
 minSize = 100
 
 minThrow = 0.0
-maxThrow = 25.0
+maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -165,9 +165,10 @@ def goFaultThrow():
   fs1 = fillfloat(-1000,n1,n2)
   fs2 = fillfloat(-1000,n1,n2)
   FaultCurve.getFsImage(cc,fs1,fs2)
-  writeImage("seis",gx)
-  writeImage("slip1",fs1)
-  writeImage("slip2",fs2)
+  writeImageM("seis",gx)
+  writeImageM("seisSmooth",gs)
+  writeImageM("slip1",fs1)
+  writeImageM("slip2",fs2)
   print min(fst)
   print max(fst)
   plot2(s1,s2,gx)

@@ -76,7 +76,7 @@ maxThrow = 20.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -98,8 +98,9 @@ def main(args):
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
   #goTest()
-  #goFlatten()
-  goRefine()
+  goFlatten()
+  #goDp()
+  #goRefine()
   '''
   gu1 = readImage(gtfile)
   gu2 = readImage(gufile)
@@ -626,26 +627,47 @@ def goUnfaultS():
   '''
 def goFlatten():
   fx = readImage(fwsfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(2.0,1.0)
-  lsf.findSlopes(fx,p2,p3,ep);
-  ep = pow(ep,4)
-  fl = Flattener3()
-  fl.setIterations(0.01,300)
-  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
-  gt = fm.flatten(fx)
-  writeImage(gtfile,gt)
-  #writeImage(gufile,gt)
-  gt = readImage(gtfile)
   fx = gain(fx)
-  gt = gain(gt)
+  if not plotOnly:
+    p2 = zerofloat(n1,n2,n3)
+    p3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lsf = LocalSlopeFinder(4.0,1.0)
+    lsf.findSlopes(fx,p2,p3,ep);
+    ep = pow(ep,6)
+    fl = Flattener3()
+    fl.setIterations(0.01,200)
+    fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+    gt = fm.flatten(fx)
+    writeImage("gt",gt)
+  else:
+    gt = readImage(gtfile)
   plot3(fx)
   plot3(gt)
 
+def goDp():
+  gx = readImage(fwsfile)
+  gx = gain(gx)
+  gp = zerofloat(n1,n2,n3)
+  gr = gx[0][0]
+  lmin = -10
+  lmax =  10
+  for i3 in range(1):
+    print i3
+    for i2 in range(n2):
+      dp = DynamicWarping(lmin,lmax)
+      dp.setStrainMax(0.25)
+      dp.setShiftSmoothing(1)
+      gi = gx[i3][i2]
+      ui = dp.findShifts(gr,gi)
+      gp[i3][i2] = dp.applyShifts(ui,gi)
+      lmin = round(min(ui))-20
+      lmax = round(max(ui))+20
+  plot3(gp)
+  plot3(gx)
 def goRefine():
-  gt = readImage(gtfile)
+  n1 = 260
+  gt = readImage(n1,n2,n3,"gts")
   gr = zerofloat(n1,n2,n3)
   g0 = gt[0][0]
   for i3 in range(n3):
@@ -751,7 +773,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-2.0,2.0)
+      ipg.setClips(-3.0,3.0)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)

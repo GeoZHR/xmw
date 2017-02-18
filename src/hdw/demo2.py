@@ -46,7 +46,7 @@ elfile = "el"
 p2file = "p2" # seismic slopes
 p3file = "p3" # seismic slopes
 #pngDir = getPngDir()
-pngDir = None
+pngDir =  "../../../png/hdw/"
 plotOnly = False
 minTheta,maxTheta = 75,85
 sigmaTheta = 40
@@ -61,12 +61,12 @@ def main(args):
   #goTpd()
   #goCurt1()
   #goCurt2()
-  #goTpdFlatten()
-  #goCurt1Flatten()
+  goTpdFlatten()
+  goCurt1Flatten()
   #goLulia()
   #goLuliaFlatten()
-  #goCurt2Flatten()
-  goCurt3Flatten()
+  goCurt2Flatten()
+  #goCurt3Flatten()
   #goFd()
   #goFdFlatten()
 def goFaultScan(gx):
@@ -344,7 +344,7 @@ def goCurt1Flatten():
   p2= zerofloat(n1,n2)
   el= zerofloat(n1,n2)
   lsf.findSlopes(fx,p2,el);
-  df = DynamicFlattener2(-dl,dl)
+  df = DynamicFlattener(-dl,dl)
   df.setStrainMax(0.5)
   df.setWindow(2,200)
   df.setShiftSmoothing(1)
@@ -352,7 +352,7 @@ def goCurt1Flatten():
   rgf = RecursiveGaussianFilterP(1)
   rgf.apply00(fx,fx)
   ux = zerofloat(n1,n2)
-  gx = df.flatten(el,p2,fx,ux)
+  gx = df.flatten(el,fx,ux)
   ut = zerofloat(n2,n1)
   for i2 in range(n2): 
     for i1 in range(n1): 
@@ -360,7 +360,10 @@ def goCurt1Flatten():
   hw,vw=n2,round(n1*2.5)
   plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
   plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2)
-  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2)
+  us = []
+  for i1 in range(1,n1,15):
+    us.append(ut[i1])
+  plot2(s1,s2,fx,u=us,cmin=min(fx)/2,cmax=max(fx)/2)
 
 def goCurt2Flatten():
   setupForSubset("curt2")
@@ -377,34 +380,34 @@ def goCurt2Flatten():
   p2= zerofloat(n1,n2)
   el= zerofloat(n1,n2)
   lsf.findSlopes(fx,p2,el);
-  df = DynamicFlattener2(-dl,dl)
+  df = DynamicFlattener(-dl,dl)
   df.setStrainMax(0.2)
   df.setWindow(2,200)
+  df.setGate(10)
   df.setErrorSmoothing(3)
   df.setShiftSmoothing(1)
   ux = zerofloat(n1,n2)
-  fs = zerofloat(n1,n2)
   rgf = RecursiveGaussianFilterP(2)
+  fs = zerofloat(n1,n2)
   rgf.apply00(fx,fs)
   fl = readImage(flfile)
-  gx = df.flatten(fl,p2,fs,ux)
+  gx = df.flatten(fl,fs,ux)
   ut = zerofloat(n2,n1)
   for i2 in range(n2): 
     for i1 in range(n1): 
       ut[i1][i2] = ux[i2][i1]
-  #df.refine(fx,ut)
   gh = df.flattenWithHorizons(ut,fx)
   dp = DynamicPicking(-dl,dl)
-  rgf = RecursiveGaussianFilterP(2)
-  u2 = zerofloat(n2,n1)
-  rgf.applyX1(ut,u2)
-  fl = pow(fl,8)
-  #dp.smoothHorizons(8,sub(1,fl),ut)
+  el = pow(el,10)
+  dp.smoothHorizons(2,el,ut)
   hw,vw=n2,round(n1*2.5)
-  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
-  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2)
-  plot2(s1,s2,gh,cmin=min(fx)/2,cmax=max(fx)/2)
-  plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2,png="fx")
+  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2,png="gx")
+  plot2(s1,s2,gh,cmin=min(fx)/2,cmax=max(fx)/2,png="gh")
+  us = []
+  for i1 in range(1,n1,15):
+    us.append(ut[i1])
+  plot2(s1,s2,fx,u=us,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="us")
 
 def goCurt3Flatten():
   setupForSubset("curt3")
@@ -456,29 +459,32 @@ def goTpdFlatten():
   dl = 60
   fx = readImage(fxfile)
   fx = gain(fx)
-  goFaultScan(fx)
   lsf = LocalSlopeFinder(8,2,5) 
   p2= zerofloat(n1,n2)
   el= zerofloat(n1,n2)
   lsf.findSlopes(fx,p2,el);
-  df = DynamicFlattener2(-dl,dl)
-  df.setStrainMax(0.2)
+  df = DynamicFlattener(-dl,dl)
+  df.setStrainMax(0.25)
   df.setWindow(1,200)
+  df.setGate(5)
   df.setErrorSmoothing(3)
   df.setShiftSmoothing(1)
   rgf = RecursiveGaussianFilterP(1)
   #rgf.apply00(fx,fx)
   ux = zerofloat(n1,n2)
   fl = readImage(flfile)
-  gx = df.flatten(fl,p2,fx,ux)
+  gx = df.flatten(fl,fx,ux)
   ut = zerofloat(n2,n1)
   for i2 in range(n2): 
     for i1 in range(n1): 
       ut[i1][i2] = ux[i2][i1]
   hw,vw=n2,round(n1*2.5)
-  plot2(s1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
-  plot2(s1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
-  plot2(s1,s2,fx,u=ut,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpfx")
+  plot2(s1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpgx")
+  us = []
+  for i1 in range(2,n1,10):
+    us.append(ut[i1])
+  plot2(s1,s2,fx,u=us,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="tphs")
   #plot2(s1,s2,fx,u=uss,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
   #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
   #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
@@ -1261,6 +1267,8 @@ def plot2(s1,s2,c,u=None,vint=30,hint=200,hw=None,vw=None,
   n1 = s1.getCount()
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
           #PlotPanel.AxesPlacement.NONE)
+  panel.setHLabel("Inline (samples)")
+  panel.setVLabel("Time (samples)")
   panel.setHLimits(0,s2.first,s2.last)
   panel.setVLimits(0,s1.first,s1.last)
   panel.setVInterval(0,vint)
@@ -1277,30 +1285,33 @@ def plot2(s1,s2,c,u=None,vint=30,hint=200,hw=None,vw=None,
   if u:
     nu = len(u)
     x2 = rampfloat(0,1,n2)
-    cp = ColorMap(0,nu-1,ColorMap.PRISM)
-    for iu in range(0,nu,10):
+    cp = ColorMap(0,nu,ColorMap.PRISM)
+    k = 1
+    for iu in range(nu):
+      color = Color.MAGENTA
+      if(k%4==0): color=Color.MAGENTA
+      if(k%4==1): color=Color.GREEN
+      if(k%4==2): color=Color.RED
+      if(k%4==3): color=Color.BLUE
       uv = panel.addPoints(0,0,u[iu],x2)
-      uv.setLineColor(cp.getColor(iu))
+      #uv.setLineColor(cp.getColor(iu))
+      uv.setLineColor(color)
       uv.setLineWidth(2.5)
-    uv = panel.addPoints(0,0,u[nu-1],x2)
-    uv.setLineColor(cp.getColor(nu-1))
-    uv.setLineWidth(2.5)
+      k = k+1
   #panel.addColorBar()
   frame = PlotFrame(panel)
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   frame.setBackground(backgroundColor)
   #frame.setFontSizeForPrint(8,240)
   #frame.setSize(470,1000)
-  frame.setFontSize(12)
+  frame.setFontSize(16)
   if hw and vw:
     frame.setSize(hw,vw)
   else:
     frame.setSize(round(n2*0.4),round(n1*2))
   frame.setVisible(True)
   if png and pngDir:
-    png += "n"+str(int(10*nrms))
-    png += "s"+str(int(10*strainMax))
-    frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
+    frame.paintToPng(720,3.33333,pngDir+png+".png")
 
 def plotfg(f,g,png=None):
   n = len(f)
