@@ -52,12 +52,15 @@ def main(args):
   goPik()
 def goPik():
   fx = readImage(gxfile)
-  lof =  LocalOrientFilter(8,2)
-  ets = lof.applyForTensors(fx)
-  ets.setEigenvalues(0.1,1,1)
-  lsf = LocalSmoothingFilter()
-  lsf.apply(ets,10,fx,fx)
-  writeImage("gs",fx)
+  rgf = RecursiveGaussianFilter(1)
+  f1 = zerofloat(n1,n2,n3)
+  f2 = zerofloat(n1,n2,n3)
+  f3 = zerofloat(n1,n2,n3)
+  rgf.apply200(fx,f1)
+  rgf.apply020(fx,f2)
+  rgf.apply002(fx,f3)
+  fx = add(f1,f2)
+  fx = add(f3,fx)
   # pick the first slice
   gx = fx[442]
   c1 = [660,144, 96,526,559,659,612,660]
@@ -72,7 +75,7 @@ def goPik():
   #xu = sp.regridBoundary(1,[c1,c2])
   plot(gx,cmin=-2,cmax=2)
   plot(gx,cmin=-2,cmax=2,pp=[c1,c2])
-  bs = sp.refine(95,2,40,1,xu,pa)
+  bs = sp.refine(95,1,40,1,xu,pa)
   plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
   for i3 in range(443,400,-1):
     gn = fx[i3]
@@ -80,6 +83,7 @@ def goPik():
     xu = sp.pickNext(50,1,20,1,xu[0],xu[1],pa)
     if(i3%2==0):
       plot(gn,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
+  plot3(fx)
 
 def goSmooth():
   gx = readImage(gxfile)

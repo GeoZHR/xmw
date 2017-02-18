@@ -292,6 +292,80 @@ public class DynamicFlattener {
     smoothShifts(u,u);
   }
 
+  public float[][][] flattenILX(int p2, int p3, float[][][] el, 
+    float[][][] fx, float[][][] ux) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] gx = new float[n3][n2][n1];
+    final int[] ct = new int[1];
+    Parallel.loop(100,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      gx[i3] =flatten(el[i3],fx[i3],ux[i3]);
+      ct[0] += 1;
+      System.out.println(round(ct[0]*100f/n3)+"% done...");
+    }});
+    RecursiveExponentialFilter rgf = new RecursiveExponentialFilter(2);
+    rgf.apply2(ux,ux);
+    //rgf.apply3(ux,ux);
+    return flattenWithHorizons(ux,fx);
+    //return gx;
+  }
+
+
+  public float[][][] flattenIL(int p2, int p3, float[][][] el, 
+    float[][][] fx, float[][][] ux) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] ft = copy(fx);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
+    rgf.apply000(fx,fx);
+    final float[][][] gx = new float[n3][n2][n1];
+    final int[] ct = new int[1];
+    final float[][] fx3 = fx[p3];
+    final float[][] el3 = el[p3];
+    final float[][] ux3 = ux[p3];
+    fx[p3] = flatten(el3,fx3,ux3);
+    _lmin = -10;
+    _lmax =  10;
+    Parallel.loop(400,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[][] fx2 = new float[n3][n1];
+      float[][] el2 = new float[n3][n1];
+      float[][] ux2 = new float[n3][n1];
+      int b3 = p3;
+      int e3 = n3-1;
+      int d3 = 1;
+      if(b3>0){e3=0;d3=-1;}
+      int k3 = 0;
+      for (int i3=b3; i3!=e3; i3+=d3) {
+        fx2[k3] = fx[i3][i2];
+        el2[k3] = el[i3][i2];
+        ux2[k3] = ux[i3][i2];
+        k3++;
+      }
+      ct[0] += 1;
+      System.out.println(round(ct[0]*100f/n2)+"% done...");
+      float[][] gx2 =flatten(el2,fx2,ux2);
+      k3 = 0;
+      for (int i3=b3; i3!=e3; i3+=d3) {
+        gx[i3][i2] = gx2[k3];
+        ux[i3][i2] = ux2[k3];
+        k3++;
+      }
+    }});
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(2);
+    ref.apply2(ux,ux);
+    ref.apply3(ux,ux);
+    return flattenWithHorizons(ux,ft);
+    //return gx;
+  }
+
+
+
   public float[][][] flattenXL(int p2, int p3, float[][][] el, 
     float[][][] fx, float[][][] ux) 
   {
@@ -318,6 +392,7 @@ public class DynamicFlattener {
       System.out.println(ct[0]*100f/n3+"% done...");
       gx[i3]=flatten(el[i3],fx[i3],ux[i3]);
     }});
+    /*
     float[][][] hs = new float[n1][n3][n2];
     float[][][] h3 = new float[n1][n3][n2];
     float[][][] h2 = new float[n1][n3][n2];
@@ -325,7 +400,13 @@ public class DynamicFlattener {
     rgf.applyX1X(hs,h3);
     rgf.applyXX1(hs,h2);
     float[][][] hd = add(abs(h2),abs(h3));
-    return flattenWithHorizons(ux,fx);
+    */
+    float[][][] ut = new float[n1][n3][n2];
+    for (int i3=0; i3<n3; ++i3)
+    for (int i2=0; i2<n2; ++i2)
+    for (int i1=0; i1<n1; ++i1)
+      ut[i1][i3][i2] = ux[i3][i2][i1];
+    return flattenWithHorizons(ut,fx);
     //return gx;
   }
 
@@ -411,6 +492,24 @@ public class DynamicFlattener {
     }}
     return gx;
   }
+
+  public float[][][] flattenWithHorizonsX(float[][][] ux, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][][] gx = new float[n3][n2][n1];
+    Sampling s1 = new Sampling(n1);
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float[] fx32 = fx[i3][i2];
+      float[] gx32 = gx[i3][i2];
+    for (int i1=0; i1<n1; ++i1) {
+      gx32[i1]=si.interpolate(s1,fx32,ux[i1][i3][i2]);
+    }}}
+    return gx;
+  }
+
 
   public float[][][] flattenWithHorizons(float[][][] ux, float[][][] fx) {
     int n3 = fx.length;
@@ -542,15 +641,13 @@ public class DynamicFlattener {
 
 
 
-  private static void applyLhs(float[] wp, float[] x, float[] y) {
-    int n1 = wp.length;
+  private static void applyLhs(float[][] wp, float[][] x, float[][] y) {
+    int n2 = wp.length;
+    int n1 = wp[0].length;
+    for (int i2=0; i2<n2; ++i2)
     for (int i1=0; i1<n1; ++i1)
-      y[i1] += wp[i1]*x[i1];
+      y[i2][i1] += wp[i2][i1]*x[i2][i1];
   }
-
-
-
-
 
 
   /**
