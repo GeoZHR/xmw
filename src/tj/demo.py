@@ -78,7 +78,7 @@ maxThrow = 20.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -111,7 +111,7 @@ def goFlattenSlopes():
   p2 = zerofloat(n1,n2,n3)
   p3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 3.0,2.0,2.0,5.0
   lsf = LocalSlopeFinder(sigma1,sigma2,sigma3,pmax)
   lsf.findSlopes(fx,p2,p3,ep)
   writeImage(p2ffile,p2)
@@ -136,7 +136,7 @@ def goSfd():
   plot3(fx)
   plot3(gx)
 def goHorizon():
-  ns = 100
+  ns = n1-65
   gx = readImage(fwsfile)
   if not plotOnly:
     p2 = readImage(p2ffile)
@@ -155,9 +155,10 @@ def goHorizon():
     hs = readHorizons(ns,hvsfile)
   hs = sub(hs,65)
   df = DynamicFlattener(-10,10)
-  gg = df.flattenWithHorizonsX(hs,copy(ns,n2,n3,65,0,0,gx))
+  fg = df.flattenWithHorizonsX(hs,copy(ns,n2,n3,65,0,0,gx))
+  writeImage("fg",fg)
   plot3(gx)
-  plot3(gg)
+  plot3(fg)
   '''
   sd = SurfaceDisplay()
   has = zerofloat(n2,n3,ns)
