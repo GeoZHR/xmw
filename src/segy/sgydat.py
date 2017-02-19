@@ -32,8 +32,13 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
+<<<<<<< HEAD
   #goTj()
   goBag()
+=======
+  goTj()
+  #goBag()
+>>>>>>> b7ea0d73aa4ff8f68832debaed26947f88372a3d
   #goCurt()
 def goCurt():
   """
@@ -230,10 +235,10 @@ def goTj():
   n1,n2,n3 = 462,951,591
   ***************************************************************************
   """
-  firstLook = False # fast, does not read all trace headers
+  firstLook = True # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
-  writeImage = True # reads all traces, writes an image
-  showImage = True # displays the image
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
   basedir = "../../../data/seis/tj/"
   sgyfile = basedir+"HZ25-14_cut_for_wxm.sgy"
   sgyfile = basedir+"CACT1619_cut_for_wxm.sgy"

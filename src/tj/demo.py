@@ -10,9 +10,6 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
-fxfile  = "fx" # input image (maybe after bilateral filtering)
-gwfile  = "gw" # input image (maybe after bilateral filtering)
-hxfile  = "horizon"
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -77,7 +74,7 @@ maxThrow = 20.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-#pngDir = "../../../png/nwc/"
+pngDir = "../../../png/tj/zhong/"
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -105,7 +102,49 @@ def main(args):
   #goDp()
   #goRefine()
   #goFlattenSlopes()
-  goHorizon()
+  #goHorizon()
+  #goResults3D()
+  #goMovieSlices()
+  goSlicesX()
+def goMovieSlices():
+  gg = readImage("fg")
+  #k1s = [36,77,95,115,145,175,215,227]
+  k1s = [265,277,332]
+  for i1 in k1s:
+  #for i1 in range(300,400,2):
+    plot3(gg,k1=i1,png="fg"+str(i1))
+def goSlicesX():
+  gg = readImage("fg")
+  gs = zerofloat(n3,n2)
+  s2 = Sampling(1077,1,624)
+  s3 = Sampling(323,1,2878)
+  for i1 in range(150,200,1):
+    for i3 in range(n3):
+      for i2 in range(n2):
+        gs[i2][i3] = gg[i3][i2][i1]
+    plot2(s3,s2,gs,png="slice"+str(i1))
+
+def goResults3D():
+  gx = readImage(gxfile)
+  gw = readImage(fwsfile)
+  gg = readImage("fg")
+  skins = readSkins(fslbase)
+  fs = fillfloat(-1,n1,n2,n3)
+  for skin in skins:
+    for cell in skin:
+      i1 = cell.getI1()-65
+      m2 = cell.getM2()
+      m3 = cell.getM3()
+      p2 = cell.getP2()
+      p3 = cell.getP3()
+      fs[m3][m2][i1] = cell.getS1()
+      fs[p3][p2][i1] = cell.getS1()
+  plot3(gx,png="seis")
+  plot3(gx,skins=skins,smax=15,png="faultSurface")
+  plot3(gx,fs,cmin=0.01,cmax=15,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="faultThrow")
+  plot3(gw,png="unfault")
+  plot3(gg,png="unfaultAndUnfold")
 def goFlattenSlopes():
   fx = readImage(fwsfile)
   p2 = zerofloat(n1,n2,n3)
@@ -606,7 +645,7 @@ def goSlip():
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
     smark = -999.999
-    #s1,s2,s3 = fsl.getDipSlips(skins,smark)
+    s1,s2,s3 = fsl.getDipSlips(skins,smark)
     #s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
     #gw = fsl.unfault([s1,s2,s3],gx)
     #writeImage(gwfile,gw)
@@ -619,22 +658,19 @@ def goSlip():
     #gw = readImage(gwfile)
     #s1 = readImage(fs1file)
     skins = readSkins(fslbase)
-    #skinr = readSkins(fskr)
+    fs = fillfloat(-1,n1,n2,n3)
+    for skin in skins:
+      for cell in skin:
+        i1 = cell.getI1()-65
+        m2 = cell.getM2()
+        m3 = cell.getM3()
+        p2 = cell.getP2()
+        p3 = cell.getP3()
+        fs[m3][m2][i1] = cell.getS1()
+        fs[p3][p2][i1] = cell.getS1()
   plot3(gx,skins=skins,smax=maxThrow)
-  #plot3(gx,skins=skinr)
-  '''
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,fs,cmin=0.01,cmax=maxThrow,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
-  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
-        clab="Vertical shift (samples)",png="gxs1i")
-  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
-        clab="Inline shift (samples)",png="gxs2i")
-  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
-        clab="Crossline shift (samples)",png="gxs3i")
-  plot3(gx)
-  plot3(gw,png="gw")
-  '''
-
 def goUnfaultS():
   print "goUnfault ..."
   gx = readImage(gxfile)
@@ -773,6 +809,8 @@ def array(x1,x2,x3=None,x4=None):
 #############################################################################
 # graphics
 
+backgroundColor = Color.WHITE
+
 def jetFill(alpha):
   return ColorMap.setAlpha(ColorMap.JET,alpha)
 def jetFillExceptMin(alpha):
@@ -811,13 +849,50 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
+def plot2(s1,s2,c,u=None,vint=50,hint=50,hw=None,vw=None,
+          cmin=0.0,cmax=0.0,cmap=ColorMap.GRAY,color=Color.RED,
+          title=None,perc=None,png=None):
+  n2 = s2.getCount()
+  n1 = s1.getCount()
+  panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
+          #PlotPanel.AxesPlacement.NONE)
+  panel.setHLabel("Crossline (traces)")
+  panel.setVLabel("Inline (traces)")
+  panel.setHLimits(0,s2.first,s2.last)
+  panel.setVLimits(0,s1.first,s1.last)
+  panel.setVInterval(0,vint)
+  panel.setHInterval(0,hint)
+  if title:
+    panel.addTitle(title)
+  cv = panel.addPixels(0,0,s1,s2,c)
+  cv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  cv.setColorModel(cmap)
+  if perc:
+    cv.setPercentiles(100-perc,perc)
+  elif cmin<cmax:
+    cv.setClips(cmin,cmax)
+  #panel.addColorBar()
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(backgroundColor)
+  #frame.setFontSizeForPrint(8,240)
+  #frame.setSize(470,1000)
+  frame.setFontSize(12)
+  if hw and vw:
+    frame.setSize(hw,vw)
+  else:
+    frame.setSize(n2,n1)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(720,3.33333,pngDir+png+".png")
+
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           horizon=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
           k1=n1/2,links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  #s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
@@ -836,7 +911,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2,2)
+    ipg.setClips1(-3,3)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -855,11 +930,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     cs.setColor(Color.YELLOW)
     ss.add(cs)
     pg.setStates(ss)
-    #ss = StateSet()
-    #ps = PointState()
-    #ps.setSize(5.0)
-    #ss.add(ps)
-    #pg.setStates(ss)
     sf.world.addChild(pg)
   if cells:
     ss = StateSet()
@@ -909,7 +979,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ct = 0
     for skin in skins:
       if smax>0.0: # show fault throws
-        cmap = ColorMap(-smax,smax,ColorMap.JET)
+        cmap = ColorMap(0.01,smax,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
       else: # show fault likelihood
         cmap = ColorMap(0.0,1.0,ColorMap.JET)
@@ -945,31 +1015,33 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  #ipg.setSlices(450,530,393)
-  ipg.setSlices(k1,596,n3)
+  ipg.setSlices(423,883,206)
+  ipg.setSlices(k1,1076,0)
   if cbar:
-    sf.setSize(1037,900)
+    #sf.setSize(1137,900)
+    sf.setSize(1287,900)
   else:
-    sf.setSize(900,900)
+    #sf.setSize(1000,900)
+    sf.setSize(1150,900)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.8*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.6)
+  ov.setScale(1.5)
   #ov.setScale(2.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,-0.15,-0.01))
-  ov.setAzimuthAndElevation(225.0,40.0)
-  #ov.setAzimuthAndElevation(-55.0,35.0)
+  ov.setTranslate(Vector3(-0.15,0.10,0.05))
+  ov.setTranslate(Vector3( 0.05,-0.10,0.08))
+  #ov.setAzimuthAndElevation(225.0,30.0)
+  ov.setAzimuthAndElevation(130,45.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
 
 #############################################################################
 run(main)
