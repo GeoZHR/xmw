@@ -20,7 +20,7 @@ def main(args):
   #goF3dUnc()
   #goJake()
   #goNathan()
-  goLulia()
+  #goLulia()
   #goCranfield2007()
   #goCranfield2010()
   #goSeamDepth()
@@ -33,11 +33,7 @@ def main(args):
   #goPoseidon()
   #goParihaka()
   #goTj()
-<<<<<<< HEAD
   goBag()
-=======
-  #goBag()
->>>>>>> 4c75e3cedfad55d03ff01a06130b9daaf1c0fe82
   #goCurt()
 def goCurt():
   """
@@ -191,6 +187,12 @@ def goBag():
       xs[i3] = x[i3][4370]
     writeImageX(fname,xs)
     '''
+    fname = basedir+"gx2538.dat"
+    xs = zerofloat(n1,n3)
+    for i3 in range(n3):
+      xs[i3] = x[i3][2538]
+    writeImageX(fname,xs)
+
     show3d(x,clip=max(x)/10)
     #show3d(xs,clip=max(xs)/10)
 
