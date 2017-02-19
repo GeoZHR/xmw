@@ -20,6 +20,7 @@ u3file  = "u3" # eigenvalue-derived planarity
 gefile  = "ge" # eigenvalue-derived planarity
 dpfile  = "dp" # eigenvalue-derived planarity
 epfile  = "ep" # eigenvalue-derived planarity
+slfile  = "sl" # eigenvalue-derived planarity
 sffile  = "sf" # salt indicator function
 mkfile  = "mk" # mask file
 phfile  = "ph"
@@ -40,8 +41,8 @@ sigmaPhi,sigmaTheta = 4,20
 plotOnly = False
 
 def main(args):
-  goSaltLike()
-  #goPik()
+  #goSaltLike()
+  goPik()
   #goTF()
 def goTF():
   fx = readImage(gxfile)
@@ -53,6 +54,7 @@ def goTF():
   plot3(ft)
 def goPik():
   fx = readImage(gxfile)
+  sl = readImage(slfile)
   rgf = RecursiveGaussianFilter(1)
   # pick the first slice
   gx = fx[442]
@@ -60,6 +62,7 @@ def goPik():
   c2 = [390,326,120, 60,202,259,328,390]
   sp = SaltPicker2()
   pa = sp.applyForInsAmp(gx)
+  pa = mul(pa,sl[442])
   pm = max(pa)/2
   for i1 in range(n1):
     pa[0   ][i1] = pm
@@ -73,6 +76,7 @@ def goPik():
   for i3 in range(443,480,1):
     gn = fx[i3]
     pa = sp.applyForInsAmp(gn)
+    pa = mul(pa,sl[i3])
     xu = sp.pickNext(50,1,20,1,xu[0],xu[1],pa)
     if(i3%2==0):
       plot(gn,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
@@ -301,16 +305,17 @@ def goSaltLike():
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ss = SaltScanner()
+    '''
     lof = LocalOrientFilterP(4,2)
     ets = lof.applyForTensors(gx)
     ets.setEigenvalues(0.01,1.0,1.0)
     ep = ss.applyForPlanar(200,ets,gx)
     writeImage(epfile,ep)
-    #ep = readImage(epfile)
+    '''
+    ep = readImage(epfile)
     lof = LocalOrientFilterP(12,8)
     lof.applyForNormal(gx,u1,u2,u3)
     sl = ss.saltLikelihood(8,ep,u1,u2,u3)
-    #writeImage(epfile,ep)
     writeImage(slfile,sl)
   else:
     ep = readImage(epfile)
