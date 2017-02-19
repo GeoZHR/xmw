@@ -37,30 +37,23 @@ plotOnly = False
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
 sigmaPhi,sigmaTheta = 4,20
-plotOnly = True
+plotOnly = False
 
 def main(args):
-  #goPlanarity()
-  #goDlsSub()
-  #goEnvelope()
-  #goDensity()
-  #goFlsSub()
-  #goFls()
-  #goCh()
-  #goSlopes()
-  #goSmooth()
-  goPik()
+  goSaltLike()
+  #goPik()
+  #goTF()
+def goTF():
+  fx = readImage(gxfile)
+  sp = SaltPicker2()
+  ks = rampint(60,1,30)
+  ft = copy(fx)
+  sp.applyTF(90,10,100,ks,fx[550],ft[550])
+  plot3(fx)
+  plot3(ft)
 def goPik():
   fx = readImage(gxfile)
   rgf = RecursiveGaussianFilter(1)
-  f1 = zerofloat(n1,n2,n3)
-  f2 = zerofloat(n1,n2,n3)
-  f3 = zerofloat(n1,n2,n3)
-  rgf.apply200(fx,f1)
-  rgf.apply020(fx,f2)
-  rgf.apply002(fx,f3)
-  fx = add(f1,f2)
-  fx = add(f3,fx)
   # pick the first slice
   gx = fx[442]
   c1 = [660,144, 96,526,559,659,612,660]
@@ -77,7 +70,7 @@ def goPik():
   plot(gx,cmin=-2,cmax=2,pp=[c1,c2])
   bs = sp.refine(95,1,40,1,xu,pa)
   plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
-  for i3 in range(443,400,-1):
+  for i3 in range(443,480,1):
     gn = fx[i3]
     pa = sp.applyForInsAmp(gn)
     xu = sp.pickNext(50,1,20,1,xu[0],xu[1],pa)
@@ -308,17 +301,16 @@ def goSaltLike():
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ss = SaltScanner()
-    '''
     lof = LocalOrientFilterP(4,2)
     ets = lof.applyForTensors(gx)
     ets.setEigenvalues(0.01,1.0,1.0)
     ep = ss.applyForPlanar(200,ets,gx)
-    '''
-    ep = readImage(epfile)
+    writeImage(epfile,ep)
+    #ep = readImage(epfile)
     lof = LocalOrientFilterP(12,8)
     lof.applyForNormal(gx,u1,u2,u3)
     sl = ss.saltLikelihood(8,ep,u1,u2,u3)
-    writeImage(epfile,ep)
+    #writeImage(epfile,ep)
     writeImage(slfile,sl)
   else:
     ep = readImage(epfile)
@@ -833,7 +825,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(579,932,400)
+  ipg.setSlices(579,932,550)
   if cbar:
     sf.setSize(987,700)
   else:
