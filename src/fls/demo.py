@@ -15,7 +15,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "scn" # ch3d input image 
-gxfile  = "gxs" # seam3d input image 
+gxfile  = "gx" # seam3d input image 
 slfile  = "sl" # salt likelihoods
 p2file  = "p2" # eigenvalue-derived planarity
 p3file  = "p3" # eigenvalue-derived planarity
@@ -53,7 +53,13 @@ def main(args):
   #goFls()
   #goCh()
   #goSlopes()
-  goSmooth()
+  #goSmooth()
+  gx = readImage(gxfile)
+  gs = zerofloat(n1,n3)
+  for i3 in range(n3):
+    gs[i3] = gx[i3][0] 
+  writeImage("gx0",gs)
+  plot3(gx,cmin=min(gx)/100,cmax=max(gx)/100)
 
 def goSmooth():
   gx = readImage(gxfile)
@@ -116,9 +122,6 @@ def goScan():
   plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
 
-
-=======
->>>>>>> 9a31b5df9542ae9338941dc32d1604562da6b365
 def goCh():
   gx = readImage(gxfile)
   gx = pow(gx,2.0)

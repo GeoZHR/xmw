@@ -21,6 +21,7 @@ gefile  = "ge" # eigenvalue-derived planarity
 dpfile  = "dp" # eigenvalue-derived planarity
 epfile  = "ep" # eigenvalue-derived planarity
 slfile  = "sl" # eigenvalue-derived planarity
+slefile  = "sle" # eigenvalue-derived planarity
 sffile  = "sf" # salt indicator function
 mkfile  = "mk" # mask file
 phfile  = "ph"
@@ -42,7 +43,8 @@ plotOnly = False
 
 def main(args):
   #goSaltLike()
-  goPik()
+  goEnvAndSaltLike()
+  #goPik()
   #goTF()
 def goTF():
   fx = readImage(gxfile)
@@ -52,35 +54,67 @@ def goTF():
   sp.applyTF(90,10,100,ks,fx[550],ft[550])
   plot3(fx)
   plot3(ft)
+def goEnvAndSaltLike():
+  #fx = readImage(gxfile)
+  sl = readImage(slfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  '''
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(8,2,2,-10,10)
+  lof.findSlopes(sl,p2,p3,ep)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  '''
+  sp = SaltPicker2()
+  pa = sp.applyForInsAmp(fx)
+  sp.combineEnvAndSaltLike(p2,p3,pa,sl)
+  writeImage(slefile,sl)
+  plot3(pa)
+  plot3(sl)
+
 def goPik():
   fx = readImage(gxfile)
-  sl = readImage(slfile)
-  rgf = RecursiveGaussianFilter(1)
+  pa = readImage(slefile)
+  '''
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(150):
+        sl[i3][i2][i1] = 0.5 
+  '''
+  k3 = 442
+  p3 = pa[k3]
   # pick the first slice
-  gx = fx[442]
-  c1 = [660,144, 96,526,559,659,612,660]
-  c2 = [390,326,120, 60,202,259,328,390]
+  gx = fx[k3]
+  c1 = [680,144, 96,526,530,580,690,680]
+  c2 = [410,326,120, 60,202,259,390,410]
   sp = SaltPicker2()
-  pa = sp.applyForInsAmp(gx)
-  pa = mul(pa,sl[442])
-  pm = max(pa)/2
+  #pa = sp.applyForInsAmp(gx)
+  #pa = mul(pa,sl[k3])
+  pm = max(p3)*0.5
   for i1 in range(n1):
-    pa[0   ][i1] = pm
-    pa[n2-1][i1] = pm
+    p3[0   ][i1] = pm
+    p3[n2-1][i1] = pm
   xu = sp.initialBoundary(1,c1,c2)
   #xu = sp.regridBoundary(1,[c1,c2])
   plot(gx,cmin=-2,cmax=2)
   plot(gx,cmin=-2,cmax=2,pp=[c1,c2])
-  bs = sp.refine(95,1,40,1,xu,pa)
+  bs = sp.refine(95,1,20,2,xu,p3)
   plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
-  for i3 in range(443,480,1):
+  for i3 in range(443,800,1):
     gn = fx[i3]
-    pa = sp.applyForInsAmp(gn)
-    pa = mul(pa,sl[i3])
-    xu = sp.pickNext(50,1,20,1,xu[0],xu[1],pa)
-    if(i3%2==0):
-      plot(gn,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
-  plot3(fx)
+    #pa = sp.applyForInsAmp(gn)
+    #pa = mul(pa,sl[i3])
+    #pm = max(pa)*0.5
+    p3 = pa[i3]
+    for i1 in range(n1):
+      p3[0   ][i1] = pm
+      p3[n2-1][i1] = pm
+    xu = sp.pickNext(10,1,5,2,xu[0],xu[1],p3)
+    if(i3%10==0):
+      plot(gn,cmin=-2,cmax=2,xp=[xu[0],xu[1]],title="Slice"+str(i3))
 
 def goSmooth():
   gx = readImage(gxfile)
@@ -589,9 +623,11 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
-        cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 
+        cmin=None,cmax=None,w1=None,w2=None,title=None,clab=None,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation);
+  if title:
+    panel.setTitle(title)
   #panel.setVInterval(0.2)
   n2 = len(f)
   n1 = len(f[0])

@@ -37,6 +37,16 @@ def setupForSubset(name):
     f1,f2 = 0.000,0.000
     #f1,f2,f3 = 220,340,0
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+  elif name=="seam2d":
+    print "setupForSubset: seam 2d"
+    seismicDir = _datdir+"seam/2d/"
+    pngDir = "../../../png/fls/seam/2d/"
+    n1,n2 = 400,400 #gs = copy(400,400,50,150,gx)
+    d1,d2 = 1.0,1.0
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    f1,f2 = 0.000,0.000
+    #f1,f2,f3 = 220,740,350
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
   elif name=="seam2dSub2":
     print "setupForSubset: seam 2d sub2"
     seismicDir = _datdir+"sub2/"
@@ -48,14 +58,35 @@ def setupForSubset(name):
     f1,f2 = 0.000,0.000
     #f1,f2,f3 = 220,740,350
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+  elif name=="bag2dTwo":
+    print "setupForSubset: bag 2d"
+    seismicDir = _datdir+"bag/2d/sub2/"
+    pngDir = "../../../png/fls/bag/2d/sub2/"
+    #n1,n2 = 1800,5516 #full xline slice 1205
+    #n1,n2 = 1000,1600 #gs f1,f2=100,1600
+    n1,n2 = 1800,2111 #full inline slice 2538
+    n1,n2 = 850,1000 #fs=copy(850,1000,100,0,fx)full inline slice 2538
+    d1,d2 = 1.0,1.0
+    f1,f2 = 0.000,0.000
+    #f1,f2 = 100,1600
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+  elif name=="bag2dOne":
+    print "setupForSubset: bag 2d"
+    seismicDir = _datdir+"bag/2d/sub1/"
+    pngDir = "../../../png/fls/bag/2d/sub1/"
+    n1,n2 = 280,260 #fs=copy(850,1000,100,0,fx)full inline slice 2538
+    d1,d2 = 1.0,1.0
+    f1,f2 = 0.000,0.000
+    #f1,f2 = 100,1600
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
   elif name=="bag2d":
     print "setupForSubset: bag 2d"
     seismicDir = _datdir+"bag/2d/"
     pngDir = "../../../png/fls/bag/2d/"
     #n1,n2 = 1800,5516 #full xline slice 1205
     #n1,n2 = 1000,1600 #gs f1,f2=100,1600
-    #n1,n2 = 1800,2111 #full inline slice 4370
     n1,n2 = 950,1129 #gs4370 f1.f2=150,757
+    n1,n2 = 1800,2111 #full inline slice 4370
     d1,d2 = 1.0,1.0
     f1,f2 = 0.000,0.000
     #f1,f2 = 100,1600
@@ -71,6 +102,26 @@ def setupForSubset(name):
     f1,f2,f3 = 0.000,0.000,0.000
     #f1,f2,f3 = 220,740,350
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="2dSub1":
+    print "setupForSubset: 2d"
+    seismicDir = _datdir+"2d/sub1/"
+    pngDir = "../../../png/slt/2d/sub1/"
+    n1,n2 = 162,461  #copy(n1-80,n2-150,80,150)
+    d1,d2 = 0.004,0.025 # (s,km,km)
+    f1,f2 = 0.004+80*d1,150*d2
+    #d1,d2 = 1.00,1.0
+    #f1,f2 = 0.00,0.0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="2dSub2":
+    print "setupForSubset: 2d"
+    seismicDir = _datdir+"2d/sub2/"
+    pngDir = "../../../png/slt/2d/sub2/"
+    #n1,n2 = 296,1941
+    n1,n2 = 162,461  #copy(n1-80,n2-150,80,150)
+    d1,d2 = 0.004,0.025 # (s,km,km)
+    f1,f2 = 0.004+80*d1,0*d2
+    #f1,f2 = 220,340
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
   else:
     print "unrecognized subset:",name
     System.exit
