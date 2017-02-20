@@ -559,7 +559,7 @@ public class LevelSet2 {
         for (int i1=1; i1<n1-1; ++i1) {
           if(_mark[i2][i1]==0){continue;}
           float distTerm = dps[i2][i1]+phs[i2][i1];
-          float gi  = g[i2][i1];
+          float gi  =  g[i2][i1];
           float g1i = g1[i2][i1];
           float g2i = g2[i2][i1];
           float ph1i = ph1[i2][i1];

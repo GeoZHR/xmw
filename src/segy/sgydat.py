@@ -32,13 +32,8 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-<<<<<<< HEAD
   #goTj()
-  goBag()
-=======
-  goTj()
   #goBag()
->>>>>>> b7ea0d73aa4ff8f68832debaed26947f88372a3d
   #goCurt()
 def goCurt():
   """

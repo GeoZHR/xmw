@@ -11,6 +11,7 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+import util.*;
 import pik.*;
 
 /**
@@ -214,6 +215,52 @@ public class SaltPicker2 {
     sub(fbs,min(fbs),fbs);
     div(fbs,max(fbs),fbs);
     return fbs;
+  }
+
+  public void combineEnvAndSaltLike(
+    float[][][] p2, float[][][] p3, float[][][] pa, float[][][] sl) 
+  {
+    sub(pa,min(pa),pa);
+    div(pa,max(pa),pa);
+    sub(sl,min(sl),sl);
+    div(sl,max(sl),sl);
+    int n3 = pa.length;
+    int n2 = pa[0].length; 
+    int n1 = pa[0][0].length; 
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float p2i = abs(p2[i3][i2][i1]);
+      float p3i = abs(p3[i3][i2][i1]);
+      if(p2i<0.4f&&p3i<0.4f) {
+        sl[i3][i2][i1] = pa[i3][i2][i1];
+      }
+    }}}
+  }
+
+  public float[][][] applyForInsAmp(final float[][][] fx) {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length; 
+    final int n1 = fx[0][0].length; 
+    final float[][][] pa = new float[n3][n2][n1];
+    final HilbertTransformFilter hbt = new HilbertTransformFilter();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+      public void compute(int i3) {
+      float[][] fx3 = fx[i3];
+      float[][] pa3 = pa[i3];
+      for (int i2=0; i2<n2; i2++){
+      float[] fi = new float[n1];
+      hbt.apply(n1,fx3[i2],fi);
+      for (int i1=0; i1<n1; i1++){
+        float fxi = fi[i1];
+        float fxr = fx3[i2][i1];
+        float pai = sqrt(fxr*fxr+fxi*fxi);
+        if(Float.isInfinite(pai)||Float.isNaN(pai)){
+          pa3[i2][i1] = 0f;
+        } else { pa3[i2][i1] = pai; }
+      }}
+    }}); 
+    return pa;
   }
 
 
