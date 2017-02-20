@@ -12,6 +12,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 
 # Names and descriptions of image files used below.
 gxfile  = "gx" # bag input image 
+pafile  = "pa" # bag input image 
 p2file  = "p2" # eigenvalue-derived planarity
 p3file  = "p3" # eigenvalue-derived planarity
 u1file  = "u1" # eigenvalue-derived planarity
@@ -43,8 +44,8 @@ plotOnly = False
 
 def main(args):
   #goSaltLike()
-  goEnvAndSaltLike()
-  #goPik()
+  #goEnvAndSaltLike()
+  goPik()
   #goTF()
 def goTF():
   fx = readImage(gxfile)
@@ -55,7 +56,7 @@ def goTF():
   plot3(fx)
   plot3(ft)
 def goEnvAndSaltLike():
-  #fx = readImage(gxfile)
+  pa = readImage(pafile)
   sl = readImage(slfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
@@ -63,14 +64,16 @@ def goEnvAndSaltLike():
   p2 = zerofloat(n1,n2,n3)
   p3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  lsf = LocalSlopeFinder(8,2,2,-10,10)
-  lof.findSlopes(sl,p2,p3,ep)
+  lsf = LocalSlopeFinder(8,2,10)
+  lsf.findSlopes(sl,p2,p3,ep)
+  print min(p2)
+  print min(p3)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   '''
   sp = SaltPicker2()
-  pa = sp.applyForInsAmp(fx)
-  sp.combineEnvAndSaltLike(p2,p3,pa,sl)
+  pmin = 2
+  sp.combineEnvAndSaltLike(pmin,p2,p3,pa,sl)
   writeImage(slefile,sl)
   plot3(pa)
   plot3(sl)
@@ -112,7 +115,7 @@ def goPik():
     for i1 in range(n1):
       p3[0   ][i1] = pm
       p3[n2-1][i1] = pm
-    xu = sp.pickNext(10,1,5,2,xu[0],xu[1],p3)
+    xu = sp.pickNext(40,1,5,1.0,xu[0],xu[1],p3)
     if(i3%10==0):
       plot(gn,cmin=-2,cmax=2,xp=[xu[0],xu[1]],title="Slice"+str(i3))
 

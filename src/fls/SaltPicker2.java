@@ -218,7 +218,7 @@ public class SaltPicker2 {
   }
 
   public void combineEnvAndSaltLike(
-    float[][][] p2, float[][][] p3, float[][][] pa, float[][][] sl) 
+    float pmin, float[][][] p2, float[][][] p3, float[][][] pa, float[][][] sl) 
   {
     sub(pa,min(pa),pa);
     div(pa,max(pa),pa);
@@ -232,7 +232,7 @@ public class SaltPicker2 {
     for (int i1=0; i1<n1; ++i1) {
       float p2i = abs(p2[i3][i2][i1]);
       float p3i = abs(p3[i3][i2][i1]);
-      if(p2i<0.4f&&p3i<0.4f) {
+      if(p2i<pmin&&p3i<pmin) {
         sl[i3][i2][i1] = pa[i3][i2][i1];
       }
     }}}
