@@ -32,13 +32,8 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-<<<<<<< HEAD
   #goTj()
   goBag()
-=======
-  goTj()
-  #goBag()
->>>>>>> b7ea0d73aa4ff8f68832debaed26947f88372a3d
   #goCurt()
 def goCurt():
   """
@@ -154,6 +149,7 @@ def goBag():
   sgyfile = basedir+"prsdm.sgy"
   datfile = basedir+"gx.dat"
   subfile = basedir+"gxs.dat"
+  subtfile = basedir+"gxst.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,1799,4091,20636,2451,6671
   #i1min,i1max,i2min,i2max,i3min,i3max = 0,1799,4091,4636,2451,2671
   n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min)/3,1+(i3max-i3min)/2
@@ -191,14 +187,15 @@ def goBag():
     for i3 in range(n3):
       xs[i3] = x[i3][4370]
     writeImageX(fname,xs)
-    '''
     fname = basedir+"gx2538.dat"
     xs = zerofloat(n1,n3)
     for i3 in range(n3):
       xs[i3] = x[i3][2538]
     writeImageX(fname,xs)
-
-    show3d(x,clip=max(x)/10)
+    '''
+    xs = copy(550,100,440,0,530,788,x)
+    writeImageX(subtfile,xs)
+    show3d(x,clip=max(xs)/10)
     #show3d(xs,clip=max(xs)/10)
 
 def goTj():

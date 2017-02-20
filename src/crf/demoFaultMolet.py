@@ -82,7 +82,7 @@ def main(args):
   #goMask()
   #goFaultScan()
   #goThin()
-  goSkinTv()
+  #goSkinTv()
   #goSmooth()
   #goSlip()
   #goUnfault()
@@ -103,7 +103,7 @@ def main(args):
   #goSetFaultImages()
   #goStrikeMask()
   #goPointsCheck()
-  #goReskin()
+  goReskin()
   #goSkinDisplay()
   #goSampleClean()
 def goMolet():
