@@ -236,6 +236,12 @@ public class SaltPicker2 {
         sl[i3][i2][i1] = pa[i3][i2][i1];
       }
     }}}
+    float slm = max(sl)*0.5f;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=0; i1<n1; ++i1) {
+      sl[i3][0   ][i1] = slm;
+      sl[i3][n2-1][i1] = slm;
+    }}
   }
 
   public float[][][] applyForInsAmp(final float[][][] fx) {

@@ -46,8 +46,8 @@ elfile = "el"
 p2file = "p2" # seismic slopes
 p3file = "p3" # seismic slopes
 #pngDir = getPngDir()
-pngDir =  "../../../png/hdw/"
 plotOnly = False
+pngDir =  "../../../png/hdw/"
 minTheta,maxTheta = 75,85
 sigmaTheta = 40
 
@@ -61,8 +61,10 @@ def main(args):
   #goTpd()
   #goCurt1()
   #goCurt2()
-  goTpdFlatten()
-  goCurt1Flatten()
+  #goTpdPaint()
+  #goTpdDerek()
+  #goTpdFlatten()
+  #goCurt1Flatten()
   #goLulia()
   #goLuliaFlatten()
   goCurt2Flatten()
@@ -349,21 +351,26 @@ def goCurt1Flatten():
   df.setWindow(2,200)
   df.setShiftSmoothing(1)
   df.setErrorSmoothing(3)
+  fs = zerofloat(n1,n2)
   rgf = RecursiveGaussianFilterP(1)
-  rgf.apply00(fx,fx)
+  rgf.apply00(fx,fs)
   ux = zerofloat(n1,n2)
-  gx = df.flatten(el,fx,ux)
+  gx = df.flatten(el,fs,ux)
   ut = zerofloat(n2,n1)
   for i2 in range(n2): 
     for i1 in range(n1): 
       ut[i1][i2] = ux[i2][i1]
   hw,vw=n2,round(n1*2.5)
-  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2)
-  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2)
+  vlabel = "Relative geologic time (samples)"
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2,png="curt1Seis")
+  plot2(s1,s2,gx,cmin=min(gx)/2,cmax=max(gx)/2,vlabel=vlabel,png="curt1Flatten")
   us = []
-  for i1 in range(1,n1,15):
+  dp = DynamicPicking(-dl,dl)
+  el = pow(el,0)
+  dp.smoothHorizons(1,el,ut)
+  for i1 in range(1,n1,10):
     us.append(ut[i1])
-  plot2(s1,s2,fx,u=us,cmin=min(fx)/2,cmax=max(fx)/2)
+  plot2(s1,s2,fx,u=us,cmin=min(fx)/2,cmax=max(fx)/2,png="curt1Horizons")
 
 def goCurt2Flatten():
   setupForSubset("curt2")
@@ -401,13 +408,13 @@ def goCurt2Flatten():
   el = pow(el,10)
   dp.smoothHorizons(2,el,ut)
   hw,vw=n2,round(n1*2.5)
-  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2,png="fx")
-  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2,png="gx")
-  plot2(s1,s2,gh,cmin=min(fx)/2,cmax=max(fx)/2,png="gh")
+  plot2(s1,s2,fx,cmin=min(fx)/2,cmax=max(fx)/2,png="fxCurt2")
+  plot2(s1,s2,gx,cmin=min(fx)/2,cmax=max(fx)/2,png="gxCurt2")
+  plot2(s1,s2,gh,cmin=min(fx)/2,cmax=max(fx)/2,png="ghCurt2")
   us = []
   for i1 in range(1,n1,15):
     us.append(ut[i1])
-  plot2(s1,s2,fx,u=us,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="us")
+  plot2(s1,s2,fx,u=us,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="usCurt2")
 
 def goCurt3Flatten():
   setupForSubset("curt3")
@@ -450,6 +457,73 @@ def goCurt3Flatten():
   plot2(s1,s2,gh,cmin=min(fx)/2,cmax=max(fx)/2)
   plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2)
 
+def goTpdPaint():
+  setupForSubset("tpdPaint")
+  ppfile = "paint" # 
+  fxfile = "tp73s" # 
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  dl = 60
+  fx = readImageM(fxfile)
+  pp = readImageM(ppfile)
+  fh = FlattenHelper(s1)
+  gx = fh.flattenByRgt(pp,fx)
+  ut = fh.rgtToHorizonVolume(pp)
+  m1 = 240
+  fx = copy(m1,n2,0,0,fx)
+  gx = copy(m1,n2,0,0,gx)
+  c1 = Sampling(m1)
+  hw,vw=n2,round(n1*2.5)
+  plot2(c1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpfx")
+  plot2(c1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpgxPaint")
+  us = []
+  for i1 in range(2,m1,10):
+    ui = zerofloat(n2)
+    for i2 in range(n2):
+      ui[i2] = ut[i2][i1]
+    us.append(ui)
+  plot2(c1,s2,fx,u=us,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="tphsPaint")
+  #plot2(s1,s2,fx,u=uss,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
+def goTpdDerek():
+  setupForSubset("tpdPaint")
+  ppfile = "paint" # 
+  fxfile = "tp73s" # 
+  fx = readImageM(fxfile)
+  s1,s2,s3 = getSamplings()
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  sigma1,sigma2=8.0,2.0 # good for Teapot Dome image tp73
+  pmax = 10.0
+  lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
+  p2 = zerofloat(n1,n2)
+  wp = zerofloat(n1,n2)
+  lsf.findSlopes(fx,p2,wp)
+  wp = pow(wp,8)
+  fl = Flattener2()
+  fl.setWeight1(0.000)
+  fl.setIterations(0.01,1000)
+  fl.setSmoothings(4.0,8.0)
+  fm = fl.getMappingsFromSlopes(s1,s2,p2,wp)
+  gx = fm.flatten(fx)
+  m1 = 240
+  fx = copy(m1,n2,0,0,fx)
+  gx = copy(m1,n2,0,0,gx)
+  c1 = Sampling(m1)
+  hw,vw=n2,round(n1*2.5)
+  plot2(c1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpfx")
+  plot2(c1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpgxDerek")
+  us = []
+  for i1 in range(2,m1,10):
+    ui = zerofloat(n2)
+    for i2 in range(n2):
+      ui[i2] = fm.x1[i2][i1]
+    us.append(ui)
+  plot2(c1,s2,fx,u=us,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="tphsDerek")
+  #plot2(s1,s2,fx,u=uss,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
+  #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
+  #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
+
 
 def goTpdFlatten():
   setupForSubset("tp2")
@@ -458,11 +532,12 @@ def goTpdFlatten():
   n1,n2,n3 = s1.count,s2.count,s3.count
   dl = 60
   fx = readImage(fxfile)
-  fx = gain(fx)
+  #fx = gain(fx)
   lsf = LocalSlopeFinder(8,2,5) 
   p2= zerofloat(n1,n2)
   el= zerofloat(n1,n2)
   lsf.findSlopes(fx,p2,el);
+  writeImageM("dip",p2)
   df = DynamicFlattener(-dl,dl)
   df.setStrainMax(0.25)
   df.setWindow(1,200)
@@ -478,13 +553,20 @@ def goTpdFlatten():
   for i2 in range(n2): 
     for i1 in range(n1): 
       ut[i1][i2] = ux[i2][i1]
+  dp = DynamicPicking(-dl,dl)
+  el = pow(el,0)
+  dp.smoothHorizons(1,el,ut)
+  m1 = 240
+  fx = copy(m1,n2,0,0,fx)
+  gx = copy(m1,n2,0,0,gx)
+  c1 = Sampling(m1)
   hw,vw=n2,round(n1*2.5)
-  plot2(s1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpfx")
-  plot2(s1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpgx")
+  plot2(c1,s2,fx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpfx")
+  plot2(c1,s2,gx,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2,png="tpgx")
   us = []
-  for i1 in range(2,n1,10):
+  for i1 in range(2,m1,10):
     us.append(ut[i1])
-  plot2(s1,s2,fx,u=us,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="tphs")
+  plot2(c1,s2,fx,u=us,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)*0.6,cmax=max(fx)*0.6,png="tphs")
   #plot2(s1,s2,fx,u=uss,vint=20,hint=50,hw=hw,vw=vw,cmin=min(fx)/2,cmax=max(fx)/2)
   #plot2(s1,s2,fx,u=ut,cmin=min(fx)/2,cmax=max(fx)/2,color=Color.YELLOW)
   #plot3(ds,k2=20,cmin=min(ds),cmax=max(ds),cmap=ColorMap.JET)
@@ -1261,14 +1343,14 @@ def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
     frame.paintToPng(720,3.333,pngDir+png+".png")
 
 def plot2(s1,s2,c,u=None,vint=30,hint=200,hw=None,vw=None,
-          cmin=0.0,cmax=0.0,cmap=ColorMap.GRAY,color=Color.RED,
+          cmin=0.0,cmax=0.0,vlabel="Time (samples)", cmap=ColorMap.GRAY,color=Color.RED,
           title=None,perc=None,png=None):
   n2 = s2.getCount()
   n1 = s1.getCount()
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT)
           #PlotPanel.AxesPlacement.NONE)
-  panel.setHLabel("Inline (samples)")
-  panel.setVLabel("Time (samples)")
+  panel.setHLabel("Inline (traces)")
+  panel.setVLabel(vlabel)
   panel.setHLimits(0,s2.first,s2.last)
   panel.setVLimits(0,s1.first,s1.last)
   panel.setVInterval(0,vint)
@@ -1296,7 +1378,7 @@ def plot2(s1,s2,c,u=None,vint=30,hint=200,hw=None,vw=None,
       uv = panel.addPoints(0,0,u[iu],x2)
       #uv.setLineColor(cp.getColor(iu))
       uv.setLineColor(color)
-      uv.setLineWidth(2.5)
+      uv.setLineWidth(3.0)
       k = k+1
   #panel.addColorBar()
   frame = PlotFrame(panel)

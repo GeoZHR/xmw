@@ -79,7 +79,7 @@ maxThrow = 30.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -93,11 +93,11 @@ def main(args):
   #goReskin()
   #goSkinMerge()
   #goSmooth()
-  #goSlip()
+  goSlip()
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
-  goCleanFaultImages()
+  #goCleanFaultImages()
   #gx = readImage(gxfile)
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
@@ -559,7 +559,8 @@ def goSlip():
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fskbase)
+    #skins = readSkins(fskbase)
+    skins = readSkins(fskr)
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error

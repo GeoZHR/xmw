@@ -64,8 +64,8 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/swt/print/"
-pngDir = None
 pngDir = "../../../png/swt/revision/"
+pngDir = None
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -98,8 +98,11 @@ def main(args):
   rx = re.apply3D(d1,gx)
   plot3(rx,cmin=-1,cmax=1)
   '''
-  goWellMap()
-
+  #goWellMap()
+  goRgtDisplay()
+def goRgtDisplay():
+  gt = readImage(gtcfile)
+  plot3(gt,cmin=min(gt),cmax=max(gt),cmap=ColorMap.JET)
 def goWellMap():
   gx = readImage(gxfile)
   lgs = getLogs()
