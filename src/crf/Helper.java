@@ -12,6 +12,24 @@ import util.*;
 
 public class Helper {
 
+  public float[][][] stratalSlices(int ns, float[][] tp, float[][] bt) {
+    int n3 = tp.length;
+    int n2 = tp[0].length;
+    float[][][] ss = new float[ns+1][n3][n2];
+    ss[0] = tp;
+    ss[ns] = bt;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float tpi = tp[i3][i2];
+      float bti = bt[i3][i2];
+      float dsi = (bti-tpi)/ns;
+      for (int is=1; is<ns; ++is) {
+      ss[is][i3][i2] = tpi+dsi*is;
+      }
+    }}
+    return ss;
+  }
+
   public void applyTF(
     final int nf, final float fmin, final float fmax, final int[] ks,
     final float[][][] fx, final float[][][] pr){

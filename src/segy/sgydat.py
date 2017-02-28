@@ -33,12 +33,75 @@ def main(args):
   #goPoseidon()
   #goParihaka()
   #goTj()
-<<<<<<< HEAD
-  goBag()
-=======
   #goBag()
->>>>>>> 46b7945413982d12616e86a8a9af7bcc14cdf59a
   #goCurt()
+  goCampos()
+def goCampos():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = ../../../data/seis/campos/Xinming_Clip_Campos.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 82123032180
+  number of traces = 8342445
+  format = 1 (4-byte IBM floating point)
+  WARNING  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  WARNING: format may actually be 5 (IEEE float)
+  WARNING  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  units for spatial coordinates: ft (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =  9384, i2max = 13148 (inline indices)
+    i3min = 23449, i3max = 25750 (crossline indices)
+    xmin =  131.925365, xmax =  146.266205 (x coordinates, in km)
+    ymin = 2279.215981, ymax = 2296.749638 (y coordinates, in km)
+  grid sampling:
+    n1 =  2401 (number of samples per trace)
+    n2 =  3765 (number of traces in inline direction)
+    n3 =  2302 (number of traces in crossline direction)
+    d1 = 0.005000 (time sampling interval, in s)
+    d2 = 0.003810 (inline sampling interval, in km)
+    d3 = 0.007620 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =  9384, i3min = 23449, x =  146.266205, y = 2279.215981
+    i2max = 13148, i3min = 23449, x =  131.925365, y = 2279.215981
+    i2min =  9384, i3max = 25750, x =  146.266205, y = 2296.749638
+    i2max = 13148, i3max = 25750, x =  131.925365, y = 2296.749638
+  grid azimuth: -90.00 degrees
+  ****** end of SEG-Y file info ******
+  """
+
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/campos/"
+  sgyfile = basedir+"Xinming_Clip_Campos.sgy"
+  datfile = basedir+"gx.dat"
+  subfile = basedir+"gxs.dat"
+  #i2min = 11982, i2max = 33190 (inline indices)
+  #i3min = 12976, i3max = 14300 (crossline indices)
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,2400,9384,13148,23449,25750
+  n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min),1+(i3max-i3min)
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    xs = copy(1200,n2,n3,420,0,0,x)
+    writeImageX(subfile,xs)
+    show3d(xs,clip=max(xs)/100)
+
 def goCurt():
   """
   ***************************************************************************

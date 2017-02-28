@@ -69,9 +69,9 @@ maxThrow = 25.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/beg/nathan/sub8/skins/"
 pngDir = None
-plotOnly = False
+pngDir = "../../../png/beg/nathan/sub8/"
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -92,12 +92,13 @@ def main(args):
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
+  goRosePlotsWithL1()
   #goRosePlots()
   #goRosePlotsScale()
   #goRosePlotsN()
   #goRosePlotsNScale()
   #goResetSurfaces()
-  goFaultsAndSurfs()
+  #goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
@@ -168,6 +169,7 @@ def goFaultsAndSurfs():
   hu1 = readImage2D(n2,n3,hu1file)
   hm1 = readImage2D(n2,n3,hm1file)
   hl1 = readImage2D(n2,n3,hl1file)
+  obs = readImage2D(n2,n3,"ob")
   hpr = Helper()
   '''
   spm = readImage2D(888165,3,"hzs/M1")
@@ -175,21 +177,21 @@ def goFaultsAndSurfs():
   writeImage(hm1file,hm1)
   '''
   gx = readImage(gxfile)
-  writeImage("gx568",gx[568])
-  #fpt = readImage(fptmfile)
+  fpt = readImage(fptmfile)
   '''
   fpt = readImage(fptvfile)
   #ft = readImage(fttvfile)
   flr = readImage("flr")
   fsc = FaultSampleCleaner()
   fsc.mask(0.2,-0.01,flr,fpt)
+  '''
   fv = 180
   hpr.horizonToImage(fv,div(hu1,5),fpt)
   hpr.horizonToImage(fv,div(hm1,5),fpt)
   hpr.horizonToImage(fv,div(hl1,5),fpt)
+  hpr.horizonToImage(fv,obs,fpt)
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
-  '''
 
 
 def goFaultDensity():
@@ -216,6 +218,31 @@ def goFaultDensity():
   fd = hp.transpose(fd)
   c3 = Sampling(n3,1.0/1.5,s3.getFirst())
   plot2(c3,s2,fd,cmin=0.01,cmax=0.15,png="fd"+stfile+sbfile)
+def goRosePlotsWithL1():
+  print "goRosePlots..."
+  btfile = hl1file
+  tp = readImage2D(n2,n3,"ob")
+  bt = readImage2D(n2,n3,btfile)
+  bt = div(bt,5)
+  hp = Helper()
+  ns = 10
+  ss = hp.stratalSlices(ns,tp,bt)
+  fpp = readImage2D(65230747,4,fppfile)
+  c2,c3=20,4
+  rp = RosePlot()
+  for ks in range(ns):
+    tpi = ss[ks]
+    bti = ss[ks+1]
+    title = btfile+str(ks)+'~'+btfile+str(ks+1)
+    pp = rp.applyForRosePlotsN(64,tpi,bti,c2,c3,n2,n3,36,fpp)
+    pp.addTitle(title)
+    pf = PlotFrame(pp)
+    wx,wy = 2100,round((c3*2100)/c2)+100
+    wx = round(wx*1.5)
+    wy = round(wy*1.3)
+    pf.setSize(wx,wy)
+    pf.setVisible(True)
+    pf.paintToPng(720,6,pngDir+title+".png")
 
 
 def goRosePlots():
@@ -616,8 +643,8 @@ def goUnfault():
 
 
 def goFaultImages():
-  #gx = readImage(gxfile)
-  gx = readImage(gsxfile)
+  gx = readImage(gxfile)
+  #gx = readImage(gsxfile)
   if not plotOnly:
     fl = fillfloat(-0.01,n1,n2,n3)
     fp = fillfloat(-0.01,n1,n2,n3)
@@ -635,7 +662,8 @@ def goFaultImages():
   else:
     #fl = readImage(fltvfile)
     #ft = readImage(fttvfile)
-    fp = readImage(fptvfile)
+    #fp = readImage(fptvfile)
+    fp = readImage("fptvmolet")
   '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
