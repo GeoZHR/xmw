@@ -988,7 +988,7 @@ public class DynamicPicking {
       _s1 = s1;
       _wp = wp;
       float n1 = wp.length;
-      _sc = sum(wp)/(n1);
+      _sc = sum(pow(wp,2))/(n1);
     }
     public void apply(Vec vx, Vec vy) {
       VecArrayFloat1 v1x = (VecArrayFloat1)vx;

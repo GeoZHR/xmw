@@ -63,7 +63,7 @@ def setupForSubset(name):
     print "setupForSubset: curt1"
     pngDir = _pngdir+"curt1/"
     seismicDir = _datdir+"curt1/"
-    n1,n2 = 210,3000 # f1,f2=580,1240
+    n1,n2 = 210,2900 # f1,f2=580,1240
     d1,d2 = 1.0,1.0 
     f1,f2 = 0.0,0.0
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
@@ -157,6 +157,17 @@ def setupForSubset(name):
     print "setupForSubset: tp2"
     pngDir = _pngdir+"fd/"
     seismicDir = "../../../data/seis/tpd/"
+    n1,n2 = 251,337
+    d1,d2 = 1.0,1.0 
+    f1,f2 = 0.0,0.0
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+    n3,d3,f3 = 1,1,1
+    s3 = Sampling(n3,d3,f3)
+  elif name=="tpdPaint":
+    """ tpdPaint """
+    print "setupForSubset: tpdPaint"
+    pngDir = _pngdir+"fd/"
+    seismicDir = "../../../data/scratch/all/xinwu/pp/"
     n1,n2 = 251,337
     d1,d2 = 1.0,1.0 
     f1,f2 = 0.0,0.0
@@ -285,6 +296,17 @@ def readImage2L(n1,n2,basename):
   ais.close()
   return image
 
+def readImageM(basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".rsf@"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 
 def readImage1D(basename):
   """ 
@@ -323,6 +345,16 @@ def writeImageL(basename,image):
   Writes an image to a file with specified basename
   """
   fileName = seismicDir+basename+".dat"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+
+def writeImageM(basename,image):
+  """ 
+  Writes an image to a file with specified basename
+  """
+  fileName = seismicDir+basename+".rsf@"
   aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()

@@ -400,14 +400,14 @@ public class DynamicFlattener {
     rgf.applyX1X(hs,h3);
     rgf.applyXX1(hs,h2);
     float[][][] hd = add(abs(h2),abs(h3));
-    */
     float[][][] ut = new float[n1][n3][n2];
     for (int i3=0; i3<n3; ++i3)
     for (int i2=0; i2<n2; ++i2)
     for (int i1=0; i1<n1; ++i1)
       ut[i1][i3][i2] = ux[i3][i2][i1];
     return flattenWithHorizons(ut,fx);
-    //return gx;
+    */
+    return gx;
   }
 
 
@@ -523,7 +523,7 @@ public class DynamicFlattener {
       float[] fx32 = fx[i3][i2];
       float[] gx32 = gx[i3][i2];
     for (int i1=0; i1<n1; ++i1) {
-      gx32[i1]=si.interpolate(s1,fx32,ux[i3][i2][i1]);
+      gx32[i1]=si.interpolate(s1,fx32,ux[i1][i2][i3]);
     }}}
     return gx;
   }
@@ -1426,7 +1426,8 @@ public class DynamicFlattener {
   private double _owf3 = 0.5; // fraction of window overlap in 3rd dimension
 
   private float error(float f, float g) {
-    return pow(abs(f-g),_epow);
+    if(_epow==1f) return abs(f-g);
+    else return pow(abs(f-g),_epow);
   }
 
   private void updateSmoothingFilters() {

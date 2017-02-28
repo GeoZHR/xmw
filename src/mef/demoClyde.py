@@ -69,9 +69,9 @@ maxThrow = 25.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 pngDir = getPngDir()
-plotOnly = False
+pngDir = None
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -79,9 +79,9 @@ def main(args):
   #goSemblanceS()
   #goSemblance()
   #goOrientScan()
-  #goThinX()
+  goThinX()
   #goSkin()
-  goFirstScan()
+  #goFirstScan()
 
 def goSemblanceS():
   gx = readImage(gxfile)
@@ -238,9 +238,9 @@ def goSkin():
   else:
     skins = readSkins(fskbase)
   plot3(gx,skins=skins,png="skins")
+  '''
   for k in range(20,30,1):
     plot3(gx,skins=[skins[k]],clab="skin"+str(k))
-  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''

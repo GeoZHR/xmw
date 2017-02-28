@@ -15,7 +15,7 @@ d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 
 
 #############################################################################
-fxfile = "gxss" # 
+fxfile = "gxsss" # 
 flfile = "fl" # 
 ftfile = "ft" # 
 fltfile = "flt" # 
@@ -39,9 +39,10 @@ def goFlatten():
   rgf = RecursiveGaussianFilterP(1)
   rgf.apply000(fx,fx)
   df = DynamicFlattener(-10,30)
-  df.setStrainMax(0.25)
+  df.setStrainMax(0.2)
   df.setWindow(3,100)
-  df.setGate(5)
+  df.setGate(2)
+  df.setErrorExponent(1)
   df.setShiftSmoothing(1)
   df.setErrorSmoothing(3)
   ux = zerofloat(n1,n2,n3)

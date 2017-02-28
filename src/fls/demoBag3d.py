@@ -31,22 +31,111 @@ sfcfile  = "sfc" # salt indicator function with constraints
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
+wxfile = "wx"
+fsfile = "fs"
 
-pngDir = getPngDir()
-pngDir = "../../../png/fls/ba/3d/"
 pngDir = False
+pngDir = "../../../png/fls/bag/3d/"
 
-plotOnly = False
-minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
-plotOnly = False
+plotOnly = True
 
 def main(args):
-  #goSaltLike()
-  #goEnvAndSaltLike()
-  goPik()
-  #goTF()
+  #goPikSlices()
+  goSaltSurface()
+def goSaltSurface():
+  gx = readImage(gxfile)
+  fs = zerofloat(n1,n2,n3)
+  if not plotOnly:
+    wx = readImage(wxfile)
+    isr = ImplicitSurfaceReconstructor()
+    isr.signAsignment(wx,fs)
+    rgf1 = RecursiveGaussianFilter(3)
+    rgf2 = RecursiveGaussianFilter(6)
+    rgf3 = RecursiveGaussianFilter(12)
+    rgf1.apply0XX(fs,fs)
+    rgf2.applyX0X(fs,fs)
+    rgf3.applyXX0(fs,fs)
+    writeImage(fsfile,fs)
+  else:
+    fs = readImage(fsfile)
+  plot3(gx,g=fs,cmin=-0.5,cmax=0.5,png="saltBody")
+  plot3(gx,fbs=fs,png="saltBound")
+def goPikSlices():
+  fx = readImage(gxfile)
+  plot3(fx,png="seis")
+  pa = readImage(pafile)
+  pm = max(pa)*0.5
+  for i3 in range(n3):
+    for i1 in range(n1):
+      pa[i3][0][i1] = pm
+      pa[i3][n2-1][i1] = pm
+  zs,ys,xs=getPiks()
+  lgs = getLineGroups(2,zs,ys,xs)
+  plot3(pa,cmin=0.5,cmax=max(pa)*0.8,lgs=lgs,png="slicesInitial")
+  zus = []
+  yus = []
+  xus = []
+  xrs = []
+  yrs = []
+  zrs = []
+  for ix in range(len(xs)):
+    k3 = xs[ix]
+    c2 = ys[ix]
+    c1 = zs[ix]
+    gx = fx[k3]
+    sp = SaltPicker2()
+    xu = sp.initialBoundary(1,c1,c2)
+    bs = sp.refine(50,1,10,1,xu,pa[k3])
+    xp = copy(xu)
+    xm = copy(xu)
+    xt = sp.regridBoundary(0.5,xu[0],xu[1])
+    xus.append(k3)
+    zus.append(xt[0])
+    yus.append(xt[1])
+    xrs.append(k3)
+    zrs.append(xt[0])
+    yrs.append(xt[1])
+    e3 = min(k3+25,n3)
+    for i3 in range(k3+1,e3,1):
+      xp = sp.pickNext(5,1,3,1.0,xp[0],xp[1],pa[i3])
+      xt = sp.regridBoundary(0.5,xp[0],xp[1])
+      xus.append(i3)
+      yus.append(xt[1])
+      zus.append(xt[0])
+    e3 = max(k3-25,-1)
+    for i3 in range(k3-1,e3,-1):
+      xm = sp.pickNext(5,1,3,1.0,xm[0],xm[1],pa[i3])
+      xt = sp.regridBoundary(0.5,xm[0],xm[1])
+      xus.append(i3)
+      zus.append(xt[0])
+      yus.append(xt[1])
+  lgr = getLineGroups(2,zrs,yrs,xrs)
+  lgu = getLineGroups(1,zus,yus,xus)
+  plot3(fx,lgs=lgr,png="slicesFinal")
+  plot3(fx,lgs=lgu,png="piks")
+  '''
+  wx = zerofloat(n1,n2,n3)
+  isr = ImplicitSurfaceReconstructor()
+  isr.pointsToImage(xus,yus,zus,pa,wx)
+  writeImage(wxfile,wx)
+  '''
+
+def getLineGroups(dx,zs,ys,xs):
+  lgs = []
+  for ic in range(0,len(ys),dx):
+    xyz = []
+    rgb = []
+    for ip in range(len(ys[ic])):
+      xyz.append(xs[ic])
+      xyz.append(ys[ic][ip])
+      xyz.append(zs[ic][ip])
+      rgb.append(1)
+      rgb.append(0)
+      rgb.append(0)
+    lg = LineGroup(xyz,rgb)
+    lgs.append(lg)
+  return lgs
+
 def goTF():
   fx = readImage(gxfile)
   sp = SaltPicker2()
@@ -72,7 +161,7 @@ def goEnvAndSaltLike():
   writeImage(p3file,p3)
   '''
   sp = SaltPicker2()
-  pmin = 2
+  pmin = 2.5
   sp.combineEnvAndSaltLike(pmin,p2,p3,pa,sl)
   writeImage(slefile,sl)
   plot3(pa)
@@ -81,12 +170,6 @@ def goEnvAndSaltLike():
 def goPik():
   fx = readImage(gxfile)
   pa = readImage(slefile)
-  '''
-  for i3 in range(n3):
-    for i2 in range(n2):
-      for i1 in range(150):
-        sl[i3][i2][i1] = 0.5 
-  '''
   k3 = 442
   p3 = pa[k3]
   # pick the first slice
@@ -106,112 +189,15 @@ def goPik():
   plot(gx,cmin=-2,cmax=2,pp=[c1,c2])
   bs = sp.refine(95,1,20,2,xu,p3)
   plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]])
-  for i3 in range(443,800,1):
+  for i3 in range(443,200,-1):
     gn = fx[i3]
-    #pa = sp.applyForInsAmp(gn)
-    #pa = mul(pa,sl[i3])
-    #pm = max(pa)*0.5
     p3 = pa[i3]
     for i1 in range(n1):
       p3[0   ][i1] = pm
       p3[n2-1][i1] = pm
-    xu = sp.pickNext(40,1,5,1.0,xu[0],xu[1],p3)
+    xu = sp.pickNext(5,1,5,1.0,xu[0],xu[1],p3)
     if(i3%10==0):
-      plot(gn,cmin=-2,cmax=2,xp=[xu[0],xu[1]],title="Slice"+str(i3))
-
-def goSmooth():
-  gx = readImage(gxfile)
-  gs = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilterP(12,8)
-  ets = lof.applyForTensors(gx)
-  ets.setEigenvalues(0.5,1,1)
-  lsf = LocalSmoothingFilter()
-  lsf.apply(ets,20,gx,gs)
-  plot3(gx,clab="Amplitude",png="gx")
-  plot3(gs,clab="Amplitude",png="gx")
-  gxe = zerofloat(n1,n2,n3)
-  gse = zerofloat(n1,n2,n3)
-  FastLevelSet3.applyForInsAmp(gx,gxe)
-  FastLevelSet3.applyForInsAmp(gs,gse)
-  plot3(gxe,cmin=0,cmax=1)
-  plot3(gse,cmin=0,cmax=1)
-
-def goSlopes():
-  print "goSlopes ..."
-  gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
-  print "p2  min =",min(p2)," max =",max(p2)
-  print "p3  min =",min(p3)," max =",max(p3)
-  print "ep min =",min(ep)," max =",max(ep)
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
-
-def goScan():
-  print "goScan ..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
-    gx = FaultScanner.taper(10,0,0,gx)
-    fs = FaultScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "fp min =",min(fp)," max =",max(fp)
-    print "ft min =",min(ft)," max =",max(ft)
-    writeImage(flfile,fl)
-    writeImage(fpfile,fp)
-    writeImage(ftfile,ft)
-  else:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-      clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=15,cmax=55,cmap=jetFill(1.0),
-      clab="Fault dip (degrees)",png="ft")
-
-def goCh():
-  gx = readImage(gxfile)
-  gx = pow(gx,2.0)
-  gx = sub(gx,min(gx))
-  gx = div(gx,max(gx))
-  gx = sub(1,gx)
-  c1 = 88
-  c2 = 353
-  c3 = 261
-  fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,10)
-  fls.setIterations(500,6,2)
-  #xss = fls.updateLevelSet(6,3,abs(gx))
-  #ph1 = fls.getPhi()
-  ph1 = readImage("phich")
-  #tg = fls.getTriangleGroup(75,95,ph1)
-  plot3(gx,cmin=0,cmax=1,png="seis")
-  plot3(ph1,cmin=1,cmax=3,png="seis")
-  #plot3(gx,cmin=0,cmax=1,tg=tg,png="seisSalt")
-
-def goPlanarity():
-  print "goPlanarity ..."
-  gx = readImage(gxfile)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilter(2,1,1)
-  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-  #writeImage(epfile,ep)
-  plot3(gx)
-  plot3(u1,cmin=0,cmax=0.8)
-  plot3(ep,cmin=0,cmax=0.8)
+      plot(p3,cmin=0.001,cmax=0.5,xp=[xu[0],xu[1]],title="Slice"+str(i3))
 
 def goEnvelope():
   gx = readImage(gxfile)
@@ -222,356 +208,6 @@ def goEnvelope():
   #writeImage(gefile,ge)
   plot3(gx,cmin=min(gx)/2,cmax=max(gx)/2)
   plot3(ge,cmin=min(ge),cmax=max(ge)/2)
-def goDensity():
-  ge = readImage(gefile)
-  ep = readImage(epfile)
-  c1 = [133,250]
-  c2 = [384,888]
-  c3 = [400,390]
-  rs = [ 10, 10]
-  fls = FastLevelSet3(n1,n2,n3,c1[0],c2[0],c3[0],rs[0])
-  dp = fls.density(0.5,ep,ge)
-  writeImage(dpfile,dp)
-  plot3(ge,cmin=min(ge),cmax=max(ge)/2)
-  plot3(dp,cmin=0.001,cmax=1)
-def goFlsSub():
-  gx = readImage(gxfile)
-  if not plotOnly:
-    dp = readImage(dpfile)
-    #ge = readImage(gefile)
-    #ep = readImage(epfile)
-    c1 = [133,250]
-    c2 = [384,888]
-    c3 = [400,390]
-    rs = [ 10, 10]
-    fls = FastLevelSet3(n1,n2,n3,c1,c2,c3,rs)
-    #dp = fls.density(0.5,ep,ge)
-    fls.setIterations(180,6,3)
-    fls.updateLevelSet(9,5,dp)
-    ph = fls.getPhi()
-    writeImage(phfile,ph)
-  else:
-    ph = readImage(phfile)
-    dp = readImage(dpfile)
-  plot3(dp,cmin=0,cmax=1)
-  plot3(gx)
-  plot3(gx,fbs=ph,png="seisSalt")
-
-def goDlsSub():
-  gx = readImage(gxfile)
-  if not plotOnly:
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
-    ep = readImage(epfile)
-    mu,lamda,alpha=0.2,2,50
-    r,niter=3,20
-    ls = LevelSet3(mu,lamda,alpha,r,niter)
-    c1 = [287]
-    c2 = [307]
-    c3 = [460]
-    rs = [ 10]
-    ph = ls.initialLevelSet(n1,n2,n3,c1,c2,c3,rs,2)
-    ls.updateLevelSetPK(1.5,ep,[gx,p2,p3],ph)
-    writeImage(phdfile,ph)
-  else:
-    ph = readImage(phdfile)
-  #plot3(ph)
-  plot3(gx,fbs=ph,png="seisSalt")
-  plot3(gx)
-
-def goDls():
-  gx = readImage(gxfile)
-  #gs = copy(n1,418,720,0,0,0,gx)
-  #writeImage("gs",gs)
-  if not plotOnly:
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
-    ep = readImage(epfile)
-    mu,lamda,alpha=0.2,2,50
-    r,niter=3,200
-    ls = LevelSet3(mu,lamda,alpha,r,niter)
-    c1 = [272,236,270,270]
-    c2 = [932,397,289,972]
-    c3 = [460,533,378,230]
-    rs = [ 10, 10, 10, 10]
-    ph = ls.initialLevelSet(n1,n2,n3,c1,c2,c3,rs,2)
-    ls.updateLevelSetPK(1.5,ep,[gx,p2,p3],ph)
-    writeImage(phdfile,ph)
-  else:
-    print 'text'
-  #plot3(ph)
-  #plot3(gx,fbs=ph,png="seisSalt")
-  plot3(gx)
-
-def goFls():
-  gx = readImage(gxfile)
-  rgf = RecursiveGaussianFilter(1)
-  rgf.apply000(gx,gx)
-  gxs = gx#FastLevelSet3.downSample(2,2,2,gx)
-  if not plotOnly:
-    c1 = 186
-    c2 = 982
-    c3 = 215
-    c1 = 198
-    c2 = 580
-    c3 = 525
-    #c1 = round(c1/2)
-    #c2 = round(c2/2)
-    #c3 = round(c3/2)
-    m3 = len(gxs)
-    m2 = len(gxs[0])
-    m1 = len(gxs[0][0])
-    fls = FastLevelSet3(m1,m2,m3,c1,c2,c3,10)
-    fls.setIterations(300,6,2)
-    xss = fls.updateLevelSet(6,3,abs(gxs))
-    ph1 = fls.getPhi()
-    #writeImage("phi",ph1)
-  else:
-    ph1 = readImage("phi1000")
-    rgf.apply000(ph1,ph1)
-  plot3(gxs,png="seis")
-  plot3(gxs,fbs=ph1,png="seisSalt")
-  #plot3(ph1)
-  print min(ph1)
-  print max(ph1)
-
-def goSaltLike():
-  gx = readImage(gxfile)
-  if not plotOnly:
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    ss = SaltScanner()
-    '''
-    lof = LocalOrientFilterP(4,2)
-    ets = lof.applyForTensors(gx)
-    ets.setEigenvalues(0.01,1.0,1.0)
-    ep = ss.applyForPlanar(200,ets,gx)
-    writeImage(epfile,ep)
-    '''
-    ep = readImage(epfile)
-    lof = LocalOrientFilterP(12,8)
-    lof.applyForNormal(gx,u1,u2,u3)
-    sl = ss.saltLikelihood(8,ep,u1,u2,u3)
-    writeImage(slfile,sl)
-  else:
-    ep = readImage(epfile)
-    sl = readImage(slfile)
-  plot3(gx,clab="Amplitude",png="gx")
-  plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),clab="Planarity",png="ep")
-  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),clab="Salt likelihood",png="sl")
-
-def goSaltSurfer():
-  gx = readImage(gxfile)
-  ep = readImage(epfile)
-  sl = readImage(slfile)
-  if not plotOnly:
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    g1 = zerofloat(n1,n2,n3)
-    g2 = zerofloat(n1,n2,n3)
-    g3 = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(8,2)
-    lof.applyForNormal(ep,u1,u2,u3)
-    ss = SaltSurfer()
-    fc = ss.findPoints(0.3,sl,u1,u2,u3)
-    sf = readImage(sffile)
-    plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),png="points")
-    #plot3(gx,sl,cmin=0.25,cmax=0.9,cells=fc,cmap=jetRamp(1.0),fbs=sf,png="pointsSf")
-    mul(u1,sl,g1)
-    mul(u2,sl,g2)
-    mul(u3,sl,g3)
-    sps = ScreenPoissonSurfer()
-    sps.setSmoothings(20,20,20)
-    mk = sps.getScreenMark(n1,n2,n3,fc)
-    sf = sps.saltIndicator(mk,g1,g2,g3)
-    writeImage(sffile,sf)
-    writeImage(mkfile,mk)
-  else:
-    sf = readImage(sffile)
-  print min(sf)
-  print max(sf)
-  plot3(gx,sl,cmin=0.25,cmax=0.9,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
-  plot3(sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=ColorMap.BLUE_WHITE_RED,
-        clab="Indicator function",png="sf")
-  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
-        clab="Indicator function",png="sfSeis")
-  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
-        clab="Indicator function",png="saltSf")
-
-def goSaltSurferC():
-  mk = readImage(mkfile)
-  gx = readImage(gxfile)
-  ep = readImage(epfile)
-  sl = readImage(slfile)
-  if not plotOnly:
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    g1 = zerofloat(n1,n2,n3)
-    g2 = zerofloat(n1,n2,n3)
-    g3 = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilterP(8,2)
-    lof.applyForNormal(gx,u1,u2,u3)
-    mul(u1,sl,g1)
-    mul(u2,sl,g2)
-    mul(u3,sl,g3)
-    sps = ScreenPoissonSurferC()
-    sps.setSmoothings(20,20,20)
-    mk = sps.getScreenMark(n1,n2,n3,fc)
-    sf = sps.saltIndicator(mk,k1,k2,k3,g1,g2,g3)
-    writeImage(sfcfile,sf)
-  else:
-    sf = readImage(sfcfile)
-  print min(sf)
-  print max(sf)
-  plot3(gx,sl,cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),fbs=sf,png="saltSl")
-  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),
-        clab="Indicator function",png="sf")
-  plot3(gx,sf,cmin=-max(sf)+1,cmax=max(sf)-1,cmap=bwrRamp(1.0),fbs=sf,
-        clab="Indicator function",png="saltSf")
-
-def goSalt():
-  gx = readImage(gxfile)
-  ae = readImage("aet")#file)
-  ce = readImage("cet")#file)
-  ca = abs(sub(ce,ae))
-  cd = sub(ce,0.5)
-  ad = sub(ae,0.5)
-  plot3(gx,ca,cmin=0.01,cmax=max(ca)-0.1,cmap=jetRamp(1.0))#,fbs=cd,png="pss")
-  plot3(gx,ce,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),fbs=cd,png="pss")
-  plot3(gx,ae,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),fbs=ad,png="pss")
-
-
-def goPSS():
-  print "point set surface method ..."
-  gx = readImage(gxfile)
-  sk = readSkins(fskbase)
-  fc = FaultSkin.getCells(sk)
-  sn = SaltNormal()
-  xu = sn.applyForNormals(fc)
-  ps = PointSetSurface()
-  #sf = ps.findScalarField(n1,n2,n3,fc)
-  sf = ps.findScalarField(n1,n2,n3,xu)
-  print min(sf)
-  print max(sf)
-  plot3(sf,cmin=min(sf),cmax=max(sf))
-  plot3(gx,cells=fc,png="cells")
-  plot3(gx,sf,cmin=min(sf),cmax=max(sf),cells=fc,fbs=sf,cmap=jetRamp(1.0),
-    clab="PointSetSurface",png="pss")
-
-
-def goFakeData():
-  #sequence = 'A' # 1 episode of faulting only
-  sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
-  #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
-  #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 0 # number of planar faults
-  conjugate = False # if True, two large planar faults will intersect
-  conical = True # if True, may want to set nplanar to 0 (or not!)
-  impedance = False # if True, data = impedance model
-  wavelet = True # if False, no wavelet will be used
-  noise = 0.5 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
-      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
-  writeImage(gxfile,gx)
-  writeImage(p2kfile,p2)
-  writeImage(p3kfile,p3)
-  print "gx min =",min(gx)," max =",max(gx)
-  print "p2 min =",min(p2)," max =",max(p2)
-  print "p3 min =",min(p3)," max =",max(p3)
-  gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
-  if impedance:
-    gmin,gmax,gmap = 0.0,1.4,ColorMap.JET
-  plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-  #plot3(gx,p2,cmap=bwrNotch(1.0))
-  #plot3(gx,p3,cmap=bwrNotch(1.0))
-
-def goScan():
-  print "goScan ..."
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  gx = readImage(gxfile)
-  gx = FaultScanner.taper(10,0,0,gx)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
-  print "fl min =",min(fl)," max =",max(fl)
-  print "fp min =",min(fp)," max =",max(fp)
-  print "ft min =",min(ft)," max =",max(ft)
-  writeImage(flfile,fl)
-  writeImage(fpfile,fp)
-  writeImage(ftfile,ft)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="ft")
-
-def goThin():
-  print "goThin ..."
-  gx = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
-
-def goStat():
-  def plotStat(s,f,slabel=None):
-    sp = SimplePlot.asPoints(s,f)
-    sp.setVLimits(0.0,max(f))
-    sp.setVLabel("Frequency")
-    if slabel:
-      sp.setHLabel(slabel)
-  fl = readImage(fltfile)
-  fp = readImage(fptfile)
-  ft = readImage(fttfile)
-  fs = FaultScanner(sigmaPhi,sigmaTheta)
-  sp = fs.getPhiSampling(minPhi,maxPhi)
-  st = fs.getThetaSampling(minTheta,maxTheta)
-  pfl = fs.getFrequencies(sp,fp,fl); pfl[-1] = pfl[0] # 360 deg = 0 deg
-  tfl = fs.getFrequencies(st,ft,fl)
-  plotStat(sp,pfl,"Fault strike (degrees)")
-  plotStat(st,tfl,"Fault dip (degrees)")
-
-def goSkin():
-  print "goSkin ..."
-  gx = readImage(gxfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  fs = FaultSkinner()
-  fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMinSkinSize(minSkinSize)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.2)
-  cells = fs.findCells([fl,fp,ft])
-  skins = fs.findSkins(cells)
-  for skin in skins:
-    skin.smoothCellNormals(4)
-  print "total number of cells =",len(cells)
-  print "total number of skins =",len(skins)
-  print "number of cells in skins =",FaultSkin.countCells(skins)
-  removeAllSkinFiles(fskbase)
-  writeSkins(fskbase,skins)
-  plot3(gx,cells=cells,png="cells")
-  plot3(gx,skins=skins,png="skins")
-  for iskin,skin in enumerate(skins):
-    plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
 
 def gain(x):
   g = mul(x,x) 
@@ -581,12 +217,60 @@ def gain(x):
   div(x,sqrt(g),y)
   return y
 
+def getPiks():
+  y1 = [  0,105,264,337,360,385,429,489,549,549,144,110, 72, 35,  0,  0]
+  z1 = [410,145,318,236,226,334,320,315,338,733,445,341,368,631,641,410]
+  y2 = [  0, 43,135,241,334,436,498,549,549,288,112, 47,  0,  0]
+  z2 = [408,392,126,305,172,352,300,310,757,545,375,442,513,408]
+  y3 = [  0,125,235,325,417,549,549,115,  0,  0]
+  z3 = [440,121,303,166,404,318,785,386,507,440]
+  y4 = [  0, 37,123,194,241,340,380,479,549,549,442,319,215,102,  0,  0]
+  z4 = [189,258,136,172,295,169,467,577,383,696,787,577,486,367,453,189]
+  y5 = [  0, 70,110,275,296,319,362,415,484,549,549,414,273,102,  0,  0]
+  z5 = [157,138,158,193,275,306,235,502,527,347,751,750,559,415,468,157]
+  y6 = [  0,259,293,351,490,549,549,415,272,132,  0,  0]
+  z6 = [ 90,213,270,292,388,316,760,718,604,469,498, 90]
+  y7 = [  0,304,421,484,549,549,227,218,139,  0,  0]
+  z7 = [ 89,246,350,544,526,775,650,650,490,530, 89]
+  y8 = [  0,365,393,395,443,549,549,463,272,169,134,  0,  0]
+  z8 = [ 60,192,420,529,688,708,784,825,688,634,520,561, 60]
+  y9 = [  0,294,314,353,379,439,549,549,402,384,225,153, 38, 42,  0,  0]
+  z9 = [ 48,122,104,246,623,747,745,800,773,743,683,511,584,141,140, 48]
+  y10 = [ 96,142,314,430,549,549,420,320,182, 96]
+  z10 = [486, 80,128,710,735,802,773,619,546,486]
+  y11= [141,172,332,439,482,549,549,434,324,187,141]
+  z11= [408, 89,170,634,733,710,782,740,558,566,408]
+  y12= [170,151,196,384,423,483,419,333,170]
+  z12= [588,406, 71,153,609,735,703,559,588]
+  y13= [196,163,194,365,432,420,493,549,549,420,196]
+  z13= [614,561, 63,159,148,487,647,643,718,586,614]
+  y14= [154,224,385,495,474,500,360,300,154]
+  z14= [647, 87,145, 66,467,617,572,566,647]
+  y15= [187,296,549,549,481,321,187]
+  z15= [632,103, 84,678,685,556,632]
+  y16= [243,290,253,253,324,380,433,496,549,549,440,356,243]
+  z16= [630,291,139, 71, 88, 66, 99, 56, 68,697,699,614,630]
+
+  y17= [232,266,253,207,282,315,381,489,549,549,232]
+  z17= [600,250,174, 58, 30, 94, 41, 36, 60,679,600]
+
+  y18= [139,193,166,197,279,329,389,432,501,549,549,139]
+  z18= [616,204, 66, 21, 24, 64, 26, 87, 67, 37,616,616]
+  zs = [z1,z2,z3,z4,z5,z6,z7,z8,z9,z10,z11,z12,z13,z14,z15,z16,z17,z18]
+  ys = [y1,y2,y3,y4,y5,y6,y7,y8,y9,y10,y11,y12,y13,y14,y15,y16,y17,y18]
+  xs = [  0, 50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,849]
+  return zs,ys,xs
 
 #############################################################################
 # graphics
 
 def jetFill(alpha):
   return ColorMap.setAlpha(ColorMap.JET,alpha)
+def rwbFill(alpha):
+  return ColorMap.setAlpha(ColorMap.RED_WHITE_BLUE,alpha)
+def bwrFill(alpha):
+  return ColorMap.setAlpha(ColorMap.BLUE_WHITE_RED,alpha)
+
 def jetFillExceptMin(alpha):
   a = fillfloat(alpha,256)
   a[0] = 0.0
@@ -622,111 +306,8 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def convertDips(ft):
-  return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
-
-def plot(f,xp=None,pp=None,xs=None,xu=None,phi=None,v1=None,v2=None,
-        cmin=None,cmax=None,w1=None,w2=None,title=None,clab=None,png=None): 
-  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
-  panel = PlotPanel(1,1,orientation);
-  if title:
-    panel.setTitle(title)
-  #panel.setVInterval(0.2)
-  n2 = len(f)
-  n1 = len(f[0])
-  s2 = Sampling(n2)
-  s1 = Sampling(n1)
-  panel.setHLimits(0,0,n2-1)
-  panel.setVLimits(0,0,n1-1)
-  pxv = panel.addPixels(0,0,s1,s2,f);
-  #pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
-  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  pxv.setColorModel(ColorMap.GRAY)
-  if cmin and cmax:
-    pxv.setClips(cmin,cmax)
-  else:
-    pxv.setClips(min(f),max(f))
-  #panel.setTitle("normal vectors")
-  if phi:
-    cv = panel.addContours(phi)
-    cv.setContours([0])
-    cv.setLineColor(Color.RED)
-    cv.setLineWidth(1.0)
-  if xp:
-    ptv = panel.addPoints(0,0,xp[0],xp[1])
-    ptv.setLineColor(Color.RED)
-    ptv.setLineWidth(2.0)
-  if xu:
-    np = len(xu[0])
-    ptv1 = panel.addPoints(xu[0],xu[1])
-    ptv1.setLineColor(Color.RED)
-    ptv1.setLineWidth(1.0)
-    for ip in range(np):
-      x1c = xu[0][ip]
-      x2c = xu[1][ip]
-      u1c = xu[2][ip]
-      u2c = xu[3][ip]
-      x1m = x1c-u1c*65
-      x2m = x2c-u2c*65
-      x1p = x1c+u1c*65
-      x2p = x2c+u2c*65
-      x1s = [x1m,x1c,x1p]
-      x2s = [x2m,x2c,x2p]
-      ptv2 = panel.addPoints(x1s,x2s)
-      ptv2.setLineColor(Color.YELLOW)
-      ptv2.setLineWidth(1.0)
-  if pp:
-    ptvl = panel.addPoints(0,0,pp[0],pp[1])
-    ptvl.setLineColor(Color.RED)
-    ptvl.setLineWidth(2.0)
-    ptvp = panel.addPoints(0,0,pp[0],pp[1])
-    ptvp.setLineStyle(PointsView.Line.NONE)
-    #ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
-    ptvp.setMarkStyle(PointsView.Mark.CROSS)
-    ptvp.setMarkColor(Color.RED)
-    ptvp.setMarkSize(6.0)
-    ptvp.setLineWidth(3.0)
-  if xs:
-    for ip in range(len(xs)):
-      ptv = panel.addPoints(xs[ip][0],xs[ip][1])
-      ptv.setLineStyle(PointsView.Line.NONE)
-      ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
-      ptv.setMarkColor(Color.RED)
-      ptv.setMarkSize(2.0)
-  if(clab):
-    cb = panel.addColorBar();
-    cb.setLabel(clab)
-  panel.setColorBarWidthMinimum(130)
-  moc = panel.getMosaic();
-  frame = PlotFrame(panel);
-  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
-  frame.setVisible(True);
-  if w1 and w2:
-    frame.setSize(w2,w1)
-  else:
-    frame.setSize(n2,round(n1*0.65))
-
-  #frame.setSize(1190,760)
-  frame.setFontSize(18)
-  if pngDir and png:
-    frame.paintToPng(300,3.333,pngDir+png+".png")
-
-def plot1(s1,y1,y2,hlabel="Values",vlabel="Probability",png=None):
-  sp = SimplePlot(SimplePlot.Origin.LOWER_LEFT)
-  pv1 = sp.addPoints(s1,y1)
-  pv1.setLineColor(Color.RED)
-  pv1 = sp.addPoints(s1,y2)
-  pv1.setLineColor(Color.BLUE)
-  #sp.setVLimits(0.1,1.1)
-  sp.setSize(800,800)
-  sp.setHLabel(hlabel)
-  sp.setVLabel(vlabel)
-  if png and pngDir:
-    sp.paintToPng(300,7.0,pngDir+png+".png")
-
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          xyz=None,cells=None,skins=None,tg=None, fbs=None,smax=0.0,
-          links=False,curve=False,trace=False,png=None):
+          lgs=None,cells=None,tg=None, fbs=None,png=None):
   n1 = len(f[0][0])
   n2 = len(f[0])
   n3 = len(f)
@@ -736,24 +317,28 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   l1,l2,l3 = s1.last,s2.last,s3.last
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
+  k1 = [408]
+  k2 = [240,470]
+  k3 = [0,100,200,300,400,500,600,700,800]
   if g==None:
-    ipg = sf.addImagePanels(s1,s2,s3,f)
+    ipg = sf.addImagePanelsX(s1,s2,s3,f,k1,k2,k3)
     if cmap!=None:
       ipg.setColorModel(cmap)
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-3.0,3.0)
+      ipg.setClips(-1.5,1.5)
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
-    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-3.0,3.0)
+    axes = [Axis.X,Axis.Y]
+    ipg = ImagePanelGroup2X(s1,s2,s3,f,g,k1,k2,k3)
+    ipg.setClips1(-1.5,1.5)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
-      cmap = jetFill(0.8)
+      cmap = rwbFill(0.4)
     ipg.setColorModel2(cmap)
     if clab:
       cbar = addColorBar(sf,clab,cint)
@@ -761,19 +346,15 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
-  if xyz:
-    pg = PointGroup(0.2,xyz)
-    ss = StateSet()
-    cs = ColorState()
-    cs.setColor(Color.YELLOW)
-    ss.add(cs)
-    pg.setStates(ss)
-    #ss = StateSet()
-    #ps = PointState()
-    #ps.setSize(5.0)
-    #ss.add(ps)
-    #pg.setStates(ss)
-    sf.world.addChild(pg)
+  if lgs:
+    for lg in lgs:
+      ss = StateSet()
+      lg.setStates(ss)
+      ls = LineState()
+      ls.setWidth(8)
+      ls.setSmooth(False)
+      ss.add(ls)
+      sf.world.addChild(lg)
   if cells:
     ss = StateSet()
     lms = LightModelState()
@@ -827,49 +408,6 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     states.add(ms)
     tg.setStates(states);
     sf.world.addChild(tg)
-  if skins:
-    sg = Group()
-    ss = StateSet()
-    lms = LightModelState()
-    lms.setTwoSide(True)
-    ss.add(lms)
-    ms = MaterialState()
-    ms.setSpecular(Color.GRAY)
-    ms.setShininess(100.0)
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    if not smax:
-      ms.setEmissiveBack(Color(0.0,0.0,0.5))
-    ss.add(ms)
-    sg.setStates(ss)
-    size = 2.0
-    if links:
-      size = 0.5 
-    for skin in skins:
-      if smax>0.0: # show fault throws
-        cmap = ColorMap(0.0,smax,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
-      else: # show fault likelihood
-        cmap = ColorMap(0.0,1.0,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
-      qg = QuadGroup(xyz,uvw,rgb)
-      qg.setStates(None)
-      sg.addChild(qg)
-      if curve or trace:
-        cell = skin.getCellNearestCentroid()
-        if curve:
-          xyz = cell.getFaultCurveXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-        if trace:
-          xyz = cell.getFaultTraceXyz()
-          pg = PointGroup(0.5,xyz)
-          sg.addChild(pg)
-      if links:
-        xyz = skin.getCellLinksXyz()
-        lg = LineGroup(xyz)
-        sg.addChild(lg)
-    sf.world.addChild(sg)
-  ipg.setSlices(579,932,550)
   if cbar:
     sf.setSize(987,700)
   else:
@@ -882,8 +420,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.6)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,-0.11))
-  ov.setAzimuthAndElevation(-108.0,25.0)
+  ov.setTranslate(Vector3(-0.02,0.13,-0.11))
+  ov.setAzimuthAndElevation(-148.0,45.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
