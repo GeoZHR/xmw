@@ -97,8 +97,11 @@ def goCampos():
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
   if showImage:
-    x = readImage(datfile,n1,n2,n3)
-    xs = copy(1200,n2,n3,420,0,0,x)
+    #x = readImage(datfile,n1,n2,n3)
+    #xs = copy(1200,n2,n3,420,0,0,x)
+    #writeImageX(subfile,xs)
+    xs = readImage(subfile,1200,n2,n3)
+    xs = copy(600,n2,n3,0,0,0,xs)
     writeImageX(subfile,xs)
     show3d(xs,clip=max(xs)/100)
 
