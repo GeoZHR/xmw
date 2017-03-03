@@ -92,3 +92,13 @@ Exception in thread "AWT-EventQueue-0" java.lang.OutOfMemoryError: Java heap spa
 	at org.python.core.PyMethod.instancemethod___call__(PyMethod.java:220)
 	at org.python.core.PyMethod.__call__(PyMethod.java:211)
 	at org.python.core.PyMethod.__call__(PyMethod.java:201)
+setupForSubset: campos
+compute planarity of gx1...
+0.0
+1.0
+setupForSubset: campos
+FaultScanner.scan: done in 163741 seconds
+FaultScanner.scan: done in 158692 seconds
+FaultScanner.scan: done in 152822 seconds
+FaultScanner.scan: done in 146872 seconds
+FaultScanner.scan: done in 146160 seconds

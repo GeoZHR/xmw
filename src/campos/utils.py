@@ -28,8 +28,8 @@ def setupForSubset(name):
   if name=="campos":
     print "setupForSubset: campos"
     seismicDir = _datdir+"campos/"
-    n1,n2,n3 = 2401,3765,2302
-    #n1,n2,n3 = 600,2000,2302
+    n1,n2,n3 = 600,3765,2302
+    #n1,n2,n3 = 600,2000,1200
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     #f1,f2,f3 = 420,0,0
@@ -220,6 +220,19 @@ def readImage(name):
   ais.readFloats(image)
   ais.close()
   return image
+
+def readImageX(n1,n2,n3,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
 
 def readImage2D(n1,n2,name):
   """ 
