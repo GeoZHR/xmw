@@ -28,8 +28,11 @@ def setupForSubset(name):
   if name=="campos":
     print "setupForSubset: campos"
     seismicDir = _datdir+"campos/"
-    n1,n2,n3 = 600,3765,2302
-    #n1,n2,n3 = 600,2000,1200
+    #n1,n2,n3 = 600,3765,2302
+    n1,n2,n3 = 900,3765,2302
+    #n1,n2,n3 = 900,1950,1200
+    #n1,n2,n3 = 600,3765,1200 # planarity portion
+    #n1,n2,n3 = 600,2000,1200 # seismic portion
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     #f1,f2,f3 = 420,0,0
