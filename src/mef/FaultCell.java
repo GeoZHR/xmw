@@ -8,6 +8,7 @@ package mef;
 
 import java.io.Serializable;
 
+import edu.mines.jtk.io.*;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -903,4 +904,57 @@ public class FaultCell implements Serializable {
       return t;
     }
   }
+
+    /**
+   * Writes a fault cells to a file with specified name.
+   * @param fileName the fault cell file name.
+   * @param cells the array of cells.
+   */
+  public static void writeToFile(String fileName, FaultCell[] cells) {
+    try {
+      ArrayOutputStream aos = new ArrayOutputStream(fileName);
+      aos.writeInt(cells.length);
+      for (FaultCell cell:cells) {
+        aos.writeFloat(cell.x1); 
+        aos.writeFloat(cell.x2); 
+        aos.writeFloat(cell.x3);
+        aos.writeFloat(cell.fl); 
+        aos.writeFloat(cell.fp); 
+        aos.writeFloat(cell.ft);
+      }
+      aos.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+
+  /**
+   * Returns fault cells read from a file with specified name.
+   * @param fileName the fault cell file name.
+   * @return the array of fault cells.
+   */
+  public static FaultCell[] readFromFile(String fileName) {
+    FaultCell[] cells;
+    try {
+      ArrayInputStream ais = new ArrayInputStream(fileName);
+      int ncell = ais.readInt();
+      cells = new FaultCell[ncell];
+      for (int icell=0; icell<ncell; ++icell) {
+        float x1 = ais.readFloat();
+        float x2 = ais.readFloat();
+        float x3 = ais.readFloat();
+        float fl = ais.readFloat();
+        float fp = ais.readFloat();
+        float ft = ais.readFloat();
+        cells[icell] = new FaultCell(x1,x2,x3,fl,fp,ft);
+      }
+      ais.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    return cells;
+  }
+
+
 }

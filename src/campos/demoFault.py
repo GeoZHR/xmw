@@ -101,7 +101,8 @@ def main(args):
   #goFaultScan()
   #goFaultCombine()
   #goThin()
-  goSkinTv()
+  goSkin()
+  #goSkinTv()
   #goSmooth()
   #goSlip()
   #goUnfault()
@@ -582,6 +583,32 @@ def goThin():
   plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
   '''
+def goSkin():
+  print "go skin..."
+  #gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(flcfile)
+    fp = readImage(fpcfile)
+    ft = readImage(ftcfile)
+    fsk = FaultSkinner()
+    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsk.setMaxDeltaStrike(10)
+    fsk.setMaxPlanarDistance(0.2)
+    fsk.setMinSkinSize(minSkinSize)
+    cells = fsk.findCells([fl,fp,ft])
+    print "cells done ..."
+    skins = fsk.findSkins(cells)
+    print "skins done ..."
+    removeAllSkinFiles(fskbase)
+    writeSkins(fskbase,skins)
+    writeImage("fpct",fp)
+  else:
+    fp = readImage("fpct")
+  '''
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+  '''
+
 def goSkinTv():
   print "go skin..."
   #gx = readImage(gxfile)

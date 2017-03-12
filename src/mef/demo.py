@@ -62,7 +62,7 @@ maxThrow =  15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = False
+plotOnly = True
 pngDir = "../../../png/mef/fake/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -70,14 +70,14 @@ pngDir = "../../../png/mef/fake/"
 def main(args):
   #goFakeData()
   #goScan()
-  #goSkinF()
+  goSkinF()
   #goSemblance()
   #goOrientScan()
   #goThinE()
   #goSkinE()
   #goTv()
   #goSkinTv()
-  goTest()
+  #goTest()
 def goTest():
   gx = readImage(gxfile)
   skins = readSkins(fskbaseF)
@@ -242,6 +242,7 @@ def goSkinF():
     fs.setMaxPlanarDistance(0.1)
     fs.setMinSkinSize(minSkinSize)
     cells = fs.findCells([fl,fp,ft])
+    writeCells("cells",cells)
     skins = fs.findSkins(cells)
     for skin in skins:
       skin.smoothCellNormals(4)
@@ -255,6 +256,8 @@ def goSkinF():
     plot3(gx,cells=cells,png="cellsF")
   else:
     skins = readSkins(fskbaseF)
+  cells = readCells("cells")
+  plot3(gx,cells=cells)
   plot3(gx,skins=skins,png="skinsF")
 
 def goSkinE():

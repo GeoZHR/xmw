@@ -313,6 +313,13 @@ def writeSkins(basename,skins):
   """ Writes all skins with specified basename. """
   for index,skin in enumerate(skins):
     writeSkin(basename,index,skin)
+def writeCells(basename,cells):
+  """ Writes one skin with specified basename and index. """
+  FaultCell.writeToFile(seismicDir+basename+".dat",cells)
+def readCells(basename):
+  """ Reads one skin with specified basename and index. """
+  return FaultCell.readFromFile(seismicDir+basename+".dat")
+
 
 from org.python.util import PythonObjectInputStream
 def readObject(name):

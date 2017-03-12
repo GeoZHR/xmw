@@ -75,6 +75,10 @@ def removeAllSkinFiles(basename):
   for fileName in fileNames:
     File(seismicDir+fileName).delete()
 
+def readCells(basename):
+  """ Reads one skin with specified basename and index. """
+  return FaultCell.readFromFile(seismicDir+basename+".dat")
+
 def readSkin(basename,index):
   """ Reads one skin with specified basename and index. """
   return FaultSkin.readFromFile(seismicDir+skinName(basename,index)+".dat")
@@ -92,6 +96,10 @@ def readSkins(basename):
     skin = readSkin(basename,index)
     skins.append(skin)
   return skins
+
+def writeCells(basename,cells):
+  """ Writes one skin with specified basename and index. """
+  FaultCell.writeToFile(seismicDir+basename+".dat",cells)
 
 def writeSkin(basename,index,skin):
   """ Writes one skin with specified basename and index. """
