@@ -9,6 +9,7 @@ package mef;
 import java.util.*;
 
 import edu.mines.jtk.awt.*;
+import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 
 import util.*;
@@ -273,10 +274,9 @@ public class FaultSkinner {
     // finite-difference approximations (parabolic interpolation) used to
     // locate ridges.
     float[][][] fs = new float[n3][n2][n1];
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1.0);
-    rgf.applyX0X(f,fs);
-    rgf.applyXX0(fs,fs);
-    f = fs;
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    rgf.applyX0X(f,f);
+    rgf.applyXX0(f,f);
 
     // Vertical image boundaries are discontinuities that may look like
     // faults. If a fault appears to be near and nearly parallel to image

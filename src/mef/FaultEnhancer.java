@@ -567,6 +567,7 @@ public class FaultEnhancer {
       float[][][][] rftp = scanTheta(thetaSampling,rfx);
       rfx = null; // enable gc to collect this large array
       float[][][][] ftp = r.unrotate(rftp);
+      rftp = null; // enable gc to collect this large array
       final float[][][] fp = ftp[0];
       final float[][][] tp = ftp[1];
       loop(n3,new LoopInt() {

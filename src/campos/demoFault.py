@@ -10,16 +10,19 @@ setupForSubset("campos")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
-gxfile  = "gxfull" # input image (maybe after bilateral filtering)
+gxfile  = "gx4" # input image (maybe after bilateral filtering)
 gsxfile = "gsx"
 p2file = "p2"
 p3file = "p3"
 gxpfile  = "gxp" # input image (maybe after bilateral filtering)
 epfile  = "ep" # fault likelihood
-eppfile  = "epp" # fault likelihood
+eppfile  = "epp1" # fault likelihood
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
+flcfile  = "flc" # fault likelihood
+fpcfile  = "fpc" # fault strike (phi)
+ftcfile  = "ftc" # fault dip (theta)
 flvfile  = "flv" # fault likelihood
 fpvfile  = "fpv" # fault strike (phi)
 ftvfile  = "ftv" # fault dip (theta)
@@ -53,6 +56,14 @@ g1file = "gx1"
 g2file = "gx2"
 g3file = "gx3"
 g4file = "gx4"
+flfile = gxfile+flfile
+fpfile = gxfile+fpfile
+ftfile = gxfile+ftfile
+fltfile = gxfile+fltfile
+fptfile = gxfile+fptfile
+fttfile = gxfile+fttfile
+obfile = gxfile+obfile
+epfile = gxfile+epfile
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -81,13 +92,16 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goDataPortion()
+  #goDataPortion()
   #goPlanar()
-  #goSeisNormal()
+  #getOceanBottom()
   #goMask()
+  #goPlanarPortion()
+  #goSeismicPortion()
   #goFaultScan()
+  #goFaultCombine()
   #goThin()
-  #goSkinTv()
+  goSkinTv()
   #goSmooth()
   #goSlip()
   #goUnfault()
@@ -95,7 +109,6 @@ def main(args):
   #goSurfaces()
   #goFaultPoints()
   #goFaultPointsScale()
-  #getOceanBottom()
   #goSeisResample()
   #goHorizon()
   #goRosePlotsWithL1()
@@ -112,6 +125,7 @@ def main(args):
   #goReskin()
   #goSkinDisplay()
   #goSampleClean()
+  #goPad()
 def goPad():
   gx = readImage(gxfile)
   hp = Helper()
@@ -120,24 +134,15 @@ def goPad():
   plot3(gx)
 def goDataPortion():
   gx = readImage(gxfile)
-  '''
-  g1 = copy(n1,2000,1200,0,      0,      0,gx)
-  g2 = copy(n1,2000,1200,0,      0,n3-1200,gx)
-  g3 = copy(n1,2000,1200,0,n2-2000,      0,gx)
-  g4 = copy(n1,2000,1200,0,n2-2000,n3-1200,gx)
+  g1 = copy(n1,1950,1200,0,      0,      0,gx)
+  g2 = copy(n1,1950,1200,0,      0,n3-1200,gx)
+  g3 = copy(n1,1950,1200,0,n2-1950,      0,gx)
+  g4 = copy(n1,1950,1200,0,n2-1950,n3-1200,gx)
   writeImage(g1file,g1)
   writeImage(g2file,g2)
   writeImage(g3file,g3)
   writeImage(g4file,g4)
   plot3(g1)
-  plot3(g2)
-  plot3(g3)
-  plot3(g4)
-  '''
-  gs = copy(1200,n2,n3,420,0,0,gx)
-  writeImage("gxSub",gs)
-  gmax = max(gs)/100
-  plot3(gs,cmin=-gmax,cmax=gmax)
 def goSampleClean():
   fx = readImage(gsxfile)
   p2 = readImage(p2file)
@@ -379,32 +384,90 @@ def goRosePlotsNScale():
   #pf.paintToPng(720,6,pngDir+title+"N"+".png")
 
 def goPlanar():
-  gx = readImage(gxfile)
-  if not plotOnly:
-    lof = LocalOrientFilter(8,2)
-    ets = lof.applyForTensors(gx)
-    ets.setEigenvalues(1.0,0.01,0.1)
-    fer = FaultEnhancer(sigmaPhi,sigmaTheta)
-    ep = fer.applyForPlanar(20,ets,gx)
-    writeImage(gxfile+epfile,ep)
-    print min(ep)
-    print max(ep)
-  else:
-    ep = readImage(epfile)
-  #plot3(gx,cmin=-3,cmax=3)
-  #plot3(ep,cmin=0.1,cmax=0.9)
+  #for gxfile in ["gx1"]:
+  for gxfile in ["gx2", "gx3", "gx4"]:
+    print "compute planarity of "+gxfile+"..."
+    epfile = gxfile+"ep"
+    gx = readImage(gxfile)
+    if not plotOnly:
+      lof = LocalOrientFilter(4,1)
+      u1 = zerofloat(n1,n2,n3)
+      u2 = zerofloat(n1,n2,n3)
+      u3 = zerofloat(n1,n2,n3)
+      ep = zerofloat(n1,n2,n3)
+      lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+      writeImage(epfile,ep)
+      print min(ep)
+      print max(ep)
+    else:
+      ep = readImage(epfile)
+    plot3(gx,cmin=-3,cmax=3)
+    plot3(ep,cmin=0.1,cmax=0.9)
+def goFaultCombine():
+  for ffile in ["fl","fp","ft"]:
+    f1 = readImageX(900,1950,1200,"gx1"+ffile)
+    f2 = readImageX(900,1950,1200,"gx2"+ffile)
+    f3 = readImageX(900,1950,1200,"gx3"+ffile)
+    f4 = readImageX(900,1950,1200,"gx4"+ffile)
+    fc = zerofloat(n1,n2,n3)
+    hp = Helper()
+    hp.combine(f1,f2,f3,f4,fc)
+    writeImage(ffile+"c",fc)
+    plot3(fc,cmin=0,cmax=1)
+  #gx = readImage("gx")
+  #plot3(gx,cmin=-2,cmax=2)
+  #plot3(f1,cmin=-2,cmax=2)
+  #plot3(f2,cmin=-2,cmax=2)
+  #plot3(f3,cmin=-2,cmax=2)
+  #plot3(f4,cmin=-2,cmax=2)
+
+def goPlanarCombine():
+  ep1 = readImageX(600,2000,1200,"gx1ep")
+  ep2 = readImageX(600,2000,1200,"gx2ep")
+  ep3 = readImageX(600,2000,1200,"gx3ep")
+  ep4 = readImageX(600,2000,1200,"gx4ep")
+  epc = zerofloat(n1,n2,n3)
+  hp = Helper()
+  hp.combine(ep1,ep2,ep3,ep4,epc)
+  writeImage(epfile,epc)
+  plot3(epc,cmin=0.1,cmax=0.9)
 
 def goMask():
   ep = readImage(epfile)
   #plot3(ep,cmin=0.1,cmax=0.9)
   ob = readImage2D(n2,n3,obfile)
+  hp = Helper()
   hp.padValues(ob,ep)
-  writeImage(eppfile,ep)
-  #plot3(ep,cmin=0.1,cmax=0.9)
+  print min(ep)
+  print max(ep)
+  hp.padValues(1,1430,n2-1,560,n3-1,ep)
+  writeImage(epfile,ep)
+  plot3(ep,cmin=0.1,cmax=0.9)
+
+def goPlanarPortion():
+  epp = readImage(eppfile)
+  ep1 = copy(n1,n2,1200,0,0,0,epp)
+  ep2 = copy(n1,n2,1200,0,0,n3-1200,epp)
+  writeImage("epp1",ep1)
+  writeImage("epp2",ep2)
+  plot3(ep1,cmin=0.1,cmax=0.9)
+  plot3(ep2,cmin=0.1,cmax=0.9)
+
+def goSeismicPortion():
+  gx  = readImage(gxfile)
+  gx1 = copy(n1,n2,1200,0,0,0,gx)
+  gx2 = copy(n1,n2,1200,0,0,n3-1200,gx)
+  writeImage("gx1",gx1)
+  writeImage("gx2",gx2)
+  plot3(gx1)
+  plot3(gx2)
 
 def goFaultScan():
-  ep = readImage(eppfile)
-  ep = clip(0.0,1.0,ep)
+  #gx = readImage(gxfile)
+  ep = readImage(epfile)
+  pow(ep,8,ep)
+  sub(ep,min(ep),ep)
+  div(ep,max(ep),ep)
   if not plotOnly:
     fe = FaultEnhancer(sigmaPhi,sigmaTheta)
     flpt = fe.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
@@ -413,12 +476,10 @@ def goFaultScan():
     writeImage(ftfile,flpt[2])
   else:
     fl = readImage(flfile)
-  #gx = readImage(gxfile)
-  #plot3(gx,flpt[0],cmin=0.01,cmax=1,cmap=jetRamp(1.0))
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
   '''
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
   flt,fpt,ftt=fe.thin(flpt)
   writeImage(fltfile,flt)
   writeImage(fptfile,ftt)
@@ -428,23 +489,6 @@ def goFaultScan():
   plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0))
   '''
 
-def goSurfaces():
-  gx = readImage(gxfile)
-  fl = readImage(fltvfile)
-  hp = Helper()
-  fns = ["sm1","su1"]
-  for fni in fns:
-    ndfs = readImage2D(3,2,fni+"ndfs")
-    ny = round(ndfs[0][0])
-    nx = round(ndfs[1][0])
-    sf = readImage2D(ny,nx,fni)
-    b2 = round(ndfs[0][2]-s2.getFirst())
-    b3 = round(ndfs[1][2]-s3.getFirst())
-    hp.horizonToImage(s1,b2,b3,sf,fl)
-  sl1 = readImage2D(n2,n3,hl1file)
-  hp.horizonToImage(s1,0,0,sl1,fl)
-  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
 
 def goFaultPoints():
   fp = readImage(fptmfile)
@@ -473,10 +517,27 @@ def getOceanBottom():
   ob = readImage2D(n2,n3,obfile)
   plot3(gx,horizon=ob)
 
+def goSlopes():
+  print "goSlopes ..."
+  gx = readImage(gxfile)
+  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  print "p2  min =",min(p2)," max =",max(p2)
+  print "p3  min =",min(p3)," max =",max(p3)
+  print "ep min =",min(ep)," max =",max(ep)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+        clab="Planarity")
 def goScan():
   print "goScan ..."
   if not plotOnly:
-    gx = readImage(gxpfile)
+    gx = readImage(gxfile)
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sig1,sig2,smooth=16.0,1.0,4.0
     fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,sig1,sig2,smooth,gx)
@@ -502,9 +563,9 @@ def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
+    fl = readImage(flcfile)
+    fp = readImage(fpcfile)
+    ft = readImage(ftcfile)
     flt,fpt,ftt = FaultEnhancer.thin([fl,fp,ft])
     writeImage(fltfile,flt)
     writeImage(fptfile,fpt)
@@ -515,18 +576,19 @@ def goThin():
     ftt = readImage(fttfile)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gx,ftt,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
+  '''
+  plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=45,png="fpt")
-
+  '''
 def goSkinTv():
   print "go skin..."
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
   if not plotOnly:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
+    fl = readImage(flcfile)
+    fp = readImage(fpcfile)
+    ft = readImage(ftcfile)
     fsk = FaultSkinner()
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMaxDeltaStrike(10)
@@ -562,13 +624,14 @@ def goSkinTv():
     fd.getFlt(skins,fl)
     fd.getFpt(skins,fp)
     fd.getFtt(skins,ft)
-    writeImage("fltv",fl)
-    writeImage("fptv",fp)
-    writeImage("fttv",ft)
+    writeImage("flctv",fl)
+    writeImage("fpctv",fp)
+    writeImage("ftctv",ft)
   else:
-    fl = readImage("fltv")
-    fp = readImage("fptv")
-    ft = readImage("fttv")
+    fl = readImage("flctv")
+    fp = readImage("fpctv")
+    ft = readImage("ftctv")
+  '''
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
@@ -576,6 +639,7 @@ def goSkinTv():
         clab="Fault likelihood",png="flt")
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
+  '''
 
 def goSmooth():
   print "goSmooth ..."

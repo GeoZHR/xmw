@@ -11,6 +11,171 @@ import ipfx.*;
 import util.*;
 
 public class Helper {
+  public void combineX(
+    float[][][] gx1, float[][][] gx2, float[][][] gx3, float[][][] gx4, 
+    float[][][] gx)
+  {
+    int m3 = gx1.length;
+    int m2 = gx1[0].length;
+    int m1 = gx1[0][0].length;
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    int b2 = n2-m2;
+    int b3 = n3-m3;
+    int d2 = 2*m2-n2;
+    int d3 = 2*m3-n3;
+    float[] w2 = new float[d2];
+    float[] w3 = new float[d3];
+    float sig2 = (d2);
+    float sig3 = (d3);
+    sig2 *= sig2;
+    sig3 *= sig3;
+    for (int i2=0; i2<d2; ++i2)
+      w2[i2] = exp(-i2*i2/sig2);
+    for (int i3=0; i3<d3; ++i3)
+      w3[i3] = exp(-i3*i3/sig3);
+    for (int i3=0; i3<m3; ++i3) {
+    for (int i2=0; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k12 = i2;
+      int k13 = i3;
+      float w2i = 1f;
+      float w3i = 1f;
+      int d2i = i2+d2-m2;
+      int d3i = i3+d3-m3;
+      if (d2i>0) w2i = w2[d2i];
+      if (d3i>0) w3i = w3[d3i];
+      gx[k13][k12][i1] += w2i*w3i*gx1[i3][i2][i1];
+    }}}
+    System.out.println("part one done....");
+
+    for (int i3=0; i3<m3; ++i3) {
+    for (int i2=0; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k22 = i2;
+      int k23 = i3+b3;
+      float w2i = 1f;
+      float w3i = 1f;
+      int d2i = i2+d2-m2;
+      int d3i = (n3-k23-1)+d3-m3;
+      if (d2i>0) w2i = w2[d2i];
+      if (d3i>0) w3i = w3[d3i];
+      gx[k23][k22][i1] += w2i*w3i*gx2[i3][i2][i1];
+    }}}
+
+    System.out.println("part two done....");
+    for (int i3=0; i3<m3; ++i3) {
+    for (int i2=0; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k32 = i2+b2;
+      int k33 = i3;
+      float w2i = 1f;
+      float w3i = 1f;
+      int d2i = (n2-k32-1)+d2-m2;
+      int d3i = i3+d3-m3;
+      if (d2i>0) w2i = w2[d2i];
+      if (d3i>0) w3i = w3[d3i];
+      gx[k33][k32][i1] += w2i*w3i*gx3[i3][i2][i1];
+    }}}
+
+    System.out.println("part three done....");
+    for (int i3=0; i3<m3; ++i3) {
+    for (int i2=0; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k42 = i2+b2;
+      int k43 = i3+b3;
+      float w2i = 1f;
+      float w3i = 1f;
+      int d2i = (n2-k42-1)+d2-m2;
+      int d3i = (n3-k43-1)+d3-m3;
+      if (d2i>0) w2i = w2[d2i];
+      if (d3i>0) w3i = w3[d3i];
+      gx[k43][k42][i1] += w2i*w3i*gx4[i3][i2][i1];
+    }}}
+    System.out.println("part four done....");
+  }
+
+
+  public void combine(
+    float[][][] gx1, float[][][] gx2, float[][][] gx3, float[][][] gx4, 
+    float[][][] gx)
+  {
+    int m3 = gx1.length;
+    int m2 = gx1[0].length;
+    int m1 = gx1[0][0].length;
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    int b2 = n2-m2;
+    int b3 = n3-m3;
+    int d2 = round(m2/2-n2/4);
+    int d3 = round(m3/2-n3/4);
+    for (int i3=0; i3<m3; ++i3) {
+    for (int i2=0; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k12 = i2;
+      int k13 = i3;
+      gx[k13][k12][i1] = gx1[i3][i2][i1];
+    }}}
+
+    for (int i3=d3; i3<m3; ++i3) {
+    for (int i2=0; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k22 = i2;
+      int k23 = i3+b3;
+      gx[k23][k22][i1] = gx2[i3][i2][i1];
+    }}}
+
+    for (int i3=0; i3<m3; ++i3) {
+    for (int i2=d2; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k32 = i2+b2;
+      int k33 = i3;
+      gx[k33][k32][i1] = gx3[i3][i2][i1];
+    }}}
+
+    for (int i3=d3; i3<m3; ++i3) {
+    for (int i2=d2; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k42 = i2+b2;
+      int k43 = i3+b3;
+      gx[k43][k42][i1] = gx4[i3][i2][i1];
+    }}}
+
+    /*
+    byte[][][] sc = new byte[n3][n2][n1];
+    for (int i3=0; i3<m3; ++i3) {
+    for (int i2=0; i2<m2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int k12 = i2;
+      int k13 = i3;
+
+      int k22 = i2;
+      int k23 = i3+b3;
+
+      int k32 = i2+b2;
+      int k33 = i3;
+
+      int k42 = i2+b2;
+      int k43 = i3+b3;
+      gx[k13][k12][i1] += gx1[i3][i2][i1];
+      gx[k23][k22][i1] += gx2[i3][i2][i1];
+      gx[k33][k32][i1] += gx3[i3][i2][i1];
+      gx[k43][k42][i1] += gx4[i3][i2][i1];
+      sc[k13][k12][i1] += 1;
+      sc[k23][k22][i1] += 1;
+      sc[k33][k32][i1] += 1;
+      sc[k43][k42][i1] += 1;
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gx[i3][i2][i1] /= sc[i3][i2][i1];
+    }}}
+    */
+
+  }
 
   public float[][][] stratalSlices(int ns, float[][] tp, float[][] bt) {
     int n3 = tp.length;
