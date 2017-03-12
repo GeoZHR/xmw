@@ -485,6 +485,56 @@ public class SurfaceDisplay {
     return new float[][]{xyz,rgb};
   }
 
+  public float[][] buildTrigs(
+    Sampling sx, Sampling sy, float[][] z) 
+  {
+    int i = 0;
+    int k = 0;
+    int nx = sx.getCount();
+    int ny = sy.getCount();
+    float[] zas = new float[nx*ny*6];
+    float[] xyz = new float[nx*ny*6*3];
+    for (int ix=4;ix<nx-4; ++ix) {
+      float x0 = (float)sx.getValue(ix  );
+      float x1 = (float)sx.getValue(ix+1);
+      for (int iy=4; iy<ny-4; ++iy) {
+        float y0 = (float)sy.getValue(iy  );
+        float y1 = (float)sy.getValue(iy+1);
+        float z1 = z[ix  ][iy  ];
+        float z2 = z[ix  ][iy+1];
+        float z3 = z[ix+1][iy  ];
+        float z4 = z[ix+1][iy  ];
+        float z5 = z[ix  ][iy+1];
+        float z6 = z[ix+1][iy+1];
+        /*
+        if(abs(z1-z2)>1f){continue;}
+        if(abs(z1-z3)>1f){continue;}
+        if(abs(z2-z3)>1f){continue;}
+        if(abs(z4-z5)>1f){continue;}
+        if(abs(z4-z6)>1f){continue;}
+        if(abs(z5-z6)>1f){continue;}
+        if(z1<0||z2<0||z3<0){continue;}
+        if(z4<0||z5<0||z6<0){continue;}
+        */
+        zas[k++] = z1;  zas[k++] = z2;  zas[k++] =z3;
+        zas[k++] = z4;  zas[k++] = z5;  zas[k++] =z6;
+
+        xyz[i++] = x0;  xyz[i++] = y0;  xyz[i++] = z[ix  ][iy  ];
+        xyz[i++] = x0;  xyz[i++] = y1;  xyz[i++] = z[ix  ][iy+1];
+        xyz[i++] = x1;  xyz[i++] = y0;  xyz[i++] = z[ix+1][iy  ];
+        xyz[i++] = x1;  xyz[i++] = y0;  xyz[i++] = z[ix+1][iy  ];
+        xyz[i++] = x0;  xyz[i++] = y1;  xyz[i++] = z[ix  ][iy+1];
+        xyz[i++] = x1;  xyz[i++] = y1;  xyz[i++] = z[ix+1][iy+1];
+      }
+    }
+    xyz = copy(i,0,xyz);
+    zas = copy(k,0,zas);
+    ColorMap cp = new ColorMap(-max(zas),-min(zas),ColorMap.JET);
+    float[] rgb = cp.getRgbFloats(mul(zas,-1));
+    return new float[][]{xyz,rgb};
+  }
+
+
   private float[] buildTrigs(
     Sampling sx, Sampling sy, float[][] z, short[][][] mk) 
   {

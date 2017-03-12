@@ -62,6 +62,7 @@ public class OptimalPathPicker {
     float[][] wx = applyForWeight(vel);
     float[] p1 = forwardPick(i0,wx);
     float[] p2 = backwardPick(round(p1[n1-1]),wx);
+    //float[] p2 = copy(p1);
     float[] b = new float[n1];
     float[] r = new float[n1];
     float[] ws = new float[n1];
@@ -73,6 +74,7 @@ public class OptimalPathPicker {
     CgSolver cs = new CgSolver(0.001,200);
     smoother1.applyTranspose(b);
     cs.solve(a1,vb,vr);
+    smoother1.apply(r);
     return r;
   }
 
@@ -184,6 +186,7 @@ public class OptimalPathPicker {
     CgSolver cs = new CgSolver(0.001,200);
     smoother2.applyTranspose(b);
     cs.solve(a2,vb,vr);
+    smoother2.apply(r);
     float[][] p1t = new float[n3][n2];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
@@ -218,6 +221,7 @@ public class OptimalPathPicker {
     CgSolver cs = new CgSolver(0.001,200);
     smoother2.applyTranspose(b);
     cs.solve(a2,vb,vr);
+    smoother2.apply(r);
     float[][] p1t = new float[n3][n2];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
@@ -265,6 +269,7 @@ public class OptimalPathPicker {
     CgSolver cs = new CgSolver(0.001,200);
     smoother2.applyTranspose(b);
     cs.solve(a2,vb,vr);
+    smoother2.apply(r);
     float[][] p1t = new float[n3][n2];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {

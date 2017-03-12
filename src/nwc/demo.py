@@ -79,7 +79,7 @@ maxThrow = 30.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 #pngDir = "../../../png/nwc/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -93,7 +93,7 @@ def main(args):
   #goReskin()
   #goSkinMerge()
   #goSmooth()
-  goSlip()
+  #goSlip()
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
@@ -114,7 +114,7 @@ def main(args):
   plot3(gu1)
   plot3(gu2)
   '''
-  #goResults()
+  goResults()
   #goSlices()
   #goChannel()
   #goReskinx()

@@ -223,7 +223,6 @@ def writeImageM(name,image):
   aos.close()
   return image
 
-
 #############################################################################
 # read/write fault skins
 

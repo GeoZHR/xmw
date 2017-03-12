@@ -7,10 +7,10 @@ Version: 2016.06.01
 
 
 from utils import * 
-setupForSubset("semblance")
+#setupForSubset("semblance")
 #setupForSubset("channel")
 #setupForSubset("surface")
-#setupForSubset("env")
+setupForSubset("env")
 #setupForSubset("semblance3d")
 #setupForSubset("fd2")
 #setupForSubset("dgb")

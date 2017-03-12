@@ -124,6 +124,18 @@ public class FaultSkinnerX {
     }
   }
 
+  public void getFaultMask(FaultSkin[] sks, float[][][] fm) {
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1i = fc.i1;
+        int i2i = fc.i2;
+        int i3i = fc.i3;
+        fm[i3i][i2i][i1i] = 1f;
+      }
+    }
+  }
+
+
 
   public void getFl(int minSize, FaultSkin[] sks, float[][][] fl) {
     for (FaultSkin sk:sks) {

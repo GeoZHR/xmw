@@ -32,6 +32,7 @@ public class SmoothWithShaping {
     CgSolver cs = new CgSolver(0.001,200);
     smoother1.applyTranspose(b);
     cs.solve(a1,vb,vr);
+    //smoother1.apply(r);
     return r;
   }
 

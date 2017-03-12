@@ -92,13 +92,13 @@ def main(args):
   #getOceanBottom()
   #goSeisResample()
   #goHorizon()
-  goRosePlotsWithL1()
+  #goRosePlotsWithL1()
   #goRosePlots()
   #goRosePlotsScale()
   #goRosePlotsN()
   #goRosePlotsNScale()
   #goResetSurfaces()
-  #goFaultsAndSurfs()
+  goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
@@ -177,13 +177,15 @@ def goFaultsAndSurfs():
   writeImage(hm1file,hm1)
   '''
   gx = readImage(gxfile)
-  fpt = readImage(fptmfile)
+  plot3(gx)
+  #fpt = readImage(fptmfile)
   '''
   fpt = readImage(fptvfile)
   #ft = readImage(fttvfile)
   flr = readImage("flr")
   fsc = FaultSampleCleaner()
   fsc.mask(0.2,-0.01,flr,fpt)
+  '''
   '''
   fv = 180
   hpr.horizonToImage(fv,div(hu1,5),fpt)
@@ -192,6 +194,7 @@ def goFaultsAndSurfs():
   hpr.horizonToImage(fv,obs,fpt)
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
+  '''
 
 
 def goFaultDensity():

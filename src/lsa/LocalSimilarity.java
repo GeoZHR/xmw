@@ -131,8 +131,8 @@ public class LocalSimilarity {
       _s  = s;
       _a  = a;
       _dir = dir;
-      _sc = sum(pow(a,2))/a.length;
-      _sc = 0.01f;
+      //_sc = sum(pow(a,2))/a.length;
+      _sc = 0.1f;
       //testSpd();
     }
     public void apply(Vec vx, Vec vy) {
@@ -219,7 +219,7 @@ public class LocalSimilarity {
     if (sigma<=0.0f)
       return;
     RecursiveExponentialFilter.Edges edges =
-      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_VALUE;
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
     ref.setEdges(edges);
     ref.apply1(x,x);
@@ -229,7 +229,7 @@ public class LocalSimilarity {
     if (sigma<=0.0f)
       return;
     RecursiveExponentialFilter.Edges edges =
-      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_VALUE;
+      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
     ref.setEdges(edges);
     ref.apply2(x,x);
@@ -361,7 +361,7 @@ public class LocalSimilarity {
     float[] as = new float[n1];
     Sampling s1 = new Sampling(n1);
     SincInterpolator si = new SincInterpolator();
-    //si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     for (int i1=0; i1<n1; ++i1) {
       double x1 = i1+s;
       //if(x1<0||x1>=n1) {x1=i1-s;}

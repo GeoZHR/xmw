@@ -58,6 +58,17 @@ def setupForSubset(name):
     f1,f2 = 0.000,0.000
     #f1,f2,f3 = 220,740,350
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+  elif name=="pik":
+    print "setupForSubset: pik"
+    seismicDir = _datdir+"pik/"
+    pngDir = "../../../png/fls/pik/"
+    #n1,n2 = 1800,5516 #full xline slice 1205
+    #n1,n2 = 1000,1600 #gs f1,f2=100,1600
+    n1,n2 = 1000,101 #full inline slice 2538
+    n1,n2 = 240,480 #full inline slice 2538
+    d1,d2 = 1.0,1.0
+    f1,f2 = 0.000,0.000
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
   elif name=="bag2dTwo":
     print "setupForSubset: bag 2d"
     seismicDir = _datdir+"bag/2d/sub2/"
@@ -158,6 +169,17 @@ def readImage(name):
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2)
   ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+def readImageL(name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
   return image

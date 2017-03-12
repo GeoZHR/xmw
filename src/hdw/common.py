@@ -22,6 +22,7 @@ from util import *
 from pik import *
 from swt import *
 from hv import *
+from sso import *
 from hdw import *
 
 #############################################################################

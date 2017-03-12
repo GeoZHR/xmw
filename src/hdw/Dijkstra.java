@@ -30,6 +30,9 @@ public class Dijkstra {
       }
     }
   }
+  public int coord2Index(int i1, int i2) {
+    return _gg.coord2Index(i1,i2);
+  }
 
 
   private GridGraph _gg = null;
@@ -51,6 +54,9 @@ public class Dijkstra {
       System.out.println("c1="+c1+"; c2="+c2);
       x = pred[x];
     }
+    int c2 = (int)floor(s/n2);
+    int c1 = s-c2*n2;
+    System.out.println("c1="+c1+"; c2="+c2);
   }
 
   public class GridGraph {

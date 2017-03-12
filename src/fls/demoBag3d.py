@@ -32,32 +32,72 @@ flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
 wxfile = "wx"
+wx1file = "wx1"
+wx2file = "wx2"
+ws1file = "ws1"
+ws2file = "ws2"
+fp1file = "fp1"
+fp2file = "fp2"
+dxsfile = "dxs"
 fsfile = "fs"
+psfile = "ps"
+psdfile = "psd"
 
 pngDir = False
 pngDir = "../../../png/fls/bag/3d/"
 
-plotOnly = True
+plotOnly = False
 
 def main(args):
   #goPikSlices()
   goSaltSurface()
+  #goSaltSurfaceX()
+
+def goSaltSurfaceX():
+  gx = readImage(gxfile)
+  isr = ImplicitSurfaceReconstructor()
+  '''
+  wx1 = readImage(wx1file)
+  wx2 = readImage(wx2file)
+  dxs = readImage2d(n3,2,dxsfile)
+  ws1 = zerofloat(n1,n2,n3)
+  ws2 = zerofloat(n1,n2,n3)
+  fp1 = zerofloat(n1,n2,n3)
+  fp2 = zerofloat(n1,n2,n3)
+  isr.getImplicitFunc(25,dxs,[wx1,wx2],[ws1,ws2],[fp1,fp2])
+  writeImage(ws1file,ws1)
+  writeImage(ws2file,ws2)
+  writeImage(fp1file,fp1)
+  writeImage(fp2file,fp2)
+  '''
+  ws1 = readImage(ws1file)
+  ws2 = readImage(ws2file)
+  fp1 = readImage(fp1file)
+  fp2 = readImage(fp2file)
+  fs = isr.smoothFit(6,6,12,[ws1,ws2],[fp1,fp2])
+  writeImage(fsfile,fs)
+  plot3(ws1,cmin=0,cmax=1)
+  plot3(ws2,cmin=0,cmax=1)
+  plot3(fp1,cmin=-10,cmax=10)
+  plot3(fp2,cmin=-10,cmax=10)
+  #plot3(gx,fbs=fs,png="saltBound")
 def goSaltSurface():
   gx = readImage(gxfile)
   fs = zerofloat(n1,n2,n3)
   if not plotOnly:
     wx = readImage(wxfile)
     isr = ImplicitSurfaceReconstructor()
-    isr.signAsignment(wx,fs)
+    isr.signAsignmentH(wx,fs)
     rgf1 = RecursiveGaussianFilter(3)
-    rgf2 = RecursiveGaussianFilter(6)
-    rgf3 = RecursiveGaussianFilter(12)
+    rgf2 = RecursiveGaussianFilter(8)
+    rgf3 = RecursiveGaussianFilter(16)
     rgf1.apply0XX(fs,fs)
     rgf2.applyX0X(fs,fs)
     rgf3.applyXX0(fs,fs)
     writeImage(fsfile,fs)
   else:
     fs = readImage(fsfile)
+  plot3(wx,cmin=-1,cmax=1)
   plot3(gx,g=fs,cmin=-0.5,cmax=0.5,png="saltBody")
   plot3(gx,fbs=fs,png="saltBound")
 def goPikSlices():
@@ -78,6 +118,11 @@ def goPikSlices():
   xrs = []
   yrs = []
   zrs = []
+  #dxs = zerofloat(n3,2)
+  wx = zerofloat(n1,n2,n3)
+  #wx1 = zerofloat(n1,n2,n3)
+  #wx2 = zerofloat(n1,n2,n3)
+  isr = ImplicitSurfaceReconstructor()
   for ix in range(len(xs)):
     k3 = xs[ix]
     c2 = ys[ix]
@@ -95,29 +140,42 @@ def goPikSlices():
     xrs.append(k3)
     zrs.append(xt[0])
     yrs.append(xt[1])
+    #dxs[0][k3] = 0;
+    #dxs[1][k3] = 0;
+    #isr.pointsToImage(xt[1],xt[0],pa[k3],wx1[k3])
+    #isr.pointsToImage(xt[1],xt[0],pa[k3],wx2[k3])
+    isr.pointsToImage(xt[1],xt[0],pa[k3],wx[k3])
     e3 = min(k3+25,n3)
     for i3 in range(k3+1,e3,1):
-      xp = sp.pickNext(5,1,3,1.0,xp[0],xp[1],pa[i3])
+      xp = sp.pickNext(5,1,3,1,xp[0],xp[1],pa[i3])
       xt = sp.regridBoundary(0.5,xp[0],xp[1])
       xus.append(i3)
       yus.append(xt[1])
       zus.append(xt[0])
+      #dxs[0][i3] = abs(i3-k3);
+      #isr.pointsToImage(xt[1],xt[0],pa[i3],wx1[i3])
+      isr.pointsToImage(xt[1],xt[0],pa[i3],wx[i3])
     e3 = max(k3-25,-1)
     for i3 in range(k3-1,e3,-1):
-      xm = sp.pickNext(5,1,3,1.0,xm[0],xm[1],pa[i3])
+      xm = sp.pickNext(5,1,3,1,xm[0],xm[1],pa[i3])
       xt = sp.regridBoundary(0.5,xm[0],xm[1])
       xus.append(i3)
-      zus.append(xt[0])
       yus.append(xt[1])
+      zus.append(xt[0])
+      #dxs[1][i3] = abs(i3-k3);
+      #isr.pointsToImage(xt[1],xt[0],pa[i3],wx2[i3])
+      isr.pointsToImage(xt[1],xt[0],pa[i3],wx[i3])
   lgr = getLineGroups(2,zrs,yrs,xrs)
   lgu = getLineGroups(1,zus,yus,xus)
-  plot3(fx,lgs=lgr,png="slicesFinal")
-  plot3(fx,lgs=lgu,png="piks")
-  '''
-  wx = zerofloat(n1,n2,n3)
-  isr = ImplicitSurfaceReconstructor()
-  isr.pointsToImage(xus,yus,zus,pa,wx)
+  plot3(fx,lgs=lgr)#,png="slicesFinal")
+  plot3(fx,lgs=lgu)#,png="piks")
   writeImage(wxfile,wx)
+  '''
+  writeImage(wx1file,wx1)
+  writeImage(wx2file,wx2)
+  writeImage(dxsfile,dxs)
+  plot3(wx1,cmin=0,cmax=1)
+  plot3(wx2,cmin=0,cmax=1)
   '''
 
 def getLineGroups(dx,zs,ys,xs):

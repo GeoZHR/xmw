@@ -189,6 +189,21 @@ public class SeismicWellTie {
     return getSamples(s1,models);
   }
 
+  public float[][][][] getSamples(
+    Sampling s1, Sampling s2, Sampling s3, WellLog[] logs) 
+  {
+    int nl = logs.length;
+    SynSeis.Model[] models = new SynSeis.Model[nl];
+    for (int il=0; il<nl; ++il) {
+      models[il] = SynSeis.getModel(logs[il]);
+      System.out.println("id="+logs[il].id);
+      System.out.println("k2="+s2.indexOfNearest(models[il].x2));
+      System.out.println("k3="+s3.indexOfNearest(models[il].x3));
+    }
+    return getSamples(s1,models);
+  }
+
+
   public float[][][][] getSamples(Sampling s1, SynSeis.Model[] models) {
     int nl = models.length;
     float f1 = (float)s1.getFirst();

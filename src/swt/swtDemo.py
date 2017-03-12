@@ -71,7 +71,7 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDisplay()
+  goDisplay()
   #goSynsFlatten()
   #goSeisFlatten()
   #goSynsSeisTie()  
@@ -99,9 +99,11 @@ def main(args):
   plot3(rx,cmin=-1,cmax=1)
   '''
   #goWellMap()
-  goRgtDisplay()
+  #goRgtDisplay()
 def goRgtDisplay():
   gt = readImage(gtcfile)
+  gx = readImage(gxfile)
+  plot3(gx)
   plot3(gt,cmin=min(gt),cmax=max(gt),cmap=ColorMap.JET)
 def goWellMap():
   gx = readImage(gxfile)
@@ -183,8 +185,9 @@ def goReflectivity(sps):
 def goDisplay():
   gx = readImage(gxfile)
   lgs = getLogs()
+  writeLogs("log",lgs)
   swt = SeismicWellTie()
-  sps = swt.getSamples(s1,lgs)
+  sps = swt.getSamples(s1,s2,s3,lgs)
   plot3(gx,sps=sps[1],wmin=2.2,wmax=2.8,clab="Density (g/cc)",png="seisDen")
   plot3(gx,sps=sps[0],wmin=2.7,wmax=4.8,clab="Velocity (km/s)",png="seisVel")
 

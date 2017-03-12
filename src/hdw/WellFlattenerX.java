@@ -14,11 +14,8 @@ limitations under the License.
 ****************************************************************************/
 package hdw;
 
-import java.util.*;
 import java.util.Random;
 import edu.mines.jtk.util.*;
-import edu.mines.jtk.dsp.*;
-import edu.mines.jtk.interp.*;
 
 import util.SmoothWithShaping;
 
@@ -29,7 +26,7 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * @author Xinming Wu, Colorado School of Mines
  * @version 2017.02.16
  */
-public class WellFlattener {
+public class WellFlattenerX {
     /**
    * The method used to extrapolate alignment errors.
    * Alignment errors |f[i]-g[i+l]| cannot be computed for indices
@@ -65,7 +62,7 @@ public class WellFlattener {
    * @param shiftMin lower bound on shift u.
    * @param shiftMax upper bound on shift u.
    */
-  public WellFlattener(int shiftMin, int shiftMax) {
+  public WellFlattenerX(int shiftMin, int shiftMax) {
     Check.argument(shiftMax-shiftMin>1,"shiftMax-shiftMin>1");
     _lmin = shiftMin;
     _lmax = shiftMax;
@@ -132,119 +129,6 @@ public class WellFlattener {
     }}
     return gx;
   }
-
-  public float[][] pickTops(int it, Sampling sz, Sampling sw, 
-    float[][] us, float[][] ws) {
-    int nw = us.length;
-    ArrayList<Float> wl = new ArrayList<Float>();
-    ArrayList<Float> zl = new ArrayList<Float>();
-    wl.add((float)sw.getValue(0));
-    zl.add((float)(it*sz.getDelta()+sz.getFirst()));
-    for (int iw=1; iw<nw; ++iw) {
-      float iz = it+us[iw][it];
-      int kz = round(iz);
-      if(ws[iw][kz]!=_nullValue) {
-        iz = (float)(iz*sz.getDelta()+sz.getFirst());
-        zl.add(iz);
-        wl.add((float)sw.getValue(iw));
-      }
-    }
-    int np = zl.size();
-    float[] wls = new float[np];
-    float[] zls = new float[np];
-    for (int ip=0; ip<np; ++ip) {
-      wls[ip] = wl.get(ip);
-      zls[ip] = zl.get(ip);
-    }
-    return new float[][]{zls,wls};
-  }
-
-  public float[][][] flattenX(float[][] gx) {
-    int nw = gx.length;
-    int nz = gx[0].length;
-    int[][] gs = findBounds(gx);
-    int[][] mk = zeroint(nz,nw);
-    float[][] gp = padNullValues(gs,gx);
-    float[][] fx = zerofloat(nz,nw);
-    float[][] ft = zerofloat(nz,nw);
-    float[][] us = zerofloat(nz,nw);
-    ft[0] = gp[0];
-    fx[0] = gx[0];
-    markNullValues(fx,mk);
-    float[] sm = new float[nw];
-    sm[0] = 1f;
-    for (int iw=1; iw<nw; ++iw) {
-      System.out.println("iw="+iw);;
-      float[] gw = gp[iw];
-      float[][] e = computeErrors(iw,sm,mk,ft,gw);
-      int b1 = gs[iw][0];
-      int e1 = gs[iw][1];
-      setNulls(b1,e1,e);
-      normalizeErrors(e);
-      float[] u = findShifts(_bstrain1,e);
-      us[iw] = u;
-      applyShifts(u,gw,ft[iw]);
-      applyShifts(u,gx[iw],fx[iw]);
-      markNullValues(fx,mk);
-      /*
-      float sms = 0f;
-      float scs = 0f;
-      for (int kw=0; kw<iw; kw++){
-        if(sm[kw]>_smin) {
-          scs += 1f;
-          sms += correlate(ft[kw],ft[iw]);
-        }
-      }
-      sm[iw] = sms/scs;
-      */
-      sm[iw] = correlate(ft[0],ft[iw]);
-      System.out.println("sm="+sm[iw]);;
-    }
-    return new float[][][]{fx,us};
-  }
-
-  public float[][] flatten(float[][] gx, float[] cm) {
-    int nw = gx.length;
-    int nz = gx[0].length;
-    int[][] gs = findBounds(gx);
-    int[][] mk = zeroint(nz,nw);
-    float[][] gp = padNullValues(gs,gx);
-    float[][] fx = zerofloat(nz,nw);
-    float[][] ft = zerofloat(nz,nw);
-    ft[0] = gp[0];
-    fx[0] = gx[0];
-    markNullValues(fx,mk);
-    float[] sm = new float[nw];
-    sm[0] = 1f;
-    cm[0] = 1f;
-    for (int iw=1; iw<nw; ++iw) {
-      System.out.println("iw="+iw);;
-      float[] gw = gp[iw];
-      float[][] e = computeErrors(iw,sm,mk,ft,gw);
-      int b1 = gs[iw][0];
-      int e1 = gs[iw][1];
-      setNulls(b1,e1,e);
-      normalizeErrors(e);
-      float[] u = findShifts(_bstrain1,e);
-      applyShifts(u,gw,ft[iw]);
-      applyShifts(u,gx[iw],fx[iw]);
-      markNullValues(fx,mk);
-      float sms = 0f;
-      float scs = 0f;
-      for (int kw=0; kw<iw; kw++){
-        float cx = correlateX(fx[kw],fx[iw]);
-        if (cx>0f) {
-          scs += 1f;
-          sms += cx;
-        }
-      }
-      cm[iw] = sms/scs;
-      sm[iw] = correlate(ft[0],ft[iw]);
-      System.out.println("sm="+sm[iw]);;
-    }
-    return fx;
-  }
-
 
   public float[][] flatten(float[][] gx) {
     int nw = gx.length;
@@ -399,7 +283,7 @@ public class WellFlattener {
   private float[] smooth(float[] u, float[][] e) {
     int n1 = u.length;
     float[] w = new float[n1];
-    SmoothWithShaping sws = new SmoothWithShaping(20);
+    SmoothWithShaping sws = new SmoothWithShaping(10);
     for (int i1=0; i1<n1; ++i1) {
       int kl = round(u[i1]-_lmin);
       float ei = e[i1][kl];
@@ -766,49 +650,6 @@ public class WellFlattener {
     if(_epower==1f) return abs(d);
     return pow(abs(d),_epower);
   }
-
-  private float correlateX(float[] f, float[] g) {
-    int n1 = f.length;
-    float ff = 0f;
-    float gg = 0f;
-    float fg = 0f;
-    float fa = 0f;
-    float ga = 0f;
-    float ct = 0f;
-    float vt = 0f;
-    float fm = FLT_MAX;
-    float gm = FLT_MAX;
-    for (int i1=0; i1<n1; ++i1) {
-      float fi = f[i1];
-      float gi = g[i1];
-      if (gi!=_nullValue) vt+=1f;
-      if(gi!=_nullValue&&fi!=_nullValue) {
-        fa += fi;
-        ga += gi;
-        ct += 1f;
-        if(fi<fm) fm = fi;
-        if(gi<gm) gm = gi;
-      }
-    }
-    if (ct/vt<0.5f) return -1f;
-    fa /= ct;
-    ga /= ct;
-    for (int i1=0; i1<n1; ++i1) {
-      float fi = f[i1];
-      float gi = g[i1];
-      if(gi!=_nullValue&&fi!=_nullValue) {
-        fi -= fa;
-        gi -= ga;
-        fi -= (fm-fa);
-        gi -= (gm-fa);
-        fg += fi*gi;
-        ff += fi*fi;
-        gg += gi*gi;
-      }
-    }
-    return (fg*fg)/(ff*gg);
-  }
-
 
   private float correlate(float[] f, float[] g) {
     int n1 = f.length;

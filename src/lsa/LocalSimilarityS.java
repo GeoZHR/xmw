@@ -79,7 +79,7 @@ public class LocalSimilarityS {
       _s  = s;
       _a  = a;
       _dir = dir;
-      _sc = 0.001f;
+      _sc = 0.01f;
       //testSpd();
     }
     public void apply(Vec vx, Vec vy) {
@@ -305,7 +305,7 @@ public class LocalSimilarityS {
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     for (int i1=0; i1<n1; ++i1) {
       double x1 = i1+s;
-      if(x1<0||x1>=n1) {x1=i1-s;}
+      //if(x1<0||x1>=n1) {x1=i1-s;}
       as[i1] = si.interpolate(s1,a,x1);
     }
     return as;

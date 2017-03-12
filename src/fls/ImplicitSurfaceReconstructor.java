@@ -16,17 +16,14 @@ import vec.*;
 import pik.*;
 
 /**
- * 2D fast level set method.
- * <p>
- * Based on the works by Yonggang Shi and William Clem Karl, 2008, 
- * A Real-Time Algorithm for the Approximation of Level-Set-Based 
- * Curve Evolution.
+ * Compute an implicit function for 3D salt boundary reconstruction.
  * @author Xinming Wu, Colorado School of Mines
- * @version 2016.16.07
+ * @version 2017.03.06
  */
 
 
 public class ImplicitSurfaceReconstructor {
+
 
   public void testSquare(float[][][] wx, float[][][] fx) {
     int n3 = fx.length;
@@ -131,6 +128,168 @@ public class ImplicitSurfaceReconstructor {
     }}
   }
 
+  public void getImplicitFunc(
+    float sig, float[][] ds, float[][][][] wxs, 
+    float[][][][] ws, float[][][][] fs) {
+    int n3 = wxs[0].length;
+    for (int i3=0; i3<n3; ++i3) {
+      float[][][] fw0 = getImplicitFuncAndWeights(wxs[0][i3]);
+      float[][][] fw1 = getImplicitFuncAndWeights(wxs[0][i3]);
+      fs[0][i3] = fw0[0];
+      fs[1][i3] = fw1[0];
+      ws[0][i3] = mul(fw0[1],gauss(sig,ds[0][i3]));
+      ws[1][i3] = mul(fw1[1],gauss(sig,ds[1][i3]));
+    }
+  }
+
+  private float gauss(float sig, float dx) {
+    return exp(-dx*dx*0.5f/(sig*sig));
+  }
+
+
+  public float[][][] getImplicitFuncAndWeights(float[][] wx) {
+    int n2 = wx.length;
+    int n1 = wx[0].length;
+    float[][] pf = new float[n2][n1];
+    float[][] ws = new float[n2][n1];
+    float[][] dx = new float[n2][n1];
+    short[][] k1 = new short[n2][n1];
+    short[][] k2 = new short[n2][n1];
+    float[][] sg = new float[n2][n1];
+    ClosestPointTransform cpt = new ClosestPointTransform(1,1);
+    cpt.apply(0.0f,wx,dx,k1,k2);
+    signAsignmentH(wx,sg);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      int c1 = k1[i2][i1];
+      int c2 = k2[i2][i1];
+      ws[i2][i1] = wx[c2][c1];
+      pf[i2][i1] = sg[i2][i1]*dx[i2][i1];
+    }}
+    return new float[][][] {pf,ws};
+  }
+
+
+
+  public float[][][] smoothFit(float sig1, float sig2, float sig3, 
+    float[][][][] ws, float[][][][] fs) {
+    int n3 = ws[0].length;
+    int n2 = ws[0][0].length;
+    int n1 = ws[0][0][0].length;
+    float[][][] b = new float[n3][n2][n1];
+    float[][][] r = new float[n3][n2][n1];
+    makeRhs(ws,fs,b);
+    VecArrayFloat3 vb = new VecArrayFloat3(b);
+    VecArrayFloat3 vr = new VecArrayFloat3(r);
+    Smoother3 smoother3 = new Smoother3(sig1,sig2,sig3);
+    A3 a3 = new A3(smoother3,ws);
+    CgSolver cs = new CgSolver(0.001,200);
+    smoother3.applyTranspose(b);
+    cs.solve(a3,vb,vr);
+    smoother3.apply(r);
+    return r;
+  }
+
+    // Conjugate-gradient operators.
+  private static class A3 implements CgSolver.A {
+    A3(Smoother3 s3, float[][][][] wp) 
+    {
+      _s3 = s3;
+      _wp = wp;
+      float n4 = wp.length;
+      float n3 = wp[0].length;
+      float n2 = wp[0][0].length;
+      float n1 = wp[0][0][0].length;
+      _sc = 4f*(sum(wp[0])+sum(wp[1]))/(n1*n2*n3*n4);
+    }
+    public void apply(Vec vx, Vec vy) {
+      VecArrayFloat3 v3x = (VecArrayFloat3)vx;
+      VecArrayFloat3 v3y = (VecArrayFloat3)vy;
+      float[][][] x = v3x.getArray();
+      float[][][] y = v3y.getArray();
+      float[][][] z = copy(x);
+      v3y.zero();
+      _s3.apply(z);
+      addAndScale(-_sc,z,y);
+      applyLhs(_wp,z,y);
+      _s3.applyTranspose(y);
+      addAndScale( _sc,x,y);
+    }
+    private float _sc;
+    private Smoother3 _s3;
+    private float[][][][] _wp;
+  }
+
+
+  private static void applyLhs(float[][][][] ws, float[][][] x, float[][][] y) {
+    int n3 = ws[0].length;
+    int n2 = ws[0][0].length;
+    int n1 = ws[0][0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float ws1 = ws[0][i3][i2][i1];
+      float ws2 = ws[1][i3][i2][i1];
+      y[i3][i2][i1] += (ws1+ws2)*x[i3][i2][i1];
+    }}}
+
+  }
+
+
+  private void makeRhs(float[][][][] ws, float[][][][] fs, float[][][] b) {
+    int n3 = ws[0].length;
+    int n2 = ws[0][0].length;
+    int n1 = ws[0][0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fs1 = fs[0][i3][i2][i1];
+      float ws1 = ws[0][i3][i2][i1];
+      float fs2 = fs[1][i3][i2][i1];
+      float ws2 = ws[1][i3][i2][i1];
+      b[i3][i2][i1] = fs1*ws1+fs2*ws2;
+    }}}
+
+  }
+
+  public float[][] pointsToArray(
+    float[] ds, float[] xs, float[][] ys, float[][] zs) {
+    int np = 0;
+    int ns = xs.length;
+    for (int is=0; is<ns; ++is)
+      np += ys[is].length;
+    float[][] ps = new float[4][np];
+    int ip = 0;
+    for (int is=0; is<ns; ++is) {
+      int nc = ys[is].length;
+      for (int ic=0; ic<nc; ++ic) {
+        ps[3][ip] = ds[is];
+        ps[2][ip] = xs[is];
+        ps[1][ip] = ys[is][ic];
+        ps[0][ip] = zs[is][ic];
+      }
+    }
+    return ps;
+  }
+
+  public void pointsToImage(
+    float[] ys, float[] zs, float[][] pa, float[][] wx) 
+  {
+    int n2 = pa.length;
+    int n1 = pa[0].length;
+    int np = ys.length;
+    for (int ip=0; ip<np; ++ip) {
+      int i2 = round(ys[ip]);
+      int i1 = round(zs[ip]);
+      i2 = max(i2,0);
+      i2 = min(i2,n2-1);
+      i1 = max(i1,0);
+      i1 = min(i1,n1-1);
+      wx[i2][i1] = pa[i2][i1];
+    }
+  }
+
+
   public void pointsToImage(
     float[] xs, float[][] ys, float[][] zs, float[][][] pa, float[][][] wx) 
   {
@@ -155,27 +314,70 @@ public class ImplicitSurfaceReconstructor {
     }
   }
 
-  public void signAsignment(
-    float[][][] wx, float[][][] fx) {
-    int n3 = wx.length;
-    int n2 = wx[0].length;
-    int n1 = wx[0][0].length;
-    for (int i3=0; i3<n3; ++i3) {
-    for (int i2=0; i2<n2; ++i2) {
-      float[] wx32 = wx[i3][i2];
-      float[] fx32 = fx[i3][i2];
-      float mk = 1f;
+  public void signAsignmentH(
+    float[][] wx, float[][] fx) {
+    int n2 = wx.length;
+    int n1 = wx[0].length;
     for (int i1=0; i1<n1; ++i1) {
-      if(wx32[i1]!=0f) {
-        fx32[i1] = 0f;
-        if(i1==0) mk*=-1f;
-        if(i1>0&&wx32[i1-1]==0) mk *= -1f;
+      float mk = 1f;
+    for (int i2=0; i2<n2; ++i2) {
+      if(wx[i2][i1]!=0f) {
+        fx[i2][i1] = 0f;
+        if(i2==0) mk*=-1f;
+        if(i2>0&&wx[i2-1][i1]==0) mk *= -1f;
       } else {
-        fx32[i1] = mk;
+        fx[i2][i1] = mk;
       }
-    }}}
+    }}
+    //despike
+    float[][] fs = zerofloat(n1,n2);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(10);
+    ref.apply(fx,fs);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(fx[i2][i1]!=0) {
+        if(fs[i2][i1]>0) fx[i2][i1] =  1f;
+        if(fs[i2][i1]<0) fx[i2][i1] = -1f;
+      }
+    }}
   }
 
+  public void signAsignmentV(
+    float[][] wx, float[][] fx) {
+    int n2 = wx.length;
+    int n1 = wx[0].length;
+    for (int i2=0; i2<n2; ++i2) {
+      float[] wx2 = wx[i2];
+      float[] fx2 = fx[i2];
+      float mk = 1f;
+    for (int i1=0; i1<n1; ++i1) {
+      if(wx2[i1]!=0f) {
+        fx2[i1] = 0f;
+        if(i1==0) mk*=-1f;
+        if(i1>0&&wx2[i1-1]==0) mk *= -1f;
+      } else {
+        fx2[i1] = mk;
+      }
+    }}
+
+  }
+
+  public void signAsignmentV(
+    float[][][] wx, float[][][] fx) {
+    int n3 = wx.length;
+    for (int i3=0; i3<n3; ++i3)
+      signAsignmentV(wx[i3],fx[i3]);
+  }
+
+  public void signAsignmentH(
+    float[][][] wx, float[][][] fx) {
+    int n3 = wx.length;
+    for (int i3=0; i3<n3; ++i3)
+      signAsignmentH(wx[i3],fx[i3]);
+  }
+
+
+  /*
   public float[][][] smooth(float sig1, float sig2, float sig3, 
     float[][][] wx, float[][][] fx) 
   {
@@ -192,6 +394,7 @@ public class ImplicitSurfaceReconstructor {
     CgSolver cs = new CgSolver(0.001,200);
     smoother3.applyTranspose(b);
     cs.solve(a3,vb,vr);
+    smoother3.apply(r);
     return r;
   }
 
@@ -223,6 +426,7 @@ public class ImplicitSurfaceReconstructor {
     private Smoother3 _s3;
     private float[][][] _wp;
   }
+  */
 
 
   private static void addAndScale(float sc, float[][][] x, float[][][] y) {

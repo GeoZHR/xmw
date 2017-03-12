@@ -1,63 +1,63 @@
 from utils2 import *
 
-#setupForSubset("bag2dTwo")
+setupForSubset("pik")
+pngDir = getPngDir()
+s1,s2 = getSamplings()
+n1,n2 = s1.count,s2.count
 
-
-fxfile = "gx" # input seismic
+fxfile = "pik" # input attribute
+fxfile = "fxs" # input attribute
 
 def main(args):
-  goBag2dOne()
-  #goBag2dTwo()
-def goBag2dOne():
-  global pngDir
-  setupForSubset("bag2dOne")
-  pngDir = getPngDir()
-  s1,s2 = getSamplings()
-  n1,n2 = s1.count,s2.count
+  #goPik()
+  goSeisPik()
+def goSeisPik():
   gx = readImage(fxfile)
-  p1 = []
-  p2 = []
-  c1 = 150
-  c2 = 136
-  r = 105
-  for k in range(37):
-    alpha = k*10*Math.PI/180
-    x1 = c1+r*sin(alpha)
-    x2 = c2+r*cos(alpha)
-    p1.append(x1)
-    p2.append(x2)
   sp = SaltPicker2()
-  pa = sp.applyForInsAmp(gx)
-  print min(pa)
-  print max(pa)
-  #xu = sp.initialBoundary(1,p1,p2)
-  xu = sp.regridBoundary(1,p1,p2)
-  w1 = round(n1*1.5)
-  w2 = round(n2*1.5)
-  plot(gx,cmin=-2,cmax=2,w1=w1,w2=w2,png="seis")
-  plot(pa,cmin=0,cmax=1,xp=[p1,p2],w1=w1,w2=w2,png="initial")
-  plot(pa,cmin=0,cmax=1,xu=xu,w1=w1,w2=w2,png="band")
-  bs = sp.refine(50,1,5,3,xu,pa)
-  '''
-  sp.smooth(10,xu[0])
-  sp.smooth(10,xu[1])
-  xu = sp.regridBoundary(1,xu[0],xu[1])
-  bs = sp.refine(20,1,5,4,xu,pa)
-  '''
-  xu = sp.pickNext(5,1,5,1.5,xu[0],xu[1],pa)
-  plot(gx,cmin=-2,cmax=2,xp=[xu[0],xu[1]],w1=w1,w2=w2,png="final")
+  fx = sp.applyForInsAmp(gx)
+  fx = sub(fx,min(fx))
+  fx = div(fx,max(fx))
+  opp = OptimalPathPicker(4,3)
+  wht = opp.applyForWeight(transpose(fx))
+  tms1 = zerofloat(n2,n1)
+  tms2 = zerofloat(n2,n1)
+  pik1 = opp.forwardPick(100,wht,tms1)
+  pik2 = opp.backwardPick(round(pik1[n2-1]),wht,tms2)
+  x2 = rampfloat(0,1,n2)
+  tt = transpose(tms1)
+  gx = div(gx,max(gx))
+  plot(gx,cmin=-1,cmax=1.0,w1=250,w2=1000,clab="Amplitude",png="seis")
+  plot(fx,cmin=0.1,cmax=1.0,w1=250,w2=1000,clab="Amplitude",png="env")
+  plot(tt,cmap=ColorMap.JET,cmin=0.1,cmax=max(tt),contour=True,w1=250,w2=1000,
+       clab="Travel time",png="time")
+  plot(tt,cmap=ColorMap.JET,cmin=0.1,cmax=max(tt),contour=True,
+          xp=[pik2,x2],w1=250,w2=1000,clab="Travel time",png="timePik")
+  plot(fx,cmin=0.1,cmax=1.0,xp=[pik2,x2],
+        w1=250,w2=1000,clab="Amplitude",png="seisPik")
 
-  opp = OptimalPathPicker(5,3)
-  ft = opp.applyTransform(bs)
-  m2,m1 = len(bs),len(bs[0])
-  wht = opp.applyForWeight(ft)
-  tms1 = zerofloat(m2,m1)
-  tms2 = zerofloat(m2,m1)
+def goPik():
+  fx = readImageL(fxfile)
+  fx = sub(fx,min(fx))
+  fx = div(fx,max(fx))
+  fx = pow(fx,0.5)
+  fx = sub(fx,min(fx))
+  fx = div(fx,max(fx))
+  opp = OptimalPathPicker(3,1)
+  wht = opp.applyForWeight(fx)
+  tms1 = zerofloat(n1,n2)
+  tms2 = zerofloat(n1,n2)
   pik1 = opp.forwardPick(50,wht,tms1)
-  pik2 = opp.backwardPick(round(pik1[m2-1]),wht,tms2)
-  x2 = rampfloat(0,1,m2)
-  plot(bs,cmin=0.001,cmax=1.0,w1=180,w2=690,png="bandMap")
-  plot(bs,cmin=0.001,cmax=1.0,xp=[pik2,x2],w1=180,w2=690,png="pik")
+  pik2 = opp.backwardPick(round(pik1[n1-1]),wht,tms2)
+  x1 = rampfloat(0,1,n1)
+  ft = transpose(fx)
+  tt = transpose(tms1)
+  plot(ft,cmin=0.1,cmax=1.0,w1=180,w2=750,clab="Attribute",png="map")
+  plot(tt,cmin=0.1,cmax=max(tt),contour=True,w1=180,w2=750,
+       clab="Travel time",png="time")
+  plot(tt,cmin=0.1,cmax=max(tt),contour=True,
+          xp=[pik2,x1],w1=180,w2=750,clab="Travel time",png="timePik")
+  plot(ft,cmin=0.1,cmax=1.0,xp=[pik2,x1],
+        w1=180,w2=750,clab="Attribute",png="mapPik")
 
 def goBag2dTwo():
   global pngDir
@@ -208,31 +208,41 @@ def smooth(sig1,sig2,sigs,x):
 # graphics
 
 gray = ColorMap.GRAY
-jet = ColorMap.JET
+cjet = ColorMap.JET
+alpha = fillfloat(1.0,256); alpha[0] = 0.0
+ajet = ColorMap.setAlpha(cjet,alpha)
 
 def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
-        cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 
+        cmap=gray,cmin=None,cmax=None,perc=None,contour=False,
+        w1=None,w2=None,clab=None,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation);
   #panel.setVInterval(0.2)
   n2 = len(f)
   n1 = len(f[0])
-  s2 = Sampling(n2)
-  s1 = Sampling(n1)
+  s2 = Sampling(n2,1,0)
+  s1 = Sampling(n1,1,0)
   panel.setHLabel("Inline (traces)")
-  panel.setVLabel("Time (samples)")
-
-  panel.setHLimits(0,0,n2-1)
-  panel.setVLimits(0,0,n1-1)
+  panel.setVLabel("Depth (samples)")
+  ft = fillfloat(-10,n1,n2)
+  panel.setHLimits(0,0,s2.last)
+  panel.setVLimits(0,0,s1.last)
   pxv = panel.addPixels(0,0,s1,s2,f);
   #pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
   pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  pxv.setColorModel(ColorMap.GRAY)
+  pxv.setColorModel(cmap)
+  if perc:
+    print perc
+    pxv.setPercentiles(100-perc,perc)
   if cmin and cmax:
     pxv.setClips(cmin,cmax)
-  else:
-    pxv.setClips(min(f),max(f))
   #panel.setTitle("normal vectors")
+  if contour:
+    cv = panel.addContours(s1,s2,f)
+    cv.setContours(120)
+    #cv.setColorModel(ColorMap.JET)
+    cv.setLineWidth(3.0)
+    cv.setLineColor(Color.BLACK)
   if phi:
     cv = panel.addContours(phi)
     cv.setContours([0])
@@ -240,7 +250,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
     cv.setLineWidth(1.0)
   if xp:
     ptv = panel.addPoints(0,0,xp[0],xp[1])
-    ptv.setLineColor(Color.RED)
+    ptv.setLineColor(Color.MAGENTA)
     ptv.setLineWidth(3.0)
   if xu:
     np = len(xu[0])
@@ -283,7 +293,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
   if(clab):
     cb = panel.addColorBar();
     cb.setLabel(clab)
-  panel.setColorBarWidthMinimum(130)
+  panel.setColorBarWidthMinimum(50)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
@@ -295,7 +305,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
   #frame.setSize(1190,760)
   frame.setFontSize(14)
   if pngDir and png:
-    frame.paintToPng(720,3.333,pngDir+png+".png")
+    frame.paintToPng(1080,3.333,pngDir+png+".png")
 
 #############################################################################
 # Run the function main on the Swing thread

@@ -128,7 +128,7 @@ def getPngDir():
 #############################################################################
 # read/write images
 
-def readImage2d(name):
+def readImage2d(n1,n2,name):
   """ 
   Reads an image from a file with specified name.
   name: base name of image file; e.g., "tpsz"

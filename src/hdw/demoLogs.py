@@ -13,8 +13,8 @@ wufile = "deepSubFlatten"
 curves  = ["v", "p", "d"]
 
 logDir = "../../../data/seis/hdw/logs/"
-pngDir = None
 pngDir =  "../../../png/hdw/logs/"
+pngDir = None
 
 plotOnly = False
 
@@ -30,8 +30,9 @@ def main(args):
   #goPorisityFlatten()
   #goDensityFlatten()
   #goVelocityFlatten()
-  #goGammaFlatten()
-  goGammaFlattenError()
+  #goVelocityFlattenSlides()
+  goGammaFlatten()
+  #goGammaFlattenError()
 def goGammaFlatten():
   lmin,lmax=-250,250
   sz,dp = goDeepGammaLogs()
@@ -52,8 +53,10 @@ def goGammaFlatten():
   wh = round(15.5*nw)
   plot(sz,sw,dc,wh=wh,cmin=0.001,cmax=200,hint=5,cbar=clab4,png="sg")
   for w in [1,nw]:
+    sm = zerofloat(nw)
     ww.setGate(w,0.85)
-    df = ww.flatten(dc)
+    df = ww.flatten(dc,sm)
+    plotCurve(sm,wh=wh-72,png="cg"+str(w))
     plot(sz,sw,df,wh=wh,cmin=0.001,cmax=200,hint=5,
         vlab=vlab,cbar=clab4,png="sgf"+str(w))
 
@@ -93,6 +96,58 @@ def goGammaFlattenError():
     plotc(dtran(et[0]),perc=95,clab="Error",png="e"+str(w))
     plot(sz,sw,df,wh=wh,cmin=0.001,cmax=200,hint=5,
         vlab=vlab,cbar=clab4)
+
+def goVelocityFlattenSlides():
+  lmin,lmax=-200,350
+  sz,dp = goDeepVelosityLogs()
+  wh = WellHelper()
+  d = 3
+  dc = wh.resample(d,dp)
+  fk = 0.0003048  #1 ft = 0.0003048 km
+  nz = len(dc[0])
+  sz = Sampling(nz,d*fk,0)#sz.getFirst())
+  nw = len(dc)
+  sw = Sampling(nw,1,1)
+  ww = WellFlattener(lmin,lmax)
+  ww.setStrainMax(0.1)
+  df = ww.flatten(dc)
+  clab4 = "Velocity (km/s)"
+  m = 3
+  mw = nw*m
+  dcp = fillfloat(-999.25,nz,mw)
+  for ik in range(0,nw,1):
+    dcp[ik*m] = dc[ik]
+  wh = 20*mw
+  sw = Sampling(mw,1.0/m,1)
+  plot(sz,sw,dcp,wh=wh,cmin=2.0,cmax=6.0,hint=1,cbar=clab4,png="svSlide")
+  vlab = "Relative geologic time"
+  for w in [1,nw]:
+    ww.setGate(w,0.85)
+    df,us = ww.flattenX(dc)
+    dfp = fillfloat(-999.25,nz,mw)
+    it = int(1.348/(d*fk))
+    it = int(0.8/(d*fk))
+    its = [0.24,0.363,0.525,0.679,0.8,0.886,1.041,1.195,1.38,1.673]
+    hz = []
+    hw = []
+    ht = []
+    for kt in range(len(its)):
+      it = int(its[kt]/(d*fk))
+      hzt,hwt = ww.pickTops(it,sz,Sampling(nw,1,1),us,dc)
+      htt = fillfloat(its[kt],len(hzt))
+      hz.append(hzt)
+      hw.append(hwt)
+      ht.append(htt)
+    for ik in range(0,nw,1):
+      dfp[ik*m] = df[ik]
+    plot(sz,sw,dfp,wh=wh,cmin=2.0,cmax=6.0,hint=1,vlab=vlab,
+        cbar=clab4,png="svfSlide"+str(w))
+    if w>1:
+      plot(sz,sw,dfp,z=ht,w=hw,wh=wh,cmin=2.0,cmax=6.0,hint=1,vlab=vlab,
+        cbar=clab4,png="svfSlidePikt"+str(w))
+      plot(sz,sw,dcp,z=hz,w=hw,wh=wh,cmin=2.0,cmax=6.0,hint=1,vlab="Depth (km)",
+        cbar=clab4,png="svfSlidePikz"+str(w))
+
 
 def goVelocityFlatten():
   lmin,lmax=-200,350
@@ -499,7 +554,7 @@ backgroundColor = Color.WHITE
 cjet = ColorMap.JET
 alpha = fillfloat(1.0,256); alpha[0] = 0.0
 ajet = ColorMap.setAlpha(cjet,alpha)
-def plot(sz,sw,fx,wh=500,wv=900,cmin=None,cmax=None,
+def plot(sz,sw,fx,z=None,w=None,wh=500,wv=900,cmin=None,cmax=None,
     hint=2,vlab="Depth (km)",cbar=None,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sp.setSize(wh,wv)
@@ -508,14 +563,41 @@ def plot(sz,sw,fx,wh=500,wv=900,cmin=None,cmax=None,
   sp.setHLabel("Log index")
   sp.addColorBar(cbar)
   sp.plotPanel.setColorBarWidthMinimum(72)
+  sp.setHLimits(sw.first-sw.delta/2,sw.last)
   pv = sp.addPixels(sz,sw,fx)
   pv.setInterpolation(PixelsView.Interpolation.NEAREST)
   pv.setColorModel(ajet)
+  if z and w:
+    for k in range(len(z)):
+      hpv = sp.addPoints(z[k],w[k])
+      hpv.setLineColor(Color.RED)
+      hpv.setLineWidth(3)
   sp.setFontSize(20)
   if cmin and cmax:
     pv.setClips(cmin,cmax)
   if png and pngDir:
     sp.paintToPng(1080,3.33333,pngDir+png+".png")
+
+def plotCurve(sm,wh=500,wv=220,hint=5,png=None):
+  n = len(sm)
+  panel = PlotPanel(1,1,PlotPanel.Orientation.X1RIGHT_X2UP)
+  panel.mosaic.setHeightElastic(0,25)
+  panel.setHLimits(0,1,n)
+  s1 = Sampling(n,1,1)
+  sv = panel.addPoints(0,0,s1,sm)
+  sv.setLineWidth(2)
+  panel.setHInterval(hint)
+  panel.setVLabel("Confidence")
+  panel.setHLabel("Log index")
+  panel.setVLimits(0,0.75,1.0)
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(backgroundColor)
+  frame.setFontSize(20)
+  frame.setSize(wh,wv)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
 
 def plotc(c,s=None,u=None,cmin=0.0,cmax=0.0,perc=None,clab="Error", png=None):
   n,nlag = len(c[0]),len(c)

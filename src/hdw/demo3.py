@@ -16,39 +16,109 @@ d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 
 #############################################################################
 fxfile = "gxsss" # 
+gtfile = "gt" # 
 flfile = "fl" # 
 ftfile = "ft" # 
 fltfile = "flt" # 
 fttfile = "ftt" # 
 p2file = "p2" # seismic slopes
 p3file = "p3" # seismic slopes
+epfile = "ep" # seismic slopes
+uxfile = "ux"
+usfile = "us"
 #pngDir = getPngDir()
 pngDir = None
 plotOnly = False
 
 def main(args):
+  #goPath()
+  #goSlopes()
+  #goFlattenWithSlopes()
   goFlatten()
+
+def goPath():
+  n2 = 5
+  n3 = 5
+  ws = fillfloat(0.1,n2,n3)
+  ws[2][2] = 1
+  dk = Dijkstra(ws)
+  dt = zerofloat(n2*n3)
+  pd = zeroint(n2*n3)
+  dk.apply(0,dt,pd)
+  dk.printPath(n3,pd,0,n2*n3-1)
+
+def goSlopes():
+  fx = readImage(fxfile)
+  if not plotOnly:
+    p2 = zerofloat(n1,n2,n3)
+    p3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lsf = LocalSlopeFinder(4.0,1.0,1.0,5.0)
+    lsf.findSlopes(fx,p2,p3,ep)
+    writeImage(p2file,p2)
+    writeImage(p3file,p3)
+    #writeImage(epfile,ep)
+  else:
+    ep = readImage(epfile)
+  plot3(fx)
+  ep = pow(ep,8)
+  plot3(ep,cmin=0.1,cmax=0.8)
+def goFlattenWithSlopes():
+  fx = readImage(fxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  ep = readImage(epfile)
+  ep = pow(ep,6.0)
+  fl = Flattener3()
+  fl.setIterations(0.01,100)
+  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+  gt = fm.flatten(fx)
+  writeImage(gtfile,gt)
+  gt = readImage(gtfile)
+  plot3(fx)
+  plot3(gt)
 
 def goFlatten():
   fx = readImage(fxfile)
-  #lsf = LocalSlopeFinder(8,2,2,5)
-  #p2 = zerofloat(n1,n2,n3)
-  #p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  #lsf.findSlopes(fx,p2,p3,ep)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  ep = readImage(epfile)
+  ep = pow(ep,12)
+  sub(ep,min(ep),ep)
+  div(ep,max(ep),ep)
   rgf = RecursiveGaussianFilterP(1)
-  rgf.apply000(fx,fx)
+  #rgf.apply000(fx,fx)
   df = DynamicFlattener(-10,30)
-  df.setStrainMax(0.2)
-  df.setWindow(3,100)
-  df.setGate(2)
+  df.setErrorExponent(1)
+  df.setStrainMax(0.5)
+  df.setWindow(2,150)
+  df.setGate(10)
   df.setErrorExponent(1)
   df.setShiftSmoothing(1)
   df.setErrorSmoothing(3)
-  ux = zerofloat(n1,n2,n3)
-  gx = df.flattenXL(0,0,ep,fx,ux)
+  #ux = zerofloat(n1,n2,n3)
+  #gx = df.flattenXL(0,0,ep,copy(fx),ux)
+  #writeImage(uxfile,ux)
+  ux = readImage(uxfile)
+  ss = SmoothWithSlopes()
+  gx = ss.flatten(ux,fx)
+  us = ss.smooth(ep,p2,p3,ux)
+  writeImage(usfile,us)
+  us = readImage(usfile)
+  gh = ss.flatten(us,fx)
   plot3(fx)
   plot3(gx)
+  plot3(gh)
+  gt = readImage(gtfile)
+  plot3(gt)
+  hs = ss.getHorizons(n1,1,0,us)
+  hs = mul(hs,2)
+  c1 = Sampling(n1,2,0)
+  plot3p(c1,s2,s3,fx,k1=51,k2=445,k3=208,cmin=-1.5,cmax=1.5)
+  plot3p(c1,s2,s3,gh,k1=46,k2=445,k3=208,cmin=-1.5,cmax=1.5)
+  plot3p(c1,s2,s3,fx,hv=hs,k1=120,k2=445,k3=208,cmin=-1.5,cmax=1.5)
+  plot3(fx,surf=div(hs[46],2))
+
   '''
   n2 = 1000
   n3 = 1000
@@ -112,6 +182,93 @@ def hueFillExceptMin(alpha):
 
 
 backgroundColor = Color.WHITE
+
+def plot3p(s1,s2,s3,f,g=None,hv=None,k1=None,k2=None,k3=None,cmap=ColorMap.GRAY,
+        cmin=-1,cmax=1,clab=None,cint=0.1,png=None):
+  width,height,cbwm = 800,1200,200
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  print n1
+  print n2
+  print n3
+  orient = PlotPanelPixels3.Orientation.X1DOWN_X2RIGHT;
+  axespl = PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM
+  panel = PlotPanelPixels3(orient,axespl,s1,s2,s3,f)
+  #panel.mosaic.setWidthElastic(0,100)
+  #panel.mosaic.setWidthElastic(0,50)
+  panel.mosaic.setHeightElastic(0,65)
+  #panel.mosaic.setHeightElastic(1,100)
+  panel.setSlice23(k1)
+  panel.setSlice13(k2)
+  panel.setSlice12(k3)
+  #panel.setSlice103(70)
+  panel.setClips(cmin,cmax)
+  if clab:
+    cbar = panel.addColorBar(clab)
+    cbar.setInterval(cint)
+  panel.setColorBarWidthMinimum(50)
+  panel.setLabel1("Depth (samples)")
+  panel.setLabel2("Inline (traces)")
+  panel.setLabel3("Crossline (traces)")
+  panel.setInterval2(50)
+  panel.setInterval3(50)
+  panel.setColorModel(ColorMap.GRAY)
+  panel.setLineColor(Color.YELLOW)
+  panel.setHLimits(0,s2.first,s2.last)
+  panel.setVLimits(0,s3.first,s3.last)
+  panel.setVLimits(1,s1.first,s1.last)
+  panel.setHLimits(1,s2.first,s2.last)
+  if g:
+    pv12 = PixelsView(s1,s2,slice12(k3,g))
+    pv12.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
+    pv13 = PixelsView(s1,s3,slice13(k2,g))
+    pv13.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
+    pv23 = PixelsView(s2,s3,slice23(k1,g))
+    pv23.setOrientation(PixelsView.Orientation.X1RIGHT_X2UP)
+    for pv in [pv12,pv13,pv23]:
+      pv.setColorModel(cmap)
+      if cmin!=cmax:
+        pv.setClips(cmin,cmax)
+    panel.pixelsView12.tile.addTiledView(pv12)
+    panel.pixelsView13.tile.addTiledView(pv13)
+    panel.pixelsView23.tile.addTiledView(pv23)
+  if hv:
+    nh = len(hv)
+    hd = HorizonDisplay()
+    cv12 = hd.slice12(k3,s2,hv)
+    cv13 = hd.slice13(k2,s3,hv)
+    cv23 = hd.slice23X(k1,s2,s3,div(hv,(float)(s1.getDelta())))
+    mp = ColorMap(0,nh,ColorMap.JET)
+    print nh
+    k = 1
+    for ih in range(0,nh-3,15):
+      color = Color.MAGENTA
+      if(k%4==0): color=Color.MAGENTA
+      if(k%4==1): color=Color.GREEN
+      if(k%4==2): color=Color.RED
+      if(k%4==3): color=Color.BLUE
+      k = k+1
+      pv12 = PointsView(cv12[ih][1],cv12[ih][0])
+      pv13 = PointsView(cv13[ih][1],cv13[ih][0])
+      pv12.setLineWidth(3.0)
+      pv13.setLineWidth(3.0)
+      pv12.setLineColor(color)#mp.getColor(ih))
+      pv13.setLineColor(color)#mp.getColor(ih))
+      panel.pixelsView12.tile.addTiledView(pv12)
+      panel.pixelsView13.tile.addTiledView(pv13)
+      nc = len(cv23[ih][0])
+      for ic in range(nc):
+        pv23 = PointsView(cv23[ih][0][ic],cv23[ih][1][ic])
+        pv23.setLineWidth(3.0)
+        pv23.setLineColor(color)#mp.getColor(ih))
+        panel.pixelsView23.tile.addTiledView(pv23)
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(Color(0xfd,0xfe,0xff)) # easy to make transparent
+  frame.setFontSize(14)#ForSlide(1.0,0.8)
+  frame.setSize(width,height)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(720,4,pngDir+"/"+png+".png")
 
 def plot2f(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
   n2 = len(f)
@@ -453,10 +610,13 @@ def plot3(f,g=None,k2=0,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     #pg.setStates(ss)
     sf.world.addChild(pg)
   if surf:
-    tg = TriangleGroup(True, s3, s2, surf)
+    sd = SurfaceDisplay()
+    xyz,rgb = sd.buildTrigs(s3,s2,surf)
+    #tg = TriangleGroup(True, s3, s2, surf)
+    tg = TriangleGroup(True,xyz,rgb)
     states = StateSet()
     cs = ColorState()
-    cs.setColor(Color.CYAN)
+    #cs.setColor(Color.ORANGE)
     states.add(cs)
     lms = LightModelState()
     lms.setTwoSide(True)
@@ -468,7 +628,7 @@ def plot3(f,g=None,k2=0,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     states.add(ms)
     tg.setStates(states);
     sf.world.addChild(tg)
-  ipg.setSlices(232,k2,0)
+  ipg.setSlices(329,445,208)
   if cbar:
     sf.setSize(987,700)
   else:
@@ -477,12 +637,12 @@ def plot3(f,g=None,k2=0,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.3*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.9*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.5)
+  ov.setScale(1.4)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.05,-0.08))
-  ov.setAzimuthAndElevation(25,45.0)
+  ov.setTranslate(Vector3(-0.05,-0.05,0.02))
+  ov.setAzimuthAndElevation(135,25.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

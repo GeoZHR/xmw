@@ -7,13 +7,13 @@ Version: 2016.06.01
 
 
 from utils import * 
-#setupForSubset("semblance")
+setupForSubset("semblance")
 #setupForSubset("channel")
 #setupForSubset("surface")
 #setupForSubset("env")
 #setupForSubset("semblance3d")
 #setupForSubset("xue")
-setupForSubset("scan")
+#setupForSubset("scan")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()

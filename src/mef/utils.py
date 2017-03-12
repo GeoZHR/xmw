@@ -104,7 +104,12 @@ def readImageLittle(name):
   ais.readFloats(image)
   ais.close()
   return image
-
+def writeImageM(name,image):
+  fileName = seismicDir+name+".rsf@"
+  aos = ArrayOutputStream(fileName)
+  aos.writeFloats(image,ByteOrder.LITTLE_ENDIAN)
+  aos.close()
+  return image
 
 def writeImage(name,image):
   """ 

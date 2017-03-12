@@ -66,7 +66,7 @@ public class SaltPicker2 {
     return xus;
   }
 
-  private void smooth(float sig, float[] xu) {
+  public void smooth(float sig, float[] xu) {
     RecursiveExponentialFilter.Edges edges =
       RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sig);
@@ -74,7 +74,7 @@ public class SaltPicker2 {
     ref.apply1(xu,xu);
   }
 
-  private void smooth(float sig, float[][] xu) {
+  public void smooth(float sig, float[][] xu) {
     int np = xu[0].length;
     RecursiveExponentialFilter.Edges edges =
       RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;

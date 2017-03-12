@@ -79,8 +79,9 @@ def main(args):
   #goSemblanceS()
   #goSemblance()
   #goOrientScan()
-  goThinX()
+  #goThinX()
   #goSkin()
+  goSmooth()
   #goFirstScan()
 
 def goSemblanceS():
@@ -238,9 +239,9 @@ def goSkin():
   else:
     skins = readSkins(fskbase)
   plot3(gx,skins=skins,png="skins")
-  '''
-  for k in range(20,30,1):
+  for k in range(20,40,1):
     plot3(gx,skins=[skins[k]],clab="skin"+str(k))
+  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,)
   '''
@@ -251,19 +252,25 @@ def goSmooth():
   fsigma = 8.0
   fl = readImage(flfile)
   gx = readImage(gxfile)
-  skins = readSkins(fskgood)
+  skins = readSkins(fskbase)
   flt = zerofloat(n1,n2,n3)
+  fm = fillfloat(-1000,n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
+  fsx.getFaultMask(skins,fm)
   p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
   writeImage(epfile,ep)
-  writeImage(gsxfile,gsx)
+  #writeImage(gsxfile,gsx)
+  writeImageM("seis",gx)
+  writeImageM("seisSmooth",gsx)
+  writeImageM("fmask",fm)
   plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="fli")
   plot3(gsx,png="gsx")
+
 
 def goSlip():
   print "goSlip ..."

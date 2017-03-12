@@ -19,6 +19,7 @@ import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import vec.*;
 import util.*;
+import java.util.*;
 
 /**
  * Seismic flattening with dynamic warping.
@@ -68,7 +69,7 @@ public class DynamicFlattener {
     _lmax = shiftMax;
     _nl = 1+_lmax-_lmin;
     _si = new SincInterpolator();
-    _extrap = ErrorExtrapolation.NEAREST;
+    _extrap = ErrorExtrapolation.AVERAGE;
   }
 
   public void setGate(int ud) {
@@ -81,7 +82,7 @@ public class DynamicFlattener {
     _lmax = shiftMax;
     _nl = 1+_lmax-_lmin;
     _si = new SincInterpolator();
-    _extrap = ErrorExtrapolation.NEAREST;
+    _extrap = ErrorExtrapolation.AVERAGE;
   }
 
 
@@ -292,6 +293,45 @@ public class DynamicFlattener {
     smoothShifts(u,u);
   }
 
+  public float[][][] flatten(
+    int c2, int c3, float wt, 
+    float[][][] el, float[][][] fx, float[][][] ux) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][] wx = new float[n3][n2];
+    float[][][] gx = new float[n3][n2][n1];
+    gx[c3][c2] = fx[c3][c2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float ws = 0f;
+      float[] el32 = el[i3][i2];
+      for (int i1=0; i1<n1; ++i1)
+        ws += el32[i1];
+      wx[i3][i2] = ws/n1;
+    }}
+    int np = n2*n3;
+    int pd[] = new int[np];
+    float ds[] = new float[np];
+    int s = getPath(c2,c3,wx,ds,pd);
+    int[] id = rampint(0,1,np);
+    quickIndexSort(ds,id);
+    for (int ip=0; ip<np; ++ip) {
+      int x = id[ip];
+      while (x!=s) {
+      }
+
+    }
+    return gx;
+  }
+
+  private int getPath(int p2, int p3, float[][] wx, float[] ds, int[] pd) {
+    Dijkstra dk = new Dijkstra(wx);
+    int s = dk.coord2Index(p2,p3);
+    dk.apply(s,ds,pd);
+    return s;
+  }
+
   public float[][][] flattenILX(int p2, int p3, float[][][] el, 
     float[][][] fx, float[][][] ux) 
   {
@@ -299,10 +339,11 @@ public class DynamicFlattener {
     final int n2 = fx[0].length;
     final int n1 = fx[0][0].length;
     final float[][][] gx = new float[n3][n2][n1];
+    final float[][] sm = new float[n3][n2];
     final int[] ct = new int[1];
-    Parallel.loop(100,new Parallel.LoopInt() {
+    Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
-      gx[i3] =flatten(el[i3],fx[i3],ux[i3]);
+      gx[i3] =flatten(el[i3],fx[i3],ux[i3],sm[i3]);
       ct[0] += 1;
       System.out.println(round(ct[0]*100f/n3)+"% done...");
     }});
@@ -324,11 +365,12 @@ public class DynamicFlattener {
     RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(2);
     rgf.apply000(fx,fx);
     final float[][][] gx = new float[n3][n2][n1];
+    final float[][] sm = new float[n3][n2];
     final int[] ct = new int[1];
     final float[][] fx3 = fx[p3];
     final float[][] el3 = el[p3];
     final float[][] ux3 = ux[p3];
-    fx[p3] = flatten(el3,fx3,ux3);
+    fx[p3] = flatten(el3,fx3,ux3,sm[p3]);
     _lmin = -10;
     _lmax =  10;
     Parallel.loop(400,new Parallel.LoopInt() {
@@ -336,6 +378,7 @@ public class DynamicFlattener {
       float[][] fx2 = new float[n3][n1];
       float[][] el2 = new float[n3][n1];
       float[][] ux2 = new float[n3][n1];
+      float[] sm2 = new float[n3];
       int b3 = p3;
       int e3 = n3-1;
       int d3 = 1;
@@ -345,11 +388,12 @@ public class DynamicFlattener {
         fx2[k3] = fx[i3][i2];
         el2[k3] = el[i3][i2];
         ux2[k3] = ux[i3][i2];
+        sm2[k3] = sm[i3][i2];
         k3++;
       }
       ct[0] += 1;
       System.out.println(round(ct[0]*100f/n2)+"% done...");
-      float[][] gx2 =flatten(el2,fx2,ux2);
+      float[][] gx2 =flatten(el2,fx2,ux2,sm2);
       k3 = 0;
       for (int i3=b3; i3!=e3; i3+=d3) {
         gx[i3][i2] = gx2[k3];
@@ -372,16 +416,19 @@ public class DynamicFlattener {
     final int n3 = fx.length;
     final int n2 = fx[0].length;
     final int n1 = fx[0][0].length;
+    final float[][] sm = new float[n3][n2];
     final float[][][] gx = new float[n3][n2][n1];
     final int[] ct = new int[1];
     final float[][] fx2 = new float[n3][n1];
     final float[][] el2 = new float[n3][n1];
     final float[][] ux2 = new float[n3][n1];
+    sm[p3][p2] = 1f;
+    final float[] sm2 = new float[n3];
     for (int i3=0; i3<n3; ++i3) {
       fx2[i3] = fx[i3][0];
       el2[i3] = el[i3][0];
     }
-    float[][] gx2 = flatten(el2,fx2,ux2);
+    float[][] gx2 = flatten(el2,fx2,ux2,sm2);
     for (int i3=0; i3<n3; ++i3) {
       ux[i3][0] = ux2[i3];
       fx[i3][0] = gx2[i3];
@@ -390,7 +437,7 @@ public class DynamicFlattener {
     public void compute(int i3) {
       ct[0] += 1;
       System.out.println(ct[0]*100f/n3+"% done...");
-      gx[i3]=flatten(el[i3],fx[i3],ux[i3]);
+      gx[i3]=flatten(el[i3],fx[i3],ux[i3],sm[i3]);
     }});
     /*
     float[][][] hs = new float[n1][n3][n2];
@@ -410,9 +457,39 @@ public class DynamicFlattener {
     return gx;
   }
 
+  public float[][][] refineIL(
+    float[][][] fx, float[][][] ux) {
+    _ud = 5;
+    _lmin = -5;
+    _lmax =  5;
+    //_bstrain1 = (int)ceil(1.0/0.25);;
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] gx = new float[n3][n2][n1];
+    final int[] ct = new int[1];
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      ct[0] += 1;
+      float[][] fx2 = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3)
+        fx2[i3] = fx[i3][i2];
+      float[][] el2 = fillfloat(0f,n1,n3);
+      float[][] ux2 = new float[n3][n1];
+      float[] sm2 = fillfloat(1f,n3);
+      System.out.println(ct[0]*100f/n2+"% done...");
+      float[][] gx2 =flatten(el2,fx2,ux2,sm2);
+      for (int i3=0; i3<n3; ++i3) {
+        gx[i3][i2]  = gx2[i3];
+      }
+    }});
+    return gx;
+  }
+
+
 
   public float[][] flatten(
-    float[][] el, float[][] fx, float[][] ux) 
+    float[][] el, float[][] fx, float[][] ux, float[] sm) 
   {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -420,26 +497,27 @@ public class DynamicFlattener {
     gx[0] = fx[0];
     float[] up = findShifts(fx[0],fx[1]);
     gx[1] = applyShifts(up,fx[1]);
-    for (int i1=0; i1<n1; ++i1) {
-      if(ux[0][i1]==0f) ux[0][i1] = i1;
-      ux[1][i1] = up[i1]+i1;
-    }
+    for (int i1=0; i1<n1; ++i1)
+      ux[1][i1] = up[i1];
     for (int i2=2; i2<n2; ++i2) {
       float mk = 0f;
       float[][] e2 = fillfloat(mk,_nl,n1);
-      computeErrors(i2,up,el[i2],gx,fx[i2],e2);
+      computeErrors(i2,up,el[i2],sm,gx,fx[i2],e2);
       findShifts(mk,e2,up);
       //int umin = round(min(up))-20;
       //int umax = round(max(up))+20;
       //setShiftMax(umin,umax);
       gx[i2] = applyShifts(up,fx[i2]);
+      sm[i2] = correlate(gx[0],gx[i2]);
+      //System.out.println("smi="+sm[i2]);
       for (int i1=0; i1<n1; ++i1) {
-        float xp = up[i1]+i1;
+        float xp = up[i1];//+i1;
         ux[i2][i1] =  xp;
       }
     }
     return gx;
   }
+
 
   private void findShifts(float mk, float[][] e2, float[] up) {
     int n1 = e2.length;
@@ -454,7 +532,6 @@ public class DynamicFlattener {
     float[][] d = accumulateForward(e2);
     backtrackReverse(d,e2,up);
     smoothShifts(up,up);
-
   }
 
 
@@ -1448,7 +1525,7 @@ public class DynamicFlattener {
    */
   private void computeErrors(
     int m2, float[] u, float[] el, 
-    float[][] f, float[] g, float[][] e) {
+    float[] sm, float[][] f, float[] g, float[][] e) {
     int n1 = g.length;
     int nl = _nl;
     int n1m = n1-1;
@@ -1477,15 +1554,22 @@ public class DynamicFlattener {
       int illo = max(0,   -_lmin-i1); // see notes
       int ilhi = min(nl,n1-_lmin-i1); // above
       int ui = round(u[i1]);
-      //if(el[i1]<0.9f) du = 20;
-      int lb = ui-_ud-_lmin;
-      int le = ui+_ud-_lmin+1;
+      int ud = _ud;
+      if(el[i1]>0.8f) ud = 1;
+      int lb = ui-ud-_lmin;
+      int le = ui+ud-_lmin+1;
       illo = max(illo,lb);
       ilhi = min(ilhi,le);
       for (int il=illo,j1=i1+il+_lmin; il<ilhi; ++il,++j1) {
-        float ei = 0f;
-        for (int i2=i2b; i2<m2; i2+=d2)
-          ei += error(f[i2][i1],g[j1]);
+        float ei = error(f[0][i1],g[j1]);
+        float sc = 1f;
+        for (int i2=i2b; i2<m2; i2+=d2) {
+          if(sm[i2]>0.5f) {
+            ei += error(f[i2][i1],g[j1]);
+            sc += 1f;
+          }
+        }
+        ei /= sc;
         e[i1][il] = ei;
         if (average) {
           eavg[il] += ei;
@@ -1532,6 +1616,22 @@ public class DynamicFlattener {
       }
     }
   }
+
+  private float correlate(float[] f, float[] g) {
+    int n1 = f.length;
+    float ff = 0f;
+    float gg = 0f;
+    float fg = 0f;
+    for (int i1=0; i1<n1; ++i1) {
+      float fi = f[i1];
+      float gi = g[i1];
+      fg += fi*gi;
+      ff += fi*fi;
+      gg += gi*gi;
+    }
+    return fg*fg/(ff*gg);
+  }
+
   
   private float[][] correlate(float sig, float[] f, float[] g) {
     int n1 = f.length;
@@ -1631,6 +1731,44 @@ public class DynamicFlattener {
       }
     }
   }
+
+  /**
+   * Non-linear accumulation of alignment errors.
+   * @param dir accumulation direction, positive or negative.
+   * @param b sample offset used to constrain changes in lag.
+   * @param e input array[ni][nl] of alignment errors.
+   * @param d output array[ni][nl] of accumulated errors.
+   */
+  private void accumulateX(int dir, float[] w, 
+    float[][] e, float[][] d) {
+    int nl = e[0].length;
+    int ni = e.length;
+    int nlm1 = nl-1;
+    int nim1 = ni-1;
+    int ib = (dir>0)?0:nim1;
+    int ie = (dir>0)?ni:-1;
+    int is = (dir>0)?1:-1;
+    for (int il=0; il<nl; ++il)
+      d[ib][il] = 0.0f;
+    for (int ii=ib; ii!=ie; ii+=is) {
+      float wi = w[ii];
+      int b = _ud;
+      if(wi>0.8f) b = 1;
+      int ji = max(0,min(nim1,ii-is));
+      for (int il=0; il<nl; ++il) {
+        float dmin = FLT_MAX;
+        for (int k=-b; k<=b; ++k) {
+          int ilk = il+k;
+          ilk = max(ilk,0);
+          ilk = min(ilk,nlm1);
+          float dk = d[ji][ilk];
+          if(dk<dmin) dmin = dk;
+        }
+        d[ii][il] = dmin+e[ii][il];
+      }
+    }
+  }
+
 
   /**
    * Non-linear accumulation of alignment errors.
@@ -2041,6 +2179,22 @@ public class DynamicFlattener {
           _s[i2][i1] = 1.0f/_s[i2][i1];
         }
       }
+    }
+  }
+
+  private class Point {
+    public int i2;
+    public int i3;
+    public float w;
+
+    public Point (int i2, int i3, float w) {
+      set(i2,i3,w);
+    }
+
+    public void set(int i2, int i3, float w) {
+      this.i2 = i2;
+      this.i3 = i3;
+      this.w = w;
     }
   }
 }
