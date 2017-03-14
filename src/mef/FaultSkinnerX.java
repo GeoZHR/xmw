@@ -653,7 +653,6 @@ public class FaultSkinnerX {
     seedList.clear();
     for (FaultCell seed:seeds)
       seedList.add(seed);
-    //seedList.add(seeds[10000]);
 
     // While potential seeds remain, ...
     for (int kseed=0; kseed<nseed; ++kseed) {
@@ -803,7 +802,7 @@ public class FaultSkinnerX {
     float w1 = cell.w1;
     float w2 = cell.w2;
     float w3 = cell.w3;
-    for (int d=0; d<3; d++) {
+    for (int d=0; d<5; d++) {
       float d1 = d*w1;
       float d2 = d*w2;
       float d3 = d*w3;

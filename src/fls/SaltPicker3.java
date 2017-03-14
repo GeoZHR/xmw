@@ -67,7 +67,8 @@ public class SaltPicker3 {
   }
 
 
-  float[][][][] signedPoints(float d, float[][][] pks, float[][][] fss) {
+  public float[][][][] signedPoints(int dp, float d, 
+    float[][][] pks, float[][][] fss) {
     int n3 = fss.length;
     int n2 = fss[0].length;
     int n1 = fss[0][0].length;
@@ -82,7 +83,7 @@ public class SaltPicker3 {
       ArrayList<float[]> fz = new ArrayList<float[]>();
       ArrayList<float[]> fp = new ArrayList<float[]>();
       ArrayList<float[]> fn = new ArrayList<float[]>();
-      for (int ip=0; ip<np; ip+=4) {
+      for (int ip=0; ip<np; ip+=dp) {
         float x1i = x1[ip];
         float x2i = x2[ip];
         float u1i = u1[ip];
@@ -104,7 +105,7 @@ public class SaltPicker3 {
         if(i1m>n1-1) continue;
         if(i2m>n2-1) continue;
         float fsp = fs3[i2p][i1p];
-        fz.add(new float[]{x1i,x2i,0f});
+        fz.add(new float[]{x1i,x2i,i3, 0f});
         if(fsp>0f) {
           fp.add(new float[]{x1p,x2p,i3, d});
           fn.add(new float[]{x1m,x2m,i3,-d});
@@ -114,26 +115,26 @@ public class SaltPicker3 {
         }
       }
       int ns = fz.size();
+      ps[i3] = new float[3][4][ns];
       float[][][] ps3 = ps[i3];
-      ps3 = new float[3][4][ns];
-      for (int ip=0; ip<np; ++ip) {
-        float[] fzi = fz.get(ip);
-        float[] fpi = fp.get(ip);
-        float[] fni = fn.get(ip);
-        ps3[0][0][ip] = fzi[0]; 
-        ps3[0][1][ip] = fzi[1]; 
-        ps3[0][2][ip] = fzi[2]; 
-        ps3[0][3][ip] = fzi[3]; 
+      for (int is=0; is<ns; ++is) {
+        float[] fzi = fz.get(is);
+        float[] fpi = fp.get(is);
+        float[] fni = fn.get(is);
+        ps3[0][0][is] = fzi[0]; 
+        ps3[0][1][is] = fzi[1]; 
+        ps3[0][2][is] = fzi[2]; 
+        ps3[0][3][is] = fzi[3]; 
 
-        ps3[1][0][ip] = fpi[0]; 
-        ps3[1][1][ip] = fpi[1]; 
-        ps3[1][2][ip] = fpi[2]; 
-        ps3[1][3][ip] = fpi[3]; 
+        ps3[1][0][is] = fpi[0]; 
+        ps3[1][1][is] = fpi[1]; 
+        ps3[1][2][is] = fpi[2]; 
+        ps3[1][3][is] = fpi[3]; 
 
-        ps3[1][0][ip] = fni[0]; 
-        ps3[1][1][ip] = fni[1]; 
-        ps3[1][2][ip] = fni[2]; 
-        ps3[1][3][ip] = fni[3]; 
+        ps3[2][0][is] = fni[0]; 
+        ps3[2][1][is] = fni[1]; 
+        ps3[2][2][is] = fni[2]; 
+        ps3[2][3][is] = fni[3]; 
       }
     }
     return ps;
@@ -179,15 +180,18 @@ public class SaltPicker3 {
       x1n[i] = cx1.interpolate(si);
       x2n[i] = cx2.interpolate(si);
     }
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2);
+    float[] g1 = new float[n];
+    float[] g2 = new float[n];
+    rgf.apply1(x1n,g1);
+    rgf.apply1(x2n,g2);
     for (int i=0; i<n; ++i) {
-      int ip = i+1; if(ip==n) ip=0;
-      int im = i-1; if(im<0)  im=n-1;
-      float g1 = x1n[ip]-x1n[im];
-      float g2 = x2n[ip]-x2n[im];
-      float gs = sqrt(g1*g1+g2*g2);
-      if(gs>0.0f){g1/=gs;g2/=gs;}
-      u1n[i] = -g2;
-      u2n[i] =  g1;
+      float g1i = g1[i];
+      float g2i = g2[i];
+      float gsi = sqrt(g1i*g1i+g2i*g2i);
+      if(gsi>0.0f){g1i/=gsi;g2i/=gsi;}
+      u1n[i] = -g2i;
+      u2n[i] =  g1i;
     }
     return new float[][]{x1n,x2n,u1n,u2n};
   }

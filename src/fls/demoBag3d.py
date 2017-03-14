@@ -66,12 +66,13 @@ def goPicker3():
   fs = zerofloat(n1,n2,n3)
   sp3 = SaltPicker3()
   pks = sp3.pick3(25,xs,ys,zs,pa,fs)
+  sps = sp3.signedPoints(4,10,pks,fs)
   for k3 in range(100,150,1):
     gx3 = gx[k3]
     pk3 = pks[k3]
     w1 = round(n1)
     w2 = round(n2)
-    plot2(gx3,cmin=-2,cmax=2,xp=[pk3[0],pk3[1]],w1=w1,w2=w2)
+    plot2(gx3,cmin=-2,cmax=2,xp=[pk3[0],pk3[1]],ps=sps[k3],w1=w1,w2=w2)
   '''
   lgs = getLineGroups(2,zs,ys,xs)
   rgf1 = RecursiveGaussianFilter(3)
@@ -397,7 +398,7 @@ def addColorBar(frame,clab=None,cint=None):
   frame.add(cbar,BorderLayout.EAST)
   return cbar
 
-def plot2(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
+def plot2(f,xp=None,ps=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
         cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   panel = PlotPanel(1,1,orientation);
@@ -429,6 +430,22 @@ def plot2(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
     ptv = panel.addPoints(0,0,xp[0],xp[1])
     ptv.setLineColor(Color.RED)
     ptv.setLineWidth(3.0)
+  if ps:
+    ptv1 = panel.addPoints(0,0,ps[0][0],ps[0][1])
+    ptv2 = panel.addPoints(0,0,ps[1][0],ps[1][1])
+    ptv3 = panel.addPoints(0,0,ps[2][0],ps[2][1])
+    ptv1.setLineStyle(PointsView.Line.NONE)
+    ptv2.setLineStyle(PointsView.Line.NONE)
+    ptv3.setLineStyle(PointsView.Line.NONE)
+    ptv1.setMarkStyle(PointsView.Mark.PLUS)
+    ptv2.setMarkStyle(PointsView.Mark.PLUS)
+    ptv3.setMarkStyle(PointsView.Mark.PLUS)
+    ptv1.setMarkSize(5)
+    ptv2.setMarkSize(5)
+    ptv3.setMarkSize(5)
+    ptv1.setMarkColor(Color.WHITE)
+    ptv2.setMarkColor(Color.RED)
+    ptv3.setMarkColor(Color.BLUE)
   if xu:
     np = len(xu[0])
     for ip in range(np):
@@ -449,17 +466,6 @@ def plot2(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
       ptv = panel.addPoints(0,0,xp[0],xp[1])
       ptv.setLineColor(Color.RED)
       ptv.setLineWidth(3.0)
-  if pp:
-    ptvl = panel.addPoints(0,0,pp[0],pp[1])
-    ptvl.setLineColor(Color.RED)
-    ptvl.setLineWidth(3.0)
-    ptvp = panel.addPoints(0,0,pp[0],pp[1])
-    ptvp.setLineStyle(PointsView.Line.NONE)
-    ptvp.setMarkStyle(PointsView.Mark.HOLLOW_CIRCLE)
-    #ptvp.setMarkStyle(PointsView.Mark.CROSS)
-    ptvp.setMarkColor(Color.YELLOW)
-    ptvp.setMarkSize(12.0)
-    ptvp.setLineWidth(3.0)
   if xs:
     for ip in range(len(xs)):
       ptv = panel.addPoints(xs[ip][0],xs[ip][1])
