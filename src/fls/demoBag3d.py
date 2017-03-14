@@ -54,8 +54,8 @@ def main(args):
   #goSaltSurfaceX()
   goPicker3()
 def goPicker3():
-  fx = readImage(gxfile)
-  plot3(fx,png="seis")
+  gx = readImage(gxfile)
+  #plot3(fx,png="seis")
   pa = readImage(pafile)
   pm = max(pa)*0.5
   for i3 in range(n3):
@@ -66,6 +66,13 @@ def goPicker3():
   fs = zerofloat(n1,n2,n3)
   sp3 = SaltPicker3()
   pks = sp3.pick3(25,xs,ys,zs,pa,fs)
+  for k3 in range(100,150,1):
+    gx3 = gx[k3]
+    pk3 = pks[k3]
+    w1 = round(n1)
+    w2 = round(n2)
+    plot2(gx3,cmin=-2,cmax=2,xp=[pk3[0],pk3[1]],w1=w1,w2=w2)
+  '''
   lgs = getLineGroups(2,zs,ys,xs)
   rgf1 = RecursiveGaussianFilter(3)
   rgf2 = RecursiveGaussianFilter(8)
@@ -75,6 +82,7 @@ def goPicker3():
   rgf3.applyXX0(fs,fs)
   plot3(fx,fbs=fs,png="saltBound")
   plot3(pa,cmin=0.5,cmax=max(pa)*0.8,lgs=lgs,png="slicesInitial")
+  '''
 
 def goSaltSurfaceX():
   gx = readImage(gxfile)
@@ -344,6 +352,8 @@ def getPiks():
 
 #############################################################################
 # graphics
+gray = ColorMap.GRAY
+jet = ColorMap.JET
 
 def jetFill(alpha):
   return ColorMap.setAlpha(ColorMap.JET,alpha)
@@ -386,6 +396,94 @@ def addColorBar(frame,clab=None,cint=None):
   cbar.setBackground(Color.WHITE)
   frame.add(cbar,BorderLayout.EAST)
   return cbar
+
+def plot2(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
+        cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  panel = PlotPanel(1,1,orientation);
+  #panel.setVInterval(0.2)
+  n2 = len(f)
+  n1 = len(f[0])
+  s2 = Sampling(n2)
+  s1 = Sampling(n1)
+  panel.setHLabel("Inline (traces)")
+  panel.setVLabel("Time (samples)")
+
+  panel.setHLimits(0,0,n2-1)
+  panel.setVLimits(0,0,n1-1)
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  #pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pxv.setColorModel(ColorMap.GRAY)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  else:
+    pxv.setClips(min(f),max(f))
+  #panel.setTitle("normal vectors")
+  if phi:
+    cv = panel.addContours(phi)
+    cv.setContours([0])
+    cv.setLineColor(Color.RED)
+    cv.setLineWidth(1.0)
+  if xp:
+    ptv = panel.addPoints(0,0,xp[0],xp[1])
+    ptv.setLineColor(Color.RED)
+    ptv.setLineWidth(3.0)
+  if xu:
+    np = len(xu[0])
+    for ip in range(np):
+      x1c = xu[0][ip]
+      x2c = xu[1][ip]
+      u1c = xu[2][ip]
+      u2c = xu[3][ip]
+      x1m = x1c-u1c*nr
+      x2m = x2c-u2c*nr
+      x1p = x1c+u1c*nr
+      x2p = x2c+u2c*nr
+      x1s = [x1m,x1c,x1p]
+      x2s = [x2m,x2c,x2p]
+      ptv2 = panel.addPoints(x1s,x2s)
+      ptv2.setLineColor(Color.YELLOW)
+      ptv2.setLineWidth(1.0)
+    if xp:
+      ptv = panel.addPoints(0,0,xp[0],xp[1])
+      ptv.setLineColor(Color.RED)
+      ptv.setLineWidth(3.0)
+  if pp:
+    ptvl = panel.addPoints(0,0,pp[0],pp[1])
+    ptvl.setLineColor(Color.RED)
+    ptvl.setLineWidth(3.0)
+    ptvp = panel.addPoints(0,0,pp[0],pp[1])
+    ptvp.setLineStyle(PointsView.Line.NONE)
+    ptvp.setMarkStyle(PointsView.Mark.HOLLOW_CIRCLE)
+    #ptvp.setMarkStyle(PointsView.Mark.CROSS)
+    ptvp.setMarkColor(Color.YELLOW)
+    ptvp.setMarkSize(12.0)
+    ptvp.setLineWidth(3.0)
+  if xs:
+    for ip in range(len(xs)):
+      ptv = panel.addPoints(xs[ip][0],xs[ip][1])
+      ptv.setLineStyle(PointsView.Line.NONE)
+      ptv.setMarkStyle(PointsView.Mark.FILLED_CIRCLE)
+      ptv.setMarkColor(Color.RED)
+      ptv.setMarkSize(2.0)
+  if(clab):
+    cb = panel.addColorBar();
+    cb.setLabel(clab)
+  panel.setColorBarWidthMinimum(130)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  frame.setVisible(True);
+  if w1 and w2:
+    frame.setSize(w2,w1)
+  else:
+    frame.setSize(round(n2*0.8),round(n1*0.8))
+  #frame.setSize(1190,760)
+  frame.setFontSize(14)
+  if pngDir and png:
+    frame.paintToPng(720,3.333,pngDir+png+".png")
+
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           lgs=None,cells=None,tg=None, fbs=None,png=None):

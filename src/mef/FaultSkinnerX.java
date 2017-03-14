@@ -612,7 +612,7 @@ public class FaultSkinnerX {
 
   // Returns skins constructed from specified cells.
   private FaultSkin[] skins(int n1, int n2, int n3, FaultCell[] cells) {
-    int sk = 1;
+    int sk = 0;
     int ncell = cells.length;
     _cells = new FaultCell[n3][n2][n1];
     for (FaultCell cell:cells) {
@@ -678,6 +678,8 @@ public class FaultSkinnerX {
 
         // While the grow queue is not empty, ...
         int ct=0;
+        setMask(sk,seed);
+        skin.add(seed);
         while (!growQueue.isEmpty()) {
           if(ct%2000==0) {
             System.out.println("ct="+ct);
@@ -692,10 +694,6 @@ public class FaultSkinnerX {
             FaultCellGrid cg = new FaultCellGrid(fcs);
             nearestCell(cell,fcs);
             if(cell!=null){
-              if(_mask[cell.i3][cell.i2][cell.i1]!=sk&&cell.skin==null) {
-                setMask(sk,cell);
-                skin.add(cell);
-              }
               FaultCell ca = cell.ca;
               FaultCell cb = cell.cb;
               FaultCell cl = cell.cl;
