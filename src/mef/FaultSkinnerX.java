@@ -692,7 +692,7 @@ public class FaultSkinnerX {
             FaultCellGrid cg = new FaultCellGrid(fcs);
             nearestCell(cell,fcs);
             if(cell!=null){
-              if(_mask[cell.i3][cell.i2][cell.i1]!=sk) {
+              if(_mask[cell.i3][cell.i2][cell.i1]!=sk&&cell.skin==null) {
                 setMask(sk,cell);
                 skin.add(cell);
               }

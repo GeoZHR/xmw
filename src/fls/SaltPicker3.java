@@ -66,6 +66,96 @@ public class SaltPicker3 {
     return pks;
   }
 
+  float[][][] signedPoints(float d, float[][][] pks, float[][][] fss) {
+    ArrayList<float[]> fz = new ArrayList<float[]>();
+    ArrayList<float[]> fp = new ArrayList<float[]>();
+    ArrayList<float[]> fn = new ArrayList<float[]>();
+    int n3 = fss.length;
+    int n2 = fss[0].length;
+    int n1 = fss[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+      float[] x1 = pks[i3][0];
+      float[] x2 = pks[i3][1];
+      float[] u1 = pks[i3][2];
+      float[] u2 = pks[i3][3];
+      int np = x1.length;
+      for (int ip=0; ip<np; ip+=4) {
+        float x1i = x1[ip];
+        float x2i = x2[ip];
+        float u1i = u1[ip];
+        float u2i = u2[ip];
+        float x1p = x1i+u1i*d;
+        float x2p = x2i+u2i*d;
+        float x1m = x1i-u1i*d;
+        float x2m = x2i-u2i*d;
+        int i1p = round(x1p);
+        int i2p = round(x2p);
+        int i1m = round(x1m);
+        int i2m = round(x2m);
+        if (i1p<0) continue;
+        if i2p<0 continue;
+        if i1m<0 continue;
+        if i2m<0 continue;
+      }
+    }
+    return null;
+  }
+
+
+  public float[][] regridBoundary(float d, float[] x1, float[] x2) {
+    int np = x1.length;
+    x1[np-1] = x1[0];
+    x2[np-1] = x2[0];
+    int k = 0;
+    float[] ds = new float[np];
+    for (int ip=1; ip<np; ++ip) {
+      float x1i = x1[ip];
+      float x2i = x2[ip];
+      float x1m = x1[ip-1];
+      float x2m = x2[ip-1];
+      float dx1 = x1i-x1m;
+      float dx2 = x2i-x2m;
+      float dsi = sqrt(dx1*dx1+dx2*dx2);
+      if(dsi>0.0f) {
+        k++;
+        x1[k] = x1i;
+        x2[k] = x2i;
+        ds[k] = ds[ip-1]+dsi;
+      }
+    }
+    x1 = copy(k+1,x1);
+    x2 = copy(k+1,x2);
+    ds = copy(k+1,ds);
+    double l = ds[k];
+    int n = (int)round(l/d);
+    Sampling ss = new Sampling(n,d,0);
+    double[] sv = ss.getValues();
+    CubicInterpolator cx1 = new CubicInterpolator(ds,x1);
+    CubicInterpolator cx2 = new CubicInterpolator(ds,x2);
+    float[] x1n = new float[n];
+    float[] x2n = new float[n];
+    float[] u1n = new float[n];
+    float[] u2n = new float[n];
+    for (int i=0; i<n; ++i) {
+      float si = (float)sv[i];
+      x1n[i] = cx1.interpolate(si);
+      x2n[i] = cx2.interpolate(si);
+    }
+    for (int i=0; i<n; ++i) {
+      int ip = i+1; if(ip==n) ip=0;
+      int im = i-1; if(im<0)  im=n-1;
+      float g1 = x1n[ip]-x1n[im];
+      float g2 = x2n[ip]-x2n[im];
+      float gs = sqrt(g1*g1+g2*g2);
+      if(gs>0.0f){g1/=gs;g2/=gs;}
+      u1n[i] = -g2;
+      u2n[i] =  g1;
+    }
+    return new float[][]{x1n,x2n,u1n,u2n};
+  }
+
+
+
   public void pointsToImage(
     float[] ys, float[] zs, float[][] pa, float[][] wx) 
   {
