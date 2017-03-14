@@ -700,33 +700,41 @@ public class FaultSkinnerX {
               FaultCell cb = cell.cb;
               FaultCell cl = cell.cl;
               FaultCell cr = cell.cr;
-              if(cl==null){ cl= findNaborLeft(cg,cell);}
-              if(cr==null){ cr=findNaborRight(cg,cell);}
-              if(ca==null){ ca=findNaborAbove(cg,cell);}
-              if(cb==null){ cb=findNaborBelow(cg,cell);}
-              if(ca!=null&&_mask[ca.i3][ca.i2][ca.i1]!=sk) {
-                linkAboveBelow(ca,cell);
-                growQueue.add(ca);
-                setMask(sk,ca);
-                skin.add(ca);
+              if(ca==null){ 
+                ca=findNaborAbove(cg,cell);
+                if(ca!=null&&_mask[ca.i3][ca.i2][ca.i1]!=sk) {
+                  linkAboveBelow(ca,cell);
+                  growQueue.add(ca);
+                  setMask(sk,ca);
+                  skin.add(ca);
+                }
               }
-              if(cb!=null&&_mask[cb.i3][cb.i2][cb.i1]!=sk) {
-                linkAboveBelow(cell,cb);
-                growQueue.add(cb);
-                setMask(sk,cb);
-                skin.add(cb);
+              if(cb==null){ 
+                cb=findNaborBelow(cg,cell);
+                if(cb!=null&&_mask[cb.i3][cb.i2][cb.i1]!=sk) {
+                  linkAboveBelow(cell,cb);
+                  growQueue.add(cb);
+                  setMask(sk,cb);
+                  skin.add(cb);
+                }
               }
-              if(cl!=null&&_mask[cl.i3][cl.i2][cl.i1]!=sk) {
-                linkLeftRight(cl,cell);
-                growQueue.add(cl);
-                setMask(sk,cl);
-                skin.add(cl);
+              if(cl==null){ 
+                cl= findNaborLeft(cg,cell);
+                if(cl!=null&&_mask[cl.i3][cl.i2][cl.i1]!=sk) {
+                  linkLeftRight(cl,cell);
+                  growQueue.add(cl);
+                  setMask(sk,cl);
+                  skin.add(cl);
+                }
               }
-              if(cr!=null&&_mask[cr.i3][cr.i2][cr.i1]!=sk) {
-                linkLeftRight(cell,cr);
-                growQueue.add(cr);
-                setMask(sk,cr);
-                skin.add(cr);
+              if(cr==null){ 
+                cr=findNaborRight(cg,cell);
+                if(cr!=null&&_mask[cr.i3][cr.i2][cr.i1]!=sk) {
+                  linkLeftRight(cell,cr);
+                  growQueue.add(cr);
+                  setMask(sk,cr);
+                  skin.add(cr);
+                }
               }
             }
           }

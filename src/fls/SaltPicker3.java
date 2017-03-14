@@ -78,6 +78,7 @@ public class SaltPicker3 {
       float[] x2 = pks[i3][1];
       float[] u1 = pks[i3][2];
       float[] u2 = pks[i3][3];
+      float[][] fs3 = fss[i3];
       int np = x1.length;
       for (int ip=0; ip<np; ip+=4) {
         float x1i = x1[ip];
@@ -93,11 +94,46 @@ public class SaltPicker3 {
         int i1m = round(x1m);
         int i2m = round(x2m);
         if(i1p<0) continue;
-        if(i1p<0) continue;
-        if(i1p<0) continue;
+        if(i2p<0) continue;
+        if(i1m<0) continue;
+        if(i2m<0) continue;
+        if(i1p>n1-1) continue;
+        if(i2p>n2-1) continue;
+        if(i1m>n1-1) continue;
+        if(i2m>n2-1) continue;
+        float fsp = fs3[i2p][i1p];
+        fz.add(new float[]{x1i,x2i,0f});
+        if(fsp>0f) {
+          fp.add(new float[]{x1p,x2p,i3, d});
+          fn.add(new float[]{x1m,x2m,i3,-d});
+        } else {
+          fp.add(new float[]{x1m,x2m,i3, d});
+          fn.add(new float[]{x1p,x2p,i3,-d});
+        }
       }
     }
-    return null;
+    int np = fz.size();
+    float[][][] ps = new float[3][4][np];
+    for (int ip=0; ip<np; ++ip) {
+      float[] fzi = fz.get(ip);
+      float[] fpi = fp.get(ip);
+      float[] fni = fn.get(ip);
+      ps[0][0][ip] = fzi[0]; 
+      ps[0][1][ip] = fzi[1]; 
+      ps[0][2][ip] = fzi[2]; 
+      ps[0][3][ip] = fzi[3]; 
+
+      ps[1][0][ip] = fpi[0]; 
+      ps[1][1][ip] = fpi[1]; 
+      ps[1][2][ip] = fpi[2]; 
+      ps[1][3][ip] = fpi[3]; 
+
+      ps[1][0][ip] = fni[0]; 
+      ps[1][1][ip] = fni[1]; 
+      ps[1][2][ip] = fni[2]; 
+      ps[1][3][ip] = fni[3]; 
+    }
+    return ps;
   }
 
 

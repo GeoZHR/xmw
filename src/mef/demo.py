@@ -62,21 +62,22 @@ maxThrow =  15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = True
+plotOnly = False
 pngDir = "../../../png/mef/fake/"
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
   #goScan()
-  goSkinF()
+  #goSkinF()
   #goSemblance()
   #goOrientScan()
   #goThinE()
   #goSkinE()
   #goTv()
-  #goSkinTv()
+  goSkinTv()
   #goTest()
 def goTest():
   gx = readImage(gxfile)
@@ -352,8 +353,8 @@ def goSkinTv():
     fsx.setMaxPlanarDistance(0.1)
     fsx.setGaussWeights(10,2,sp,st)
     skins = fsx.findSkins(n1,n2,n3,cells)
-    removeAllSkinFiles(fsktv)
-    writeSkins(fsktv,skins)
+    #removeAllSkinFiles(fsktv)
+    #writeSkins(fsktv,skins)
   else:
     skins = readSkins(fsktv)
   print len(skins)
