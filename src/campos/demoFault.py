@@ -101,8 +101,8 @@ def main(args):
   #goFaultScan()
   #goFaultCombine()
   #goThin()
-  goSkin()
-  #goSkinTv()
+  #goSkin()
+  goSkinTv()
   #goSmooth()
   #goSlip()
   #goUnfault()
@@ -587,9 +587,10 @@ def goSkin():
   print "go skin..."
   #gx = readImage(gxfile)
   if not plotOnly:
-    fl = readImage(flcfile)
-    fp = readImage(fpcfile)
-    ft = readImage(ftcfile)
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    print "fault images loading done ..."
     fsk = FaultSkinner()
     fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
     fsk.setMaxDeltaStrike(10)
@@ -601,9 +602,9 @@ def goSkin():
     print "skins done ..."
     removeAllSkinFiles(fskbase)
     writeSkins(fskbase,skins)
-    writeImage("fpct",fp)
+    writeImage(fptfile,fp)
   else:
-    fp = readImage("fpct")
+    fp = readImage(fptfile)
   '''
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
@@ -613,6 +614,7 @@ def goSkinTv():
   print "go skin..."
   #gx = readImage(gxfile)
   if not plotOnly:
+    '''
     fl = readImage(flcfile)
     fp = readImage(fpcfile)
     ft = readImage(ftcfile)
@@ -626,27 +628,48 @@ def goSkinTv():
     print len(sks)
     print "fault skins load finish..."
     fcs = FaultSkin.getCells(sks)
-    cells = []
-    for ic in range(0,len(fcs),4):
-      cells.append(fcs[ic])
-    print len(cells)
+    sk1 = readSkinsX("part1/",fskbase)
+    print "fault skins part1 load finish..."
+    sk2 = readSkinsX("part2/",fskbase)
+    print "fault skins part2 load finish..."
+    sk3 = readSkinsX("part3/",fskbase)
+    print "fault skins part3 load finish..."
+    sk4 = readSkinsX("part4/",fskbase)
+    print "fault skins part4 load finish..."
+    hpr = Helper()
+    m1 = n1
+    m2 = 1950
+    m3 = 1200
+    fcs1 = hpr.combineFaultCells1(n1,n2,n3,m1,m2,m3,sk1,sk2)
+    fcs2 = hpr.combineFaultCells2(n1,n2,n3,m1,m2,m3,sk3,sk4)
+    fcs = hpr.combineFaultCells(n1,n2,n3,m1,m2,m3,sk1,sk2,sk3,sk4)
+    writeCells("cell1",fcs1)
+    writeCells("cell2",fcs2)
+    hpr = Helper()
+    fcs1 = readCells("cell1")
+    fcs2 = readCells("cell2")
+    fcsr = hpr.resample(fcs1,fcs2)
+    writeCells("cellSub",fcsr)
+    print len(fcsr)
     print "fault cells load finish..."
-
+    '''
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)
     fsx = FaultSkinnerX()
-    fsx.setGrowLikelihoods(0.3,0.5)
+    fsx.setGrowLikelihoods(0.2,0.6)
     fsx.setMinSkinSize(1000)
     fsx.setMaxPlanarDistance(0.2)
 
-    fsx.resetCells(cells)
+    #fsx.resetCells(cells)
+    cells = readCells("cellSub")
     fsx.setGaussWeights(sp,st)
     skins = fsx.findSkins(n1,n2,n3,cells)
     removeAllSkinFiles(fsktv)
     writeSkins(fsktv,skins)
+    print "fault skins write finish..."
+    '''
     fd = FaultDisplay()
-    print "fault skins load finish..."
     fd = FaultDisplay()
     fd.getFlt(skins,fl)
     fd.getFpt(skins,fp)
@@ -654,6 +677,7 @@ def goSkinTv():
     writeImage("flctv",fl)
     writeImage("fpctv",fp)
     writeImage("ftctv",ft)
+    '''
   else:
     fl = readImage("flctv")
     fp = readImage("fpctv")

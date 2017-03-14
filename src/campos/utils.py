@@ -291,6 +291,20 @@ def readSkin(basename,index):
   """ Reads one skin with specified basename and index. """
   return FaultSkin.readFromFile(seismicDir+skinName(basename,index)+".dat")
 
+def readSkinsX(subDir,basename):
+  """ Reads all skins with specified basename. """
+  fileNames = []
+  for fileName in File(seismicDir+subDir).list():
+    if fileName.startswith(basename):
+      fileNames.append(fileName)
+  fileNames.sort()
+  skins = []
+  for iskin,fileName in enumerate(fileNames):
+    index = skinIndex(basename,fileName)
+    skin = readSkin(subDir+basename,index)
+    skins.append(skin)
+  return skins
+
 def readSkins(basename):
   """ Reads all skins with specified basename. """
   fileNames = []

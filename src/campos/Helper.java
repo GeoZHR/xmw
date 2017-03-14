@@ -7,7 +7,7 @@ import edu.mines.jtk.interp.*;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
 
-import ipfx.*;
+import mef.*;
 import util.*;
 
 public class Helper {
@@ -96,6 +96,217 @@ public class Helper {
     System.out.println("part four done....");
   }
 
+  public FaultCell[] combineFaultCells1(
+    int n1, int n2, int n3, int m1, int m2, int m3,
+    FaultSkin[] sks1, FaultSkin[] sks2) {
+    int b2 = n2-m2;
+    int b3 = n3-m3;
+    int d2 = round(m2-n2/2);
+    int d3 = round(m3-n3/2);
+    ArrayList<FaultCell> fcs = new ArrayList<FaultCell>();
+    for (FaultSkin skin:sks1) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2();
+      float x3 = cell.getX3();
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2<m2-d2&&x3<m3-d3) fcs.add(cn); 
+    }}
+    sks1 = null;
+    System.out.println("part one done....");
+    for (FaultSkin skin:sks2) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2();
+      float x3 = cell.getX3()+b3;
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2<m2-d2&&x3>=(d3+b3)) fcs.add(cn); 
+    }}
+    sks2 = null;
+    System.out.println("part two done....");
+    return fcs.toArray(new FaultCell[0]);
+  }
+
+
+  public FaultCell[] combineFaultCells2(
+    int n1, int n2, int n3, int m1, int m2, int m3,
+    FaultSkin[] sks3, FaultSkin[] sks4)
+  {
+    int b2 = n2-m2;
+    int b3 = n3-m3;
+    int d2 = round(m2-n2/2);
+    int d3 = round(m3-n3/2);
+    ArrayList<FaultCell> fcs = new ArrayList<FaultCell>();
+    for (FaultSkin skin:sks3) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2()+b2;
+      float x3 = cell.getX3();
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2>=(b2+d2)&&x3<m3-d3) fcs.add(cn); 
+    }}
+    sks3 = null;
+    System.out.println("part three done....");
+
+    for (FaultSkin skin:sks4) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2()+b2;
+      float x3 = cell.getX3()+b3;
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2>=(b2+d2)&&x3>=(b3+d3)) fcs.add(cn); 
+    }}
+    sks4 = null;
+    System.out.println("part four done....");
+    return fcs.toArray(new FaultCell[0]);
+  }
+
+  public FaultCell[] resample(FaultCell[] fcs1, FaultCell[] fcs2) {
+    int nc1 = fcs1.length;
+    int nc2 = fcs2.length;
+    ArrayList<FaultCell> fcs = new ArrayList<FaultCell>();
+    for (int ic=0; ic<nc1; ic+=4)
+      fcs.add(fcs1[ic]);
+    for (int ic=0; ic<nc2; ic+=4)
+      fcs.add(fcs2[ic]);
+    return fcs.toArray(new FaultCell[0]);
+  }
+
+  public FaultCell[] combineFaultCells(
+    int n1, int n2, int n3, int m1, int m2, int m3,
+    FaultSkin[] sks1, FaultSkin[] sks2, FaultSkin[] sks3, FaultSkin[] sks4)
+  {
+    int b2 = n2-m2;
+    int b3 = n3-m3;
+    int d2 = round(m2-n2/2);
+    int d3 = round(m3-n3/2);
+    ArrayList<FaultCell> fcs = new ArrayList<FaultCell>();
+    for (FaultSkin skin:sks1) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2();
+      float x3 = cell.getX3();
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2<m2-d2&&x3<m3-d3) fcs.add(cn); 
+    }}
+    sks1 = null;
+    System.out.println("part one done....");
+    for (FaultSkin skin:sks2) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2();
+      float x3 = cell.getX3()+b3;
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2<m2-d2&&x3>=(d3+b3)) fcs.add(cn); 
+    }}
+    sks2 = null;
+    System.out.println("part two done....");
+
+    for (FaultSkin skin:sks3) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2()+b2;
+      float x3 = cell.getX3();
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2>=(b2+d2)&&x3<m3-d3) fcs.add(cn); 
+    }}
+    sks3 = null;
+    System.out.println("part three done....");
+
+    for (FaultSkin skin:sks4) {
+    for (FaultCell cell:skin) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2()+b2;
+      float x3 = cell.getX3()+b3;
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2>=(b2+d2)&&x3>=(b3+d3)) fcs.add(cn); 
+    }}
+    sks4 = null;
+    System.out.println("part four done....");
+    return fcs.toArray(new FaultCell[0]);
+
+  }
+
+
+  public FaultCell[] combineFaultCells(
+    int n1, int n2, int n3, int m1, int m2, int m3,
+    FaultCell[] cs1, FaultCell[] cs2, FaultCell[] cs3, FaultCell[] cs4)
+  {
+    int b2 = n2-m2;
+    int b3 = n3-m3;
+    int d2 = round(m2-n2/2);
+    int d3 = round(m3-n3/2);
+    ArrayList<FaultCell> fcs = new ArrayList<FaultCell>();
+    for (FaultCell cell:cs1) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2();
+      float x3 = cell.getX3();
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2<m2-d2&&x3<m3-d3) fcs.add(cn); 
+    }
+    for (FaultCell cell:cs2) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2();
+      float x3 = cell.getX3()+b3;
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2<m2-d2&&x3<m3-d3) fcs.add(cn); 
+      if(x2<m2-d2&&x3>=(d3+b3)) fcs.add(cn); 
+    }
+
+    for (FaultCell cell:cs3) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2()+b2;
+      float x3 = cell.getX3();
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2>=(b2+d2)&&x3<m3-d3) fcs.add(cn); 
+    }
+
+    for (FaultCell cell:cs4) {
+      float x1 = cell.getX1();
+      float x2 = cell.getX2()+b2;
+      float x3 = cell.getX3()+b3;
+      float fl = cell.getFl();
+      float fp = cell.getFp();
+      float ft = cell.getFt();
+      FaultCell cn = new FaultCell(x1,x2,x3,fl,fp,ft);
+      if(x2>=(b2+d2)&&x3>=(b3+d3)) fcs.add(cn); 
+    }
+    return fcs.toArray(new FaultCell[0]);
+
+  }
 
   public void combine(
     float[][][] gx1, float[][][] gx2, float[][][] gx3, float[][][] gx4, 
