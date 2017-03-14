@@ -92,10 +92,9 @@ public class SaltPicker3 {
         int i2p = round(x2p);
         int i1m = round(x1m);
         int i2m = round(x2m);
-        if (i1p<0) continue;
-        if i2p<0 continue;
-        if i1m<0 continue;
-        if i2m<0 continue;
+        if(i1p<0) continue;
+        if(i1p<0) continue;
+        if(i1p<0) continue;
       }
     }
     return null;
