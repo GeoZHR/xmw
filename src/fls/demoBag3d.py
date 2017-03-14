@@ -43,15 +43,38 @@ fsfile = "fs"
 psfile = "ps"
 psdfile = "psd"
 
-pngDir = False
 pngDir = "../../../png/fls/bag/3d/"
+pngDir = False
 
 plotOnly = False
 
 def main(args):
   #goPikSlices()
-  goSaltSurface()
+  #goSaltSurface()
   #goSaltSurfaceX()
+  goPicker3()
+def goPicker3():
+  fx = readImage(gxfile)
+  plot3(fx,png="seis")
+  pa = readImage(pafile)
+  pm = max(pa)*0.5
+  for i3 in range(n3):
+    for i1 in range(n1):
+      pa[i3][0][i1] = pm
+      pa[i3][n2-1][i1] = pm
+  zs,ys,xs=getPiks()
+  fs = zerofloat(n1,n2,n3)
+  sp3 = SaltPicker3()
+  pks = sp3.pick3(25,xs,ys,zs,pa,fs)
+  lgs = getLineGroups(2,zs,ys,xs)
+  rgf1 = RecursiveGaussianFilter(3)
+  rgf2 = RecursiveGaussianFilter(8)
+  rgf3 = RecursiveGaussianFilter(16)
+  rgf1.apply0XX(fs,fs)
+  rgf2.applyX0X(fs,fs)
+  rgf3.applyXX0(fs,fs)
+  plot3(fx,fbs=fs,png="saltBound")
+  plot3(pa,cmin=0.5,cmax=max(pa)*0.8,lgs=lgs,png="slicesInitial")
 
 def goSaltSurfaceX():
   gx = readImage(gxfile)

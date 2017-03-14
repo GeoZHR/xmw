@@ -612,7 +612,7 @@ public class FaultSkinnerX {
 
   // Returns skins constructed from specified cells.
   private FaultSkin[] skins(int n1, int n2, int n3, FaultCell[] cells) {
-    int sk = 0;
+    int sk = 1;
     int ncell = cells.length;
     _cells = new FaultCell[n3][n2][n1];
     for (FaultCell cell:cells) {
@@ -621,7 +621,7 @@ public class FaultSkinnerX {
       int i3 = cell.i3;
       _cells[i3][i2][i1] = cell;
     }
-
+    _mask = new short[n3][n2][n1];
     // Empty list of skins.
     ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
 
@@ -668,7 +668,6 @@ public class FaultSkinnerX {
         sk++;
         FaultCell seed = seedList.get(kseed);
 
-        _mask = new short[n3][n2][n1];
         // Make a new empty skin.
         FaultSkin skin = new FaultSkin();
 
@@ -693,8 +692,8 @@ public class FaultSkinnerX {
             FaultCellGrid cg = new FaultCellGrid(fcs);
             nearestCell(cell,fcs);
             if(cell!=null){
-              if(_mask[cell.i3][cell.i2][cell.i1]==0) {
-                setMask(cell);
+              if(_mask[cell.i3][cell.i2][cell.i1]!=sk) {
+                setMask(sk,cell);
                 skin.add(cell);
               }
               FaultCell ca = cell.ca;
@@ -705,28 +704,28 @@ public class FaultSkinnerX {
               if(cr==null){ cr=findNaborRight(cg,cell);}
               if(ca==null){ ca=findNaborAbove(cg,cell);}
               if(cb==null){ cb=findNaborBelow(cg,cell);}
-              if(ca!=null&&_mask[ca.i3][ca.i2][ca.i1]==0) {
+              if(ca!=null&&_mask[ca.i3][ca.i2][ca.i1]!=sk) {
                 linkAboveBelow(ca,cell);
                 growQueue.add(ca);
-                setMask(ca);
+                setMask(sk,ca);
                 skin.add(ca);
               }
-              if(cb!=null&&_mask[cb.i3][cb.i2][cb.i1]==0) {
+              if(cb!=null&&_mask[cb.i3][cb.i2][cb.i1]!=sk) {
                 linkAboveBelow(cell,cb);
                 growQueue.add(cb);
-                setMask(cb);
+                setMask(sk,cb);
                 skin.add(cb);
               }
-              if(cl!=null&&_mask[cl.i3][cl.i2][cl.i1]==0) {
+              if(cl!=null&&_mask[cl.i3][cl.i2][cl.i1]!=sk) {
                 linkLeftRight(cl,cell);
                 growQueue.add(cl);
-                setMask(cl);
+                setMask(sk,cl);
                 skin.add(cl);
               }
-              if(cr!=null&&_mask[cr.i3][cr.i2][cr.i1]==0) {
+              if(cr!=null&&_mask[cr.i3][cr.i2][cr.i1]!=sk) {
                 linkLeftRight(cell,cr);
                 growQueue.add(cr);
-                setMask(cr);
+                setMask(sk,cr);
                 skin.add(cr);
               }
             }
@@ -788,7 +787,7 @@ public class FaultSkinnerX {
   }
 
 
-  private void setMask(FaultCell cell) {
+  private void setMask(int sk, FaultCell cell) {
     int n3 = _mask.length;
     int n2 = _mask[0].length;
     int n1 = _mask[0][0].length;
@@ -808,8 +807,8 @@ public class FaultSkinnerX {
       int p1 = round(x1+d1); if(p1<0) {p1=0;} if(p1>=n1){p1=n1-1;} 
       int p2 = round(x2+d2); if(p2<0) {p2=0;} if(p2>=n2){p2=n2-1;} 
       int p3 = round(x3+d3); if(p3<0) {p3=0;} if(p3>=n3){p3=n3-1;} 
-      _mask[m3][m2][m1] = 1;
-      _mask[p3][p2][p1] = 1;
+      _mask[m3][m2][m1] = (byte)sk;
+      _mask[p3][p2][p1] = (byte)sk;
     }
 
   }

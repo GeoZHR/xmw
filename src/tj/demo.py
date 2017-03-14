@@ -5,7 +5,8 @@ Version: 2016.01.22
 """
 
 from utils import *
-setupForSubset("cact")
+setupForSubset("hz25")
+#setupForSubset("cact")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -81,6 +82,7 @@ plotOnly = True
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
+  goTF()
   #goSlopes()
   #goScan()
   #goThin()
@@ -105,7 +107,14 @@ def main(args):
   #goHorizon()
   #goResults3D()
   #goMovieSlices()
-  goSlicesX()
+  #goSlicesX()
+def goTF():
+  gx = readImage(gxfile)
+  gr = zerofloat(n1,n2,n3)
+  ks = rampint(60,1,30)
+  SaltPicker2.applyTF(100,1,100,ks,gx,gr)
+  plot3(gx)
+  plot3(gr)
 def goMovieSlices():
   gg = readImage("fg")
   #k1s = [36,77,95,115,145,175,215,227]
@@ -174,6 +183,45 @@ def goSfd():
   gx = df.flattenIL(0,0,ep,fx,fs,ux)
   plot3(fx)
   plot3(gx)
+def goHorizonHz25():
+  ns = n1-65
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2ffile)
+    p3 = readImage(p3ffile)
+    wp = readImage(epffile)
+    wp = pow(wp,6)
+    c1 = rampfloat(65,1,ns)
+    c2 = fillfloat(round(n2/2),ns)
+    c3 = fillfloat(round(n3/2),ns)
+    hv = HorizonVolume()
+    hv.setCG(0.01,100)
+    hv.setExternalIterations(12)
+    hs = hv.applyForHorizonVolume(c1,c2,c3,wp,p2,p3)
+    writeImage(hvsfile,hs)
+  else:
+    hs = readHorizons(ns,hvsfile)
+  hs = sub(hs,65)
+  df = DynamicFlattener(-10,10)
+  fg = df.flattenWithHorizonsX(hs,copy(ns,n2,n3,65,0,0,gx))
+  writeImage("fg",fg)
+  plot3(gx)
+  plot3(fg)
+  '''
+  sd = SurfaceDisplay()
+  has = zerofloat(n2,n3,ns)
+  for ih in range(ns):
+    has[ih] = sd.amplitudeOnHorizon(hs[ih],eps)
+  has = pow(has,2)
+  has = sub(has,min(has))
+  has = div(has,max(has))
+  writeImage("hast",has)
+  #has = readHorizons(ns,hasfile)
+  for ih in range(10,20,1):
+    title = "Slice "+str(ih)
+    plot2(s2,s3,has[ih],cmin=0.2,cmax=1.0,title=title,png=title)
+  '''
+
 def goHorizon():
   ns = n1-65
   gx = readImage(fwsfile)
