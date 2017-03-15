@@ -751,7 +751,7 @@ public class FaultSkinnerX {
         //skinList.add(skin);
         updateCells(n1,n2,n3,skin);
         if (skin.size()>=_ncsmin) {
-          FaultSkin.writeToFile(seisDir+Integer.toString(skinNo)+"dat",skin);
+          FaultSkin.writeToFile(seisDir+"fst"+Integer.toString(skinNo)+"dat",skin);
           skinNo ++;
         }
       }
