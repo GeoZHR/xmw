@@ -68,7 +68,7 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  #goReSkin()
+  goReSkin()
   '''
   goSmooth()
   goSlip()
@@ -78,7 +78,7 @@ def main(args):
   '''
   #goSubset()
   #goCfault()
-  goGVF()
+  #goGVF()
 def goGVF():
   gx = readImage(gxfile)
   fl = readImage(flfile)

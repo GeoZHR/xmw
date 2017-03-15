@@ -454,8 +454,8 @@ public class FaultSkinnerX {
 
   public FaultSkin[] findSkinsXX(FaultCell[] cells, float[][][] fl) {
     FaultSkin[] sks = skinsXX(cells,fl);
-    //return sks;
-    return reskin(sks,fl);
+    return sks;
+    //return reskin(sks,fl);
     //return resetSkins(sks,fl);
   }
 
