@@ -75,7 +75,7 @@ maxThrow = 20.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/tj/geng/"
 pngDir = None
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -331,9 +331,8 @@ def goPlanar():
   plot3(ep,cmin=0.1,cmax=0.9)
 
 def goFaultScan():
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
   ep = readImage(epfile)
-  #pow(ep,8,ep)
   sub(ep,min(ep),ep)
   div(ep,max(ep),ep)
   if not plotOnly:
@@ -347,6 +346,7 @@ def goFaultScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
+  '''
   flt,fpt,ftt=fe.thin(flpt)
   writeImage(fltfile,flt)
   writeImage(fptfile,ftt)
@@ -356,6 +356,7 @@ def goFaultScan():
   plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0))
   plot3(gx,ftt,cmin=minTheta,cmax=maxTheta,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
+  '''
 
 
 def goSlopes():

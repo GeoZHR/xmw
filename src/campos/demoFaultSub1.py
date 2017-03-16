@@ -6,7 +6,7 @@ Version: 2016.01.22
 
 from utils import *
 #setupForSubset("nathan")
-setupForSubset("campos")
+setupForSubset("camposSub1")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -45,30 +45,15 @@ gwfile = "gw"
 fsktv = "fst" # fault skin (basename only)
 fppfile = "fpp"
 fpsfile = "fps"
-hl1file = "hl1"
-hu1file = "hu1"
-hm1file = "hm1"
 obfile = "ob"
 u1file = "u1"
 u2file = "u2"
 u3file = "u3"
-g1file = "gx1"
-g2file = "gx2"
-g3file = "gx3"
-g4file = "gx4"
-flfile = gxfile+flfile
-fpfile = gxfile+fpfile
-ftfile = gxfile+ftfile
-fltfile = gxfile+fltfile
-fptfile = gxfile+fptfile
-fttfile = gxfile+fttfile
-obfile = gxfile+obfile
-epfile = gxfile+epfile
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
+minTheta,maxTheta = 70,85
 sigmaPhi,sigmaTheta = 20,50
 
 # These parameters control the construction of fault skins.
@@ -92,17 +77,12 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goDataPortion()
+  #goSeis()
   #goPlanar()
-  #getOceanBottom()
-  #goMask()
-  #goPlanarPortion()
-  #goSeismicPortion()
   #goFaultScan()
-  #goFaultCombine()
   #goThin()
   #goSkin()
-  #goSkinTv()
+  goSkinTv()
   #goSmooth()
   #goSlip()
   #goUnfault()
@@ -127,7 +107,10 @@ def main(args):
   #goSkinDisplay()
   #goSampleClean()
   #goPad()
+def goSeis():
   gx = readImage(gxfile)
+  gx = gain(gx)
+  writeImage(gxfile,gx)
   plot3(gx)
 def goPad():
   gx = readImage(gxfile)
@@ -387,25 +370,22 @@ def goRosePlotsNScale():
   #pf.paintToPng(720,6,pngDir+title+"N"+".png")
 
 def goPlanar():
-  #for gxfile in ["gx1"]:
-  for gxfile in ["gx2", "gx3", "gx4"]:
-    print "compute planarity of "+gxfile+"..."
-    epfile = gxfile+"ep"
-    gx = readImage(gxfile)
-    if not plotOnly:
-      lof = LocalOrientFilter(4,1)
-      u1 = zerofloat(n1,n2,n3)
-      u2 = zerofloat(n1,n2,n3)
-      u3 = zerofloat(n1,n2,n3)
-      ep = zerofloat(n1,n2,n3)
-      lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-      writeImage(epfile,ep)
-      print min(ep)
-      print max(ep)
-    else:
-      ep = readImage(epfile)
-    plot3(gx,cmin=-3,cmax=3)
-    plot3(ep,cmin=0.1,cmax=0.9)
+  print "compute planarity of "+gxfile+"..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    lof = LocalOrientFilter(4,1)
+    u1 = zerofloat(n1,n2,n3)
+    u2 = zerofloat(n1,n2,n3)
+    u3 = zerofloat(n1,n2,n3)
+    ep = zerofloat(n1,n2,n3)
+    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+    writeImage(epfile,ep)
+    print min(ep)
+    print max(ep)
+  else:
+    ep = readImage(epfile)
+  plot3(gx,cmin=-3,cmax=3)
+  plot3(ep,cmin=0.1,cmax=0.9)
 def goFaultCombine():
   for ffile in ["fl","fp","ft"]:
     f1 = readImageX(900,1950,1200,"gx1"+ffile)
@@ -478,7 +458,6 @@ def goFaultScan():
     writeImage(fpfile,flpt[1])
     writeImage(ftfile,flpt[2])
   else:
-    fl = readImage(flfile)
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
@@ -616,7 +595,6 @@ def goSkinTv():
   print "go skin..."
   #gx = readImage(gxfile)
   if not plotOnly:
-    '''
     fl = readImage(flcfile)
     fp = readImage(fpcfile)
     ft = readImage(ftcfile)
@@ -654,7 +632,6 @@ def goSkinTv():
     writeCells("cellSub",fcsr)
     print len(fcsr)
     print "fault cells load finish..."
-    '''
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)

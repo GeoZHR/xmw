@@ -77,11 +77,14 @@ def goCampos():
   basedir = "../../../data/seis/campos/"
   sgyfile = basedir+"Xinming_Clip_Campos.sgy"
   datfile = basedir+"gx.dat"
-  subfile = basedir+"gxs.dat"
+  subfile = basedir+"gxSub.dat"
+  subfile1 = basedir+"gxSub1.dat"
   #i2min = 11982, i2max = 33190 (inline indices)
   #i3min = 12976, i3max = 14300 (crossline indices)
   i1min,i1max,i2min,i2max,i3min,i3max = 0,2400,9384,13148,23449,25750
   n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min),1+(i3max-i3min)
+  n1,n2,n3 = 1200,3765,2302
+  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -96,14 +99,15 @@ def goCampos():
     scale = 1
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
+  '''
   if showImage:
     #x = readImage(datfile,n1,n2,n3)
     #xs = copy(1200,n2,n3,420,0,0,x)
     #writeImageX(subfile,xs)
-    xs = readImage(subfile,1200,n2,n3)
-    xs = copy(600,n2,n3,0,0,0,xs)
-    writeImageX(subfile,xs)
-    show3d(xs,clip=max(xs)/100)
+    x = readImage(subfile,n1,n2,n3)
+    xs = copy(1000,3100,550,35,0,1752,x)
+    writeImageX(subfile1,xs)
+    show3d(xs,clip=max(xs)/10)
 
 def goCurt():
   """
