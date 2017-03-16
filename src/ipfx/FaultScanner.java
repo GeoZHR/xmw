@@ -495,10 +495,10 @@ public class FaultScanner {
   }
 
   // Sampling of angles depends on extent of smoothing.
-  private Sampling makePhiSampling(double phiMin, double phiMax) {
+  public Sampling makePhiSampling(double phiMin, double phiMax) {
     return angleSampling(_sigmaPhi,phiMin,phiMax);
   }
-  private Sampling makeThetaSampling(double thetaMin, double thetaMax) {
+  public Sampling makeThetaSampling(double thetaMin, double thetaMax) {
     return angleSampling(_sigmaTheta,thetaMin,thetaMax);
   }
   private static Sampling angleSampling(
