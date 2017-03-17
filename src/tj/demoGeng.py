@@ -61,9 +61,9 @@ sigmaPhi,sigmaTheta = 15,50
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.05
-upperLikelihood = 0.4
-minSkinSize = 500
+lowerLikelihood = 0.2
+upperLikelihood = 0.6
+minSkinSize = 200
 
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
@@ -75,19 +75,20 @@ maxThrow = 20.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/tj/geng/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
   #goPlanar()
-  goFaultScan()
+  #goFaultScan()
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
   #goSkinTv()
+  goSkinClean()
   #goReskin()
   #goSkinMerge()
   #goSmooth()
@@ -435,17 +436,16 @@ def goThin():
 
 def goSkinTv():
   print "go skin tv..."
-  gx = readImage(gxfile)
   fsx = FaultSkinnerX()
+  gx = readImage(gxfile)
   if not plotOnly:
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)
     fsx.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsx.setMinSkinSize(minSkinSize)
+    fsx.setMinSkinSize(1000)
     fsx.setMaxPlanarDistance(0.2)
     fsk = readSkins(fskbase)
-    fr = FaultReskin()
     fcs = FaultSkin.getCells(fsk)
     cells = []
     for ic in range(0,len(fcs),4):
@@ -455,17 +455,58 @@ def goSkinTv():
     skins = fsx.findSkins(n1,n2,n3,cells)
     removeAllSkinFiles(fsktv)
     writeSkins(fsktv,skins)
+    fd = FaultDisplay()
+    fl = zerofloat(n1,n2,n3)
+    fp = zerofloat(n1,n2,n3)
+    ft = zerofloat(n1,n2,n3)
+    fd.getFlt(skins,fl)
+    fd.getFpt(skins,fp)
+    fd.getFtt(skins,ft)
+    writeImage("fltv",fl)
+    writeImage("fptv",fp)
+    writeImage("fttv",ft)
   else:
-    skins = readSkins(fsktv)
-  sks = []
-  for skin in skins:
-    if(skin.size()>10000):
-      sks.append(skin)
-  print len(sks)
-  flt = zerofloat(n1,n2,n3)
-  fsx.getFl(sks,flt)
-  plot3(gx,skins=sks)
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+    #fl = readImage("fltv")
+    #fp = readImage("fptv")
+    #ft = readImage("fttv")
+    sk = readSkins(fsktv)
+    fl = zerofloat(n1,n2,n3)
+    fp = zerofloat(n1,n2,n3)
+    ft = zerofloat(n1,n2,n3)
+    fsx.getFlpt(5000,sk,fl,fp,ft)
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,ft,cmin=75,cmax=85,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+def goSkinClean():
+  fsx = FaultSkinnerX()
+  sks = readSkins(fsktv)
+  fcs = FaultSkin.getCells(sks)
+  fsx.resetCells(fcs)
+  fs = FaultSkinner()
+  fs.setGrowLikelihoods(0.2,0.7)
+  fs.setMaxDeltaStrike(10)
+  fs.setMaxPlanarDistance(0.2)
+  fs.setMinSkinSize(3000)
+  skins = fs.findSkins(fcs)
+  print "total number of skins =",len(skins)
+  print "number of cells in skins =",FaultSkin.countCells(skins)
+  removeAllSkinFiles("fsc")
+  writeSkins("fsc",skins)
+  fd = FaultDisplay()
+  fl = zerofloat(n1,n2,n3)
+  fp = zerofloat(n1,n2,n3)
+  ft = zerofloat(n1,n2,n3)
+  fd.getFlt(skins,fl)
+  fd.getFpt(skins,fp)
+  fd.getFtt(skins,ft)
+  writeImage("fltc",fl)
+  writeImage("fptc",fp)
+  writeImage("fttc",ft)
+  gx = readImage(gxfile)
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
 
 def goSkin():

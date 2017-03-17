@@ -630,7 +630,7 @@ public class FaultSkinnerT {
       int i3 = cell.i3;
       _cells[i3][i2][i1] = cell;
     }
-    _mask = new short[n3][n2][n1];
+    _mask = new int[n3][n2][n1];
 
     // Cell comparator for high-to-low ordering based on fault likelihoods.
     Comparator<FaultCell> flComparator = new Comparator<FaultCell>() {
@@ -773,7 +773,7 @@ public class FaultSkinnerT {
       int i3 = cell.i3;
       _cells[i3][i2][i1] = cell;
     }
-    _mask = new short[n3][n2][n1];
+    _mask = new int[n3][n2][n1];
     // Empty list of skins.
     ArrayList<FaultSkin> skinList = new ArrayList<FaultSkin>();
 
@@ -964,8 +964,8 @@ public class FaultSkinnerT {
       int p1 = round(x1+d1); if(p1<0) {p1=0;} if(p1>=n1){p1=n1-1;} 
       int p2 = round(x2+d2); if(p2<0) {p2=0;} if(p2>=n2){p2=n2-1;} 
       int p3 = round(x3+d3); if(p3<0) {p3=0;} if(p3>=n3){p3=n3-1;} 
-      _mask[m3][m2][m1] = (byte)sk;
-      _mask[p3][p2][p1] = (byte)sk;
+      _mask[m3][m2][m1] = sk;
+      _mask[p3][p2][p1] = sk;
     }
 
   }
@@ -1390,7 +1390,7 @@ public class FaultSkinnerT {
   // Methods to find good nabors of a specified cell. These methods return
   // null if no nabor is good enough, based on various thresholds.
   private FaultCell[][][] _cells;
-  private short[][][] _mask;
+  private int[][][] _mask;
 
 
   private FaultCell findNaborAbove(FaultCellGrid cells, FaultCell cell) {

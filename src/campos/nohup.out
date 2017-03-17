@@ -1094,3 +1094,6 @@ Exception in thread "AWT-EventQueue-0" java.lang.OutOfMemoryError: Java heap spa
 	at org.python.core.PyMethod.__call__(PyMethod.java:196)
 	at org.python.core.PyObject._jcallexc(PyObject.java:3502)
 	at org.python.core.PyObject._jcall(PyObject.java:3534)
+setupForSubset: campos sub1
+go skin...
+/home/xinwu/Home/bin/jy: line 41: 11147 Killed                  java -server -d64 -ea -Xmx230g -Djava.library.path=$JAVA_LIBRARY_PATH -Djava.util.logging.config.file=$HOME/.java_logging_config -Dpython.cachedir.skip=false -Dpython.cachedir=/tmp/cachedir org.python.util.jython $*
