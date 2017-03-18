@@ -696,6 +696,7 @@ public class DynamicWarping {
     normalizeErrors(es);
   }
 
+<<<<<<< HEAD
   public void smoothErrors1X(int nter, float[][][] e) {
     for (int iter=0; iter<nter; iter++) 
       smoothErrors1(_bstrain1,e,e);
@@ -703,6 +704,8 @@ public class DynamicWarping {
     normalizeErrors(e);
   }
 
+=======
+>>>>>>> 3d2e8d6f69724b21a54dbbe55f0e639e69620215
   private static void normalizeErrorsX(float[][][] e) {
     int n2 = e.length;
     for (int i2=0; i2<n2; ++i2) {
