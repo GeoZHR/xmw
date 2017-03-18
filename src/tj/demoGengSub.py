@@ -52,6 +52,8 @@ smfile = "sm"
 cmfile = "cm"
 clfile = "cl"
 hvsfile = "hvs"
+uxfile = "ux"
+usfile = "us"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -88,9 +90,9 @@ def main(args):
   #goSkinTv()
   #goReskinx()
   #goSkinClean()
-  goSkinMerge()
+  #goSkinMerge()
   #goSmooth()
-  #goSlopes()
+  goSlopes()
   #goSlip()
   #goUnfaultS()
   #goDisplay()
@@ -108,6 +110,55 @@ def main(args):
   #goResults3D()
   #goMovieSlices()
   #goSlicesX()
+  goFlattenDF()
+def goFlattenDF():
+  fx = readImage(gxfile)
+  fl = readImage(fltfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  ep = readImage(epfile)
+  fl = mul(fl,2)
+  rgf = RecursiveGaussianFilterP(2)
+  rgf.applyX0X(fl,fl)
+  rgf.applyXX0(fl,fl)
+  ep = sub(1,fl)
+  '''
+  df = DynamicFlattener(-30,30)
+  df.setErrorExponent(1)
+  df.setStrainMax(0.5)
+  df.setWindow(2,150)
+  df.setGate(30)
+  df.setErrorExponent(1)
+  df.setShiftSmoothing(1)
+  df.setErrorSmoothing(3)
+  ux = zerofloat(n1,n2,n3)
+  gx = df.flattenXL(0,0,ep,copy(fx),ux)
+  writeImage(uxfile,ux)
+  '''
+  ep = pow(ep,6)
+  sub(ep,min(ep),ep)
+  div(ep,max(ep),ep)
+  ux = readImage(uxfile)
+  ss = SmoothWithSlopes()
+  gx = ss.flatten(ux,fx)
+  us = ss.smooth(ep,p2,p3,ux)
+  writeImage(usfile,us)
+  us = readImage(usfile)
+  gh = ss.flatten(us,fx)
+  plot3(fx)
+  plot3(gx)
+  plot3(gh)
+  '''
+  gt = readImage(gtfile)
+  plot3(gt)
+  hs = ss.getHorizons(n1,1,0,us)
+  hs = mul(hs,2)
+  c1 = Sampling(n1,2,0)
+  plot3p(c1,s2,s3,fx,k1=51,k2=445,k3=208,cmin=-1.5,cmax=1.5)
+  plot3p(c1,s2,s3,gh,k1=46,k2=445,k3=208,cmin=-1.5,cmax=1.5)
+  plot3p(c1,s2,s3,fx,hv=hs,k1=120,k2=445,k3=208,cmin=-1.5,cmax=1.5)
+  plot3(fx,surf=div(hs[46],2))
+  '''
 
 def goMovieSlices():
   gg = readImage("fg")
@@ -363,7 +414,7 @@ def goFaultScan():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 6.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)

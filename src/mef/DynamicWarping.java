@@ -695,6 +695,7 @@ public class DynamicWarping {
     normalizeErrorsX(es);
     normalizeErrors(es);
   }
+
   private static void normalizeErrorsX(float[][][] e) {
     int n2 = e.length;
     for (int i2=0; i2<n2; ++i2) {

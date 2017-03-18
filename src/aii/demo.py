@@ -84,7 +84,7 @@ def main(args):
   #goFaults()
   #goImpedance2()
   #goSlip()
-  goUnfaultS()
+  #goUnfaultS()
   #goFlatten()
   #goInitial()
   #goImpedance3(0.1,0.0,1.0)
@@ -95,7 +95,7 @@ def main(args):
   #goImpFlatten(0.9,0.0,1.0)
   #goImpFlatten(0.9,0.0,0.001)
   #goHorizon()
-  #goOrientations()
+  goOrientations()
   #goImpedanceHorizon()
 def goImpedanceHorizon():
   pc = readImage(pcfile)
@@ -115,17 +115,19 @@ def goOrientations():
   gn = readImage(gncfile)
   hz = readImage2D(n2,n3,hzfile)
   sk = readSkins(fslbase)
-  lof = LocalOrientFilter(2,2)
+  lof = LocalOrientFilter(2,3)
   et = lof.applyForTensors(gn)
   et.invertStructure(0.0,1.0,1.0)
+  '''
   plot3(gn,cmin=-2,cmax=1.5,clab="Amplitude",png="gn")
   plot3(gn,skins=sk,smax=15.0,clab="Fault throw (samples)",png="gnskin")
   plot3(gn,cmin=0,cmax=15,cmap=ColorMap.JET,
         clab="Fault throw (samples)",png="throwBar")
   plot3(gn,cmin=-2,cmax=1.5,clab="Amplitude",et=et,size=15,png="gnet")
   plot3c(gn,cmin=-2,cmax=1.5,clab="Amplitude",hz=hz,mk=-1,png="gnhz")
+  '''
   plot3c(gn,cmin=-2,cmax=1.5,hz=hz,mk=-1,et=et,png="gnhzw")
-  plot3c(gn,cmin=-2,cmax=1.5,hz=hz,mk=-1,et=et,w=False,png="gnhzv")
+  plot3c(gn,cmin=-2,cmax=1.5,hz=hz,mk=-1,et=et,skins=sk,w=False,png="gnhzv")
 def goHorizon():
   hz = readImage2D(n2,n3,hzfile)
   gc = readImage(gnfile)
@@ -804,7 +806,7 @@ def plot3c(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if w:
       hs = tv.applyForSegmentsW(2,et,hz)
     else:
-      hs = tv.applyForSegmentsV(2,et,hz)
+      hs = tv.applyForSegmentsV(2,et,hz,skins)
     cp = ColorMap(0,1,ColorMap.JET)
     vi = fillfloat(0.9,6)
     cb = cp.getRgbFloats(vi)
@@ -817,6 +819,7 @@ def plot3c(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ls.setSmooth(False)
       ss.add(ls)
       sf.world.addChild(lg)
+  '''
   if skins:
     sg = Group()
     ss = StateSet()
@@ -844,6 +847,7 @@ def plot3c(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       qg.setStates(None)
       sg.addChild(qg)
     sf.world.addChild(sg)
+  '''
   ipg.setSlices(n1,138,59)
   #ipg.setSlices(92,140,59)
   if hz:
