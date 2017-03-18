@@ -36,7 +36,8 @@ def goBag2dOne():
   w2 = round(n2*1.5)
   plot(gx,cmin=-2,cmax=2,w1=w1,w2=w2,png="seis")
   plot(pa,cmin=0,cmax=1,xp=[p1,p2],w1=w1,w2=w2,png="initial")
-  plot(pa,cmin=0,cmax=1,xu=xu,w1=w1,w2=w2,png="band")
+  #plot(pa,cmin=0,cmax=1,xu=xu,w1=w1,w2=w2,png="band")
+  plot(pa,cmin=0,cmax=1,xp=[p1,p2],xu=xu,w1=w1,w2=w2,png="band")
   bs = sp.refine(50,1,5,3,xu,pa)
   '''
   sp.smooth(10,xu[0])

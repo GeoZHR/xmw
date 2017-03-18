@@ -544,7 +544,7 @@ public class FaultReskin {
 
  public float[][][][] faultImagesFromCellsJake(
    int n1, int n2, int n3, FaultCell[] cells) {
-   setCells(cells);
+   setCellsX(cells);
    float[][][] fls = new float[_n3][_n2][_n1];
    float[][][] fps = new float[_n3][_n2][_n1];
    float[][][] fts = new float[_n3][_n2][_n1];
@@ -626,10 +626,9 @@ public class FaultReskin {
    return new float[][][][]{fl,fp,ft};
  }
 
-
- public float[][][][] faultImagesFromCells(
-   int n1, int n2, int n3, FaultCell[] cells) {
-   setCells(cells);
+ public FaultSkin[] faultSkinsFromCells(
+   int n1, int n2, int n3, int minSkinSize,FaultCell[] cells) {
+   setCellsX(cells);
    float[][][] fls = new float[_n3][_n2][_n1];
    float[][][] fps = new float[_n3][_n2][_n1];
    float[][][] fts = new float[_n3][_n2][_n1];
@@ -639,18 +638,35 @@ public class FaultReskin {
    float[][][] g22 = new float[_n3][_n2][_n1];
    float[][][] g23 = new float[_n3][_n2][_n1];
    float[][][] g33 = new float[_n3][_n2][_n1];
+   int r = 30;
+   float[][] sc = new float[2*r+1][2*r+1];
+   float sig = 4f/(r*r);
+   for (int du=-r; du<=r; du += 2)
+   for (int dv=-r; dv<=r; dv += 2)
+     sc[du+r][dv+r] = exp(-(du*du+dv*dv)*sig);
    for (FaultCell cell:cells) {
      float fli = cell.fl;
      int i1 = cell.i1-_j1;
      int i2 = cell.i2-_j2;
      int i3 = cell.i3-_j3;
      fls[i3][i2][i1] = 1f;
-     g11[i3][i2][i1] = cell.w11*fli;
-     g12[i3][i2][i1] = cell.w12*fli;
-     g13[i3][i2][i1] = cell.w13*fli;
-     g22[i3][i2][i1] = cell.w22*fli;
-     g23[i3][i2][i1] = cell.w23*fli;
-     g33[i3][i2][i1] = cell.w33*fli;
+     for (int du=-r; du<=r; du += 2) {
+     for (int dv=-r; dv<=r; dv += 2) {
+       int k3 = round(i3+dv*cell.v3+du*cell.u3);
+       int k2 = round(i2+dv*cell.v2+du*cell.u2);
+       int k1 = round(i1+dv*cell.v1+du*cell.u1);
+       if(k3<0||k3>=_n3) {continue;}
+       if(k2<0||k2>=_n2) {continue;}
+       if(k1<0||k1>=_n1) {continue;}
+       float sci = sc[du+r][dv+r];
+       g11[k3][k2][k1] += cell.w11*fli*sci;
+       g12[k3][k2][k1] += cell.w12*fli*sci;
+       g13[k3][k2][k1] += cell.w13*fli*sci;
+       g22[k3][k2][k1] += cell.w22*fli*sci;
+       g23[k3][k2][k1] += cell.w23*fli*sci;
+       g33[k3][k2][k1] += cell.w33*fli*sci;
+       if(fls[k3][k2][k1]<sci) fls[k3][k2][k1] = sci;
+     }}
    }
    System.out.println("assignments done...");
    RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(1);
@@ -695,6 +711,114 @@ public class FaultReskin {
    lsf.apply(et,2000,fls,fls);
    computeStrikeDip(fls,fps,fts);
    System.out.println("structure-oriented smoothing done...");
+   FaultSkinner  fs = new FaultSkinner();
+   fs.setGrowLikelihoods(0.2f,0.6f);
+   fs.setMaxDeltaStrike(10);
+   fs.setMaxPlanarDistance(0.2f);
+   fs.setMinSkinSize(minSkinSize);
+   div(fls,max(fls),fls);
+   FaultCell[] fcs = fs.findCells(new float[][][][]{fls,fps,fts});
+   int nc = fcs.length;
+   for (int ic=0; ic<nc; ++ic) {
+     FaultCell fci = fcs[ic];
+     float x1 = fci.x1+_j1;
+     float x2 = fci.x2+_j2;
+     float x3 = fci.x3+_j3;
+     float fl = fci.fl;
+     float fp = fci.fp;
+     float ft = fci.ft;
+     fcs[ic] = new FaultCell(x1,x2,x3,fl,fp,ft);
+   }
+   return fs.findSkins(fcs);
+ }
+
+
+ public float[][][][] faultImagesFromCells(
+   int n1, int n2, int n3, FaultCell[] cells) {
+   setCellsX(cells);
+   float[][][] fls = new float[_n3][_n2][_n1];
+   float[][][] fps = new float[_n3][_n2][_n1];
+   float[][][] fts = new float[_n3][_n2][_n1];
+   float[][][] g11 = new float[_n3][_n2][_n1];
+   float[][][] g12 = new float[_n3][_n2][_n1];
+   float[][][] g13 = new float[_n3][_n2][_n1];
+   float[][][] g22 = new float[_n3][_n2][_n1];
+   float[][][] g23 = new float[_n3][_n2][_n1];
+   float[][][] g33 = new float[_n3][_n2][_n1];
+   int r = 30;
+   float[][] sc = new float[2*r+1][2*r+1];
+   float sig = 4f/(r*r);
+   for (int du=-r; du<=r; du += 2)
+   for (int dv=-r; dv<=r; dv += 2)
+     sc[du+r][dv+r] = exp(-(du*du+dv*dv)*sig);
+   for (FaultCell cell:cells) {
+     float fli = cell.fl;
+     int i1 = cell.i1-_j1;
+     int i2 = cell.i2-_j2;
+     int i3 = cell.i3-_j3;
+     fls[i3][i2][i1] = 1f;
+     for (int du=-r; du<=r; du += 2) {
+     for (int dv=-r; dv<=r; dv += 2) {
+       int k3 = round(i3+dv*cell.v3+du*cell.u3);
+       int k2 = round(i2+dv*cell.v2+du*cell.u2);
+       int k1 = round(i1+dv*cell.v1+du*cell.u1);
+       if(k3<0||k3>=_n3) {continue;}
+       if(k2<0||k2>=_n2) {continue;}
+       if(k1<0||k1>=_n1) {continue;}
+       float sci = sc[du+r][dv+r];
+       g11[k3][k2][k1] += cell.w11*fli*sci;
+       g12[k3][k2][k1] += cell.w12*fli*sci;
+       g13[k3][k2][k1] += cell.w13*fli*sci;
+       g22[k3][k2][k1] += cell.w22*fli*sci;
+       g23[k3][k2][k1] += cell.w23*fli*sci;
+       g33[k3][k2][k1] += cell.w33*fli*sci;
+       if(fls[k3][k2][k1]<sci) fls[k3][k2][k1] = sci;
+     }}
+   }
+   System.out.println("assignments done...");
+   RecursiveGaussianFilterP rgf1 = new RecursiveGaussianFilterP(1);
+   rgf1.apply000(fls,fls);
+   System.out.println("fl smoothing done...");
+   RecursiveGaussianFilterP rgf2 = new RecursiveGaussianFilterP(10);
+   float[][][][] gs = {g11,g22,g33,g12,g13,g23};
+   for (float[][][] g:gs) {
+     rgf2.apply000(g,g);
+   }
+   System.out.println("gaussian smoothing done...");
+   float[][][] w1 = new float[_n3][_n2][_n1];
+   float[][][] w2 = new float[_n3][_n2][_n1];
+   float[][][] u1 = new float[_n3][_n2][_n1];
+   float[][][] u2 = new float[_n3][_n2][_n1];
+   float[][][] u3 = new float[_n3][_n2][_n1];
+   solveEigenproblems(g11,g12,g13,g22,g23,g33,w1,w2,u1,u2,u3);
+   // Compute u1 such that u3 > 0.
+   for (int i3=0; i3<_n3; ++i3) {
+     for (int i2=0; i2<_n2; ++i2) {
+       for (int i1=0; i1<_n1; ++i1) {
+         float u1i = u2[i3][i2][i1];
+         float u2i = u2[i3][i2][i1];
+         float u3i = u3[i3][i2][i1];
+         float u1s = 1.0f-u2i*u2i-u3i*u3i;
+         u1i = (u1s>0.0f)?sqrt(u1s):0.0f;
+         if (u3i<0.0f) {
+           u1i = -u1i;
+           u2i = -u2i;
+         }
+         u1[i3][i2][i1] = u1i;
+         u2[i3][i2][i1] = u2i;
+       }
+     }
+   }
+   System.out.println("eigentensors done...");
+   float[][][] eu = fillfloat(0.01f,_n1,_n2,_n3);
+   float[][][] ev = fillfloat(1.00f,_n1,_n2,_n3);
+   float[][][] ew = fillfloat(1.00f,_n1,_n2,_n3);
+   EigenTensors3 et = new EigenTensors3(u1,u2,w1,w2,eu,ev,ew,true);
+   LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+   lsf.apply(et,2000,fls,fls);
+   computeStrikeDip(fls,fps,fts);
+   System.out.println("structure-oriented smoothing done...");
+
    float[][][] fl = new float[n3][n2][n1];
    float[][][] fp = new float[n3][n2][n1];
    float[][][] ft = new float[n3][n2][n1];
@@ -1170,6 +1294,8 @@ public class FaultReskin {
     return sfs;
   }
 
+
+
   private void setCells(int n1, int n2, int n3, FaultCell[] cells) {
     _j1 = 0;
     _j2 = 0;
@@ -1180,6 +1306,29 @@ public class FaultReskin {
     _cells = new FaultCell[_n3][_n2][_n1];
     for (FaultCell cell:cells)
       set(cell);
+  }
+
+  private void setCellsX(FaultCell[] cells) {
+    int i1min = Integer.MAX_VALUE;
+    int i2min = Integer.MAX_VALUE;
+    int i3min = Integer.MAX_VALUE;
+    int i1max = -i1min;
+    int i2max = -i2min;
+    int i3max = -i3min;
+    for (FaultCell cell:cells) {
+      if (cell.i1<i1min) i1min = cell.i1;
+      if (cell.i2<i2min) i2min = cell.i2;
+      if (cell.i3<i3min) i3min = cell.i3;
+      if (cell.i1>i1max) i1max = cell.i1;
+      if (cell.i2>i2max) i2max = cell.i2;
+      if (cell.i3>i3max) i3max = cell.i3;
+    }
+    _j1 = i1min;
+    _j2 = i2min;
+    _j3 = i3min;
+    _n1 = 1+i1max-i1min;
+    _n2 = 1+i2max-i2min;
+    _n3 = 1+i3max-i3min;
   }
 
 

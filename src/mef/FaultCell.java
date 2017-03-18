@@ -715,7 +715,7 @@ public class FaultCell implements Serializable {
   /////////////////////////////////////////////////////////////////////////
   // private
 
-  private void set(
+  public void set(
       float x1, float x2, float x3, 
       float fl, float fp, float ft) {
     this.x1 = x1; 

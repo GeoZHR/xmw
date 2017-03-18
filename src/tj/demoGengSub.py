@@ -562,7 +562,7 @@ def goSkin():
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
 def goSkinMerge():
-  #gx = readImage(gxfile)
+  gx = readImage(gxfile)
   if not plotOnly:
     skins = readSkins(fslbase)
     fsk = FaultSkinner() # as in goSkin
@@ -575,64 +575,28 @@ def goSkinMerge():
     fr = FaultReskin()
     skrs = []
     k = 1
-    for skin in skins:
+    for skin in [skins[1],skins[5],skins[10]]:
       print k
       cells = FaultSkin.getCells(skin)
+      '''
       fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
       div(fl,max(fl),fl)
       cells = fsk.findCells([fl,fp,ft])
       skt = fsk.findSkins(cells)
+      '''
+      skt = fr.faultSkinsFromCells(n1,n2,n3,minSkinSize,cells)
       skrs.append(skt[0])
       k = k+1
-    '''
-    sks1 = [skins[0],skins[2],skins[3],skins[5]] 
-    cells = FaultSkin.getCells(sks1)
-    fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
-    div(fl,max(fl),fl)
-    cells = fs.findCells([fl,fp,ft])
-    skt1 = fs.findSkins(cells)
-
-    cells = FaultSkin.getCells(skt1)
-    fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
-    div(fl,max(fl),fl)
-    cells = fs.findCells([fl,fp,ft])
-    skt1 = fs.findSkins(cells)
-
-
-    sks2 = [skins[1]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
-    cells = FaultSkin.getCells(sks2)
-    fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
-    div(fl,max(fl),fl)
-    cells = fs.findCells([fl,fp,ft])
-    skt2 = fs.findSkins(cells)
-
-    sks3 = [skins[4]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
-    cells = FaultSkin.getCells(sks3)
-    fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
-    div(fl,max(fl),fl)
-    cells = fs.findCells([fl,fp,ft])
-    skt3 = fs.findSkins(cells)
-
-
-    sks4 = [skins[6]] #[skins[11],skins[6]] #[skins[7],skins[9]]#skins[5]
-    cells = FaultSkin.getCells(sks4)
-    fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
-    div(fl,max(fl),fl)
-    cells = fs.findCells([fl,fp,ft])
-    skt4 = fs.findSkins(cells)
-
-    skrs = [skt1[0],skt2[0],skt3[0],skt4[0]]
-    '''
-    removeAllSkinFiles(fskr)
-    writeSkins(fskr,skrs)
+    #removeAllSkinFiles(fskr)
+    #writeSkins(fskr,skrs)
   else:
     skrs = readSkins(fskr)
     fsx = FaultSkinnerX()
     flt = zerofloat(n1,n2,n3)
     fsx.getFl(skrs,flt)
     writeImage(fltfile,flt)
-  '''
   plot3(gx,skins=skrs)
+  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   '''
