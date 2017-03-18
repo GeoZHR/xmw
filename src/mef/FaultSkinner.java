@@ -600,8 +600,10 @@ public class FaultSkinner {
       can = false;
     } else if (absDeltaFt(ca,cb)>_dftmax) {
       can = false;
+    /*
     } else if (absDeltaS1(ca,cb)>_ds1max) {
       can = false;
+    */
     } else if (maxDistanceToPlane(ca,cb)>_dnpmax) {
       can = false;
     }

@@ -88,7 +88,7 @@ def main(args):
   #goSkinTv()
   #goReskinx()
   #goSkinClean()
-  #goSkinMerge()
+  goSkinMerge()
   #goSmooth()
   #goSlopes()
   #goSlip()
@@ -108,15 +108,6 @@ def main(args):
   #goResults3D()
   #goMovieSlices()
   #goSlicesX()
-  gx = readImage(gxfile)
-  skins = readSkins(fslbase)
-  fsx = FaultSkinnerX()
-  nk = len(skins)
-  for ik in range(0,20,1):
-    flt = zerofloat(n1,n2,n3)
-    fsx.getFl(skins,flt)
-    plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="skin"+str(ik))
 
 def goMovieSlices():
   gg = readImage("fg")
@@ -571,19 +562,16 @@ def goSkin():
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
 def goSkinMerge():
-  gx = readImage(gxfile)
+  #gx = readImage(gxfile)
   if not plotOnly:
-    skins = readSkins("fsc")
-    #fsc = FaultScanner(sigmaPhi,sigmaTheta)
-    #sp = fsc.makePhiSampling(minPhi,maxPhi)
-    #st = fsc.makeThetaSampling(minTheta,maxTheta)
-
-    fs = FaultSkinner()
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-
+    skins = readSkins(fslbase)
+    fsk = FaultSkinner() # as in goSkin
+    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+    fsk.setMaxDeltaStrike(10)
+    fsk.setMaxPlanarDistance(0.2)
+    fsk.setMinSkinSize(minSkinSize)
+    fsk.setMinMaxThrow(-1,100)
+    skins = fsk.reskin(skins)
     fr = FaultReskin()
     skrs = []
     k = 1
@@ -592,11 +580,10 @@ def goSkinMerge():
       cells = FaultSkin.getCells(skin)
       fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
       div(fl,max(fl),fl)
-      cells = fs.findCells([fl,fp,ft])
-      skt = fs.findSkins(cells)
+      cells = fsk.findCells([fl,fp,ft])
+      skt = fsk.findSkins(cells)
       skrs.append(skt[0])
       k = k+1
-
     '''
     sks1 = [skins[0],skins[2],skins[3],skins[5]] 
     cells = FaultSkin.getCells(sks1)
@@ -643,9 +630,12 @@ def goSkinMerge():
     fsx = FaultSkinnerX()
     flt = zerofloat(n1,n2,n3)
     fsx.getFl(skrs,flt)
+    writeImage(fltfile,flt)
+  '''
   plot3(gx,skins=skrs)
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
+  '''
 
 
 def goReskin(): 

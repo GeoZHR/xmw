@@ -114,6 +114,7 @@ public class FaultSkinnerX {
   }
 
   public void getFl(FaultSkin[] sks, float[][][] fl) {
+    zero(fl);
     for (FaultSkin sk:sks) {
       for (FaultCell fc:sk) {
         int i1i = fc.i1;
