@@ -575,32 +575,24 @@ def goSkinMerge():
     fr = FaultReskin()
     skrs = []
     k = 1
-    for skin in [skins[1],skins[5],skins[10]]:
+    for skin in skins:
       print k
       cells = FaultSkin.getCells(skin)
-      '''
-      fl,fp,ft = fr.faultImagesFromCells(n1,n2,n3,cells)
-      div(fl,max(fl),fl)
-      cells = fsk.findCells([fl,fp,ft])
-      skt = fsk.findSkins(cells)
-      '''
       skt = fr.faultSkinsFromCells(n1,n2,n3,minSkinSize,cells)
       skrs.append(skt[0])
       k = k+1
-    #removeAllSkinFiles(fskr)
-    #writeSkins(fskr,skrs)
-  else:
-    skrs = readSkins(fskr)
+    removeAllSkinFiles(fskr)
+    writeSkins(fskr,skrs)
     fsx = FaultSkinnerX()
     flt = zerofloat(n1,n2,n3)
     fsx.getFl(skrs,flt)
     writeImage(fltfile,flt)
+  else:
+    skrs = readSkins(fskr)
+    flt = readImage(fltfile)
   plot3(gx,skins=skrs)
-  '''
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  '''
-
 
 def goReskin(): 
   gx = readImage(gxfile)
