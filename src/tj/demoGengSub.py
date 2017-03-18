@@ -37,6 +37,7 @@ fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
 gwfile = "gw" # unfaulted image
+fwsfile = "fws" # unfaulted image
 sw1file = "sw1" # 1st component of unfaulting shifts
 sw2file = "sw2" # 2nd component of unfaulting shifts
 sw3file = "sw3" # 3rd component of unfaulting shifts
@@ -88,10 +89,10 @@ def main(args):
   #goSkinTv()
   #goReskinx()
   #goSkinClean()
-  goSkinMerge()
+  #goSkinMerge()
   #goSmooth()
   #goSlopes()
-  #goSlip()
+  goSlip()
   #goUnfaultS()
   #goDisplay()
   #goFaultImages()
@@ -578,9 +579,10 @@ def goSkinMerge():
     for skin in skins:
       print k
       cells = FaultSkin.getCells(skin)
-      skt = fr.faultSkinsFromCells(n1,n2,n3,minSkinSize,cells)
-      skrs.append(skt[0])
-      k = k+1
+      skt = fr.faultSkinFromCells(n1,n2,n3,minSkinSize,cells)
+      if(skt):
+        skrs.append(skt)
+        k = k+1
     removeAllSkinFiles(fskr)
     writeSkins(fskr,skrs)
     fsx = FaultSkinnerX()
@@ -704,7 +706,7 @@ def goSlip():
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fskbase)
+    skins = readSkins(fskr)
     fsl = FaultSlipper(gsx,p2,p3)
     fsl.setOffset(2.0) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error
@@ -743,7 +745,7 @@ def goUnfaultS():
     fw = zerofloat(n1,n2,n3)
     lof = LocalOrientFilter(8.0,4.0,4.0)
     et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
+    et.setEigenvalues(0.005,1.0,1.0)
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
@@ -765,7 +767,6 @@ def goUnfaultS():
     #gw = readImage(gwfile)
     fw = readImage(fwsfile)
     #fw = readImage("fwt")
-  fw = gain(fw)
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
   '''
