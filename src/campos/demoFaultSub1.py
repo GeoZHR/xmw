@@ -72,7 +72,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub8/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -637,12 +637,13 @@ def goSkinTv():
     writeImage("fptv",fp)
     writeImage("fttv",ft)
   else:
-    fl = readImage("fltv")
+    #fl = readImage("fltv")
     fp = readImage("fptv")
-    ft = readImage("fttv")
-  '''
-  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+    #ft = readImage("fttv")
+    gx = readImage(gxfile)
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
+  '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ft,cmin=60,cmax=85,cmap=jetFillExceptMin(1.0),

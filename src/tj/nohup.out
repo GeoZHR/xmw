@@ -715,3 +715,421 @@ FaultScanner.scan: done in 71 seconds
 FaultScanner.scan: done in 47 seconds
 FaultScanner.scan: done in 24 seconds
 FaultScanner.scan: done
+setupForSubset: gengSub
+goScan ...
+FaultScanner.scan: done in 9808 seconds
+FaultScanner.scan: done in 9815 seconds
+FaultScanner.scan: done in 9977 seconds
+FaultScanner.scan: done in 9877 seconds
+FaultScanner.scan: done in 9966 seconds
+FaultScanner.scan: done in 10021 seconds
+FaultScanner.scan: done in 10054 seconds
+FaultScanner.scan: done in 10093 seconds
+FaultScanner.scan: done in 10156 seconds
+FaultScanner.scan: done in 10224 seconds
+FaultScanner.scan: done in 10316 seconds
+FaultScanner.scan: done in 10268 seconds
+FaultScanner.scan: done in 10229 seconds
+FaultScanner.scan: done in 10208 seconds
+FaultScanner.scan: done in 10209 seconds
+FaultScanner.scan: done in 10219 seconds
+FaultScanner.scan: done in 10243 seconds
+FaultScanner.scan: done in 10162 seconds
+FaultScanner.scan: done in 10162 seconds
+FaultScanner.scan: done in 10127 seconds
+FaultScanner.scan: done in 10051 seconds
+FaultScanner.scan: done in 9991 seconds
+FaultScanner.scan: done in 9948 seconds
+FaultScanner.scan: done in 9920 seconds
+FaultScanner.scan: done in 9870 seconds
+FaultScanner.scan: done in 9802 seconds
+FaultScanner.scan: done in 9762 seconds
+FaultScanner.scan: done in 9711 seconds
+FaultScanner.scan: done in 9662 seconds
+FaultScanner.scan: done in 9622 seconds
+FaultScanner.scan: done in 9573 seconds
+FaultScanner.scan: done in 9522 seconds
+FaultScanner.scan: done in 9481 seconds
+FaultScanner.scan: done in 9436 seconds
+FaultScanner.scan: done in 9392 seconds
+FaultScanner.scan: done in 9353 seconds
+FaultScanner.scan: done in 9374 seconds
+FaultScanner.scan: done in 9359 seconds
+FaultScanner.scan: done in 9386 seconds
+FaultScanner.scan: done in 9469 seconds
+FaultScanner.scan: done in 9460 seconds
+FaultScanner.scan: done in 9458 seconds
+FaultScanner.scan: done in 9453 seconds
+FaultScanner.scan: done in 9436 seconds
+FaultScanner.scan: done in 9397 seconds
+FaultScanner.scan: done in 9347 seconds
+FaultScanner.scan: done in 9386 seconds
+FaultScanner.scan: done in 9452 seconds
+FaultScanner.scan: done in 9509 seconds
+FaultScanner.scan: done in 9558 seconds
+FaultScanner.scan: done in 9615 seconds
+FaultScanner.scan: done in 9658 seconds
+FaultScanner.scan: done in 9670 seconds
+FaultScanner.scan: done in 9707 seconds
+FaultScanner.scan: done in 9736 seconds
+FaultScanner.scan: done in 9762 seconds
+FaultScanner.scan: done in 9766 seconds
+FaultScanner.scan: done in 9779 seconds
+FaultScanner.scan: done in 9801 seconds
+FaultScanner.scan: done in 9825 seconds
+FaultScanner.scan: done in 9810 seconds
+FaultScanner.scan: done in 9744 seconds
+FaultScanner.scan: done in 9678 seconds
+FaultScanner.scan: done in 9613 seconds
+FaultScanner.scan: done in 9549 seconds
+FaultScanner.scan: done in 9485 seconds
+FaultScanner.scan: done in 9424 seconds
+FaultScanner.scan: done in 9364 seconds
+FaultScanner.scan: done in 9300 seconds
+FaultScanner.scan: done in 9238 seconds
+FaultScanner.scan: done in 9180 seconds
+FaultScanner.scan: done in 9117 seconds
+FaultScanner.scan: done in 9061 seconds
+FaultScanner.scan: done in 9002 seconds
+FaultScanner.scan: done in 8945 seconds
+FaultScanner.scan: done in 8887 seconds
+FaultScanner.scan: done in 8829 seconds
+FaultScanner.scan: done in 8772 seconds
+FaultScanner.scan: done in 8715 seconds
+FaultScanner.scan: done in 8663 seconds
+FaultScanner.scan: done in 8607 seconds
+FaultScanner.scan: done in 8555 seconds
+FaultScanner.scan: done in 8501 seconds
+FaultScanner.scan: done in 8449 seconds
+FaultScanner.scan: done in 8396 seconds
+FaultScanner.scan: done in 8345 seconds
+FaultScanner.scan: done in 8296 seconds
+FaultScanner.scan: done in 8247 seconds
+FaultScanner.scan: done in 8200 seconds
+FaultScanner.scan: done in 8150 seconds
+FaultScanner.scan: done in 8104 seconds
+FaultScanner.scan: done in 8057 seconds
+FaultScanner.scan: done in 8011 seconds
+FaultScanner.scan: done in 7966 seconds
+FaultScanner.scan: done in 7920 seconds
+FaultScanner.scan: done in 7875 seconds
+FaultScanner.scan: done in 7831 seconds
+FaultScanner.scan: done in 7784 seconds
+FaultScanner.scan: done in 7740 seconds
+FaultScanner.scan: done in 7698 seconds
+FaultScanner.scan: done in 7657 seconds
+FaultScanner.scan: done in 7621 seconds
+FaultScanner.scan: done in 7580 seconds
+FaultScanner.scan: done in 7540 seconds
+FaultScanner.scan: done in 7516 seconds
+FaultScanner.scan: done in 7516 seconds
+FaultScanner.scan: done in 7516 seconds
+FaultScanner.scan: done in 7508 seconds
+FaultScanner.scan: done in 7467 seconds
+FaultScanner.scan: done in 7438 seconds
+FaultScanner.scan: done in 7406 seconds
+FaultScanner.scan: done in 7369 seconds
+FaultScanner.scan: done in 7336 seconds
+FaultScanner.scan: done in 7305 seconds
+FaultScanner.scan: done in 7268 seconds
+FaultScanner.scan: done in 7247 seconds
+FaultScanner.scan: done in 7219 seconds
+FaultScanner.scan: done in 7179 seconds
+FaultScanner.scan: done in 7148 seconds
+FaultScanner.scan: done in 7120 seconds
+FaultScanner.scan: done in 7081 seconds
+FaultScanner.scan: done in 7046 seconds
+FaultScanner.scan: done in 7011 seconds
+FaultScanner.scan: done in 6983 seconds
+FaultScanner.scan: done in 6953 seconds
+FaultScanner.scan: done in 6914 seconds
+FaultScanner.scan: done in 6889 seconds
+FaultScanner.scan: done in 6863 seconds
+FaultScanner.scan: done in 6829 seconds
+FaultScanner.scan: done in 6789 seconds
+FaultScanner.scan: done in 6754 seconds
+FaultScanner.scan: done in 6718 seconds
+FaultScanner.scan: done in 6692 seconds
+FaultScanner.scan: done in 6660 seconds
+FaultScanner.scan: done in 6622 seconds
+FaultScanner.scan: done in 6584 seconds
+FaultScanner.scan: done in 6550 seconds
+FaultScanner.scan: done in 6512 seconds
+FaultScanner.scan: done in 6476 seconds
+FaultScanner.scan: done in 6439 seconds
+FaultScanner.scan: done in 6402 seconds
+FaultScanner.scan: done in 6374 seconds
+FaultScanner.scan: done in 6334 seconds
+FaultScanner.scan: done in 6295 seconds
+FaultScanner.scan: done in 6257 seconds
+FaultScanner.scan: done in 6218 seconds
+FaultScanner.scan: done in 6182 seconds
+FaultScanner.scan: done in 6149 seconds
+FaultScanner.scan: done in 6111 seconds
+FaultScanner.scan: done in 6075 seconds
+FaultScanner.scan: done in 6046 seconds
+FaultScanner.scan: done in 6009 seconds
+FaultScanner.scan: done in 5969 seconds
+FaultScanner.scan: done in 5928 seconds
+FaultScanner.scan: done in 5890 seconds
+FaultScanner.scan: done in 5853 seconds
+FaultScanner.scan: done in 5816 seconds
+FaultScanner.scan: done in 5776 seconds
+FaultScanner.scan: done in 5738 seconds
+FaultScanner.scan: done in 5704 seconds
+FaultScanner.scan: done in 5667 seconds
+FaultScanner.scan: done in 5629 seconds
+FaultScanner.scan: done in 5596 seconds
+FaultScanner.scan: done in 5568 seconds
+FaultScanner.scan: done in 5534 seconds
+FaultScanner.scan: done in 5496 seconds
+FaultScanner.scan: done in 5457 seconds
+FaultScanner.scan: done in 5418 seconds
+FaultScanner.scan: done in 5380 seconds
+FaultScanner.scan: done in 5342 seconds
+FaultScanner.scan: done in 5303 seconds
+FaultScanner.scan: done in 5265 seconds
+FaultScanner.scan: done in 5229 seconds
+FaultScanner.scan: done in 5191 seconds
+FaultScanner.scan: done in 5153 seconds
+FaultScanner.scan: done in 5115 seconds
+FaultScanner.scan: done in 5076 seconds
+FaultScanner.scan: done in 5040 seconds
+FaultScanner.scan: done in 5003 seconds
+FaultScanner.scan: done in 4964 seconds
+FaultScanner.scan: done in 4925 seconds
+FaultScanner.scan: done in 4888 seconds
+FaultScanner.scan: done in 4851 seconds
+FaultScanner.scan: done in 4813 seconds
+FaultScanner.scan: done in 4775 seconds
+FaultScanner.scan: done in 4738 seconds
+FaultScanner.scan: done in 4702 seconds
+FaultScanner.scan: done in 4666 seconds
+FaultScanner.scan: done in 4628 seconds
+FaultScanner.scan: done in 4590 seconds
+FaultScanner.scan: done in 4552 seconds
+FaultScanner.scan: done in 4514 seconds
+FaultScanner.scan: done in 4477 seconds
+FaultScanner.scan: done in 4440 seconds
+FaultScanner.scan: done in 4402 seconds
+FaultScanner.scan: done in 4365 seconds
+FaultScanner.scan: done in 4328 seconds
+FaultScanner.scan: done in 4290 seconds
+FaultScanner.scan: done in 4254 seconds
+FaultScanner.scan: done in 4217 seconds
+FaultScanner.scan: done in 4179 seconds
+FaultScanner.scan: done in 4142 seconds
+FaultScanner.scan: done in 4104 seconds
+FaultScanner.scan: done in 4067 seconds
+FaultScanner.scan: done in 4030 seconds
+FaultScanner.scan: done in 3992 seconds
+FaultScanner.scan: done in 3955 seconds
+FaultScanner.scan: done in 3918 seconds
+FaultScanner.scan: done in 3880 seconds
+FaultScanner.scan: done in 3844 seconds
+FaultScanner.scan: done in 3806 seconds
+FaultScanner.scan: done in 3769 seconds
+FaultScanner.scan: done in 3731 seconds
+FaultScanner.scan: done in 3694 seconds
+FaultScanner.scan: done in 3656 seconds
+FaultScanner.scan: done in 3619 seconds
+FaultScanner.scan: done in 3582 seconds
+FaultScanner.scan: done in 3544 seconds
+FaultScanner.scan: done in 3507 seconds
+FaultScanner.scan: done in 3470 seconds
+FaultScanner.scan: done in 3433 seconds
+FaultScanner.scan: done in 3395 seconds
+FaultScanner.scan: done in 3359 seconds
+FaultScanner.scan: done in 3321 seconds
+FaultScanner.scan: done in 3284 seconds
+FaultScanner.scan: done in 3247 seconds
+FaultScanner.scan: done in 3209 seconds
+FaultScanner.scan: done in 3172 seconds
+FaultScanner.scan: done in 3135 seconds
+FaultScanner.scan: done in 3099 seconds
+FaultScanner.scan: done in 3061 seconds
+FaultScanner.scan: done in 3024 seconds
+FaultScanner.scan: done in 2987 seconds
+FaultScanner.scan: done in 2950 seconds
+FaultScanner.scan: done in 2913 seconds
+FaultScanner.scan: done in 2876 seconds
+FaultScanner.scan: done in 2839 seconds
+FaultScanner.scan: done in 2802 seconds
+FaultScanner.scan: done in 2765 seconds
+FaultScanner.scan: done in 2728 seconds
+FaultScanner.scan: done in 2691 seconds
+FaultScanner.scan: done in 2654 seconds
+FaultScanner.scan: done in 2617 seconds
+FaultScanner.scan: done in 2580 seconds
+FaultScanner.scan: done in 2543 seconds
+FaultScanner.scan: done in 2506 seconds
+FaultScanner.scan: done in 2470 seconds
+FaultScanner.scan: done in 2432 seconds
+FaultScanner.scan: done in 2396 seconds
+FaultScanner.scan: done in 2359 seconds
+FaultScanner.scan: done in 2322 seconds
+FaultScanner.scan: done in 2286 seconds
+FaultScanner.scan: done in 2249 seconds
+FaultScanner.scan: done in 2212 seconds
+FaultScanner.scan: done in 2176 seconds
+FaultScanner.scan: done in 2139 seconds
+FaultScanner.scan: done in 2103 seconds
+FaultScanner.scan: done in 2066 seconds
+FaultScanner.scan: done in 2030 seconds
+FaultScanner.scan: done in 1993 seconds
+FaultScanner.scan: done in 1957 seconds
+FaultScanner.scan: done in 1920 seconds
+FaultScanner.scan: done in 1884 seconds
+FaultScanner.scan: done in 1847 seconds
+FaultScanner.scan: done in 1811 seconds
+FaultScanner.scan: done in 1774 seconds
+FaultScanner.scan: done in 1737 seconds
+FaultScanner.scan: done in 1700 seconds
+FaultScanner.scan: done in 1664 seconds
+FaultScanner.scan: done in 1627 seconds
+FaultScanner.scan: done in 1591 seconds
+FaultScanner.scan: done in 1556 seconds
+FaultScanner.scan: done in 1522 seconds
+FaultScanner.scan: done in 1489 seconds
+FaultScanner.scan: done in 1454 seconds
+FaultScanner.scan: done in 1420 seconds
+FaultScanner.scan: done in 1386 seconds
+FaultScanner.scan: done in 1351 seconds
+FaultScanner.scan: done in 1317 seconds
+FaultScanner.scan: done in 1283 seconds
+FaultScanner.scan: done in 1247 seconds
+FaultScanner.scan: done in 1213 seconds
+FaultScanner.scan: done in 1178 seconds
+FaultScanner.scan: done in 1142 seconds
+FaultScanner.scan: done in 1107 seconds
+FaultScanner.scan: done in 1069 seconds
+FaultScanner.scan: done in 1032 seconds
+FaultScanner.scan: done in 995 seconds
+FaultScanner.scan: done in 958 seconds
+FaultScanner.scan: done in 920 seconds
+FaultScanner.scan: done in 883 seconds
+FaultScanner.scan: done in 846 seconds
+FaultScanner.scan: done in 809 seconds
+FaultScanner.scan: done in 772 seconds
+FaultScanner.scan: done in 735 seconds
+FaultScanner.scan: done in 698 seconds
+FaultScanner.scan: done in 661 seconds
+FaultScanner.scan: done in 624 seconds
+FaultScanner.scan: done in 587 seconds
+FaultScanner.scan: done in 550 seconds
+FaultScanner.scan: done in 513 seconds
+FaultScanner.scan: done in 476 seconds
+FaultScanner.scan: done in 439 seconds
+FaultScanner.scan: done in 403 seconds
+FaultScanner.scan: done in 366 seconds
+FaultScanner.scan: done in 329 seconds
+FaultScanner.scan: done in 292 seconds
+FaultScanner.scan: done in 256 seconds
+FaultScanner.scan: done in 219 seconds
+FaultScanner.scan: done in 183 seconds
+FaultScanner.scan: done in 146 seconds
+FaultScanner.scan: done in 110 seconds
+FaultScanner.scan: done in 73 seconds
+FaultScanner.scan: done in 37 seconds
+FaultScanner.scan: done
+fl min = 0.269771873951  max = 0.992180883884
+fp min = 0.0  max = 358.853515625
+ft min = 75.0  max = 85.0
+libGL error: No matching fbConfigs or visuals found
+libGL error: failed to load driver: swrast
+Caught handled GLException: X11GLXDrawableFactory - Could not initialize shared resources for X11GraphicsDevice[type .x11, connection localhost:10.0, unitID 0, handle 0x0, owner false, ResourceToolkitLock[obj 0x3e439dba, isOwner false, <383f075f, 3cff461f>[count 0, qsz 0, owner <NULL>]]] on thread AWT-EventQueue-0-SharedResourceRunner
+    [0]: jogamp.opengl.x11.glx.X11GLXDrawableFactory$SharedResourceImplementation.createSharedResource(X11GLXDrawableFactory.java:306)
+    [1]: jogamp.opengl.SharedResourceRunner.run(SharedResourceRunner.java:353)
+    [2]: java.lang.Thread.run(Thread.java:745)
+Caused[0] by GLException: AWT-EventQueue-0-SharedResourceRunner: Error making temp context(1) current: display 0x7eeda4007690, context 0x7eeda403e870, drawable X11OnscreenGLXDrawable[Realized true,
+	Factory   jogamp.opengl.x11.glx.X11GLXDrawableFactory@538c2d1a,
+	Handle    0x2e00002,
+	Surface   WrappedSurface[ displayHandle 0x7eeda4007690
+, surfaceHandle 0x2e00002
+, size 64x64
+, UOB[ OWNS_SURFACE | WINDOW_INVISIBLE ]
+, X11GLXGraphicsConfiguration[X11GraphicsScreen[X11GraphicsDevice[type .x11, connection localhost:10.0, unitID 0, handle 0x7eeda4007690, owner true, ResourceToolkitLock[obj 0x51ba0190, isOwner true, <4dacec14, 274427da>[count 2, qsz 0, owner <AWT-EventQueue-0-SharedResourceRunner>]]], idx 0], visualID 0x177, fbConfigID 0x8f,
+	requested GLCaps[rgba 8/8/8/0, opaque, accum-rgba 0/0/0/0, dp/st/ms 16/0/0, dbl, mono  , hw, GLProfile[GL2/GL2.sw], on-scr[.]],
+	chosen    GLCaps[glx vid 0x177, fbc 0x8f: rgba 8/8/8/8, opaque, accum-rgba 0/0/0/0, dp/st/ms 32/0/0, dbl, mono  , hw, GLProfile[GL2/GL2.sw], on-scr[.]]]
+, surfaceLock <15123ad5, 14251f66>[count 1, qsz 0, owner <AWT-EventQueue-0-SharedResourceRunner>]
+, X11DummyUpstreamSurfaceHook[pixel 64x64]
+, upstreamSurface false ]] on thread AWT-EventQueue-0-SharedResourceRunner
+    [0]: jogamp.opengl.x11.glx.X11GLXContext.createImpl(X11GLXContext.java:393)
+    [1]: jogamp.opengl.GLContextImpl.makeCurrentWithinLock(GLContextImpl.java:765)
+    [2]: jogamp.opengl.GLContextImpl.makeCurrent(GLContextImpl.java:648)
+    [3]: jogamp.opengl.GLContextImpl.makeCurrent(GLContextImpl.java:586)
+    [4]: jogamp.opengl.x11.glx.X11GLXDrawableFactory$SharedResourceImplementation.createSharedResource(X11GLXDrawableFactory.java:277)
+    [5]: jogamp.opengl.SharedResourceRunner.run(SharedResourceRunner.java:353)
+    [6]: java.lang.Thread.run(Thread.java:745)
+Exception in thread "AWT-EventQueue-0" com.jogamp.opengl.GLException: Profile GL_DEFAULT is not available on X11GraphicsDevice[type .x11, connection localhost:10.0, unitID 0, handle 0x0, owner false, ResourceToolkitLock[obj 0x3e439dba, isOwner false, <383f075f, 3cff461f>[count 0, qsz 0, owner <NULL>]]], but: []
+	at com.jogamp.opengl.GLProfile.get(GLProfile.java:991)
+	at com.jogamp.opengl.GLProfile.getDefault(GLProfile.java:722)
+	at com.jogamp.opengl.awt.GLCanvas.<init>(GLCanvas.java:264)
+	at com.jogamp.opengl.awt.GLCanvas.<init>(GLCanvas.java:231)
+	at com.jogamp.opengl.awt.GLCanvas.<init>(GLCanvas.java:218)
+	at edu.mines.jtk.ogl.GlCanvas.<init>(GlCanvas.java:45)
+	at edu.mines.jtk.sgl.ViewCanvas.<init>(ViewCanvas.java:38)
+	at edu.mines.jtk.sgl.SimpleFrame.<init>(SimpleFrame.java:66)
+	at edu.mines.jtk.sgl.SimpleFrame.<init>(SimpleFrame.java:44)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.python.core.PyReflectedConstructor.constructProxy(PyReflectedConstructor.java:210)
+	at org.python.core.PyReflectedConstructor.__call__(PyReflectedConstructor.java:179)
+	at org.python.core.PyObject.__call__(PyObject.java:345)
+	at org.python.core.PyMethod.instancemethod___call__(PyMethod.java:220)
+	at org.python.core.PyMethod.__call__(PyMethod.java:211)
+	at org.python.core.PyMethod.__call__(PyMethod.java:206)
+	at org.python.core.Deriveds.dispatch__init__(Deriveds.java:19)
+	at org.python.core.PyObjectDerived.dispatch__init__(PyObjectDerived.java:1057)
+	at org.python.core.PyType.type___call__(PyType.java:1565)
+	at org.python.core.PyType.__call__(PyType.java:1548)
+	at org.python.core.PyObject.__call__(PyObject.java:387)
+	at org.python.core.PyObject.__call__(PyObject.java:391)
+	at org.python.pycode._pyx0.plot3$46(demoGengSub.py:1131)
+	at org.python.pycode._pyx0.call_function(demoGengSub.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:301)
+	at org.python.core.PyFunction.function___call__(PyFunction.java:376)
+	at org.python.core.PyFunction.__call__(PyFunction.java:371)
+	at org.python.pycode._pyx0.goScan$17(demoGengSub.py:399)
+	at org.python.pycode._pyx0.call_function(demoGengSub.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:120)
+	at org.python.core.PyFunction.__call__(PyFunction.java:307)
+	at org.python.pycode._pyx0.main$1(demoGengSub.py:86)
+	at org.python.pycode._pyx0.call_function(demoGengSub.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:134)
+	at org.python.core.PyFunction.__call__(PyFunction.java:317)
+	at common$py.run$3(/home/xinwu/Home/research/xmw/src/tj/common.py:40)
+	at common$py.call_function(/home/xinwu/Home/research/xmw/src/tj/common.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:301)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:194)
+	at org.python.core.PyFunction.__call__(PyFunction.java:387)
+	at org.python.core.PyMethod.instancemethod___call__(PyMethod.java:220)
+	at org.python.core.PyMethod.__call__(PyMethod.java:211)
+	at org.python.core.PyMethod.__call__(PyMethod.java:201)
+	at org.python.core.PyMethod.__call__(PyMethod.java:196)
+	at org.python.core.PyObject._jcallexc(PyObject.java:3502)
+	at org.python.core.PyObject._jcall(PyObject.java:3534)
+	at org.python.proxies.common$_RunMain$0.run(Unknown Source)
+	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
+	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:756)
+	at java.awt.EventQueue.access$500(EventQueue.java:97)
+	at java.awt.EventQueue$3.run(EventQueue.java:709)
+	at java.awt.EventQueue$3.run(EventQueue.java:703)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:76)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:726)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:201)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+X11Util.Display: Shutdown (JVM shutdown: true, open (no close attempt): 1/1, reusable (open, marked uncloseable): 0, pending (open in creation order): 1)
+X11Util: Open X11 Display Connections: 1
+X11Util: Open[0]: NamedX11Display[localhost:10.0, 0x7eeda4007690, refCount 1, unCloseable false]
