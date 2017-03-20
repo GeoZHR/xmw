@@ -67,8 +67,9 @@ public class SmoothWithSlopes {
     final int n2 = wx[0].length;
     final int n1 = wx[0][0].length;
     final float[][][] us = new float[n3][n2][n1];
-    Parallel.loop(n1,new Parallel.LoopInt() {
-    public void compute(int i1) {
+    //Parallel.loop(n1,new Parallel.LoopInt() {
+    //public void compute(int i1) {
+    for (int i1=0; i1<n1; ++i1) {
       System.out.println("i1="+i1);
       float[][] hx1 = new float[n3][n2];
       float[][] p21 = new float[n3][n2];
@@ -89,7 +90,8 @@ public class SmoothWithSlopes {
       for (int i3=0; i3<n3; ++i3)
       for (int i2=0; i2<n2; ++i2)
         us[i3][i2][i1] = hx1[i3][i2]-i1;
-    }});
+    //}});
+    }
     return us;
   }
 
