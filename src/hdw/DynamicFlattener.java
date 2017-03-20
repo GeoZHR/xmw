@@ -408,6 +408,81 @@ public class DynamicFlattener {
     //return gx;
   }
 
+  public float[][][] flattenXLm(int p2, int p3, float[][][] el, 
+    float[][][] fs, float[][][] fx, float[][][] ux) 
+  {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][] sm = new float[n3][n2];
+    final float[][][] gx = new float[n3][n2][n1];
+    final int[] ct = new int[1];
+    final float[][] fx2 = new float[n3][n1];
+    final float[][] fs2 = new float[n3][n1];
+    final float[][] ux2 = new float[n3][n1];
+    final float[][] el2 = fillfloat(1f,n1,n3);
+    sm[p3][p2] = 1f;
+    final float[] sm2 = new float[n3];
+    int k3 = 0;
+    for (int i3=n3-1; i3>=0; --i3) {
+      fs2[k3] = fs[i3][p2];
+      fx2[k3] = fx[i3][p2];
+      el2[k3] = el[i3][p2];
+      sm2[k3] = sm[i3][p2];
+      k3++;
+    }
+    float[][] gs2 = flatten(el2,fs2,ux2,sm2);
+    k3 = 0;
+    for (int i3=n3-1; i3>=0; --i3) {
+      ux[i3][p2] = ux2[k3];
+      fs[i3][p2] = gs2[k3];
+      gx[i3][p2] = applyShifts(ux2[k3],fx[i3][p2]);
+      k3++;
+    }
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      ct[0] += 1;
+      System.out.println(ct[0]*100f/n3+"% done...");
+      float[] sf = new float[n2-p2];
+      float[][] ef = new float[n2-p2][n1];
+      float[][] ff = new float[n2-p2][n1];
+      float[][] uf = new float[n2-p2][n1];
+      for (int i2=p2; i2<n2; ++i2) {
+        ef[i2-p2] = el[i3][i2];
+        ff[i2-p2] = fs[i3][i2];
+        uf[i2-p2] = ux[i3][i2];
+        sf[i2-p2] = sm[i3][i2];
+      }
+      float[][] gf = flatten(ef,ff,uf,sf);
+      for (int i2=p2; i2<n2; ++i2)  
+        gx[i3][i2] = applyShifts(uf[i2-p2],fx[i3][i2]);
+
+      float[] sb = new float[p2+1];
+      float[][] eb = new float[p2+1][n1];
+      float[][] fb = new float[p2+1][n1];
+      float[][] ub = new float[p2+1][n1];
+      int k2=0;
+      for (int i2=p2; i2>=0; --i2) {
+        eb[k2] = el[i3][i2];
+        fb[k2] = fs[i3][i2];
+        ub[k2] = ux[i3][i2];
+        sb[k2] = sm[i3][i2];
+        k2++;
+      }
+      float[][] gb = flatten(eb,fb,ub,sb);
+      k2 = 0;
+      for (int i2=p2; i2>=0; --i2) {
+        el[i3][i2]=eb[k2];
+        fs[i3][i2]=fb[k2];
+        ux[i3][i2]=ub[k2];
+        sm[i3][i2]=sb[k2];
+        //gx[i3][i2]=gb[k2];
+        gx[i3][i2] = applyShifts(ub[k2],fx[i3][i2]);
+        k2++;
+      }
+    }});
+    return gx;
+  }
 
 
   public float[][][] flattenXL(int p2, int p3, float[][][] el, 
@@ -486,6 +561,32 @@ public class DynamicFlattener {
     return gx;
   }
 
+  public float[][] flattenReverse(
+    float[][] el, float[][] fx, float[][] ux, float[] sm) 
+  {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] gx = new float[n2][n1];
+    gx[n2-1] = fx[n2-1];
+    float[] up = findShifts(fx[n2-1],fx[n2-2]);
+    gx[n2-2] = applyShifts(up,fx[n2-2]);
+    sm[n2-2] = correlate(gx[0],gx[n2-2]);
+    for (int i1=0; i1<n1; ++i1)
+      ux[n2-2][i1] = up[i1];
+    for (int i2=n2-3; i2>=0; --i2) {
+      float mk = 0f;
+      float[][] e2 = fillfloat(mk,_nl,n1);
+      computeErrorsReverse(i2,up,el[i2],sm,gx,fx[i2],e2);
+      findShifts(mk,e2,up);
+      gx[i2] = applyShifts(up,fx[i2]);
+      sm[i2] = correlate(gx[0],gx[i2]);
+      for (int i1=0; i1<n1; ++i1) {
+        float xp = up[i1];
+        ux[i2][i1] =  xp;
+      }
+    }
+    return gx;
+  }
 
 
   public float[][] flatten(
@@ -1514,6 +1615,101 @@ public class DynamicFlattener {
       new RecursiveExponentialFilter(_usmooth2*_bstrain2);
     _ref3 = (_usmooth3<=0.0) ? null :
       new RecursiveExponentialFilter(_usmooth3*_bstrain3);
+  }
+
+  private void computeErrorsReverse(
+    int m2, float[] u, float[] el, 
+    float[] sm, float[][] f, float[] g, float[][] e) {
+    int n2 = f.length;
+    int n1 = g.length;
+    int nl = _nl;
+    int n1m = n1-1;
+    boolean average = _extrap==ErrorExtrapolation.AVERAGE;
+    boolean nearest = _extrap==ErrorExtrapolation.NEAREST;
+    boolean reflect = _extrap==ErrorExtrapolation.REFLECT;
+    float[] eavg = average?new float[nl]:null; 
+    int[] navg = average?new int[nl]:null;
+    float emax = 0.0f;
+
+    // Notes for indexing:
+    // 0 <= il < nl, where il is index for lag
+    // 0 <= i1 < n1, where i1 is index for sequence f
+    // 0 <= j1 < n1, where j1 is index for sequence g
+    // j1 = i1+il+lmin, where il+lmin = lag
+    // 0 <= i1+il+lmin < n1, so that j1 is in bounds
+    // max(0,-lmin-i1) <= il < min(nl,n1-lmin-i1)
+    // max(0,-lmin-il) <= i1 < min(n1,n1-lmin-il)
+    // j1 = 0    => i1 =     -lmin-il
+    // j1 = n1-1 => i1 = n1-1-lmin-il
+
+    // Compute errors where indices are in bounds for both f and g.
+    int d2 = _dw;
+    int i2b = min(n2-1,m2+_wind*d2);
+    for (int i1=0; i1<n1; ++i1) {
+      int illo = max(0,   -_lmin-i1); // see notes
+      int ilhi = min(nl,n1-_lmin-i1); // above
+      int ui = round(u[i1]);
+      int ud = _ud;
+      if(el[i1]>0.8f) ud = 1;
+      int lb = ui-ud-_lmin;
+      int le = ui+ud-_lmin+1;
+      illo = max(illo,lb);
+      ilhi = min(ilhi,le);
+      for (int il=illo,j1=i1+il+_lmin; il<ilhi; ++il,++j1) {
+        float ei = error(f[0][i1],g[j1]);
+        float sc = 1f;
+        for (int i2=i2b; i2<m2; i2-=d2) {
+          if(sm[i2]>0.5f) {
+            ei += error(f[i2][i1],g[j1]);
+            sc += 1f;
+          }
+        }
+        ei /= sc;
+        e[i1][il] = ei;
+        if (average) {
+          eavg[il] += ei;
+          navg[il] += 1;
+        }
+        if (ei>emax) 
+          emax = ei;
+      }
+    }
+
+    // If necessary, complete computation of average errors for each lag.
+    if (average) {
+      for (int il=0; il<nl; ++il) {
+        if (navg[il]>0)
+          eavg[il] /= navg[il];
+      }
+    }
+
+    // For indices where errors have not yet been computed, extrapolate.
+    for (int i1=0; i1<n1; ++i1) {
+      int illo = max(0,   -_lmin-i1); // same as
+      int ilhi = min(nl,n1-_lmin-i1); // above
+      for (int il=0; il<nl; ++il) {
+        if (il<illo || il>=ilhi) {
+          if (average) {
+            if (navg[il]>0) {
+              e[i1][il] = eavg[il];
+            } else {
+              e[i1][il] = emax;
+            }
+          } else if (nearest || reflect) {
+            int k1 = (il<illo)?-_lmin-il:n1m-_lmin-il;
+            if (reflect)
+              k1 += k1-i1;
+            if (0<=k1 && k1<n1) {
+              e[i1][il] = e[k1][il];
+            } else {
+              e[i1][il] = emax;
+            }
+          } else {
+            e[i1][il] = emax;
+          }
+        }
+      }
+    }
   }
 
 

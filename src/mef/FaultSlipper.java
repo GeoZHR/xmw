@@ -114,7 +114,7 @@ public class FaultSlipper {
     int lmin = round((float)smin-2*_offset); // because shifts != throws
     int lmax = round((float)smax+2*_offset); // TODO: use pmax*_offset?
     DynamicWarping dw = new DynamicWarping(lmin,lmax);
-    dw.setStrainMax(0.25,0.25); // TODO: always 0.25? goes with 4 below?
+    dw.setStrainMax(0.5,0.5); // TODO: always 0.25? goes with 4 below?
     computeAlignmentErrors(skin,lmin,lmax,_offset,_gs);
     extrapolateAlignmentErrors(lmin,lmax,cab);
     computeShifts(dw,cab,clr);
@@ -153,6 +153,7 @@ public class FaultSlipper {
         }
       }
     }
+    FaultCell[][][] cells = new FaultCell[n3][n2][n1];
 
     // For all cells in all skins, ...
     for (FaultSkin skin:skins) {
@@ -164,46 +165,41 @@ public class FaultSlipper {
         int i3m = cell.i3m;
         int i2p = cell.i2p;
         int i3p = cell.i3p;
+        if(abs(cell.s1)<2f) {continue;}
         if(i2m<0||i2p<0){continue;}
         if(i3m<0||i3p<0){continue;}
         if(i2m>=n2||i2p>=n2){continue;}
         if(i3m>=n3||i3p>=n3){continue;}
-
-        // If slip on the minus side has not been set, zero it.
-        if (s1[i3m][i2m][i1]==smark) {
-          s1[i3m][i2m][i1] = 0.0f;
-          s2[i3m][i2m][i1] = 0.0f;
-          s3[i3m][i2m][i1] = 0.0f;
-        }
 
         // Set or accumulate slip on the plus side.
         if (s1[i3p][i2p][i1]==smark) {
           s1[i3p][i2p][i1]  = cell.s1;
           s2[i3p][i2p][i1]  = cell.s2;
           s3[i3p][i2p][i1]  = cell.s3;
-          ss[i3p][i2p][i1]  = 1.0f;
-        } else {
-          s1[i3p][i2p][i1] += cell.s1;
-          s2[i3p][i2p][i1] += cell.s2;
-          s3[i3p][i2p][i1] += cell.s3;
-          ss[i3p][i2p][i1] += 1.0f;
-        }
-      }
-    }
-
-    // Where more than one slip was accumulated, compute the average.
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          if (ss[i3][i2][i1]>1.0f) {
-            float si = 1.0f/ss[i3][i2][i1];
-            s1[i3][i2][i1] *= si;
-            s2[i3][i2][i1] *= si;
-            s3[i3][i2][i1] *= si;
+          s1[i3m][i2m][i1] = 0.0f;
+          s2[i3m][i2m][i1] = 0.0f;
+          s3[i3m][i2m][i1] = 0.0f;
+          cells[i3p][i2p][i1] = cell;
+        } else if (abs(cell.s1)>abs(s1[i3p][i2p][i1])){
+          s1[i3p][i2p][i1]  = cell.s1;
+          s2[i3p][i2p][i1]  = cell.s2;
+          s3[i3p][i2p][i1]  = cell.s3;
+          s1[i3m][i2m][i1] = 0.0f;
+          s2[i3m][i2m][i1] = 0.0f;
+          s3[i3m][i2m][i1] = 0.0f;
+          FaultCell cp = cells[i3p][i2p][i1];
+          if(cp!=null) {
+          int p2m = cp.i2m;
+          int p3m = cp.i3m;
+          s1[p3m][p2m][i1] = smark;
+          s2[p3m][p2m][i1] = smark;
+          s3[p3m][p2m][i1] = smark;
+          cells[i3p][i2p][i1] = cell;
           }
         }
       }
     }
+
     return new float[][][][]{s1,s2,s3};
   }
 
@@ -551,14 +547,12 @@ public class FaultSlipper {
       dw.smoothErrors1(elr,elr);
       normalizeErrors(elr); // TODO: helpful?
     }
-    for (int ismooth=0; ismooth<1; ++ismooth) { // TODO: how many?
-      dw.smoothErrors1X(eab,eab);
-      dw.smoothErrors1X(elr,elr);
-    }
     */
-    dw.smoothErrors1X(2,eab);
-    dw.smoothErrors1X(2,elr);
-
+    for (int ismooth=0; ismooth<2; ++ismooth) { // TODO: how many?
+      dw.smoothErrors1X(eab,eab);
+      //dw.smoothErrors1X(elr,elr);
+    }
+    dw.smoothErrors1X(elr,elr);
     // Find shifts by accumulating once more and then backtracking.
     for (int iab=0; iab<nab; ++iab) {
       float[][] dab = dw.accumulateForward(eab[iab]);

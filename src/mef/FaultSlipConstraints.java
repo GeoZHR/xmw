@@ -123,6 +123,7 @@ public class FaultSlipConstraints {
     ArrayList<float[][]> cl = new ArrayList<float[][]>();
     for (FaultSkin sk:_sks) {
       for (FaultCell fc:sk) {
+        if(abs(fc.s1)<2f) {continue;}
         float fl = fc.getFl();
         float[] h1 = new float[3];
         float[] f1 = new float[3];
@@ -320,6 +321,7 @@ public class FaultSlipConstraints {
     FaultCell[][][] cells = new FaultCell[n3][n2][n1];
     for (FaultSkin sk:_sks) {
       for (FaultCell fc:sk) {
+        if(abs(fc.s1)<2f) {continue;}
         int i1i = fc.getI1();
         int i2i = fc.getI2();
         int i3i = fc.getI3();
