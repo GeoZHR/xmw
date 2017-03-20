@@ -626,7 +626,7 @@ public class FaultReskin {
    return new float[][][][]{fl,fp,ft};
  }
 
- public FaultSkin[] faultSkinsFromCells(
+ public FaultSkin faultSkinFromCells(
    int n1, int n2, int n3, int minSkinSize,FaultCell[] cells) {
    setCellsX(cells);
    float[][][] fls = new float[_n3][_n2][_n1];
@@ -729,7 +729,21 @@ public class FaultReskin {
      float ft = fci.ft;
      fcs[ic] = new FaultCell(x1,x2,x3,fl,fp,ft);
    }
-   return fs.findSkins(fcs);
+   FaultSkin[] skins = fs.findSkins(fcs);
+   int nk = skins.length;
+   if(nk<=0) return null; 
+   if(nk==1) return skins[0];
+   FaultSkin skin = null;
+   if(nk>1) {
+     int size = 0;
+     for (int ik=0; ik<nk; ++ik) {
+       if(skins[ik].size()>size) {
+         size = skins[ik].size();
+         skin = skins[ik];
+       }
+     }
+   }
+   return skin;
  }
 
 

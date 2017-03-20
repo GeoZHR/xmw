@@ -37,6 +37,7 @@ fslbase = "fsl" # fault skin (basename only)
 fskgood = "fsg" # fault skin (basename only)
 fsktv = "fst" # fault skin (basename only)
 gwfile = "gw" # unfaulted image
+fwsfile = "fws" # unfaulted image
 sw1file = "sw1" # 1st component of unfaulting shifts
 sw2file = "sw2" # 2nd component of unfaulting shifts
 sw3file = "sw3" # 3rd component of unfaulting shifts
@@ -70,14 +71,14 @@ minSkinSize = 5000
 # These parameters control the computation of fault dip slips.
 # See the class FaultSlipper for more information.
 minThrow = 0.0
-maxThrow = 35.0
+maxThrow = 40.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/tj/geng/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -92,7 +93,7 @@ def main(args):
   #goSkinClean()
   #goSkinMerge()
   #goSmooth()
-  goSlopes()
+  #goSlopes()
   #goSlip()
   #goUnfaultS()
   #goDisplay()
@@ -101,7 +102,7 @@ def main(args):
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
   #goTest()
-  #goFlatten()
+  goFlatten()
   #goSfd()
   #goDp()
   #goRefine()
@@ -110,31 +111,52 @@ def main(args):
   #goResults3D()
   #goMovieSlices()
   #goSlicesX()
-  goFlattenDF()
+  #goFlattenDF()
 def goFlattenDF():
-  fx = readImage(gxfile)
+  fx = readImage(gtfile)
+  flstop = 0.1
+  fsigma = 8.0
+  fl = fillfloat(1,n1,n2,n3)
+  p2 = readImage(p2ffile)
+  p3 = readImage(p3ffile)
+  ep = readImage(epffile)
+  fs = zerofloat(n1,n2,n3)
+  rgf = RecursiveGaussianFilterP(1)
+  rgf.apply0XX(fx,fs)
+  fs = FaultScanner.smooth(flstop,fsigma,p2,p3,fl,fs)
+  print "smooth done..."
+
+  for i2 in range(n2):
+    fx[0][i2] = fx[2][i2]
+    fx[1][i2] = fx[2][i2]
+  for i3 in range(n3):
+    fx[i3][0] = fx[i3][2]
+    fx[i3][1] = fx[i3][2]
   fl = readImage(fltfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  ep = readImage(epfile)
   fl = mul(fl,2)
-  rgf = RecursiveGaussianFilterP(2)
   rgf.applyX0X(fl,fl)
   rgf.applyXX0(fl,fl)
   ep = sub(1,fl)
-  '''
-  df = DynamicFlattener(-30,30)
+  df = DynamicFlattener(-10,20)
   df.setErrorExponent(1)
-  df.setStrainMax(0.5)
+  df.setStrainMax(0.2)
   df.setWindow(2,150)
-  df.setGate(30)
+  df.setGate(5)
   df.setErrorExponent(1)
   df.setShiftSmoothing(1)
   df.setErrorSmoothing(3)
   ux = zerofloat(n1,n2,n3)
-  gx = df.flattenXL(0,0,ep,copy(fx),ux)
-  writeImage(uxfile,ux)
+  gx = df.flattenXLm(279,n3-1,fl,fs,copy(fx),ux)
+  plot3(fx)
+  plot3(gx)
   '''
+  writeImage(uxfile,ux)
+  writeImage("gdf",gx)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  el = zerofloat(n1,n2,n3)
+  lsf = LocalSlopeFinder(4.0,1.0)
+  lsf.findSlopes(fx,p2,p3,el);
   ep = pow(ep,6)
   sub(ep,min(ep),ep)
   div(ep,max(ep),ep)
@@ -145,9 +167,9 @@ def goFlattenDF():
   writeImage(usfile,us)
   us = readImage(usfile)
   gh = ss.flatten(us,fx)
-  plot3(fx)
-  plot3(gx)
   plot3(gh)
+  writeImage(uxfile,ux)
+  '''
   '''
   gt = readImage(gtfile)
   plot3(gt)
@@ -200,11 +222,11 @@ def goResults3D():
   plot3(gw,png="unfault")
   plot3(gg,png="unfaultAndUnfold")
 def goFlattenSlopes():
-  fx = readImage(fwsfile)
+  fx = readImage(gtfile)
   p2 = zerofloat(n1,n2,n3)
   p3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
-  sigma1,sigma2,sigma3,pmax = 3.0,2.0,2.0,5.0
+  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
   lsf = LocalSlopeFinder(sigma1,sigma2,sigma3,pmax)
   lsf.findSlopes(fx,p2,p3,ep)
   writeImage(p2ffile,p2)
@@ -413,8 +435,8 @@ def goFaultScan():
 
 def goSlopes():
   print "goSlopes ..."
-  gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 4.0,2.0,2.0,5.0
+  gx = readImage(gsxfile)
+  sigma1,sigma2,sigma3,pmax = 8.0,2.0,2.0,5.0
   p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
@@ -629,9 +651,10 @@ def goSkinMerge():
     for skin in skins:
       print k
       cells = FaultSkin.getCells(skin)
-      skt = fr.faultSkinsFromCells(n1,n2,n3,minSkinSize,cells)
-      skrs.append(skt[0])
-      k = k+1
+      skt = fr.faultSkinFromCells(n1,n2,n3,minSkinSize,cells)
+      if(skt):
+        skrs.append(skt)
+        k = k+1
     removeAllSkinFiles(fskr)
     writeSkins(fskr,skrs)
     fsx = FaultSkinnerX()
@@ -743,7 +766,7 @@ def goSmooth():
   fsigma = 8.0
   gx = readImage(gxfile)
   fl = readImage(fltfile)
-  p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
+  p2,p3,ep = FaultScanner.slopes(8.0,2.0,2.0,5.0,gx)
   gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,fl,gx)
   writeImage(gsxfile,gsx)
   plot3(gsx,png="gsx")
@@ -751,13 +774,14 @@ def goSmooth():
 def goSlip():
   print "goSlip ..."
   gx = readImage(gxfile)
+  offset = 3
   if not plotOnly:
     gsx = readImage(gsxfile)
     p2 = readImage(p2file)
     p3 = readImage(p3file)
-    skins = readSkins(fskbase)
+    skins = readSkins(fskr)
     fsl = FaultSlipper(gsx,p2,p3)
-    fsl.setOffset(2.0) # the default is 2.0 samples
+    fsl.setOffset(offset) # the default is 2.0 samples
     fsl.setZeroSlope(False) # True only if we want to show the error
     fsl.computeDipSlips(skins,minThrow,maxThrow)
     print "  dip slips computed, now reskinning ..."
@@ -770,31 +794,32 @@ def goSlip():
     skins = fc.filterBySlip(1,skins)
     #skins = fsk.reskin(skins)
     print ", after =",len(skins)
+    smark = -999.999
+    t1,t2,t3 = fsl.getDipSlips(skins,smark)
     removeAllSkinFiles(fslbase)
     writeSkins(fslbase,skins)
-    smark = -999.999
-    s1,s2,s3 = fsl.getDipSlips(skins,smark)
-    c1,c2,c3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+    c1,c2,c3 = fsl.interpolateDipSlips([t1,t2,t3],smark)
     gw = fsl.unfault([c1,c2,c3],gx)
     writeImage(gwfile,gw)
-    writeImage(fs1file,s1)
-    writeImage(fs2file,s2)
-    writeImage(fs3file,s3)
+    writeImage(fs1file,t1)
+    writeImage(fs2file,t2)
+    writeImage(fs3file,t3)
   else:
     gw = readImage(gwfile)
-    s1 = readImage(fs1file)
+    t1 = readImage(fs1file)
   plot3(gx)
-  plot3(gw)
-  plot3(gx,s1,cmin=0.01,cmax=maxThrow,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="gxs1")
+  #plot3(gw)
+  plot3(gw,t1,cmin=-1.0,cmax=maxThrow,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)"+str(offset),png="gxs1")
+
 def goUnfaultS():
   print "goUnfault ..."
   gx = readImage(gxfile)
   if not plotOnly:
     fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,4.0,4.0)
+    lof = LocalOrientFilter(8.0,2.0,2.0)
     et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
+    et.setEigenvalues(0.0001,1.0,1.0)
 
     wp = fillfloat(1.0,n1,n2,n3)
     skins = readSkins(fslbase)
@@ -802,8 +827,8 @@ def goUnfaultS():
     sp = fsc.screenPoints(wp)
     mul(sp[3][0],10,sp[3][0])
 
-    uf = UnfaultS(8.0,8.0)
-    uf.setIters(100)
+    uf = UnfaultS(4.0,8.0)
+    uf.setIters(200)
     uf.setTensors(et)
     [t1,t2,t3] = uf.findShifts(sp,wp)
     #uf.convertShifts(40,[t1,t2,t3])
@@ -816,9 +841,12 @@ def goUnfaultS():
     #gw = readImage(gwfile)
     fw = readImage(fwsfile)
     #fw = readImage("fwt")
-  fw = gain(fw)
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
+  t1 = readImage(fs1file)
+  plot3(fw,t1,cmin=-0.1,cmax=maxThrow,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
+
   '''
   plot3(gw,png="fwuf")
   skins = readSkins(fslbase)
@@ -836,14 +864,13 @@ def goUnfaultS():
   '''
 def goFlatten():
   fx = readImage(fwsfile)
-  fx = gain(fx)
   if not plotOnly:
     p2 = zerofloat(n1,n2,n3)
     p3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
     lsf = LocalSlopeFinder(4.0,1.0)
     lsf.findSlopes(fx,p2,p3,ep);
-    ep = pow(ep,6)
+    ep = pow(ep,4)
     fl = Flattener3()
     fl.setIterations(0.01,200)
     fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
@@ -851,8 +878,14 @@ def goFlatten():
     writeImage("gt",gt)
   else:
     gt = readImage(gtfile)
-  plot3(fx)
-  plot3(gt)
+  skins = readSkins(fslbase)
+  smark = -999.999
+  fsl = FaultSlipper(gt,gt,gt)
+  t1,t2,t3 = fsl.getDipSlips(skins,smark)
+  plot3(fx,t1,cmin=-0.1,cmax=maxThrow,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
+  plot3(gt,t1,cmin=-0.1,cmax=maxThrow,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
 
 def goDp():
   gx = readImage(fwsfile)
@@ -1132,7 +1165,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         #ct = ct+1
     sf.world.addChild(sg)
   ipg.setSlices(423,883,206)
-  ipg.setSlices(k1,1076,0)
+  ipg.setSlices(k1,279,0)
   if cbar:
     #sf.setSize(1137,900)
     sf.setSize(1287,900)
@@ -1143,8 +1176,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
-  #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
+  #zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.5)
   #ov.setScale(2.5)
