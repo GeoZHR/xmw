@@ -60,14 +60,14 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved.
 pngDir = None
 pngDir = "../../../png/ipsi/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goTopHorizon()
   #goSlopes()
-  #goScan()
+  goScan()
   #goThin()
   #goThinImages()
   #goSkin()
@@ -80,7 +80,7 @@ def main(args):
   #goUncConvert()
   #goFlatten()
   #goHorizons()
-  goFlattenGaps()
+  #goFlattenGaps()
 def goTest():
   rgt = readImage(rgtfile)
   f = zerofloat(n2,n3)
@@ -160,9 +160,9 @@ def goScan():
     ft = readImage(ftfile)
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,convertDips(ft),cmin=35,cmax=50,cmap=jetFill(1.0),
+  plot3(gx,ft,cmin=75,cmax=80,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
 
 def goThin():

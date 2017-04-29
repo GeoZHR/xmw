@@ -7,6 +7,7 @@ Version: 2015.02.09
 from fakeutils import *
 #setupForSubset("fake")
 setupForSubset("tp")
+setupForSubset("zhiguang")
 #setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -58,10 +59,10 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 plotOnly = True
 #pngDir = "../../../png/flc/fake/"
 pngDir = "../../../png/flc/tp/"
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -75,13 +76,27 @@ def main(args):
   #goSkin()
   #goReferImage()
   #goRefine3d()
-  goRefine3dV()
+  #goRefine3dV()
   #goTest()
   #gx = readImage(gufile)
   #gx = gain(gx)
   #plot3p(gx)
   #goSeisFlatten()
-
+  goZhiguang()
+def goZhiguang():
+  dat  = readImageM("data")
+  dat1 = readImageM("data1")
+  smin,smax = -40,40
+  dw = DynamicWarping(smin,smax)
+  dw.setStrainMax(0.25,0.2,0.2)
+  dw.setErrorSmoothing(2)
+  ds = dw.findShifts(dat1,dat)
+  gh = dw.applyShifts(ds,dat)
+  plot3p(dat,cmin=-0.005,cmax=0.005,clab="Amplitude",png="gf1")
+  plot3p(dat1,cmin=-0.005,cmax=0.005,clab="Amplitude",png="gh1")
+  plot3p(gh,cmin=-0.005,cmax=0.005,clab="Amplitude",png="gr1")
+  plot3p(sub(gh,dat),cmin=-0.005,cmax=0.005)
+  
 def goSeisFlatten():
   gf = readImage(gufile)
   flr = FlattenerR()
@@ -875,10 +890,10 @@ def plot3p(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  ov.setAxesScale(1.0,1.0,1.3)
+  #ov.setAxesScale(1.0,1.0,1.3)
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  ov.setAzimuthAndElevation(50,35.0)
-  ov.setTranslate(Vector3(-0.2,-0.3,0.3))
+  #ov.setAzimuthAndElevation(50,35.0)
+  #ov.setTranslate(Vector3(-0.2,-0.3,0.3))
   ov.setScale(1.3)
   sf.setVisible(True)
   if png and pngDir:

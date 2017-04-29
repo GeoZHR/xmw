@@ -32,6 +32,22 @@ def setupForSubset(name):
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,1500
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  if name=="tpd":
+    print "setupForSubset: costa rica"
+    seismicDir = _datdir+"swt/csm/seismicz/subz_401_4_600/2d/"
+    n1,n2,n3 = 401,357,201
+    d1,d2,d3 = 0.004,0.025,1.0 
+    f1,f2,f3 = 0.600,0.000,1500
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  if name=="clyde2d":
+    print "setupForSubset: subset of clyde"
+    seismicDir = _datdir+"mef/clyde/2d/"
+    pngDir = "../../../png/mef/clyde/"
+    n1,n2,n3 = 400,801,300
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    f1,f2,f3 = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="nathan":
     print "setupForDataset: nathan"
     seismicDir = _datdir+"nathan/"
@@ -127,7 +143,19 @@ def readImage2D(n1,n2,name):
   """
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2)
-  ais = ArrayInputStream(fileName)#,ByteOrder.LITTLE_ENDIAN)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+def readImageM(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".rsf@"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
   return image
@@ -140,7 +168,7 @@ def writeImage(name,image):
   image: the image
   """
   fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)#,ByteOrder.LITTLE_ENDIAN)
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image

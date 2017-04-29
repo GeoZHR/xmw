@@ -125,6 +125,20 @@ public class FaultSkinnerX {
     }
   }
 
+  public void getFs(FaultSkin[] sks, float[][][] fs) {
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1i = fc.i1;
+        int i2m = fc.i2m;
+        int i3m = fc.i3m;
+        int i2p = fc.i2p;
+        int i3p = fc.i3p;
+        fs[i3m][i2m][i1i] = fc.s1;
+        fs[i3p][i2p][i1i] = fc.s1;
+      }
+    }
+  }
+
   public void getFaultMask(FaultSkin[] sks, float[][][] fm) {
     for (FaultSkin sk:sks) {
       for (FaultCell fc:sk) {
@@ -151,6 +165,7 @@ public class FaultSkinnerX {
   }
 
   public void getFls(FaultSkin[] sks, float[][][] fl) {
+    zero(fl);
     int n3 = fl.length;
     int n2 = fl[0].length;
     for (FaultSkin sk:sks) {
@@ -170,6 +185,29 @@ public class FaultSkinnerX {
       }
     }
   }
+
+  public void getFss(FaultSkin[] sks, float[][][] fl) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    for (FaultSkin sk:sks) {
+      for (FaultCell fc:sk) {
+        int i1m = fc.i1;
+        int i2m = fc.i2m;
+        int i3m = fc.i3m;
+        int i1p = fc.i1;
+        int i2p = fc.i2p;
+        int i3p = fc.i3p;
+        if(i2m>=n2||i2m<0){continue;}
+        if(i3m>=n3||i3m<0){continue;}
+        if(i2p>=n2||i2p<0){continue;}
+        if(i3p>=n3||i3p<0){continue;}
+        fl[i3m][i2m][i1m] = fc.s1;
+        fl[i3p][i2p][i1p] = fc.s1;
+      }
+    }
+  }
+
+
 
   /**
    * Returns array of cells in ridge surfaces of fault likelihood.

@@ -241,7 +241,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
     cv.setLineWidth(1.0)
   if xp:
     ptv = panel.addPoints(0,0,xp[0],xp[1])
-    ptv.setLineColor(Color.RED)
+    ptv.setLineColor(Color.YELLOW)
     ptv.setLineWidth(3.0)
   if xu:
     np = len(xu[0])
@@ -257,21 +257,21 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
       x1s = [x1m,x1c,x1p]
       x2s = [x2m,x2c,x2p]
       ptv2 = panel.addPoints(x1s,x2s)
-      ptv2.setLineColor(Color.YELLOW)
+      ptv2.setLineColor(Color.RED)
       ptv2.setLineWidth(1.0)
     if xp:
       ptv = panel.addPoints(0,0,xp[0],xp[1])
-      ptv.setLineColor(Color.RED)
+      ptv.setLineColor(Color.YELLOW)
       ptv.setLineWidth(3.0)
   if pp:
     ptvl = panel.addPoints(0,0,pp[0],pp[1])
-    ptvl.setLineColor(Color.RED)
+    ptvl.setLineColor(Color.YELLOW)
     ptvl.setLineWidth(3.0)
     ptvp = panel.addPoints(0,0,pp[0],pp[1])
     ptvp.setLineStyle(PointsView.Line.NONE)
     ptvp.setMarkStyle(PointsView.Mark.HOLLOW_CIRCLE)
     #ptvp.setMarkStyle(PointsView.Mark.CROSS)
-    ptvp.setMarkColor(Color.YELLOW)
+    ptvp.setMarkColor(Color.RED)
     ptvp.setMarkSize(12.0)
     ptvp.setLineWidth(3.0)
   if xs:

@@ -8,10 +8,11 @@ from tputils import *
 setupForSubset("subz_401_4_600")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.getCount(),s2.getCount(),s3.getCount()
+s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
 method = "b" # blended
 logSet = "d" # deep logs only
 logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax = 2.4,5.6
-#logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.0,2.8
+logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.0,2.8
 #logType = "p"; logLabel = "Porosity"; vmin,vmax = 0.0,0.4
 #logType = "g"; logLabel = "Gamma ray (API units)"; vmin,vmax = 0.0,200.0
 smin,smax = -5.5,5.5
@@ -96,6 +97,7 @@ def main(args):
   #goFigures()
   #goImpedance()
   #goTest()
+  #goSliceExtraction()
 
 
 def goSlopes():
@@ -325,7 +327,23 @@ def goTest():
   k1,k2,k3 = 366,15,96
   s = readImage(sfile); print "s min =",min(s)," max =",max(s)
   g = readImage(gfile)
+  hp = Helper()
+  #hp.positionCheck(g)
   display(s,g,vmin,vmax,logType)
+def goSliceExtraction():
+  c2 = [ 0,15,52, 67, 77,105,181,203,211,247,264,356]
+  c3 = [64,64,84,104,113,108, 86, 71, 64, 53, 49, 49]
+  hp = Helper()
+  gx = readImage(sfile)
+  wx = readImage(gfile)
+  gs,ws = hp.sliceExtraction(c2,c3,gx,wx)
+  writeImageM("seisSlice",gs)
+  writeImageM("wellSlice",ws)
+  s1 = Sampling(n1)
+  s2 = Sampling(n2)
+  print n1
+  print n2
+  plot2(s1,s2,gs,g=ws,cmin=vmin,cmax=vmax,cmap=jetFillExceptMin(1.0))
 
 
 def goInterpO():
@@ -579,6 +597,58 @@ def addColorBar(frame,clab=None,cint=None):
 
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
+
+def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
+  n2 = len(f)
+  n1 = len(f[0])
+  f1,f2 = s1.getFirst(),s2.getFirst()
+  d1,d2 = s1.getDelta(),s2.getDelta()
+  panel = panel2Teapot()
+  panel.setHInterval(1.0)
+  panel.setVInterval(1.0)
+  panel.setHLabel("Lateral position (km)")
+  panel.setVLabel("Depth (s)")
+  #panel.setHInterval(100.0)
+  #panel.setVInterval(100.0)
+  #panel.setHLabel("Pixel")
+  #panel.setVLabel("Pixel")
+  if label:
+    panel.addColorBar(label)
+  else:
+    panel.addColorBar()
+  panel.setColorBarWidthMinimum(80)
+  pv = panel.addPixels(s1,s2,f)
+  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  pv.setColorModel(ColorMap.GRAY)
+  pv.setClips(-2,2)
+  if g:
+    pv = panel.addPixels(s1,s2,g)
+    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    pv.setColorModel(cmap)
+    if label:
+      panel.addColorBar(label)
+    else:
+      panel.addColorBar()
+  if cmin and cmax:
+    pv.setClips(cmin,cmax)
+  frame2Teapot(panel,png)
+def panel2Teapot():
+  panel = PlotPanel(1,1,
+    PlotPanel.Orientation.X1DOWN_X2RIGHT)#,PlotPanel.AxesPlacement.NONE)
+  return panel
+def frame2Teapot(panel,png=None):
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  #frame.setFontSizeForPrint(8,240)
+  #frame.setSize(1240,774)
+  #frame.setFontSizeForSlide(1.0,0.9)
+  frame.setFontSize(12)
+  frame.setSize(n2+120,n1)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(400,3.2,pngDir+png+".png")
+  return frame
+
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,

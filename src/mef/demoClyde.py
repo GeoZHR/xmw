@@ -81,8 +81,20 @@ def main(args):
   #goOrientScan()
   #goThinX()
   #goSkin()
-  goSmooth()
+  #goSmooth()
   #goFirstScan()
+
+  gx = readImage(gxfile)
+  writeImage("gx30",gx[30])
+  '''
+  skins = readSkins(fskbase)
+  print len(skins)
+  flt = fillfloat(-1000,n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFl(skins,flt)
+  plot3(gx,flt,cmin=0,cmax=1.0,cint=0.2,cmap=jetRamp(1.0),
+        clab="Enhanced fault attribute",png="flt")
+  '''
 
 def goSemblanceS():
   gx = readImage(gxfile)

@@ -56,6 +56,8 @@ def setupForSubset(name):
   s1 = Sampling(n1,d1,f1)
   s2 = Sampling(357,0.025,0.000)
   s3 = Sampling(161,0.025,0.000)
+  print d1
+  print f1
   print n1
   '''
   s1 = Sampling(n1,1,0)
@@ -94,6 +96,17 @@ def writeImage(name,image):
   """
   fileName = seismicDir+name+".dat"
   aos = ArrayOutputStream(fileName)
+  aos.writeFloats(image)
+  aos.close()
+  return image
+def writeImageM(name,image):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  fileName = seismicDir+name+".rsf@"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image

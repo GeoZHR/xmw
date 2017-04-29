@@ -5,8 +5,8 @@ Version: 2016.01.22
 """
 
 from utils import *
-setupForSubset("hz25")
-#setupForSubset("cact")
+#setupForSubset("hz25")
+setupForSubset("cact")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -73,16 +73,16 @@ maxThrow = 20.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/tj/zhong/"
+pngDir = None
 plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDisplay()
-  goTF()
+  #goTF()
   #goSlopes()
   #goScan()
   #goThin()
@@ -105,7 +105,7 @@ def main(args):
   #goRefine()
   #goFlattenSlopes()
   #goHorizon()
-  #goResults3D()
+  goResults3D()
   #goMovieSlices()
   #goSlicesX()
 def goTF():

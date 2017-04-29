@@ -43,8 +43,8 @@ fsfile = "fs"
 psfile = "ps"
 psdfile = "psd"
 
-pngDir = "../../../png/fls/bag/3d/"
 pngDir = False
+pngDir = "../../../png/fls/bag/3d/"
 
 plotOnly = False
 
@@ -67,6 +67,7 @@ def goPicker3():
   sp3 = SaltPicker3()
   pks = sp3.pick3(25,xs,ys,zs,pa,fs)
   sps = sp3.signedPoints(4,10,pks,fs)
+  '''
   for k3 in range(100,150,1):
     gx3 = gx[k3]
     pk3 = pks[k3]
@@ -81,9 +82,9 @@ def goPicker3():
   rgf1.apply0XX(fs,fs)
   rgf2.applyX0X(fs,fs)
   rgf3.applyXX0(fs,fs)
-  plot3(fx,fbs=fs,png="saltBound")
+  plot3(gx,g=fs,cmin=-0.5,cmax=0.5,png="saltBody")
+  plot3(gx,fbs=fs,png="saltBound")
   plot3(pa,cmin=0.5,cmax=max(pa)*0.8,lgs=lgs,png="slicesInitial")
-  '''
 
 def goSaltSurfaceX():
   gx = readImage(gxfile)
@@ -199,10 +200,10 @@ def goPikSlices():
       isr.pointsToImage(xt[1],xt[0],pa[i3],wx[i3])
   lgr = getLineGroups(2,zrs,yrs,xrs)
   lgu = getLineGroups(1,zus,yus,xus)
-  plot3(fx,lgs=lgr)#,png="slicesFinal")
-  plot3(fx,lgs=lgu)#,png="piks")
-  writeImage(wxfile,wx)
+  plot3(fx,lgs=lgr,png="slicesFinal")
+  plot3(fx,lgs=lgu,png="piks")
   '''
+  writeImage(wxfile,wx)
   writeImage(wx1file,wx1)
   writeImage(wx2file,wx2)
   writeImage(dxsfile,dxs)
@@ -502,7 +503,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   l1,l2,l3 = s1.last,s2.last,s3.last
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
-  k1 = [408]
+  k1 = []
   k2 = [240,470]
   k3 = [0,100,200,300,400,500,600,700,800]
   if g==None:

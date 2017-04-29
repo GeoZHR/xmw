@@ -27,7 +27,7 @@ sfcfile  = "sfc" # salt indicator function with constraints
 
 pngDir = None
 pngDir = getPngDir()
-pngDir = "../../../png/slt/3d/"
+pngDir = "../../../png/med/"
 
 plotOnly = True
 
@@ -118,8 +118,8 @@ def goBrainPik():
   rmax = sqrt(c1*c1+c2*c2+c3*c3)
   pc = PolarCoordinates(c1,c2,c3,0,rmax)
   xyz=pc.reverseTransform(sfs)
-  plot3s(gx,cmin=min(gx),cmax=max(gx),cmap=ColorMap.GRAY)
-  plot3s(gx,cmin=min(gx),cmax=max(gx),cmap=ColorMap.GRAY,xyz=xyz)
+  plot3s(gx,cmin=min(gx),cmax=max(gx),cmap=ColorMap.GRAY,png="med")
+  plot3s(gx,cmin=min(gx),cmax=max(gx),cmap=ColorMap.GRAY,xyz=xyz,png="brain")
 
 
 def goPik():
@@ -599,7 +599,7 @@ def plot3s(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     states.add(ms)
     tg.setStates(states);
     sf.world.addChild(tg)
-  ipg.setSlices(232,63,0)
+  ipg.setSlices(190,63,88)
   if cbar:
     sf.setSize(987,700)
   else:
@@ -608,12 +608,12 @@ def plot3s(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.3*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 1.2*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
   ov.setScale(1.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,0.05,-0.08))
-  ov.setAzimuthAndElevation(45,45.0)
+  ov.setAzimuthAndElevation(45,25.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

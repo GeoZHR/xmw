@@ -245,6 +245,25 @@ public class WellFlattener {
     return fx;
   }
 
+  public float[] confidence(float[][] fw) {
+    int nw = fw.length;
+    float[] cw = new float[nw];
+    cw[0] = 1;
+    for (int iw=1; iw<nw; ++iw) {
+      float sms = 0f;
+      float scs = 0f;
+      for (int kw=0; kw<iw; kw++){
+        float cx = correlateX(fw[kw],fw[iw]);
+        if (cx>0f) {
+          scs += 1f;
+          sms += cx;
+        }
+      }
+      cw[iw] = sms/scs;
+    }
+    return cw;
+  }
+
 
   public float[][] flatten(float[][] gx) {
     int nw = gx.length;
@@ -634,6 +653,7 @@ public class WellFlattener {
           float fi = f[i2][i1];
           if(sm[i2]<_smin) {continue;}
           //if(mk[i2][i1]==1&&i2>10) {continue;}
+          //if(mk[i2][i1]==1) {continue;}
           es += error(fi,gj);
           ct += 1f;
         }

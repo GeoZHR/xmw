@@ -32,10 +32,10 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-  #goTj()
+  goTj()
   #goBag()
   #goCurt()
-  goCampos()
+  #goCampos()
 def goCampos():
   """
   ***************************************************************************
@@ -306,8 +306,8 @@ def goTj():
   n1,n2,n3 = 462,951,591
   ***************************************************************************
   """
-  firstLook = True # fast, does not read all trace headers
-  secondLook = False # slow, must read all trace headers
+  firstLook = False # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
   showImage = False # displays the image
   basedir = "../../../data/seis/tj/"

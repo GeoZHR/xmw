@@ -10,7 +10,8 @@ fxfile = "fxs" # input attribute
 
 def main(args):
   #goPik()
-  goSeisPik()
+  #goSeisPik()
+  goSeisPikWithWrongSource()
 def goSeisPik():
   gx = readImage(fxfile)
   sp = SaltPicker2()
@@ -34,6 +35,37 @@ def goSeisPik():
           xp=[pik2,x2],w1=250,w2=1000,clab="Travel time",png="timePik")
   plot(fx,cmin=0.1,cmax=1.0,xp=[pik2,x2],
         w1=250,w2=1000,clab="Amplitude",png="seisPik")
+def goSeisPikWithWrongSource():
+  gx = readImage(fxfile)
+  sp = SaltPicker2()
+  fx = sp.applyForInsAmp(gx)
+  fx = sub(fx,min(fx))
+  fx = div(fx,max(fx))
+  opp = OptimalPathPicker(4,3)
+  wht = opp.applyForWeight(transpose(fx))
+  tms1 = zerofloat(n2,n1)
+  tms2 = zerofloat(n2,n1)
+  pik1 = opp.forwardPick(0,wht,tms1)
+  pik2 = opp.backwardPick(round(pik1[n2-1]),wht,tms2)
+  x2 = rampfloat(0,1,n2)
+  tt1 = transpose(tms1)
+  tt2 = transpose(tms2)
+  gx = div(gx,max(gx))
+  #plot(gx,cmin=-1,cmax=1.0,w1=250,w2=1000,clab="Amplitude",png="seis")
+  #plot(fx,cmin=0.1,cmax=1.0,w1=250,w2=1000,clab="Amplitude",png="env")
+  plot(tt1,cmap=ColorMap.JET,cmin=0.1,cmax=max(tt1),contour=True,w1=250,w2=1000,
+       clab="Travel time",png="time1")
+  plot(tt2,cmap=ColorMap.JET,cmin=0.1,cmax=max(tt2),contour=True,w1=250,w2=1000,
+       clab="Travel time",png="time2")
+
+  plot(tt1,cmap=ColorMap.JET,cmin=0.1,cmax=max(tt1),contour=True,
+          xp=[pik1,x2],w1=250,w2=1000,clab="Travel time",png="timePik1")
+  plot(tt2,cmap=ColorMap.JET,cmin=0.1,cmax=max(tt2),contour=True,
+          xp=[pik2,x2],w1=250,w2=1000,clab="Travel time",png="timePik2")
+  plot(fx,cmin=0.1,cmax=1.0,xp=[pik1,x2],
+        w1=250,w2=1000,clab="Amplitude",png="seisPik1")
+  plot(fx,cmin=0.1,cmax=1.0,xp=[pik2,x2],
+        w1=250,w2=1000,clab="Amplitude",png="seisPik2")
 
 def goPik():
   fx = readImageL(fxfile)
@@ -250,8 +282,8 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
     cv.setLineWidth(1.0)
   if xp:
     ptv = panel.addPoints(0,0,xp[0],xp[1])
-    ptv.setLineColor(Color.MAGENTA)
-    ptv.setLineWidth(3.0)
+    ptv.setLineColor(Color.YELLOW)
+    ptv.setLineWidth(5.0)
   if xu:
     np = len(xu[0])
     for ip in range(np):
