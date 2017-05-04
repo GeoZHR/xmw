@@ -39,9 +39,9 @@ def goHorizonPick2D():
   hv2.setWeights(0.001)
   k1, k2= rampfloat(20,5,40), 50 # seed points at the 50th trace
   g = hv2.applyForHorizonVolume(k1,k2,wp,p2) # computed horizons
-  ploth(s1,s2,wp)
-  ploth(s1,s2,f)
-  ploth(s1,s2,f,h=g,k2=k2,k1=k1)
+  ploth(s1,s2,wp,png="wp")
+  ploth(s1,s2,f,png="seis")
+  ploth(s1,s2,f,h=g,k2=k2,k1=k1,png="horizon")
 def gain(x):
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(20.0)
@@ -55,8 +55,8 @@ def gain(x):
 
 gray = ColorMap.GRAY
 jet = ColorMap.JET
-pngDir = "../../../png/hv/2d/"
 pngDir = None
+pngDir = "./"
 def ploth(s1,s2,x,h=None,k2=None,k1=None,cmap=ColorMap.GRAY,
     clab=None,vlabel=None,hlabel=None,
   cmin=0,cmax=0,title=None,png=None):

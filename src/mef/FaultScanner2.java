@@ -405,7 +405,6 @@ public class FaultScanner2 {
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     int nt = thetaSampling.getCount();
 
-    /*
     for (int it=0; it<nt; ++it) {
       System.out.println(it+"/"+(nt-1)+" done...");
       float ti = (float)thetaSampling.getValue(it);
@@ -433,7 +432,6 @@ public class FaultScanner2 {
       }}
     }
 
-    */
     for (int it=0; it<nt; ++it) {
       System.out.println(it+"/"+(nt-1)+" done...");
       float ti = (float)thetaSampling.getValue(it);

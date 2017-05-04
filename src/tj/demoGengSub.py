@@ -193,6 +193,7 @@ def goResults3D():
   gx = readImage(gxfile)
   gw = readImage(fwsfile)
   gg = readImage(gtfile)
+  '''
   skins = readSkins(fslbase)
   fs = fillfloat(-1,n1,n2,n3)
   fl = fillfloat( 0,n1,n2,n3)
@@ -201,12 +202,13 @@ def goResults3D():
   fsx.getFss(skins,fs)
   writeImage(fltfile,fl)
   writeImage(fs1file,fs)
-  plot3(gx,k1=898,png="seis")
   plot3(gx,skins=skins,k1=898,png="faultSurface")
   plot3(gx,fl,cmin=0.25,cmax=1.0,k1=898,cmap=jetFillExceptMin(1.0))
   plot3(gx,skins=skins,smax=35,k1=898,png="throwSurface")
   plot3(gx,fs,cmin=0.01,cmax=35,k1=898,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="faultThrow")
+  '''
+  plot3(gx,k1=898,png="seis")
   plot3(gw,k1=898,png="unfault")
   plot3(gg,k1=898,png="unfaultAndUnfold")
 def goFlattenSlopes():
