@@ -1,7 +1,7 @@
 """
-Demo of surface reconstruction from fault cells/oriented points
-Author: Xinming Wu and Dave Hale, Colorado School of Mines
-Version: 2015.02.09
+Demo of generating avo models
+Author: Xinming Wu, University of Texas at Austin
+Version: 2017.05.05
 """
 
 from utils import *
