@@ -8,6 +8,7 @@ package avo;
 
 import java.io.*;
 import java.util.*;
+import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 public class Helper {
@@ -46,5 +47,29 @@ public class Helper {
       las[2][3][ip] = rv4[2][ip];
     }
     return las;
+  }
+
+  public float[][][] resampleLogs(
+    int m1, int d1, float[][][] las) 
+  {
+    int n3 = las.length;
+    int n2 = las[0].length;
+    float[][][] lar = new float[n3][n2][m1];
+    MedianFinder mf = new MedianFinder(7);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      int b1 = i1*d1;
+      float[] rht = copy(d1,b1,las[0][i2]);
+      float[] vpt = copy(d1,b1,las[1][i2]);
+      float[] vst = copy(d1,b1,las[2][i2]);
+      float vsm = mf.findMedian(vst);
+      int[] id = new int[1];
+      float[] vsa = abs(sub(vst,vsm));
+      min(vsa,id);
+      lar[0][i2][i1] = rht[id[0]];
+      lar[1][i2][i1] = vpt[id[0]];
+      lar[2][i2][i1] = vst[id[0]];
+    }}
+    return lar;
   }
 }

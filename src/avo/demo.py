@@ -40,29 +40,13 @@ maxThrow = 20.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-pngDir = "../../../png/aii/fake/"
+pngDir = "../../../png/avo/fake/"
 plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
-  #goFaults()
-  #goImpedance2()
-  #goSlip()
-  #goUnfaultS()
-  #goFlatten()
-  #goInitial()
-  #goImpedance3(0.1,0.0,1.0)
-  #goImpedance3(0.9,1.0,1.0)
-  #goImpedance3(0.9,0.0,1.0)
-  #goImpedance3(0.9,0.0,0.001)
-  #goImpFlatten(0.1,0.0,1.0)
-  #goImpFlatten(0.9,0.0,1.0)
-  #goImpFlatten(0.9,0.0,0.001)
-  #goHorizon()
-  #goImpedanceHorizon()
-  goLogs()
-def goLogs():
+  goModels()
+def goModels():
   rv2 = readTxtLogs(logFile2)
   rv3 = readTxtLogs(logFile3)
   rv5 = readTxtLogs(logFile5)
@@ -83,10 +67,22 @@ def goLogs():
   sw = Sampling(4)
   plotLogs(sz,sw,la[0],wh=400,wv=800,cmin=2.0,cmax=2.7,
     hint=2,vlab="Depth (Samples)",cbar="Density")
-  plotLogs(sz,sw,la[1],wh=400,wv=800,cmin=70,cmax=115,
+  plotLogs(sz,sw,la[1],wh=400,wv=800,cmin=60,cmax=115,
     hint=2,vlab="Depth (Samples)",cbar="Vp")
   plotLogs(sz,sw,la[2],wh=400,wv=800,cmin=140,cmax=250,
     hint=2,vlab="Depth (Samples)",cbar="Vs")
+  lar = hp.resampleLogs(501,7,la)
+  rvs = FakeData.densityAndVelocity2d(0.0,lar)
+  s1,s2=Sampling(501),Sampling(501)
+  plotLogs(s1,s2,rvs[0],wh=700,wv=600,cmin=2.0,cmax=2.7,
+    hint=2,vlab="Depth (Samples)",cbar="Density",png="Rho")
+  plotLogs(s1,s2,rvs[1],wh=700,wv=600,cmin=70,cmax=115,
+    hint=2,vlab="Depth (Samples)",cbar="Vp",png="Vp")
+  plotLogs(s1,s2,rvs[2],wh=700,wv=600,cmin=140,cmax=250,
+    hint=2,vlab="Depth (Samples)",cbar="Vs",png="Vs")
+  writeImage("Rho",rvs[0])
+  writeImage("Vp",rvs[1])
+  writeImage("Vs",rvs[2])
 
 def goImpedanceHorizon():
   pc = readImage(pcfile)
@@ -545,21 +541,21 @@ cjet = ColorMap.JET
 alpha = fillfloat(1.0,256); alpha[0] = 0.0
 ajet = ColorMap.setAlpha(cjet,alpha)
 def plotLogs(sz,sw,fx,wh=500,wv=800,cmin=None,cmax=None,
-    hint=2,vlab="Depth (Samples)",cbar=None,png=None):
+    hint=100,vlab="Depth (samples)",cbar=None,png=None):
   fz = sz.first
   dz = sz.delta
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sp.setSize(wh,wv)
-  sp.setHInterval(hint)
+  #sp.setHInterval(hint)
   sp.setVLabel(vlab)
-  sp.setHLabel("Log index")
+  sp.setHLabel("Lateral position (samples)")
   sp.addColorBar(cbar)
   sp.plotPanel.setColorBarWidthMinimum(72)
   sp.setHLimits(sw.first-sw.delta/2,sw.last)
   sp.setVLimits(sz.first,sz.last)
   pv = sp.addPixels(sz,sw,fx)
   pv.setInterpolation(PixelsView.Interpolation.NEAREST)
-  pv.setColorModel(ajet)
+  pv.setColorModel(cjet)
   n1 = len(fx[0])
   sp.setFontSize(20)
   if cmin and cmax:
