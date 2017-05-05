@@ -24,7 +24,7 @@ import static ipf.FaultGeometry.*;
  * Jacobians of functions used in folding and faulting have been implemented
  * but not tested. Therefore, beware of errors in calculated slopes p2 and p3.
  * </em>
- * @author Dave Hale and Xinming Wu, Colorado School of Mines
+ * @author Xinming Wu, University of Texas at Austin
  * @version 2017.05.05
  */
 public class FakeData {
