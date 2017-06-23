@@ -8,9 +8,9 @@ Version: 2016.06.01
 
 from utils import * 
 #setupForSubset("semblance")
-#setupForSubset("channel")
+setupForSubset("channel")
 #setupForSubset("surface")
-setupForSubset("env")
+#setupForSubset("env")
 #setupForSubset("semblance3d")
 #setupForSubset("fd2")
 #setupForSubset("dgb")
@@ -42,7 +42,8 @@ def main(args):
   #goCorrelation()
   #goHorizonPik()
   #timeMark()
-  goAbSemblancePik()
+  #goAbSemblancePik()
+  goChannel()
 def timeMark():
   fx = readImage(fxfile)
   fx = gain(fx)

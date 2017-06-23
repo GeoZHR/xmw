@@ -76,6 +76,7 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  goPlanarity()
   #goSemblance()
   #goOrientScan()
   #goSlopes()
@@ -95,6 +96,7 @@ def main(args):
   #goFlatten()
   #goHorizonExtraction()
   #goComparison()
+  '''
   gx = readImage(gxfile)
   fl = readImage(flfile)
   f2 = zerofloat(n1,n2,n3)
@@ -109,6 +111,7 @@ def main(args):
         if(fli<0.5):
           f3[i3][i2][i1]=-30
   plot3(gx, fbs=f3)
+  '''
 
   '''
   gx = readImage(gxfile)
@@ -121,6 +124,23 @@ def main(args):
   writeImage("gxSub",gxs)
   writeImage("semSub",sems)
   '''
+def goPlanarity():
+  print "go semblance ..."
+  gx = readImage(gxfile)
+  lof = LocalOrientFilterP(3.0,1.0,1.0)
+  ep = zerofloat(n1,n2,n3)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
+  plot3(gx,ep,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
+  plot3(ep)
+  eps = zerofloat(n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      eps[i3][i2] = ep[i3][i2][56]
+  writeImage("ep56",eps)
+
 def goSemblance():
   print "go semblance ..."
   gx = readImage(gxfile)
@@ -134,6 +154,7 @@ def goSemblance():
     sem = readImage(semfile)
   sem=sub(1,sem)
   plot3(gx,sem,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
+  plot3(sem)
 
 def goOrientScan():
   gx = readImage(gxfile)

@@ -10,8 +10,8 @@ fxfile = "fxs" # input attribute
 
 def main(args):
   #goPik()
-  #goSeisPik()
-  goSeisPikWithWrongSource()
+  goSeisPik()
+  #goSeisPikWithWrongSource()
 def goSeisPik():
   gx = readImage(fxfile)
   sp = SaltPicker2()
@@ -255,7 +255,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
   s2 = Sampling(n2,1,0)
   s1 = Sampling(n1,1,0)
   panel.setHLabel("Inline (traces)")
-  panel.setVLabel("Depth (samples)")
+  panel.setVLabel("Time (samples)")
   ft = fillfloat(-10,n1,n2)
   panel.setHLimits(0,0,s2.last)
   panel.setVLimits(0,0,s1.last)
@@ -325,7 +325,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
   if(clab):
     cb = panel.addColorBar();
     cb.setLabel(clab)
-  panel.setColorBarWidthMinimum(50)
+  panel.setColorBarWidthMinimum(55)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
@@ -335,7 +335,7 @@ def plot(f,xp=None,pp=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
   else:
     frame.setSize(round(n2*0.8),round(n1*0.8))
   #frame.setSize(1190,760)
-  frame.setFontSize(14)
+  frame.setFontSize(16)
   if pngDir and png:
     frame.paintToPng(1080,3.333,pngDir+png+".png")
 

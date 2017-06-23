@@ -107,6 +107,7 @@ def readTxtLogs(name):
   rvps = tr.readLogs(fileName)
   return rvps
 
+
 def readImage(name):
   """ 
   Reads an image from a file with specified name.
@@ -115,6 +116,18 @@ def readImage(name):
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+def readImage3D(m1,m2,m3,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(m1,m2,m3)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
   return image
@@ -131,15 +144,26 @@ def readImage2D(n1,n2,name):
   ais.close()
   return image
 
+def readImage2DL(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
-def writeImage(name,image):
+def writeImageL(name,image):
   """ 
   Writes an image to a file with specified name.
   name: base name of image file; e.g., "tpgp"
   image: the image
   """
   fileName = seismicDir+name+".dat"
-  aos = ArrayOutputStream(fileName)
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   aos.writeFloats(image)
   aos.close()
   return image

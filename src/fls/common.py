@@ -1,5 +1,6 @@
 import sys
 import jarray
+import math
 
 from java.awt import *
 from java.io import *

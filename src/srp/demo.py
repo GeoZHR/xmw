@@ -52,13 +52,13 @@ pngDir = None
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
-  #goSlopes()
-  #goScan()
+  goFakeData()
+  goSlopes()
+  goScan()
   #goThin()
-  #goSkin()
-  #goPSS()
-  goSPS()
+  goSkin()
+  goPSS()
+  #goSPS()
 def goSPS():
   print "screened Poisson surface method ..."
   gx = readImage(gxfile)
@@ -87,9 +87,9 @@ def goFakeData():
   sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 4 # number of planar faults
-  conjugate = True # if True, two large planar faults will intersect
-  conical = False # if True, may want to set nplanar to 0 (or not!)
+  nplanar = 1 # number of planar faults
+  conjugate = False # if True, two large planar faults will intersect
+  conical = True # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio

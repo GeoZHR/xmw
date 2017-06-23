@@ -55,7 +55,7 @@ def main(args):
   goPicker3()
 def goPicker3():
   gx = readImage(gxfile)
-  #plot3(fx,png="seis")
+  plot3(gx,png="seis")
   pa = readImage(pafile)
   pm = max(pa)*0.5
   for i3 in range(n3):
@@ -85,6 +85,25 @@ def goPicker3():
   plot3(gx,g=fs,cmin=-0.5,cmax=0.5,png="saltBody")
   plot3(gx,fbs=fs,png="saltBound")
   plot3(pa,cmin=0.5,cmax=max(pa)*0.8,lgs=lgs,png="slicesInitial")
+
+  xps,yps,zps=[],[],[]
+  xrs,yrs,zrs=[],[],[]
+  for i3 in range(0,n3,50):
+    xrs.append(i3)
+    yrs.append(pks[i3][1])
+    zrs.append(pks[i3][0])
+  xrs.append(n3-1)
+  yrs.append(pks[n3-1][1])
+  zrs.append(pks[n3-1][0])
+  for i3 in range(n3):
+    xps.append(i3)
+    yps.append(pks[i3][1])
+    zps.append(pks[i3][0])
+  lrs = getLineGroups(2,zrs,yrs,xrs)
+  lps = getLineGroups(1,zps,yps,xps)
+  plot3(gx,lgs=lrs,png="slicesFinal")
+  plot3(gx,lgs=lps,png="piks")
+
 
 def goSaltSurfaceX():
   gx = readImage(gxfile)
@@ -221,7 +240,7 @@ def getLineGroups(dx,zs,ys,xs):
       xyz.append(ys[ic][ip])
       xyz.append(zs[ic][ip])
       rgb.append(1)
-      rgb.append(0)
+      rgb.append(1)
       rgb.append(0)
     lg = LineGroup(xyz,rgb)
     lgs.append(lg)
@@ -578,9 +597,17 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     mc = MarchingCubes(s1,s2,s3,fbs)
     ct = mc.getContour(0.0)
     tg = TriangleGroup(ct.i,ct.x,ct.u)
+    xyz = ct.x
+    np = len(xyz)/3
+    zs = zerofloat(np)
+    for ip in range(np):
+      zs[ip] = -xyz[ip*3+2]
+    cp = ColorMap(-n1-1,0,ColorMap.JET);
+    rgb = cp.getRgbFloats(zs)
+    tg = TriangleGroup(ct.i,ct.x,ct.u,rgb)
     states = StateSet()
     cs = ColorState()
-    cs.setColor(Color.MAGENTA)
+    #cs.setColor(Color.MAGENTA)
     #cs.setColor(Color.ORANGE)
     #cs.setColor(Color.CYAN)
     states.add(cs)

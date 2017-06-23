@@ -48,6 +48,17 @@ def setupForSubset(name):
     f1,f2 = 0.000,0.000
     #f1,f2,f3 = 220,740,350
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+  elif name=="seamSub2d":
+    print "setupForSubset: seam 2d"
+    seismicDir = _datdir+"seam/sub2d/"
+    pngDir = "../../../png/fls/seam/sub2d/"
+    n1,n2 = 550,450 #gs = gx[:][108]
+    d1,d2 = 0.02,0.005
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    f1,f2 = 40*d1,300*d2+2.49
+    #f1,f2,f3 = 220,740,350
+    s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
+
   elif name=="yk":
     print "setupForSubset: seam 2d"
     seismicDir = _datdir+"yk/"

@@ -24,6 +24,199 @@ public class FaultEnhance {
     _prob = new float[gate*2-1];
   }
 
+  public float[][] enhanceInPolarSpace1(int d1, int d2, float sigma, 
+    int[][] seeds, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    int ns = seeds[0].length;
+    float rx = sqrt(d1*d1+d2*d2);
+    int nr = round(rx);
+    int np = nr*2;
+    int[] k1s = new int[np];
+    int[] k2s = new int[np];
+    float[] fp = new float[np];
+    float[][] gx = new float[n2][n1];
+    float[][] wx = exp(mul(-1,fx));
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+    for (int is=0; is<ns; ++is) {
+      int k1 = seeds[0][is];
+      int k2 = seeds[1][is];
+      float[][] gs = applyPolarTransform(k1,k2,rx,wx);
+      int i2p = 90;
+      float gmax = 0.0f;
+      for (int i2=65; i2<115; i2++) {
+        float gsum = 0.0f;
+        float[] gs2 = gs[i2];
+        for (int i1=0; i1<nr-10; ++i1)
+          gsum += gs2[i1];
+        for (int i1=nr+10; i1<np; ++i1)
+          gsum += gs2[i1];
+        if(gmax<gsum) {
+          gmax = gsum;
+          i2p = i2;
+        }
+      }
+      float[][] ws = matrixTransform(gs);
+      float[] p1 = forwardPick(i2p,ws);
+      float[] p2 = backwardPick(round(p1[np-1]),ws);
+      float[] rs = new float[np];
+      float[] as = new float[np];
+      for (int ip=0; ip<nr; ip++) {
+        rs[ip] = nr-ip;
+        as[ip] = p2[ip]+180;
+      }
+      for (int ip=nr; ip<np; ip++) {
+        rs[ip] = ip-nr;
+        as[ip] = p2[ip];
+      }
+      float[][] xs = reverseTransform(k1,k2,rs,as);
+      for (int ip=0; ip<np; ip++) {
+        int i1 = round(xs[0][ip]);
+        int i2 = round(xs[1][ip]);
+        k1s[ip] = i1;
+        k2s[ip] = i2;
+        i1 = max(i1,0);
+        i2 = max(i2,0);
+        i1 = min(i1,n1-1);
+        i2 = min(i2,n2-1);
+        fp[ip] = fx[i2][i1];
+      }
+      rgf.apply0(fp,fp);
+      int bp = round(sigma);
+      int ep = np-bp;
+      for (int ip=bp; ip<=ep; ++ip) {
+        int i1 = k1s[ip];
+        int i2 = k2s[ip];
+        if(i1>=0&&i1<n1&&i2>=0&&i2<n2) {
+          float fpi = fp[ip];
+          //if(fp[ip]>gx[i2][i1])
+          gx[i2][i1] += fpi;
+        }
+      }
+    }
+    return gx;
+  }
+
+
+  public float[][] enhanceInPolarSpace(int d1, int d2, float sigma, 
+    int[][] seeds, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    int ns = seeds[0].length;
+    float rx = sqrt(d1*d1+d2*d2);
+    int nr = round(rx);
+    int np = nr*2;
+    int[] k1s = new int[np];
+    int[] k2s = new int[np];
+    float[] fp = new float[np];
+    float[][] gx = new float[n2][n1];
+    float[][] wx = exp(mul(-1,fx));
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(sigma);
+    for (int is=0; is<ns; ++is) {
+      int k1 = seeds[0][is];
+      int k2 = seeds[1][is];
+      float[][] gs = applyPolarTransform(k1,k2,rx,wx);
+      int i2p = 90;
+      float gmax = 0.0f;
+      for (int i2=0; i2<180; i2++) {
+        float gsum = 0.0f;
+        float[] gs2 = gs[i2];
+        for (int i1=0; i1<nr-10; ++i1)
+          gsum += gs2[i1];
+        for (int i1=nr+10; i1<np; ++i1)
+          gsum += gs2[i1];
+        if(gmax<gsum) {
+          gmax = gsum;
+          i2p = i2;
+        }
+      }
+      float[][] ws = matrixTransform(gs);
+      float[] p1 = forwardPick(i2p,ws);
+      float[] p2 = backwardPick(round(p1[np-1]),ws);
+      float[] rs = new float[np];
+      float[] as = new float[np];
+      for (int ip=0; ip<nr; ip++) {
+        rs[ip] = nr-ip;
+        as[ip] = p2[ip]+180;
+      }
+      for (int ip=nr; ip<np; ip++) {
+        rs[ip] = ip-nr;
+        as[ip] = p2[ip];
+      }
+      float[][] xs = reverseTransform(k1,k2,rs,as);
+      for (int ip=0; ip<np; ip++) {
+        int i1 = round(xs[0][ip]);
+        int i2 = round(xs[1][ip]);
+        k1s[ip] = i1;
+        k2s[ip] = i2;
+        i1 = max(i1,0);
+        i2 = max(i2,0);
+        i1 = min(i1,n1-1);
+        i2 = min(i2,n2-1);
+        fp[ip] = fx[i2][i1];
+      }
+      rgf.apply0(fp,fp);
+      int bp = round(sigma);
+      int ep = np-bp;
+      for (int ip=bp; ip<=ep; ++ip) {
+        int i1 = k1s[ip];
+        int i2 = k2s[ip];
+        if(i1>=0&&i1<n1&&i2>=0&&i2<n2) {
+          float fpi = fp[ip];
+          //if(fp[ip]>gx[i2][i1])
+          gx[i2][i1] += fpi;
+        }
+      }
+    }
+    return gx;
+  }
+
+  public float[][] applyPolarTransform(
+    float x1, float x2, float rx, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    Sampling s1 = new Sampling(n1);
+    Sampling s2 = new Sampling(n2);
+    int np = 360;
+    int nr = round(rx);
+    float[][] fr = new float[np][nr];
+    SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    for (int ir=0; ir<nr; ++ir) {
+    for (int ip=0; ip<np; ++ip) {
+      float phi = (float)toRadians(ip);
+      float rx1 = ir*sin(phi);
+      float rx2 = ir*cos(phi);
+      float x1i = x1-rx1;
+      float x2i = x2-rx2;
+      fr[ip][ir] = si.interpolate(s1,s2,fx,x1i,x2i);
+    }}
+    float[][] gx = new float[180][2*nr];
+    for (int ip=0; ip<180; ip++) {
+      for (int ir=0; ir<nr; ir++) {
+        gx[ip][ir+nr] = fr[ip    ][ir];
+        gx[ip][ir   ] = fr[180+ip][nr-1-ir];
+      }
+    }
+    return gx;
+  }
+
+  public float[][] reverseTransform(
+    float c1, float c2, float[] rs, float[] as) {
+    int np = rs.length;
+    float[] x1 = new float[np];
+    float[] x2 = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+      float ri = rs[ip];
+      float phi = (float)toRadians(as[ip]);
+      float rx1 = ri*sin(phi);
+      float rx2 = ri*cos(phi);
+      x1[ip] = c1-rx1;
+      x2[ip] = c2-rx2;
+    }
+    return new float[][]{x1,x2};
+  }
+
   public float[][] applyForEnhanceX(
     int d1, int d2, float sigma, int[][] seeds, float[][] fx) 
   {
@@ -38,7 +231,6 @@ public class FaultEnhance {
       int k2 = seeds[1][is];
       int b1 = max(k2-d2,0);
       int e1 = min(k2+d2+1,n2);
-
       int bb2 = max(k1-d1,0);
       int eb2 = k1+1;
       int bf2 = eb2;
@@ -63,10 +255,8 @@ public class FaultEnhance {
         i2 = max(i2,0);
         i2 = min(i2,n2-1);
         if (abs(i1-eb2)>10) {
-          float fpi = fp[i1-bb2];
-          gx[i2][i1]+=fpi;
+          gx[i2][i1] += fp[i1-bb2];
         }
-
       }
     }
     return gx;
@@ -185,6 +375,74 @@ public class FaultEnhance {
     return ft;
   }
 
+  public float[][] thinX(float fm, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] ft = new float[n2][n1];
+    float[][] fs = new float[n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
+    rgf.apply00(fx,fs);
+    for (int i2=1;i2<n2-1;i2++) {
+    for (int i1=1;i1<n1-1;i1++) {
+      float fsi = fs[i2][i1];
+      float fsm2 = fs[i2-1][i1];
+      float fsp2 = fs[i2+1][i1];
+      float fsm1 = fs[i2][i1-1];
+      float fsp1 = fs[i2][i1+1];
+      if (fsm2<fsi&&fsp2<fsi&&fsi>fm) {
+        ft[i2  ][i1] = fsi;
+        //ft[i2-1][i1] = fsm;
+        //ft[i2+1][i1] = fsp;
+      }
+      if (fsm1<fsi&&fsp1<fsi&&fsi>fm) {
+        ft[i2][i1] = fsi;
+        //ft[i2][i1-1] = fsm;
+        //ft[i2][i1+1] = fsp;
+      }
+    }}
+
+    return ft;
+  }
+
+
+  public int[][] findSeedsX(int d1, int d2, float fm, 
+    float[][] fx, float[][] ft) 
+  {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] fs = new float[n2][n1];
+    ArrayList<Integer> k1 = new ArrayList<Integer>();
+    ArrayList<Integer> k2 = new ArrayList<Integer>();
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
+    rgf.apply00(fx,fs);
+    for (int i2=5;i2<n2-5;i2+=d2) {
+    for (int i1=5;i1<n1-5;i1+=d1) {
+      float fsi = fs[i2][i1];
+      float fsm2 = fs[i2-1][i1];
+      float fsp2 = fs[i2+1][i1];
+      float fsm1 = fs[i2][i1-1];
+      float fsp1 = fs[i2][i1+1];
+      boolean onRidge = false;
+      if (fsm2<fsi&&fsp2<fsi&&fsi>fm)
+        onRidge = true;
+      if (fsm1<fsi&&fsp1<fsi&&fsi>fm)
+        onRidge = true;
+      if (onRidge) {
+        k1.add(i1);
+        k2.add(i2);
+        ft[i2][i1] = fsi;
+      }
+
+    }}
+    int ns = k1.size();
+    int[][] seeds = new int[2][ns];
+    for (int is=0; is<ns; ++is) {
+      seeds[0][is] = k1.get(is); 
+      seeds[1][is] = k2.get(is); 
+    }
+    return seeds;
+  }
+
 
   public int[][] findSeeds(int d1, int d2, float fm, 
     float[][] fx, float[][] ft) 
@@ -203,11 +461,7 @@ public class FaultEnhance {
       float fsp = fs[i2+1][i1];
       if (fsm<fsi&&fsp<fsi&&fsi>fm) {
         k1.add(i1);
-        k1.add(i1);
-        k1.add(i1);
         k2.add(i2);
-        k2.add(i2-1);
-        k2.add(i2+1);
         ft[i2][i1] = fsi;
       }
     }}
@@ -218,6 +472,17 @@ public class FaultEnhance {
       seeds[1][is] = k2.get(is); 
     }
     return seeds;
+  }
+
+  public float[][] matrixTransform(float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] gx = new float[n1][n2];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gx[i1][i2]  = fx[i2][i1];
+    }}
+    return gx;
   }
 
   public float[][] applyForWeight(float[][] vel) {
@@ -398,7 +663,8 @@ public class FaultEnhance {
     return p;
   }
 
-  public float[] backwardPick(int i0, int b1, int b2, int e1, int e2, float[][] wx) {
+  public float[] backwardPick(int i0, int b1, int b2, 
+    int e1, int e2, float[][] wx) {
     int n2 = e2-b2;
     int n1 = e1-b1;
     float[] p = new float[n2];
@@ -568,7 +834,8 @@ public class FaultEnhance {
     return p;
   }
 
-  public float[] forwardPick(int i0, int b1, int b2, int e1, int e2, float[][] wx) {
+  public float[] forwardPick(int i0, int b1, int b2, 
+    int e1, int e2, float[][] wx) {
     int n2 = e2-b2;
     int n1 = e1-b1;
     float[] p = new float[n2];

@@ -20,7 +20,7 @@ def main(args):
   #goF3dUnc()
   #goJake()
   #goNathan()
-  #goLulia()
+  goLulia()
   #goCranfield2007()
   #goCranfield2010()
   #goSeamDepth()
@@ -32,10 +32,75 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-  goTj()
+  #goTj()
   #goBag()
   #goCurt()
   #goCampos()
+  #goGeng()
+def goGeng():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = /data/seis/f3d/f3draw.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 699003060
+  number of traces = 600515
+  format = 3 (2-byte two's complement integer)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   300, i2max =  1250 (inline indices)
+    i3min =   100, i3max =   750 (crossline indices)
+    xmin =  605.416700, xmax =  629.576300 (x coordinates, in km)
+    ymin = 6073.556400, ymax = 6090.463200 (y coordinates, in km)
+  grid sampling:
+    n1 =   462 (number of samples per trace)
+    n2 =   951 (number of traces in inline direction)
+    n3 =   651 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.025000 (inline sampling interval, in km)
+    d3 = 0.024999 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   300, i3min =   100, x =  605.835500, y = 6073.556400
+    i2max =  1250, i3min =   100, x =  629.576300, y = 6074.219900
+    i2min =   300, i3max =   750, x =  605.381800, y = 6089.799700
+    i2max =  1250, i3max =   750, x =  629.122600, y = 6090.463200
+  grid azimuth: 88.40 degrees
+  ****** end of SEG-Y file info ******
+  good subset with no dead traces
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
+  n1,n2,n3 = 462,951,591
+  ***************************************************************************
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = True # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
+  basedir = "../../../data/seis/geng/"
+  sgyfile = basedir+"Tianjing_Den_0_3000_2ms.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,511,25893624,28792700,0,0
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1
+    #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    gain(100,x)
+    show3d(x,clip=max(x)/2)
+    show3d(x,clip=1.0)
+
 def goCampos():
   """
   ***************************************************************************

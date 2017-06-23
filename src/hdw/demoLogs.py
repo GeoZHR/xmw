@@ -26,8 +26,8 @@ s1,s2,s3=Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
 logDir = "../../../data/seis/hdw/logs/"
 seismicDir = "../../../data/seis/hdw/logs/"
-pngDir = None
 pngDir =  "../../../png/hdw/logs/seg/"
+pngDir = None
 
 plotOnly = True
 
@@ -38,13 +38,13 @@ def main(args):
   #goDeepLogSub()
   #goDeepLogs()
   #goDeepLogSubFlatten()
-  #goFlatten()
+  goFlatten()
   #goDeepPorosityLogs()
   #goPorisityFlatten()
   #goDensityFlatten()
   #goVelocityFlatten()
   #goVelocityFlattenSlides()
-  goGammaFlatten()
+  #goGammaFlatten()
   #goGammaFlattenError()
   #goDisplay()
   #goDeepDensityLogs()
@@ -804,7 +804,6 @@ def dtran(d):
 
 def getLogs(curves):
   nc = len(curves)
-
   fileName = logDir+curves[0]+"logs.txt"
   ifile = open(fileName,'r+')
   lines = ifile.readlines()

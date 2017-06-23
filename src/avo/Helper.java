@@ -25,7 +25,8 @@ public class Helper {
     nps[2] = np3;
     nps[3] = np4;
     int npm = max(nps);
-    float[][][] las = new float[3][4][npm];
+    //float[][][] las = new float[3][4][npm];
+    float[][][] las = fillfloat(-999.25f,npm,4,3);
     for (int ip=0; ip<np1; ++ip) { 
       las[0][0][ip] = rv1[0][ip];
       las[1][0][ip] = rv1[1][ip];
