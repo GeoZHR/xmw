@@ -72,7 +72,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub8/molet/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -94,7 +94,7 @@ def main(args):
   #goSeisResample()
   #goHorizon()
   #goRosePlots()
-  goRosePlotsWithL1()
+  #goRosePlotsWithL1()
   #goRosePlotsScale()
   #goRosePlotsN()
   #goRosePlotsNScale()
@@ -107,6 +107,15 @@ def main(args):
   #goReskin()
   #goSkinDisplay()
   #goSampleClean()
+  gx = readImage(gxfile)
+  sk = readSkins(fsktv)
+  hp = Helper()
+  k = 0
+  for skin in sk:
+    hp.writeAsciiFault(s1,s2,s3,"fault"+str(k),skin)
+    hp.resampleSkin(s1,s2,s3,skin)
+    k = k+1
+  plot3x(gx,skins=sk)
 def goMolet():
   gx = readImage(gxfile)
   gf = zerofloat(n1,n2,n3)
@@ -676,8 +685,8 @@ def goFaultImages():
     writeImage(fptvfile,fp)
     writeImage(fttvfile,ft)
   else:
-    fl = readImage(fltvfile)
-    ft = readImage(fttvfile)
+    #fl = readImage(fltvfile)
+    #ft = readImage(fttvfile)
     fp = readImage(fptvfile)
   '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
@@ -932,7 +941,7 @@ def plot3x(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  #s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last

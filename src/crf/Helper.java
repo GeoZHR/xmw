@@ -6,11 +6,52 @@ import edu.mines.jtk.util.*;
 import edu.mines.jtk.interp.*;
 import edu.mines.jtk.awt.ColorMap;
 import static edu.mines.jtk.util.ArrayMath.*;
+import java.io.*;
 
-import ipfx.*;
+import mef.*;
 import util.*;
 
 public class Helper {
+
+
+  public void writeAsciiFault(
+    Sampling s1, Sampling s2, Sampling s3, String name, FaultSkin skin) 
+    throws IOException  {
+    PrintWriter writer = new PrintWriter(name,"UTF-8");
+    float f1 = (float)s1.getFirst();
+    float f2 = (float)s2.getFirst();
+    float f3 = (float)s3.getFirst();
+    float d1 = (float)s1.getDelta();
+    float d2 = (float)s2.getDelta();
+    float d3 = (float)s3.getDelta();
+    for (FaultCell cell:skin) {
+      float x1 = d1*cell.getX1()+f1;
+      float x2 = d2*cell.getX2()+f2;
+      float x3 = (d3*cell.getX3())/1.5f+f3;
+      String row = String.format("%.4f",x3)+"      ";
+      row += String.format("%.4f",x2)+"      ";
+      row += String.format("%.4f",x1)+"      ";
+      writer.println(row);
+    }
+    writer.close();
+  }
+
+  public void resampleSkin(
+    Sampling s1, Sampling s2, Sampling s3, FaultSkin skin) {
+    float f1 = (float)s1.getFirst();
+    float f2 = (float)s2.getFirst();
+    float f3 = (float)s3.getFirst();
+    float d1 = (float)s1.getDelta();
+    float d2 = (float)s2.getDelta();
+    float d3 = (float)s3.getDelta();
+    for (FaultCell cell:skin) {
+      float x1 = d1*cell.getX1()+f1;
+      float x2 = d2*cell.getX2()+f2;
+      float x3 = d3*cell.getX3()+f3;
+      cell.setX(x1,x2,x3);
+    }
+  }
+
 
   public float[][][] stratalSlices(int ns, float[][] tp, float[][] bt) {
     int n3 = tp.length;

@@ -763,6 +763,43 @@ public class FaultEnhancer {
     }});
   }
 
+  private void smooth2X(final float[][][] snd) {
+    final int n3 = n3(snd);
+    final int n2 = n2(snd);
+    final RecursiveExponentialFilter refx = makeRef(2);
+    loop(n2,new LoopInt() {
+    public void compute(int i2) {
+      float[][] s2 = extractSlice2(i2,snd);
+      if (s2!=null) {
+        refx.apply2(s2,s2); 
+        restoreSlice2(i2,snd,s2);
+      }
+    }});
+
+    final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
+    loop(n3,new LoopInt() {
+    public void compute(int i3) {
+      float[][] s3 = extractSlice3(i3,snd);
+      if (s3!=null) {
+        ref.apply2(s3,s3); 
+        restoreSlice3(i3,snd,s3);
+      }
+    }});
+
+  }
+
+  private static void restoreSlice2(int i2, float[][][] x, float[][] x2) {
+    int n1 = n1(x);
+    int n2 = n2(x);
+    int n3 = n3(x);
+    int i3lo = i3lo(i2,x);
+    int i3hi = i3hi(i2,x);
+    int m3 = 1+i3hi-i3lo;
+    assert x2.length==m3:"x2 length is correct";
+    for (int i3=0; i3<m3; ++i3)
+      copy(x2[i3],x[i3+i3lo][i2]);
+  }
+
   // Smoothing filter
   private static RecursiveExponentialFilter makeRef(double sigma) {
     RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);

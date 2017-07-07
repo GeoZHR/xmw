@@ -56,14 +56,6 @@ g1file = "gx1"
 g2file = "gx2"
 g3file = "gx3"
 g4file = "gx4"
-flfile = gxfile+flfile
-fpfile = gxfile+fpfile
-ftfile = gxfile+ftfile
-fltfile = gxfile+fltfile
-fptfile = gxfile+fptfile
-fttfile = gxfile+fttfile
-obfile = gxfile+obfile
-epfile = gxfile+epfile
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -92,6 +84,8 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
+  gx = readImage(gxfile)
+  plot3(gx)
   #goDataPortion()
   #goPlanar()
   #getOceanBottom()
@@ -127,8 +121,6 @@ def main(args):
   #goSkinDisplay()
   #goSampleClean()
   #goPad()
-  gx = readImage(gxfile)
-  plot3(gx)
 def goPad():
   gx = readImage(gxfile)
   hp = Helper()
@@ -788,36 +780,36 @@ def goUnfault():
 
 def goFaultImages():
   gx = readImage(gxfile)
-  #gx = readImage(gsxfile)
   if not plotOnly:
     fl = fillfloat(-0.01,n1,n2,n3)
     fp = fillfloat(-0.01,n1,n2,n3)
     ft = fillfloat(-0.01,n1,n2,n3)
-    skins = readSkins(fsrbase)
+    skins = readSkins(fskbase)
     fsx = FaultSkinnerX()
-    fsx.getFlpt(200,skins,fl,fp,ft)
+    fsx.getFlpt(1000,skins,fl,fp,ft)
+    '''
     hp = Helper()
     hp.rotateX(26,fp)
     hp.rotate(90,fp)
     hp.convert(fp)
-    #writeImage(fltvfile,fl)
-    #writeImage(fptvfile,fp)
-    #writeImage(fttvfile,ft)
+    '''
+    writeImage(fltfile,fl)
+    writeImage(fptfile,fp)
+    writeImage(fttfile,ft)
   else:
-    #fl = readImage(fltvfile)
-    #ft = readImage(fttvfile)
-    #fp = readImage(fptvfile)
-    fp = readImage("fptvmolet")
+    #fl = readImage(fltfile)
+    #ft = readImage(fttfile)
+    fp = readImage(fptfile)
   '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ft,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  '''
   fpt = readImage(fptvfile)
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
-  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+  '''
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 
 def goResetSurfaces():

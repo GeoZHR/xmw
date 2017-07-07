@@ -77,12 +77,12 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goSeis()
+  goSeis()
   #goPlanar()
   #goFaultScan()
   #goThin()
   #goSkin()
-  goSkinTv()
+  #goSkinTv()
   #goSmooth()
   #goSlip()
   #goUnfault()
@@ -109,8 +109,8 @@ def main(args):
   #goPad()
 def goSeis():
   gx = readImage(gxfile)
-  gx = gain(gx)
-  writeImage(gxfile,gx)
+  #gx = gain(gx)
+  #writeImage(gxfile,gx)
   plot3(gx)
 def goPad():
   gx = readImage(gxfile)

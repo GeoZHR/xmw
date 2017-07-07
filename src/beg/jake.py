@@ -85,7 +85,7 @@ maxThrow = 185.0
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = "../../../png/beg/jake/sub2/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -109,21 +109,21 @@ def main(args):
   #goPSS()
   #goFaultSlopes()
   #goFaultSurfer()
-  #goSkinMerge()
+  goSkinMerge()
   #goFillHoles()
   #goTest()
   #goTest1()
   #goSkinBig()
   #goFlatten()
   #goResults()
-  fw = readImage("gx")
+  #fw = readImage("gx")
   '''
   fs = copy(n1,800,n3,0,800,0,fw)
   writeImage("fxsub",fs)
   '''
-  print min(fw)
-  print max(fw)
-  plot3(fw,cmin=-1,cmax=1)
+  #print min(fw)
+  #print max(fw)
+  #plot3(fw,cmin=-1,cmax=1)
   '''
   fk1 = zerofloat(n2-910,n3)
   print n2-910
@@ -239,7 +239,7 @@ def goSkinMerge():
     writeSkins(fskr,skt)
   else:
     skins = readSkins(fskr)
-  #plot3(gx,skins=skins)
+  plot3(gx,skins=skins)
 
 
 def goFaultSlopes():

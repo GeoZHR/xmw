@@ -38,10 +38,27 @@ def setupForSubset(name):
     #f1,f2,f3 = 420,0,0
     f1,f2,f3 = 0,0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  if name=="camposSub":
+    print "setupForSubset: campos sub"
+    seismicDir = _datdir+"campos/sub/"
+    n1,n2,n3 = 1000,2000,550
+    n1,n2,n3 = 500,600,550
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #f1,f2,f3 = 455,0,1752
+    f1,f2,f3 = 0,0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   if name=="camposSub1":
     print "setupForSubset: campos sub1"
     seismicDir = _datdir+"campos/sub1/"
     n1,n2,n3 = 1000,3100,550
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #f1,f2,f3 = 455,0,1752
+    f1,f2,f3 = 0,0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  if name=="camposSub2":
+    print "setupForSubset: campos sub2"
+    seismicDir = _datdir+"campos/sub2/"
+    n1,n2,n3 = 455,1875,1384
     d1,d2,d3 = 1.0,1.0,1.0 
     #f1,f2,f3 = 455,0,1752
     f1,f2,f3 = 0,0,0

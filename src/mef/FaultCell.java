@@ -51,6 +51,13 @@ public class FaultCell implements Serializable {
     setNormalVector(w1,w2,w3);
   }
 
+  public void setX(float x1, float x2, float x3) {
+    this.x1=x1;
+    this.x2=x2;
+    this.x3=x3;
+  }
+
+
   public FaultCell getCa() {
     return this.ca;
   }

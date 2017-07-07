@@ -494,6 +494,30 @@ public class Helper {
     }}}
   }
 
+  public void replaceZeros(float v, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(gx[i3][i2][i1]==0f)
+        gx[i3][i2][i1] = v;
+    }}}
+  }
+
+  public void replaceNaN(float v, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(Float.isNaN(gx[i3][i2][i1])||Float.isInfinite(gx[i3][i2][i1]))
+        gx[i3][i2][i1] = v;
+    }}}
+  }
+
   public void padValues(float v, int b2, int e2, int b3, int e3, float[][][] gx) {
     int n1 = gx[0][0].length;
     for (int i3=b3; i3<=e3; ++i3) {

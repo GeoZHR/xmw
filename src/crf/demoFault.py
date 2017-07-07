@@ -85,7 +85,7 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
-  #goFaultImages()
+  goFaultImages()
   #goSurfaces()
   #goFaultPoints()
   #goFaultPointsScale()
@@ -98,7 +98,7 @@ def main(args):
   #goRosePlotsN()
   #goRosePlotsNScale()
   #goResetSurfaces()
-  goFaultsAndSurfs()
+  #goFaultsAndSurfs()
   #goFaultDensity()
   #goSetFaultImages()
   #goStrikeMask()
@@ -106,6 +106,9 @@ def main(args):
   #goReskin()
   #goSkinDisplay()
   #goSampleClean()
+def goAsciiFaults():
+  gx = readImage(gxfile)
+
 def goSampleClean():
   fx = readImage(gsxfile)
   p2 = readImage(p2file)
