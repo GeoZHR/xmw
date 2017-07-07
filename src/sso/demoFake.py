@@ -52,15 +52,15 @@ hasfile = "has"
 hacfile = "hac"
 f1,f2,f3 = 0,0,0
 d1,d2,d3 = 1,1,1
-n1,n2,n3 = 121,152,153
 n1,n2,n3 = 451,101,101
+n1,n2,n3 = 121,152,153
 s1 = Sampling(n1,d1,f1)
 s2 = Sampling(n2,d2,f2)
 s3 = Sampling(n3,d3,f3)
 plotOnly = False
 
 def main(args):
-  #goFakeData()
+  goFakeData()
   #goLof()
   #goLoe()
   #goStratigraphy()
@@ -68,7 +68,7 @@ def main(args):
   #goSmoothS()
   #goLittleEnd()
   #goLofSlope()
-  goLoeSlope()
+  #goLoeSlope()
 def goLofSlope():
   fx = readImageL(501,n2,n3,"sfx")
   p2k = readImageL(501,n2,n3,"sp2t")
@@ -157,13 +157,13 @@ def goFakeData():
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   lateralViriation = True
-  noise = 0.4 # (rms noise)/(rms signal) ratio
+  noise = 0.0 # (rms noise)/(rms signal) ratio
   if not plotOnly:
     fx,p2,p3,hs = FakeData.seismicAndSlopes3d2015A(sequence,
     nplanar,conjugate,conical,impedance,wavelet,lateralViriation,noise)
     hz = hs[0]
     ha = hs[1]
-    writeImage(fxfile,fx)
+    writeImage(fxcfile,fx)
     writeImage(hzfile,hz)
     writeImage(hacfile,ha)
     writeImage(p2kfile,p2)
