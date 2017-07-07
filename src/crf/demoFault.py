@@ -85,7 +85,7 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
-  goFaultImages()
+  #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
   #goFaultPointsScale()
@@ -106,9 +106,12 @@ def main(args):
   #goReskin()
   #goSkinDisplay()
   #goSampleClean()
+  goAsciiFaults()
 def goAsciiFaults():
   gx = readImage(gxfile)
-
+  sks = readSkins("fsb")
+  fcs = FaultSkin.getCells(sks)
+  plot3x(gx,skins=sks)
 def goSampleClean():
   fx = readImage(gsxfile)
   p2 = readImage(p2file)
