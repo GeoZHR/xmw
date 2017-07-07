@@ -51,8 +51,8 @@ import static edu.mines.jtk.util.ArrayMath.*;
  * and linearity is (ev-ew)/eu. Both linearity and planarity are
  * in the range [0,1].
  *
- * @author Dave Hale, Colorado School of Mines
- * @version 2007.02.12
+ * @author Xinming Wu, Colorado School of Mines
+ * @version 2016.02.12
  */
 public class ChannelEnhanceFilter {
 

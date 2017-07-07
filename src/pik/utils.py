@@ -30,9 +30,11 @@ def setupForSubset(name):
     print "setupForSubset: 2d fault"
     pngDir = _pngdir+"fault/2d/"
     seismicDir = _datdir+"fault/2d/"
-    n1,n2 = 222,440 #f3d75s
     n1,n2 = 400,801 #cylde200
     n1,n2 = 300,1200 #gx238 crf dataset
+    n1,n2 = 651,601 #fxnwc
+    n1,n2 = 222,440 #f3d75s
+    n1,n2 = 380,591 #ep56
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)

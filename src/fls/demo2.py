@@ -2,8 +2,9 @@ from utils2 import *
 
 #setupForSubset("2dSub1")
 #setupForSubset("bag2dTwo")
-setupForSubset("bag2dOne")
-#setupForSubset("seam2d")
+#setupForSubset("bag2dOne")
+setupForSubset("seam2d")
+setupForSubset("yk")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 
@@ -11,14 +12,15 @@ pngDir = None
 pngDir = getPngDir()
 
 fxfile = "st"
-fxfile = "gx366"
 fxfile = "gs" #bag2dTwo
 fxfile = "gs4370" #seam2dsub2
-fxfile = "gx1046" #seam2dsub2
 fxfile = "st"
-fxfile = "gx" #seam2d
 fxfile = "gx2538s" #bag2dTwo
 fxfile = "fx67cs" #bag2dOne
+fxfile = "gx" #seam2d
+fxfile = "gx1046" #seam2dsub2
+fxfile = "gx366"
+fxfile = "stack1_for_wxmSub"
 phfile = "phi"
 dpfile = "damp"
 #fxfile = "f3d267"
@@ -45,7 +47,7 @@ def main(args):
   #goSeamTest()
   #goSeam2dP()
   #goTensor()
-  #goFls()
+  goFls()
   #goFlsP()
   #goDLSP()
   #goBagDlsp()
@@ -53,8 +55,8 @@ def main(args):
   #goBand()
   #goTF()
   #goSaltPickerSub2()
-  goBag2dOne()
-  goBag2dTwo()
+  #goBag2dOne()
+  #goBag2dTwo()
 def goBag2dOne():
   gx = readImage(fxfile)
   p1 = []
@@ -458,34 +460,56 @@ def goFlsP():
 
 def goFls():
   gx = readImage(fxfile)
+  '''
+  lof = LocalOrientFilter(4,2)
+  ets = lof.applyForTensors(gx)
+  ets.setEigenvalues(0.001,1.0)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,10,gx,gx)
+  '''
+  rgf = RecursiveGaussianFilterP(1)
+  rgf.apply00(gx,gx)
+  sp = SaltPicker2()
+  pa = sp.applyForInsAmp(gx)
+  print min(pa)
+  print max(pa)
+  plot(gx)
+  plot(pa)
+  p11s = [650, 530, 325]
+  p12s = [650,1070, 970]
+
+  p21s = [325, 669, 532]
+  p22s = [840,1230,1068]
+  for i in range(len(p11s)):
+    p11 = p11s[i]
+    p21 = p21s[i]
+    p12 = p12s[i]
+    p22 = p22s[i]
+    dp1 = (p21-p11)/float(p22-p12)
+    for k2 in range(0,p22-p12,1):
+      k1 = round(p11+dp1*k2)
+      pa[k2+p12][k1-1] = 4
+      pa[k2+p12][k1  ] = 4
+      pa[k2+p12][k1+1] = 4
   p2 = zerofloat(n1,n2)
   el = zerofloat(n1,n2)
-  lsf = LocalSlopeFinder(8,2,5)
-  lsf.findSlopes(gx,p2,el)
+  lsf = LocalSlopeFinder(1,1,5)
+  lsf.findSlopes(pa,p2,el)
   lsf = LocalSlopeFinder(2,1,5)
-  lsf.findSlopes(gx,p2)
-  x1 = [220]
-  x2 = [900]
-  rs = [ 5]
-  x1 = [110]
-  x2 = [450]
-  rs = [  5]
-  gxs = FastLevelSets2.downSample(1,1,gx) 
-  els = FastLevelSets2.downSample(1,1,el) 
-  p2s = FastLevelSets2.downSample(1,1,p2) 
-  m2 = len(gxs)
-  m1 = len(gxs[0])
-  fls = FastLevelSets2(m1,m2,x1,x2,rs)
-  phi = zerofloat(m1,m2)
-  plot(gxs)
-  fls.setIterations(650,6,2)
-  xss = fls.applySegments(9,5,els,gxs,p2s,phi)
+  lsf.findSlopes(pa,p2)
+  x1 = [ 50,210,300,420,480,560,700,780,500,625,700,780,500, 425, 580, 680]
+  x2 = [600,600,600,600,600,600,600,600,100,200,200,200,800,1200,1300,1050]
+  rs = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10]
+  fls = FastLevelSets2(n1,n2,x1,x2,rs)
+  phi = zerofloat(n1,n2)
+  fls.setIterations(600,4,2)
+  xss = fls.applySegments(9,5,pa,pa,p2,phi)
   writeImage(phfile,phi)
-  rgf = RecursiveGaussianFilter(4)
+  rgf = RecursiveGaussianFilter(1)
   rgf.apply00(phi,phi)
   plot(phi)
-  plot(gxs,pp=xss[1][0],png=None)#pngName+str(k))
-  plot(gxs,phi=phi,png=None)#pngName+str(k))
+  #plot(pa,pp=xss[1][0],png=None)#pngName+str(k))
+  plot(pa,phi=phi,png=None)#pngName+str(k))
 
 def goSeamTest():
   gx = readImage(fxfile)

@@ -156,9 +156,10 @@ public class FastLevelSet2 {
     float[][] el, float[][] fx, float[][] p2) {
     _gWindow = gw;
     createGaussFilter(gw,sigma);
-    float[][] damp = density(0.6f,el,fx);
-    float[][] ddip = density(0.6f,el,p2);
-    float[][][] dps = new float[][][]{damp,ddip};
+    float[][] damp = density(0.3f,el,fx);
+    float[][] ddip = density(0.3f,el,p2);
+    //float[][][] dps = new float[][][]{damp,ddip};
+    float[][][] dps = new float[][][]{damp};
     balanceDensity(dps);
     updateEvolutionSpeed(dps); 
     for (int iter=0; iter<_outerIters; iter++) {
@@ -413,7 +414,7 @@ public class FastLevelSet2 {
     System.out.println("g11max="+max(fx));
     System.out.println("g11min="+min(g11));
     System.out.println("g11avg="+sum(fx)/(_n1*_n2));
-    float[][][] gs = new float[][][]{fx,u1};//,g11,g12,g22};
+    float[][][] gs = new float[][][]{fx};//,g11,g12,g22};
     _muin[0] = 0.0f;
     _muin[1] = 0.0f;
     _muin[2] = 0.0f;

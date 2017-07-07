@@ -36,7 +36,12 @@ from pik import *
 #############################################################################
 
 pngDir = "../../../png/test/wlm/"
+seismicDir = "../../../data/seis/tests/"
+fxfile = "cbound"
 
+n1,n2=400,10
+s1 = Sampling(n1)
+s2 = Sampling(n2)
 seed = 99 
 seed = 954 
 seed = 2127 
@@ -48,8 +53,9 @@ nrms = 0.5
 strainMax = 1.0
 
 def main(args):
+  goZhiguang()
   #d = goDynamicWarping()
-  d = goWarpWithSimilarity()
+  #d = goWarpWithSimilarity()
   #goPikWithError()
   #f,g,s = makeSequences()
   #plotfgX(f,d,png="fdx")
@@ -57,6 +63,88 @@ def main(args):
   #l = goLocalSimilarity()
   #plotfgs(f,g,g,g,png="fgg")
   #plotfgs(f,g,d,l,png="fgs")
+def goZhiguang():
+  ml = 35
+  strainMax = 0.2
+  #f,g,s = makeSequences()
+  fx = readImage2D(400,10,fxfile)
+  f,g=fx[0],fx[5]
+  dw = DynamicWarping(-ml,0)
+  dw.setErrorExtrapolation(DynamicWarping.ErrorExtrapolation.NEAREST)
+  dw.setStrainMax(strainMax)
+  e = dw.computeErrors(f,g)
+  d = dw.accumulateForward(e)
+  u = dw.backtrackReverse(d,e)
+  #plotfg(f,g,png="fg")
+  #plot2c(etran(e),s,u,perc=93,png="cesu")
+  #plotc(etran(e),None,None,perc=98,png="cesu")
+  #plotc(dtran(d),s,u,perc=97,png="cdsu")
+  ef = dw.accumulateForward(e)
+  er = dw.accumulateReverse(e)
+  es = sub(add(ef,er),e) # avoid normalization after smoothing
+  #es = dw.smoothErrors(e) # this method normalizes after smoothing
+  '''
+  plotc(dtran(ef),None,None,cbar="Accumulated error",perc=97,png="cef")
+  plotc(dtran(er),None,None,cbar="Accumulated error",perc=97,png="cer")
+  plotc(dtran(es),None,None,cbar="Accumulated error",perc=97,png="ces")
+  '''
+  for strainMax in [0.4]:
+    dw.setStrainMax(strainMax)
+    e = dw.computeErrors(f,g)
+    d = dw.accumulateForward(e)
+    u = dw.backtrackReverse(d,e)
+    #plotc(dtran(d),s,u,cbar="Accumulated error",perc=97,png="cdsu")
+    ea = dw.smoothErrors(e)
+    da = dw.accumulateForward(ea)
+    ua = dw.backtrackReverse(da,ea)
+    #plotc(dtran(da),s,ua,cbar="Accumulated error",perc=97,png="cdasu")
+    #edge = RecursiveExponentialFilter.Edges.OUTPUT_ZERO_VALUE
+    #ref = RecursiveExponentialFilter(10)
+    #ref.setEdges(edge)
+    #ref.apply(ua,ua)
+    #plotc(dtran(d),s,ua,cbar="Accumulated error",perc=97,png="cdsus")
+  fx[1] = fx[5]
+  gx = copy(fx)
+  gx[1] = dw.applyShifts(ua,fx[5])
+  plot2(s1,s2,fx)
+  plot2(s1,s2,gx)
+
+  '''
+
+  ml = 33
+  sd = 1.0
+  fx = readImage2D(400,10,fxfile)
+  f = fx[0]
+  g = fx[5]
+  dw = DynamicWarping(-ml,ml)
+  e = dw.computeErrors(f,g)
+  sa = transpose(sub(1,e))
+  sa = sub(sa,min(sa))
+  sa = div(sa,max(sa))
+  #plotc(sa,None,None,cbar="1-error",perc=99, png="lsdw")
+  opp = OptimalPathPicker(3,0.5)
+  wht = opp.applyForWeight(sa)
+  n1,n2=len(sa[0]),len(sa)
+  tms1 = zerofloat(n1,n2)
+  tms2 = zerofloat(n1,n2)
+  pik1 = opp.forwardPick(33,wht,tms1)
+  piks = opp.applyForPath(33,0,sa)
+  pik1 = sub(pik1,33)
+  piks = sub(piks,33)
+  #pik2 = opp.backwardPick(round(pik1[n2-1]),wht,tms2)
+  #x2 = rampfloat(0,1,n2)
+  tt = tms1
+  plotc(tt,None,None,cbar="Travel time",perc=95,png="timedw")
+  plotc(tt,None,None,cbar="Travel time",contour=True,perc=95,png="timeCdw")
+  plotc(tt,pik1,pik1,cbar="Travel time",contour=True,perc=95,png="timePikdw")
+  plotc(tt,piks,piks,cbar="Travel time",contour=True,perc=95,png="timePiksdw")
+  fx[1] = fx[5]
+  gx = copy(fx)
+  gx[1] = dw.applyShifts(piks,fx[5])
+  plot2(s1,s2,fx)
+  plot2(s1,s2,gx)
+  '''
+
 def goWarpWithSimilarity():
   global nrms,strainMax
   ml = 33
@@ -311,8 +399,20 @@ def addNoise(nrms,fpeak,f,seed=0):
   grms = sqrt(sum(mul(g,g))/n)
   g = mul(g,nrms*frms/grms)
   return add(f,g)
+def readImage2D(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".rsf@"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
  
 #############################################################################
+
 # plotting
 
 backgroundColor = Color.WHITE
@@ -460,6 +560,57 @@ def plotc(c,s=None,u=None,contour=False,cbar="Error",
     png += "n"+str(int(10*nrms))
     png += "s"+str(int(10*strainMax))
     frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
+
+def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
+  n2 = len(f)
+  n1 = len(f[0])
+  f1,f2 = s1.getFirst(),s2.getFirst()
+  d1,d2 = s1.getDelta(),s2.getDelta()
+  panel = panel2Teapot()
+  panel.setHInterval(1.0)
+  panel.setVInterval(1.0)
+  panel.setHLabel("Lateral position (km)")
+  panel.setVLabel("Time (s)")
+  #panel.setHInterval(100.0)
+  #panel.setVInterval(100.0)
+  #panel.setHLabel("Pixel")
+  #panel.setVLabel("Pixel")
+  if label:
+    panel.addColorBar(label)
+  else:
+    panel.addColorBar()
+  panel.setColorBarWidthMinimum(80)
+  pv = panel.addPixels(s1,s2,f)
+  pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pv.setColorModel(ColorMap.GRAY)
+  pv.setClips(-2,2)
+  if g:
+    pv = panel.addPixels(s1,s2,g)
+    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    pv.setColorModel(cmap)
+    if label:
+      panel.addColorBar(label)
+    else:
+      panel.addColorBar()
+  if cmin and cmax:
+    pv.setClips(cmin,cmax)
+  frame2Teapot(panel,png)
+def panel2Teapot():
+  panel = PlotPanel(1,1,
+    PlotPanel.Orientation.X1DOWN_X2RIGHT)#,PlotPanel.AxesPlacement.NONE)
+  return panel
+def frame2Teapot(panel,png=None):
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  #frame.setFontSizeForPrint(8,240)
+  #frame.setSize(1240,774)
+  #frame.setFontSizeForSlide(1.0,0.9)
+  frame.setFontSize(12)
+  frame.setSize(n2/2,n1)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(400,3.2,pngDir+png+".png")
+  return frame
 
 def plot2c(c,s,u,clip=None,perc=None,png=None):
   n,nlag = len(c[0]),len(c)

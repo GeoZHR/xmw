@@ -17,6 +17,7 @@ package hdw;
 import java.util.Random;
 
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.dsp.*;
 
 import util.SmoothWithShaping;
 
@@ -30,6 +31,76 @@ import swt.*;
  * @version 2017.02.16
  */
 public class WellHelper {
+
+  public float[][] varianceMap(
+    Sampling s2, Sampling s3, WellLog[] logs, float[][] wd) {
+    int n2 = s2.getCount();
+    int n3 = s3.getCount();
+    float[][] va = new float[n3][n2];
+    int nw = wd.length;
+    int nz = wd[0].length;
+    float ws = 0.0f;
+    float np = 0.0f;
+    for (int iw=0; iw<nw; ++iw) {
+      for (int iz=0; iz<nz; ++iz) {
+        float wi = wd[iw][iz];
+        if(wi!=_nullValue) {
+          np += 1f;
+          ws += wi;
+        }
+      }
+    }
+    float wa = ws/np;
+    for (int iw=0; iw<nw; ++iw) {
+      float npi = 0f;
+      float vai = 0f;
+      for (int iz=0; iz<nz; ++iz) {
+        float wi = wd[iw][iz];
+        if(wi!=_nullValue) {
+          npi += 1f;
+          vai += (wi-wa)*(wi-wa);
+        }
+      }
+      float x2i = logs[iw].x2[0];
+      float x3i = logs[iw].x3[0];
+      int i2 = s2.indexOfNearest(x2i);
+      int i3 = s3.indexOfNearest(x3i);
+      va[i3][i2] = vai/npi;
+    }
+    /*
+    float vmax = max(va);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      if (va[i3][i2]==0) {
+        va[i3][i2] = vmax;
+      }
+    }}
+    */
+
+    return va;
+  }
+
+  public float[][] lengthMap(
+    Sampling s2, Sampling s3, WellLog[] logs, float[][] wd) {
+    int n2 = s2.getCount();
+    int n3 = s3.getCount();
+    float[][] lg = new float[n3][n2];
+    int nw = wd.length;
+    int nz = wd[0].length;
+    for (int iw=0; iw<nw; ++iw) {
+      float np = 0;
+      for (int iz=0; iz<nz; ++iz) {
+      if(wd[iw][iz]!=_nullValue)
+        np+=1;
+      }
+      float x2i = logs[iw].x2[0];
+      float x3i = logs[iw].x3[0];
+      int i2 = s2.indexOfNearest(x2i);
+      int i3 = s3.indexOfNearest(x3i);
+      lg[i3][i2] = np;
+    }
+    return lg;
+  }
 
   public float[][][] toArray(WellLog[] logs, double[] ndf) {
     int nc = 4;
@@ -135,6 +206,29 @@ public class WellHelper {
     return copy(mz,nw,0,0,wc);
   }
 
+  public float[][] sortByTravelTime(
+    Sampling s2, Sampling s3, float[][] time, WellLog[] logs, float[][] wd) {
+    int nw = wd.length;
+    int nz = wd[0].length;
+    float[] ts = new float[nw];
+    int[] ids = new int[nw];
+    for (int iw=0; iw<nw; ++iw) {
+      float x2 = logs[iw].x2[0];
+      float x3 = logs[iw].x3[0];
+      int i2 = s2.indexOfNearest(x2);
+      int i3 = s3.indexOfNearest(x3);
+      ts[iw] = time[i3][i2];
+      ids[iw] = iw;
+    }
+    quickIndexSort(ts,ids);
+    float[][] wr = new float[nw][nz];
+    for (int iw=0; iw<nw; ++iw) {
+      wr[iw] = wd[ids[iw]];
+    }
+    return wr;
+  }
+
+
   public float[][] sortLogs(float[][] wd) {
     int nw = wd.length;
     int nz = wd[0].length;
@@ -152,6 +246,39 @@ public class WellHelper {
       wr[iw] = wd[ids[nw-iw-1]];
     }
     return wr;
+  }
+
+  public int[] sortLogIds(float[][] wd) {
+    int nw = wd.length;
+    int nz = wd[0].length;
+    int[] np = new int[nw];
+    int[] ids = new int[nw];
+    for (int iw=0; iw<nw; ++iw) {
+      ids[iw] = iw;
+    for (int iz=0; iz<nz; ++iz) {
+      if(wd[iw][iz]!=_nullValue)
+        np[iw]+=1;
+    }}
+    quickIndexSort(np,ids);
+    return ids;
+  }
+
+
+
+  public int findLongestLog(float[][] wd) {
+    int nw = wd.length;
+    int nz = wd[0].length;
+    int id = 0;
+    int nmax = 0;
+    for (int iw=0; iw<nw; ++iw) {
+      int np = 0;
+      for (int iz=0; iz<nz; ++iz) {
+        if(wd[iw][iz]!=_nullValue)
+          np+=1;
+      }
+      if(np>nmax) {nmax=np;id=iw;}
+    }
+    return id;
   }
 
 

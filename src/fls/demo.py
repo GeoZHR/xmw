@@ -8,7 +8,7 @@ from utils import *
 
 #setupForSubset("ch3d")
 #setupForSubset("seam3d")
-setupForSubset("seam3dSub")
+#setupForSubset("seam3dSub")
 setupForSubset("seam3d")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
@@ -55,11 +55,16 @@ def main(args):
   #goSlopes()
   #goSmooth()
   gx = readImage(gxfile)
+  gs = copy(n1,400,450,0,250,300,gx)
+  writeImage("gxSub",gs)
+  plot3(gs)
+  '''
   gs = zerofloat(n1,n3)
   for i3 in range(n3):
     gs[i3] = gx[i3][0] 
   writeImage("gx0",gs)
   plot3(gx,cmin=min(gx)/100,cmax=max(gx)/100)
+  '''
 
 def goSmooth():
   gx = readImage(gxfile)

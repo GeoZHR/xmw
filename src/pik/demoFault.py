@@ -14,8 +14,10 @@ f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
 d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 #############################################################################
 gxfile = "clyde200" # input semblance image
-gxfile = "f3d75s" # input semblance image
 gxfile = "gx238" # input semblance image
+gxfile = "fxnwc" # input semblance image
+gxfile = "f3d75s" # input semblance image
+gxfile = "ep56" # input semblance image
 elfile = "el" # picked path using Sergey's method
 smfile = "sm"
 pngDir = getPngDir()
@@ -24,8 +26,32 @@ plotOnly = False
 
 def main(args):
   #goSemblance()
-  #goFaultPik()
-  goTimeMarker()
+  goFaultPik()
+  #goFaultPik1()
+  #goTimeMarker()
+  #goPolar()
+def goPolar():
+  sm = readImage(smfile)
+  sm = sub(1,sm)
+  '''
+  gx = readImage(gxfile)
+  ss = copy(100,100,120,100,sm)
+  gs = copy(100,100,120,100,gx)
+  plot(gs,ss,cmin=0.1,cmax=0.5,cmap=jetFillExceptMin(0.6),cint=0.2)
+  k = 1.2
+  n2 = 100
+  for i2 in range(n2):
+    i1 = round(k*i2)
+    if i1<100:
+      ss[i2][i1] = 2
+  rgf = RecursiveGaussianFilterP(1)
+  rgf.apply00(ss,ss)
+  '''
+  pc = PolarCoordinates(555,125,100,0,360)
+  sc,gx = pc.applyTransform(sm)
+  plot(sm)
+  plot(sc)
+  plot(gx)
 def goTimeMarker():
   gx = readImage(gxfile)
   gx = gain(gx)
@@ -70,35 +96,60 @@ def goSemblance():
   lof.applyForNormalLinear(gx,u1,u2,el)
   writeImage(smfile,el)
 
-def goFaultPik():
+def goFaultPik1():
   gx = readImage(gxfile)
   gx = gain(gx)
   sm = readImage(smfile)
+  plot(sub(1,sm))
+  sm = pow(sm,8)
   sm = sub(1,sm)
-  fe = FaultEnhance(4,1.0)
+  fe = FaultEnhance(4,0.2)
   st1 = zerofloat(n1,n2)
-  seeds=fe.findSeeds(5,1,0.05,sm,st1)
-  se = fe.applyForEnhanceX(50,50,20,seeds,sm)
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply00(se,se)
+  seeds=fe.findSeeds(1,1,0.3,sm,st1)
+  se = fe.enhanceInPolarSpace1(60,60,10,seeds,sm)
   se = sub(se,min(se))
   se = div(se,max(se))
-  st2 = zerofloat(n1,n2)
-  seeds=fe.findSeeds(2,1,0.05,se,st2)
-  se = fe.applyForEnhanceX(50,50,20,seeds,sm)
-  stt = fe.thin(0.05,se)
+  plot(st1)
+  plot(se,cmin=0.01,cmax=0.6)
   cmin = -1
   cmax =  1
   mp1 = ColorMap.GRAY
   mp2 = ColorMap.JET
-  plot2(s1,s2,sm,vint=50,hint=200,cmin=0.0,cmax=0.5,cmap=mp1)
-  plot2(s1,s2,st1,vint=50,hint=200,cmin=0.0,cmax=0.5,cmap=mp1)
-  plot2(s1,s2,se,vint=50,hint=200,cmin=0.0,cmax=0.5,cmap=mp1)
-  plot(gx,sm,cmin=0.1,cmax=0.5,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot(gx,se,cmin=0.1,cmax=0.5,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot(gx,stt,cmin=0.1,cmax=0.5,cmap=jetFillExceptMin(0.6),cint=0.2)
-
+  plot(gx,sm,cmin=0.3,cmax=1.0,cmap=jetFillExceptMin(0.6),cint=0.2)
+  plot(gx,se,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
   '''
+  plot(gx,stt,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
+  plot2(s1,s2,et,u=pik1,vint=20,hint=20,cmin=0,cmax=0.5,cmap=mp2)
+  plot2(s1,s2,gx,u=pik1,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
+  plot2(s1,s2,gx,u=pik2,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
+  '''
+  #plot2(s1,s2,gx,u=pik3,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp)
+
+
+def goFaultPik():
+  #gx = readImage(gxfile)
+  #gx = gain(gx)
+  sm = readImage(gxfile)
+  plot(sub(1,sm))
+  sm = pow(sm,8)
+  sm = sub(1,sm)
+  fe = FaultEnhance(4,0.5)
+  st1 = zerofloat(n1,n2)
+  seeds=fe.findSeedsX(1,1,0.3,sm,st1)
+  #se = fe.applyForEnhanceX(20,20,8,seeds,sm)
+  se = fe.enhanceInPolarSpace(40,40,10,seeds,sm)
+  se = sub(se,min(se))
+  se = div(se,max(se))
+  plot(st1)
+  plot(se,cmin=0.01,cmax=0.5)
+  '''
+  cmin = -1
+  cmax =  1
+  mp1 = ColorMap.GRAY
+  mp2 = ColorMap.JET
+  plot(gx,sm,cmin=0.3,cmax=1.0,cmap=jetFillExceptMin(0.6),cint=0.2)
+  plot(gx,se,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
+  plot(gx,stt,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
   plot2(s1,s2,et,u=pik1,vint=20,hint=20,cmin=0,cmax=0.5,cmap=mp2)
   plot2(s1,s2,gx,u=pik1,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
   plot2(s1,s2,gx,u=pik2,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
@@ -234,9 +285,11 @@ backgroundColor = Color.WHITE
 def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
         label=None,neareast=False,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  n1,n2=len(f[0]),len(f)
+  s1,s2=Sampling(n1),Sampling(n2)
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
   panel.setVInterval(50)
-  panel.setHInterval(200)
+  panel.setHInterval(50)
   #panel.setHLabel("Inline (traces)")
   #panel.setVLabel("Time (samples)")
   pxv = panel.addPixels(0,0,s1,s2,f);
@@ -258,7 +311,8 @@ def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
-  frame.setSize(1400,700)
+  #frame.setSize(1400,700)
+  frame.setSize(700,500)
   frame.setFontSize(24)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")

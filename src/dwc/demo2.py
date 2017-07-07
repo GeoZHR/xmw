@@ -11,47 +11,58 @@ from utils2d import *
 #setupForSubset("tccs")
 setupForSubset("sigmoid")
 setupForSubset("benxin")
+setupForSubset("zhiguang")
 s1,s2 = getSamplings()
 n1,n2 = s1.count,s2.count
 f1,f2 = s1.getFirst(),s2.getFirst()
 d1,d2 = s1.getDelta(),s2.getDelta()
 
-pngDir = None
 pngDir = getPngDir()
+pngDir = None
 
 label1,label2 = None,None
 gxfile = "gx" # for pnz/tccs data
+gx1file = "shot" # for pnz/tccs data
+gx2file = "shot1" # for pnz/tccs data
 
 def main(args):
   #goDw()
   goWarp()
 
 def goWarp():
+  f = readImage("vinit")
+  print min(f)
+  print max(f)
+  #writeImageL("vma",f)
+  fclips = (2,3.5)
+  plot2X(f,f,fclips,label="Velocity",png="hd")
+  '''
   global nrms,esmooth,usmooth,shiftMax
   nrms = 0.0
   esmooth = 2
   usmooth = 1.0
-  strainMax1 = 0.25
-  strainMax2 = 0.25
-  esmooth = 0
-  shiftMax = 120
-  shift = shiftMax
-  mlag = 2*shift
+  strainMax1 = 0.2
+  strainMax2 = 0.5
+  shiftMax = 10
+  mlag = 2*shiftMax
   
-  uclips = (0,shift*2)
-  uclips = (0,120)
-  dw = DynamicWarping(0,mlag)
+  uclips = (-10,10)
+  uclips = (-10,10)
+  dw = DynamicWarping(-mlag,0)
   dw.setStrainMax(strainMax1,strainMax2)
   dw.setErrorSmoothing(esmooth)
-  f = readImage("501")
-  g = readImage("502")
+  dw.setErrorExponent(1)
+  f = readImageM(gx2file)
+  f = mul(f,8)
+  g = readImageM(gx1file)
   n1,n2 = s1.count,s2.count
-  f = gain(f)
-  g = gain(g)
+  #f = gain(f)
+  #g = gain(g)
   print min(f)
   print max(f)
   fclips = (-.0005,.0005)
   fclips = (-.5,.5)
+  plot2X(g,f,fclips,label="Amplitude",png="gg")
   plot2X(f,g,fclips,label="Amplitude",png="fg")
   if esmooth==0:
     dw.setShiftSmoothing(usmooth,0.0)
@@ -60,9 +71,10 @@ def goWarp():
   u = dw.findShifts(f,g)
   h = dw.applyShifts(u,g)
   print max(u)
-  plot2X(h,sub(f,h),fclips,label="Amplitude",png="hd")
+  plot2X(h,sub(g,h),fclips,label="Amplitude",png="hd")
   plot2X(u,u,uclips,label="Shift (samples)",png="uu")
   writeImage("shifts",u)
+  '''
 def goDw():
   fx = getFault()
   ux = getUnconformity()
@@ -742,6 +754,8 @@ def plot2X(f,g,clips=None,label=None,png=None):
   panel.mosaic.setWidthTileSpacing(10);
   pv0 = panel.addPixels(0,0,s1,s2,f)
   pv1 = panel.addPixels(0,1,s1,s2,g)
+  pv1.setColorModel(ColorMap.JET)
+  pv0.setColorModel(ColorMap.JET)
   pv0.setInterpolation(PixelsView.Interpolation.NEAREST)
   pv1.setInterpolation(PixelsView.Interpolation.NEAREST)
   if clips:

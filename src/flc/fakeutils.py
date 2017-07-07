@@ -9,6 +9,7 @@ from common import *
 # Internal constants
 
 _datdir = "../../../data/seis/flc/"
+_datdir = "../../../data/seis/dwc/"
 
 #############################################################################
 # Setup
@@ -33,6 +34,14 @@ def setupForSubset(name):
     print "setupForSubset: tp"
     seismicDir = _datdir+"tp/"
     n1,n2,n3 = 251,357,143
+    d1,d2,d3 = 1.0,1.0,1.0 
+    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="zhiguang":
+    """ subset of Teapot dome """
+    print "setupForSubset: tp"
+    seismicDir = _datdir+"zhiguang/"
+    n1,n2,n3 = 2101,401,41
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
@@ -87,6 +96,17 @@ def readImage(name):
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+def readImageM(name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".rsf@"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
   return image

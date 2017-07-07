@@ -9,7 +9,6 @@ from common import *
 # Internal constants
 
 _datdir = "../../../data/seis/slt/"
-_datdir = "../../../data/seis/fls/seam/"
 _datdir = "../../../data/seis/fls/"
 
 #############################################################################
@@ -40,7 +39,7 @@ def setupForSubset(name):
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="seam3d":
     print "setupForSubset: seam 3d"
-    seismicDir = _datdir+"3d/"
+    seismicDir = _datdir+"seam/3d/"
     pngDir = "../../../png/fls/seam/3d/"
     n1,n2,n3 = 751,1169,1002
     #n1,n2,n3 = 580,1169,1002
@@ -48,6 +47,17 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,0.000,0.000
     #f1,f2,f3 = 220,740,350
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="seamSub":
+    print "setupForSubset: seam 3d subset"
+    seismicDir = _datdir+"seam/sub/"
+    pngDir = "../../../png/fls/seam/sub/"
+    #n1,n2,n3 = 751,1169,1002
+    n1,n2,n3 = 550,400,450 #gs = copy(550,400,450,40,250,300,gx)
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    f1,f2,f3 = 0.000,0.000,0.000
+    #f1,f2,f3 = 40,250,300
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="seam3dSub":
     print "setupForSubset: seam 3d subset"

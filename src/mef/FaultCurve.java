@@ -65,6 +65,24 @@ public class FaultCurve implements Iterable<FaultPoint>,Serializable {
     }}
   }
 
+  public static void getFlImage(int i1max, FaultCurve[] curves, float[][] fl) {
+    for (FaultCurve curve:curves) {
+      int k1max = 0;
+      for (FaultPoint point:curve) {
+        int i1 = point.i1;
+        if (i1>k1max) k1max = i1;
+      }
+      if(k1max>i1max) {
+        for (FaultPoint point:curve) {
+          int i1 = point.i1;
+          int i2 = point.i2;
+          fl[i2][i1] = point.fl;
+        }
+      }
+    }
+  }
+
+
   public static void getFlsImage(FaultCurve[] curves, float[][] fl) {
     for (FaultCurve curve:curves) {
     for (FaultPoint point:curve) {

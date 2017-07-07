@@ -23,6 +23,65 @@ import pik.*;
 public class SaltPicker3 {
 
   public float[][][] pick3(
+    int d2, float[][] c3, float[] c2, float[][] c1, float[][][] pa, 
+    float[][][] fss) 
+  {
+    int nc = c2.length;
+    int n3 = pa.length;
+    int n2 = pa[0].length;
+    int n1 = pa[0][0].length;
+    SaltPicker2 sp2 = new SaltPicker2();
+    float[][][] pks = new float[n2][4][];
+    for (int ic=0; ic<nc; ++ic) {
+      int k2 = round(c2[ic]);
+      float[][] pa2 = slice2(k2,pa);
+      float[][] xu = sp2.initialBoundary(1,c1[ic],c3[ic]);
+      sp2.refine(50,1,4,1,xu,pa2);
+      float[][] xp = copy(xu);
+      float[][] xm = copy(xu);
+      float[][] xt = sp2.regridBoundary(1.0f,xu[0],xu[1]);
+      pks[k2] = xt;
+      float[][] wx = new float[n3][n1];
+      pointsToImage(xt[1],xt[0],pa2,wx);
+      signAsignmentH(k2,wx,fss);
+      int e2 = min(k2+d2,n2-1);
+      int b2 = max(k2-d2,0);
+      for (int i2=k2+1; i2<=e2; i2++) {
+        pa2 = slice2(i2,pa);
+        xp = sp2.pickNext(5,1,3,1,xp[0],xp[1],pa2);
+        xt = sp2.regridBoundary(1.0f,xp[0],xp[1]);
+        pks[i2] = xt;
+        zero(wx);
+        pointsToImage(xt[1],xt[0],pa2,wx);
+        signAsignmentH(i2,wx,fss);
+      }
+      for (int i2=k2-1; i2>=b2; i2--) {
+        pa2 = slice2(i2,pa);
+        xm = sp2.pickNext(5,1,3,1,xm[0],xm[1],pa2);
+        xt = sp2.regridBoundary(1.0f,xm[0],xm[1]);
+        pks[i2] = xt;
+        zero(wx);
+        pointsToImage(xt[1],xt[0],pa2,wx);
+        signAsignmentH(i2,wx,fss);
+      }
+    }
+    System.out.println("fssmin="+min(fss));
+    System.out.println("fssmax="+max(fss));
+    return pks;
+  }
+
+  private float[][] slice2(int k2, float[][][] fx) {
+    int n3 = fx.length;
+    int n1 = fx[0][0].length;
+    float[][] fs = new float[n3][n1];
+    for (int i3=0; i3<n3; ++i3)
+      for (int i1=0; i1<n1; ++i1)
+        fs[i3][i1] = fx[i3][k2][i1];
+    return fs;
+  }
+
+
+  public float[][][] pick3(
     int d3, float[] c3, float[][] c2, float[][] c1, float[][][] pa, 
     float[][][] fss) 
   {
@@ -50,9 +109,8 @@ public class SaltPicker3 {
         xt = sp2.regridBoundary(1.0f,xp[0],xp[1]);
         pks[i3] = xt;
         zero(wx);
-        pointsToImage(xt[1],xt[0],pa[k3],wx);
+        pointsToImage(xt[1],xt[0],pa[i3],wx);
         signAsignmentH(wx,fss[i3]);
-
       }
       for (int i3=k3-1; i3>=b3; i3--) {
         xm = sp2.pickNext(5,1,3,1,xm[0],xm[1],pa[i3]);
@@ -242,6 +300,36 @@ public class SaltPicker3 {
       }
     }}
   }
+
+  public void signAsignmentH(
+    int k2, float[][] wx, float[][][] fx) {
+    int n3 = wx.length;
+    int n1 = wx[0].length;
+    float[][] fx2 = new float[n3][n1];
+    for (int i1=0; i1<n1; ++i1) {
+      float mk = 1f;
+    for (int i3=0; i3<n3; ++i3) {
+      if(wx[i3][i1]!=0f) {
+        fx2[i3][i1] = 0f;
+        if(i3==0) mk*=-1f;
+        if(i3>0&&wx[i3-1][i1]==0) mk*=-1f;
+      } else {
+        fx2[i3][i1] = mk;
+      }
+    }}
+    //despike
+    float[][] fs2 = zerofloat(n1,n3);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(10);
+    ref.apply(fx2,fs2);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(fx2[i3][i1]!=0) {
+        if(fs2[i3][i1]>0) fx[i3][k2][i1] =  1f;
+        if(fs2[i3][i1]<0) fx[i3][k2][i1] = -1f;
+      }
+    }}
+  }
+
 
 
 }

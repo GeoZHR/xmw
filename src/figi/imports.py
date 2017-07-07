@@ -8,6 +8,7 @@ from java.io import *
 from java.lang import *
 from java.util import *
 from javax.swing import *
+from java.nio import *
 
 from edu.mines.jtk.awt import *
 from edu.mines.jtk.dsp import *

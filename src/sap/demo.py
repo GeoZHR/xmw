@@ -7,8 +7,8 @@ Version: 2016.06.01
 
 
 from utils import * 
-setupForSubset("semblance")
-#setupForSubset("channel")
+#setupForSubset("semblance")
+setupForSubset("channel")
 #setupForSubset("surface")
 #setupForSubset("env")
 #setupForSubset("semblance3d")
@@ -31,8 +31,8 @@ pngDir = None
 plotOnly = False
 
 def main(args):
-  goABsemblance()
-  #goChannel()
+  #goABsemblance()
+  goChannel()
   #goSurface()
   #goSemblance3d() 
   #goEnv3d() 
@@ -88,8 +88,8 @@ def goChannel():
   c2 = Sampling(cp2[1],1,0)
   c3 = Sampling(cp3[2],1,0)
   ss = [s1,c2,c3]
-  plot2(s1,gx,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
-  plot2(s1,gx,us=us,ss=ss,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
+  plot2(s1,s2,gx,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
+  plot2(s1,s2,gx,us=us,ss=ss,cps=cps,css=css,vint=100,hint=100,cmap=ColorMap.GRAY)
   #plot2(s1,dtran(d),u,vint=200,hint=200,cmap=ColorMap.GRAY)
 def goSlices():
   #fx = readImage2L(n1,n2,"sliceNew")

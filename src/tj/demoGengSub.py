@@ -76,7 +76,7 @@ maxThrow = 40.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 #pngDir = "../../../png/beg/hongliu/"
-pngDir = "../../../png/tj/geng/"
+pngDir = "../../../png/tj/geng/sub/"
 pngDir = None
 plotOnly = True
 
@@ -102,13 +102,8 @@ def main(args):
   #sk = readSkins(fskr)
   #plot3(gx,skins=sk)
   #goTest()
-  goFlatten()
-  #goSfd()
-  #goDp()
-  #goRefine()
-  #goFlattenSlopes()
-  #goHorizon()
-  #goResults3D()
+  #goFlatten()
+  goResults3D()
   #goMovieSlices()
   #goSlicesX()
   #goFlattenDF()
@@ -117,13 +112,10 @@ def goFlattenDF():
   flstop = 0.1
   fsigma = 8.0
   fl = fillfloat(1,n1,n2,n3)
-  p2 = readImage(p2ffile)
-  p3 = readImage(p3ffile)
-  ep = readImage(epffile)
   fs = zerofloat(n1,n2,n3)
   rgf = RecursiveGaussianFilterP(1)
-  rgf.apply0XX(fx,fs)
-  fs = FaultScanner.smooth(flstop,fsigma,p2,p3,fl,fs)
+  rgf.apply000(fx,fs)
+  #fs = FaultScanner.smooth(flstop,fsigma,p2,p3,fl,fs)
   print "smooth done..."
 
   for i2 in range(n2):
@@ -137,11 +129,11 @@ def goFlattenDF():
   rgf.applyX0X(fl,fl)
   rgf.applyXX0(fl,fl)
   ep = sub(1,fl)
-  df = DynamicFlattener(-10,20)
+  df = DynamicFlattener(-5,5)
   df.setErrorExponent(1)
   df.setStrainMax(0.2)
   df.setWindow(2,150)
-  df.setGate(5)
+  df.setGate(2)
   df.setErrorExponent(1)
   df.setShiftSmoothing(1)
   df.setErrorSmoothing(3)
@@ -183,12 +175,9 @@ def goFlattenDF():
   '''
 
 def goMovieSlices():
-  gg = readImage("fg")
-  #k1s = [36,77,95,115,145,175,215,227]
-  k1s = [265,277,332]
-  for i1 in k1s:
-  #for i1 in range(300,400,2):
-    plot3(gg,k1=i1,png="fg"+str(i1))
+  gg = readImage(gtfile)
+  for i1 in range(700,800,1):
+    plot3(gg,k1=i1,png="slice"+str(i1))
 def goSlicesX():
   gg = readImage("fg")
   gs = zerofloat(n3,n2)
@@ -203,24 +192,25 @@ def goSlicesX():
 def goResults3D():
   gx = readImage(gxfile)
   gw = readImage(fwsfile)
-  gg = readImage("fg")
+  gg = readImage(gtfile)
+  '''
   skins = readSkins(fslbase)
   fs = fillfloat(-1,n1,n2,n3)
-  for skin in skins:
-    for cell in skin:
-      i1 = cell.getI1()-65
-      m2 = cell.getM2()
-      m3 = cell.getM3()
-      p2 = cell.getP2()
-      p3 = cell.getP3()
-      fs[m3][m2][i1] = cell.getS1()
-      fs[p3][p2][i1] = cell.getS1()
-  plot3(gx,png="seis")
-  plot3(gx,skins=skins,smax=15,png="faultSurface")
-  plot3(gx,fs,cmin=0.01,cmax=15,cmap=jetFillExceptMin(1.0),
+  fl = fillfloat( 0,n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFls(skins,fl)
+  fsx.getFss(skins,fs)
+  writeImage(fltfile,fl)
+  writeImage(fs1file,fs)
+  plot3(gx,skins=skins,k1=898,png="faultSurface")
+  plot3(gx,fl,cmin=0.25,cmax=1.0,k1=898,cmap=jetFillExceptMin(1.0))
+  plot3(gx,skins=skins,smax=35,k1=898,png="throwSurface")
+  plot3(gx,fs,cmin=0.01,cmax=35,k1=898,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="faultThrow")
-  plot3(gw,png="unfault")
-  plot3(gg,png="unfaultAndUnfold")
+  '''
+  plot3(gx,k1=898,png="seis")
+  plot3(gw,k1=898,png="unfault")
+  plot3(gg,k1=898,png="unfaultAndUnfold")
 def goFlattenSlopes():
   fx = readImage(gtfile)
   p2 = zerofloat(n1,n2,n3)
@@ -1164,14 +1154,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  ipg.setSlices(423,883,206)
-  ipg.setSlices(k1,279,0)
+  ipg.setSlices(k1,9,6)
   if cbar:
     #sf.setSize(1137,900)
-    sf.setSize(1287,900)
+    sf.setSize(937,900)
   else:
     #sf.setSize(1000,900)
-    sf.setSize(1150,900)
+    sf.setSize(800,900)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
@@ -1185,12 +1174,11 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setTranslate(Vector3(-0.15,0.10,0.05))
   ov.setTranslate(Vector3( 0.05,-0.10,0.08))
   #ov.setAzimuthAndElevation(225.0,30.0)
-  ov.setAzimuthAndElevation(130,45.0)
-  sf.setVisible(True)
+  ov.setAzimuthAndElevation(50,40.0)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
+  #sf.setVisible(False)
 #############################################################################
 run(main)
