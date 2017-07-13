@@ -42,7 +42,7 @@ u1file = "u1" # relateive geologic time volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,20
+sigmaPhi,sigmaTheta = 8,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -69,14 +69,39 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goSkinTv()
-  goSmooth()
-  '''
-  goSlip()
-  goUnfaultS()
-  goFlatten()
-  goHorizonExtraction()
-  '''
+  #goSkinTv()
+  #goSmooth()
+  #goSlip()
+  #goUnfaultS()
+  #goFlatten()
+  #goHorizonExtraction()
+  goFbs()
+def goFbs():
+  gx = readImage(gxfile)
+  sk = readSkins(fslbase)
+  fl = zerofloat(n1,n2,n3)
+  fs = FaultSkinnerX()
+  fs.getFl(sk,fl)
+  fs1 = zerofloat(n1,n2,n3)
+  fs2 = zerofloat(n1,n2,n3)
+  fs3 = zerofloat(n1,n2,n3)
+  for skin in sk:
+    for cell in skin:
+      i1 = cell.getI1()
+      i2 = cell.getI2()
+      i3 = cell.getI3()
+      c2 = cell.getS2()
+      c3 = cell.getS3()
+      if c2<0:
+        c2 = -c2
+        c3 = -c3
+      fs2[i3][i2][i1] = c2
+      fs3[i3][i2][i1] = c3
+  fb = FaultExtension()
+  fe = fb.faultExtension(fs1,fs2,fs3)
+  plot3(gx,fe,cmin=min(fe),cmax=max(fe),cmap=jetRamp(1.0),
+        clab="Fault energy")
+
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only
   #sequence = 'OA' # 1 episode of folding, followed by one episode of faulting
@@ -232,7 +257,6 @@ def goSkinTv():
       cells.append(fcs[ic])
     print len(cells)
     print "fault cells load finish..."
-
     fs = FaultScanner(sigmaPhi,sigmaTheta)
     sp = fs.makePhiSampling(minPhi,maxPhi)
     st = fs.makeThetaSampling(minTheta,maxTheta)
@@ -254,6 +278,8 @@ def goSkinTv():
     fl = readImage("fltv")
     fp = readImage("fptv")
   plot3(gx,skins=skins)
+  for iskin,skin in enumerate(skins):
+    plot3(gx,skins=[skin],links=True,)
   plot3(gx,fp,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=40,png="fpt")
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
@@ -265,7 +291,7 @@ def goSmooth():
   fsigma = 8.0
   fl = readImage(flfile)
   gx = readImage(gxfile)
-  skins = readSkins(fskgood)
+  skins = readSkins(fsktv)
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFl(skins,flt)
@@ -285,7 +311,7 @@ def goSlip():
   gsx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  skins = readSkins(fskgood)
+  skins = readSkins(fsktv)
   fsl = FaultSlipper(gsx,p2,p3)
   fsl.setOffset(2.0) # the default is 2.0 samples
   fsl.setZeroSlope(False) # True only if we want to show the error
@@ -296,7 +322,7 @@ def goSlip():
   fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsk.setMinSkinSize(minSkinSize)
   fsk.setMinMaxThrow(minThrow,maxThrow)
-  skins = fsk.reskin(skins)
+  #skins = fsk.reskin(skins)
   print ", after =",len(skins)
   removeAllSkinFiles(fslbase)
   writeSkins(fslbase,skins)
@@ -421,7 +447,7 @@ def goSlices():
   gx  = gain(gx)
   fw  = gain(fw)
   flt = readImage(fltfile)
-  sks = readSkins(fskgood)
+  sks = readSkins(fsktv)
   skl = readSkins(fslbase)
   fls = like(flt)
   fss = like(flt)

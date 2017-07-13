@@ -903,9 +903,16 @@ public class FaultSkinnerT {
     // Filter skins to include only those that are big enough. Remove all
     // cells from any skins that are too small.
     ArrayList<FaultSkin> bigSkinList = new ArrayList<FaultSkin>();
+    FaultSkinner fsk = new FaultSkinner();
+    fsk.setGrowLikelihoods(_fllo,_flhi);
+    fsk.setMaxDeltaStrike(10);
+    fsk.setMaxPlanarDistance(0.2);
     for (FaultSkin skin:skinList) {
       if (skin.size()>=_ncsmin) {
-        bigSkinList.add(skin);
+        FaultCell[] fcs = skin.getCells();
+        resetCells(fcs);
+        FaultSkin[] sks = fsk.findSkins(fcs);
+        bigSkinList.add(sks[0]);
       } else {
         for (FaultCell cell:skin) {
           cell.skin = null;

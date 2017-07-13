@@ -37,6 +37,7 @@ fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbaseF = "fskf" # fault skin (basename only)
 fskbaseE = "fske" # fault skin (basename only)
+fslbase = "fsl"
 fsktv = "fst"
 smfile = "sm"
 cmfile = "cm"
@@ -78,6 +79,8 @@ def main(args):
   #goSkinE()
   #goTv()
   goSkinTv()
+  #goSmooth()
+  #goSlip()
   #goTest()
 def goTest():
   gx = readImage(gxfile)
@@ -368,8 +371,70 @@ def goSkinTv():
   '''
   plot3(gx,skins=skins,png="skinsTv")
   plot3(gx,skins=[skins[1],skins[3]],png="skinsCrossTv")
+  for iskin,skin in enumerate(skins):
+    plot3(gx,skins=[skin],links=True,)
 
 
+
+def goSmooth():
+  print "goSmooth ..."
+  flstop = 0.1
+  fsigma = 8.0
+  fl = readImage(flfile)
+  gx = readImage(gxfile)
+  skins = readSkins(fsktv)
+  flt = zerofloat(n1,n2,n3)
+  fsx = FaultSkinnerX()
+  fsx.getFl(skins,flt)
+  p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
+  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  writeImage(gsxfile,gsx)
+  plot3(gx,flt,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fli")
+  plot3(gsx,png="gsx")
+
+def goSlip():
+  print "goSlip ..."
+  gx = readImage(gxfile)
+  gsx = readImage(gsxfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  skins = readSkins(fsktv)
+  fsl = FaultSlipper(gsx,p2,p3)
+  fsl.setOffset(2.0) # the default is 2.0 samples
+  fsl.setZeroSlope(False) # True only if we want to show the error
+  fsl.computeDipSlips(skins,minThrow,maxThrow)
+  print "  dip slips computed, now reskinning ..."
+  print "  number of skins before =",len(skins),
+  fsk = FaultSkinner() # as in goSkin
+  fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
+  fsk.setMinSkinSize(minSkinSize)
+  fsk.setMinMaxThrow(minThrow,maxThrow)
+  #skins = fsk.reskin(skins)
+  print ", after =",len(skins)
+  removeAllSkinFiles(fslbase)
+  writeSkins(fslbase,skins)
+  smark = -999.999
+  s1,s2,s3 = fsl.getDipSlips(skins,smark)
+  writeImage(fs1file,s1)
+  writeImage(fs2file,s2)
+  writeImage(fs3file,s3)
+  plot3(gx,skins=skins,smax=10.0,slices=[85,5,60],png="skinss1")
+  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)",png="gxs1")
+  s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
+  plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1i")
+  plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2i")
+  plot3(gx,s3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3i")
+  gw = fsl.unfault([s1,s2,s3],gx)
+  plot3(gx)
+  plot3(gw,clab="Amplitude",png="gw")
 
 
 def like(x):
