@@ -30,11 +30,27 @@ def setupForSubset(name):
     print "setupForSubset: 2d fault"
     pngDir = _pngdir+"fault/2d/"
     seismicDir = _datdir+"fault/2d/"
+    n1,n2 = 651,601 #fxnwc
+    n1,n2 = 300,1200 #gx238 crf dataset
+    n1,n2 = 400,801 #cylde200
+    n1,n2 = 222,440 #f3d75s
+    n1,n2 = 380,591 #ep56
+    d1,d2 = 1,1 # (s,km/s)
+    f1,f2 = 0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="edge":
+    """ edge """
+    print "setupForSubset: edge"
+    pngDir = _pngdir+"fault/2d/"
+    seismicDir = _datdir+"edge/"
     n1,n2 = 400,801 #cylde200
     n1,n2 = 300,1200 #gx238 crf dataset
     n1,n2 = 651,601 #fxnwc
     n1,n2 = 222,440 #f3d75s
     n1,n2 = 380,591 #ep56
+    n1,n2 = 481,321 #test
+    n1,n2 = 1052,698 #ep56
+    #n1,n2 = 321,481 #135069.dat
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
@@ -60,7 +76,6 @@ def setupForSubset(name):
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
     n3,d3,f3 = 1,1,1
     s3 = Sampling(n3,d3,f3)
-
   elif name=="fd2":
     """ fd2 """
     print "setupForSubset: fd2"
@@ -83,7 +98,6 @@ def setupForSubset(name):
     s1,s2 = Sampling(n1,d1,f1),Sampling(n2,d2,f2)
     n3,d3,f3 = 1,1,1
     s3 = Sampling(n3,d3,f3)
-
   elif name=="channel":
     """ nwc channel (slice 120) """
     print "setupForSubset: channel"

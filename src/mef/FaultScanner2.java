@@ -9,6 +9,7 @@ package mef;
 
 import java.util.*;
 import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.lapack.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 import static edu.mines.jtk.util.Parallel.*;
 
@@ -146,6 +147,12 @@ public class FaultScanner2 {
     Sampling st = makeThetaSampling(thetaMin,thetaMax);
     return scan(st,sig1,sig2,smooth,g);
   }
+  public float[][][] scanC(
+      double thetaMin, double thetaMax,
+      float sig1, float sig2, float smooth, float[][] g) {
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    return scanC(st,sig1,sig2,smooth,g);
+  }
 
 
   /**
@@ -166,6 +173,13 @@ public class FaultScanner2 {
     float[][][] snd = semblanceNumDen(sig1,sig2, smooth,g);
     return scanTheta(thetaSampling,snd);
   }
+
+  public float[][][] scanC(
+      Sampling thetaSampling, float sig1, float sig2, float smooth, float[][] g) {
+    float[][][] snd = semblanceNumDen(sig1,sig2, smooth,g);
+    return scanThetaC(thetaSampling,snd);
+  }
+
 
 
   /**
@@ -233,6 +247,180 @@ public class FaultScanner2 {
 
     return null;
   }
+
+  public float[] parabolicFit(float[] f) {
+    int n1 = f.length;
+    double[][] A = new double[3][3];
+    double[][] B = new double[3][1];
+    double s4=0.0;
+    double s3=0.0;
+    double s2=0.0;
+    double s1=0.0;
+    double s0=0.0;
+    double b0=0.0;
+    double b1=0.0;
+    double b2=0.0;
+    for (int i1=0; i1<n1; ++i1) {
+      double x1 = i1;
+      double x2 = i1*x1;
+      double x3 = i1*x2;
+      double x4 = i1*x3;
+      s0 += 1.;
+      s1 += x1;
+      s2 += x2;
+      s3 += x3;
+      s4 += x4;
+      b0 += x2*f[i1];
+      b1 += x1*f[i1];
+      b2 += f[i1];
+    }
+    A[0][0] = s4;
+    A[1][0] = s3;
+    A[2][0] = s2;
+    A[0][1] = s3;
+    A[1][1] = s2;
+    A[2][1] = s1;
+    A[0][2] = s2;
+    A[1][2] = s1;
+    A[2][2] = s0;
+    B[0][0] = b0;
+    B[1][0] = b1;
+    B[2][0] = b2;
+    DMatrix da = new DMatrix(A);
+    DMatrix db = new DMatrix(B);
+    DMatrix dx = da.solve(db);
+    double[][] x = dx.get();
+    float a = (float)x[0][0];
+    float b = (float)x[1][0];
+    float c = (float)x[2][0];
+    return new float[]{a,b,c};
+  }
+
+  //public float[] parabolicFit(float[] f) {
+  public float[] parabolicFit(float thetaMin, float thetaMax, float[] f) {
+    int n1 = f.length;
+    float[] ft = new float[n1];
+    double[][] A = new double[3][3];
+    double[][] B = new double[3][1];
+    double s4=0.0;
+    double s3=0.0;
+    double s2=0.0;
+    double s1=0.0;
+    double s0=0.0;
+    double b0=0.0;
+    double b1=0.0;
+    double b2=0.0;
+    for (int i1=0; i1<n1; ++i1) {
+      double x1 = i1;
+      double x2 = i1*x1;
+      double x3 = i1*x2;
+      double x4 = i1*x3;
+      s0 += 1.;
+      s1 += x1;
+      s2 += x2;
+      s3 += x3;
+      s4 += x4;
+      b0 += x2*f[i1];
+      b1 += x1*f[i1];
+      b2 += f[i1];
+    }
+    A[0][0] = s4+1000;
+    A[1][0] = s3;
+    A[2][0] = s2;
+
+    A[0][1] = s3+1000;
+    A[1][1] = s2;
+    A[2][1] = s1;
+
+    A[0][2] = s2+1000;
+    A[1][2] = s1;
+    A[2][2] = s0;
+
+    B[0][0] = b0;
+    B[1][0] = b1;
+    B[2][0] = b2;
+    DMatrix da = new DMatrix(A);
+    DMatrix db = new DMatrix(B);
+    DMatrix dx = da.solve(db);
+    double[][] x = dx.get();
+    float a = (float)x[0][0];
+    float b = (float)x[1][0];
+    float c = (float)x[2][0];
+    for (int i1=0; i1<n1; ++i1) {
+      ft[i1] = a*i1*i1+b*i1+c;
+    }
+    //return ft;
+    double xp = -0.5*b/a;
+    float fm = (float)(c+b*xp+a*xp*xp);
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    int nt = st.getCount();
+    float tm = 0.0f;
+    if (xp<nt) {
+      tm = -(float)st.valueOfNearest(xp);
+    } else {
+      xp = 2.0*nt-xp;
+      tm = (float)st.valueOfNearest(xp);
+    }
+    if(a>0) fm = 0f;
+    return new float[]{fm,tm};
+  }
+
+  public float[][][] faultLikeFit(
+    float thetaMin, float thetaMax, float[][][] fls) {
+    int nt = fls.length;
+    int n2 = fls[0].length;
+    int n1 = fls[0][0].length;
+    float[][][] fltr = new float[2][n2][n1];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float[] ft = new float[nt];
+      for (int it=0; it<nt; ++it)
+        ft[it] = fls[it][i2][i1];
+      float[] flt = parabolicFit(thetaMin,thetaMax,ft);
+      fltr[0][i2][i1] = flt[0];
+      fltr[1][i2][i1] = flt[1];
+    }}
+    return fltr;
+  }
+  public float[][] faultLikeFitX(int r, float[][] fl) {
+    int n2 = fl.length;
+    int n1 = fl[0].length;
+    float[][] flr = new float[n2][n1];
+    for (int i2=r; i2<n2-r-1; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float[] ft = new float[r*2+1];
+      for (int r2=-r;r2<=r;r2++)
+        ft[r2+r] = fl[i2+r2][i1];
+      float[] abc = parabolicFit(ft);
+      float a = abc[0];
+      float b = abc[1];
+      float c = abc[2];
+      float s = -abs(2*a*r+b)/(2*a);
+      flr[i2][i1] = fl[i2][i1]/(s+0.0001f);
+    }}
+    return flr;
+  }
+
+
+  public float[][] faultLikeFit(int r, float[][] fl) {
+    int n2 = fl.length;
+    int n1 = fl[0].length;
+    float[][] flr = new float[n2][n1];
+    for (int i2=r; i2<n2-r-1; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float[] ft = new float[r*2+1];
+      for (int r2=-r;r2<=r;r2++)
+        ft[r2+r] = fl[i2+r2][i1];
+      float[] abc = parabolicFit(ft);
+      float a = abc[0];
+      float b = abc[1];
+      float c = abc[2];
+      float s = -abs(2*a*r+b)/(2*a);
+      flr[i2][i1] = fl[i2][i1]/(s+0.0001f);
+    }}
+    return flr;
+  }
+
 
 
   /**
@@ -404,7 +592,6 @@ public class FaultScanner2 {
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     int nt = thetaSampling.getCount();
-
     for (int it=0; it<nt; ++it) {
       System.out.println(it+"/"+(nt-1)+" done...");
       float ti = (float)thetaSampling.getValue(it);
@@ -460,6 +647,66 @@ public class FaultScanner2 {
     }
     return new float[][][]{f,t};
   }
+
+  private float[][][] scanThetaC(Sampling thetaSampling, float[][][] snd) {
+    final int n2 = snd[0].length;
+    final int n1 = snd[0][0].length;
+    final float[][] sn = snd[0];
+    final float[][] sd = snd[1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    int nt = thetaSampling.getCount();
+    final float[][][] fs = new float[nt*2][n2][n1];
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = -1.0f/tan(theta);
+      float[][] sns = shear(si,shear,sn);
+      float[][] sds = shear(si,shear,sd);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(sns,sns);
+      ref.apply1(sds,sds);
+      float[][] ss = semblanceFromNumDen(sns,sds);
+      float[][] s2 = unshear(si,shear,ss);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        st = st*st; // semblance^8
+        float fi = 1.0f-st;
+        fs[it][i2][i1] = fi;
+      }}
+    }
+
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = 1.0f/tan(theta);
+      float[][] sns = shear(si,shear,sn);
+      float[][] sds = shear(si,shear,sd);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(sns,sns);
+      ref.apply1(sds,sds);
+      float[][] ss = semblanceFromNumDen(sns,sds);
+      float[][] s2 = unshear(si,shear,ss);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        st = st*st; // semblance^8
+        float fi = 1.0f-st;
+        fs[nt*2-it-1][i2][i1] = fi;
+      }}
+    }
+    return fs;
+  }
+
 
 
   // Computes fault semblance numerators and denominators.

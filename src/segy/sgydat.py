@@ -32,12 +32,12 @@ def main(args):
   #goShengwen()
   #goPoseidon()
   #goParihaka()
-  goTj()
+  #goTj()
   #goBag()
   #goCurt()
   #goCampos()
-<<<<<<< HEAD
   #goCampos2()
+  #goWasson()
 def goCampos2():
   """
   ***************************************************************************
@@ -84,7 +84,6 @@ def goCampos2():
   i1min,i1max,i2min,i2max,i3min,i3max = 0,454,9392,13140,25770,27153
   n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min),1+(i3max-i3min)
   n1,n2,n3=455,1875,1384
-=======
   #goGeng()
 def goGeng():
   """
@@ -129,7 +128,6 @@ def goGeng():
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,511,25893624,28792700,0,0
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
->>>>>>> 2a69ec613bc9d1e4301b58d2d44c399800a4855b
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -142,13 +140,6 @@ def goGeng():
     plotXY(si)
   if writeImage:
     scale = 1
-<<<<<<< HEAD
-    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,2,1)
-  si.close()
-  if showImage:
-    x = readImage(datfile,n1,n2,n3)
-    show3d(x,clip=max(x)/10)
-=======
     #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
   si.close()
@@ -157,7 +148,6 @@ def goGeng():
     gain(100,x)
     show3d(x,clip=max(x)/2)
     show3d(x,clip=1.0)
->>>>>>> 2a69ec613bc9d1e4301b58d2d44c399800a4855b
 
 def goCampos():
   """
@@ -430,11 +420,7 @@ def goTj():
   n1,n2,n3 = 462,951,591
   ***************************************************************************
   """
-<<<<<<< HEAD
-  firstLook = True # fast, does not read all trace headers
-=======
   firstLook = False # fast, does not read all trace headers
->>>>>>> 2a69ec613bc9d1e4301b58d2d44c399800a4855b
   secondLook = True # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
   showImage = False # displays the image

@@ -110,8 +110,12 @@ def main(args):
 def goAsciiFaults():
   gx = readImage(gxfile)
   sks = readSkins("fsb")
-  fcs = FaultSkin.getCells(sks)
   plot3x(gx,skins=sks)
+  '''
+  fpt = readImage(fptvfile)
+  plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+  '''
 def goSampleClean():
   fx = readImage(gsxfile)
   p2 = readImage(p2file)

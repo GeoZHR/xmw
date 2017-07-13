@@ -48,6 +48,16 @@ def setupForSubset(name):
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     f1,f2,f3 = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="f3d2d":
+    print "setupForSubset: subset of clyde"
+    seismicDir = _datdir+"mef/f3d/2d/"
+    pngDir = "../../../png/mef/clyde/"
+    n1,n2,n3 = 400,801,300
+    n1,n2,n3 = 222,440,300
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    f1,f2,f3 = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="nathan":
     print "setupForDataset: nathan"
     seismicDir = _datdir+"nathan/"
@@ -132,6 +142,17 @@ def readImage(name):
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+def readImage2DB(n1,n2,name):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.BIG_ENDIAN)
   ais.readFloats(image)
   ais.close()
   return image

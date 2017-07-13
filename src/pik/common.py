@@ -18,8 +18,10 @@ from edu.mines.jtk.sgl import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from sso import *
 from util import *
-from ipfx import *
+from mef import *
+from acm import *
 from pik import *
 
 #############################################################################

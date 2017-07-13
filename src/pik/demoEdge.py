@@ -14,110 +14,31 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
 d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 #############################################################################
-gxfile = "teste" # edge
 gxfile = "gx238" # input semblance image
 gxfile = "fxnwc" # input semblance image
-gxfile = "clyde200" # input semblance image
+gxfile = "246009" # edge
+gxfile = "388067" # edge
+gxfile = "teste" # edge
 gxfile = "f3d75s" # input semblance image
 gxfile = "ep56" # input semblance image
+gxfile = "clyde200" # input semblance image
 elfile = "el" # picked path using Sergey's method
 smfile = "sm"
-chfile = "ch"
-flfile  = "fl" # fault likelihood
-ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
-fttfile = "ftt" # fault dip thinned
-
 pngDir = getPngDir()
 pngDir = None
 plotOnly = False
 
-
-# These parameters control the scan over fault strikes and dips.
-# See the class FaultScanner for more information.
-minTheta,maxTheta = 50,85
-sigmaTheta = 10
-
-# These parameters control the construction of fault skins.
-# See the class FaultSkinner for more information.
-lowerLikelihood = 0.25
-upperLikelihood = 0.50
-minSize = 180
-
-minThrow = 0.0
-maxThrow = 30.0
-
 def main(args):
   #goSemblance()
-  goFaultPik()
+  #goFaultPik()
+  #goFaultPik1()
   #goTimeMarker()
   #goPolar()
   #goEdgeEnhance()
-  #goEdgeTime()
-  #goCoherence()
-  #goScan()
-  #goThin()
-  #goFaultPik1()
-def goScan():
-  print "goScan ..."
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  writeImage(gxfile,gx)
-  lof = LocalOrientFilterP(4,2)
-  ets = lof.applyForTensors(gx)
-  lsf = LocalSmoothingFilter()
-  ets.setEigenvalues(0.01,1.0)
-  if not plotOnly:
-    gx = FaultScanner2.taper(10,0,gx)
-    fs = FaultScanner2(sigmaTheta)
-    sig1,sig2,smooth=16.0,2.0,4.0
-    fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "ft min =",min(ft)," max =",max(ft)
-    writeImage(flfile,fl)
-    writeImage(ftfile,ft)
-  else:
-    fl = readImage(flfile)
-    ft = readImage(ftfile)
-  plot2X(s1,s2,gx)
-  plot2X(s1,s2,gx,g=fl,cmin=0.001,cmax=1,cmap=jetRamp(1.0),
-      label="Fault likelihood")
-def goThin():
-  print "goThin ..."
-  gx = readImage(gxfile)
-  if not plotOnly:
-    fl = readImage(flfile)
-    ft = readImage(ftfile)
-    fs = FaultScanner2(sigmaTheta)
-    flt,ftt = fs.thin([fl,ft])
-    writeImage(fltfile,flt)
-    writeImage(fttfile,ftt)
-  else:
-    flt = readImage(fltfile)
-    ftt = readImage(fttfile)
-  #plot2(s1,s2,gx)
-  plot2X(s1,s2,gx,g=flt,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
-
-def goCoherence():
-  gx = readImage(gxfile)
-  if not plotOnly:
-    sig1,sig2=8,2
-    p2 = zerofloat(n1,n2)
-    ep = zerofloat(n1,n2)
-    lsf = LocalSlopeFinder(sig1,sig2,5)
-    lsf.findSlopes(gx,p2,ep)
-    cov = Covariance()
-    em,es=cov.covarianceEigen(8,p2,gx)
-    print "done..."
-    ch = div(em,es)
-    writeImage(chfile,ch)
-  else:
-    ch = readImage(chfile)
-  plot(ch)
-
+  goEdgeTime()
 def goPolar():
-  gx = readImage(gxfile)
-  fl = readImage(fltfile)
+  sm = readImage(smfile)
+  sm = sub(1,sm)
   '''
   gx = readImage(gxfile)
   ss = copy(100,100,120,100,sm)
@@ -132,22 +53,11 @@ def goPolar():
   rgf = RecursiveGaussianFilterP(1)
   rgf.apply00(ss,ss)
   '''
-  c1,c2=200,300
-  fl = zerofloat(n1,n2)
-  pi = Math.PI
-  for r in range(1,100,1):
-    m1 = round(c1-r*sin(pi/9))
-    m2 = round(c2-r*cos(pi/9))
-    p1 = round(c1+r*sin(pi/18))
-    p2 = round(c2+r*cos(pi/18))
-    fl[m2][m1]=1
-    fl[p2][p1]=1
-
-  fe = FaultEnhance(4,0.2)
-  gs = fe.applyPolarTransform(c1,c2,100,fl)
+  pc = PolarCoordinates(555,125,100,0,360)
+  sc,gx = pc.applyTransform(sm)
+  plot(sm)
+  plot(sc)
   plot(gx)
-  plot(fl)
-  plot(gs)
 
 def goTimeMarker():
   gx = readImage(gxfile)
@@ -195,22 +105,17 @@ def goFaultPik1():
   gx = readImage(gxfile)
   gx = gain(gx)
   sm = readImage(smfile)
-  plot(sm,cmin=0.4,cmax=0.95)
-  sm = pow(sm,2)
+  plot(sub(1,sm))
+  sm = pow(sm,8)
   sm = sub(1,sm)
-  fe = FaultEnhance(10,0.3)
-  st = fe.thin2(0.01,sm)
-  seeds = fe.pickSeeds(8,0.1,st)
-  ss = zerofloat(n1,n2)
-  rgf = RecursiveGaussianFilterP(2)
-  rgf.apply00(st,ss)
-  ss = sub(ss,min(ss))
-  ss = div(ss,max(ss))
-  se = fe.enhanceInPolarSpace1(80,20,65,89,seeds,ss)
+  fe = FaultEnhance(4,0.2)
+  st1 = zerofloat(n1,n2)
+  seeds=fe.findSeeds(1,1,0.3,sm,st1)
+  se = fe.enhanceInPolarSpace1(60,60,10,seeds,sm)
   se = sub(se,min(se))
   se = div(se,max(se))
-  plot(sub(1,st),cmin=0.4,cmax=0.95)
-  plot(sub(1,se),cmin=0.4,cmax=0.95)
+  plot(st1)
+  plot(se,cmin=0.01,cmax=0.6)
   cmin = -1
   cmax =  1
   mp1 = ColorMap.GRAY
@@ -238,18 +143,95 @@ def goEdgeEnhance():
   g2 = mul(g2,g2)
   gs = add(g1,g2)
   gs = sqrt(gs)
+  gs = sub(gs,min(gs))
+  sm = div(gs,max(gs))
   plot(gs,cmap=ColorMap.GRAY)
   '''
   gx = sub(gx,min(gx))
   sm = div(gx,max(gx))
   sm = sub(1,sm)
-  fe = FaultEnhance(20,2)
+  fe = FaultEnhance(10,2)
   st1 = zerofloat(n1,n2)
-  seeds=fe.findSeedsX(1,1,0.1,sm,st1)
+  seeds=fe.findSeedsX(2,2,0.1,sm,st1)
   plot(sm)
   plot(st1)
   #se = fe.applyForEnhanceX(40,40,8,seeds,sm)
-  se = fe.enhanceInPolarSpace(10,10,10,seeds,st1)
+  se = fe.enhanceInPolarSpace(30,30,8,seeds,st1)
+  se = sub(se,min(se))
+  se = div(se,max(se))
+  plot(se,cmin=0.01,cmax=0.5)
+  '''
+  cmin = -1
+  cmax =  1
+  mp1 = ColorMap.GRAY
+  mp2 = ColorMap.JET
+  plot(gx,sm,cmin=0.3,cmax=1.0,cmap=jetFillExceptMin(0.6),cint=0.2)
+  plot(gx,se,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
+  plot(gx,stt,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
+  plot2(s1,s2,et,u=pik1,vint=20,hint=20,cmin=0,cmax=0.5,cmap=mp2)
+  plot2(s1,s2,gx,u=pik1,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
+  plot2(s1,s2,gx,u=pik2,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
+  '''
+  #plot2(s1,s2,gx,u=pik3,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp)
+
+def goEdgeTime():
+  gx = readImage(smfile)
+  gx = pow(gx,4)
+  gx = sub(gx,min(gx))
+  sm = div(gx,max(gx))
+  sm = sub(1,sm)
+  '''
+  g1 = zerofloat(n1,n2)
+  g2 = zerofloat(n1,n2)
+  rgf = RecursiveGaussianFilterP(1)
+  rgf.apply10(gx,g1)
+  rgf.apply01(gx,g2)
+  gs = sqrt(add(mul(g1,g1),mul(g2,g2)))
+  gs = sub(gs,min(gs))
+  sm = div(gs,max(gs))
+  '''
+  lof = LocalOrientFilter(4,4)
+  u1 = zerofloat(n1,n2)
+  u2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  lof.applyForNormalLinear(gx,u1,u2,el)
+  ee = EdgeEnhance()
+  st = ee.findRidges(0.01,sm)
+  sd = ee.pickSeeds(4,0.3,st)
+  fd = ee.seedsToImage(sd,st)
+  #ps1,ps2 = ee.applyEnhance(650,520,100,8,u1,u2,st1)
+  ss = zerofloat(n1,n2)
+  rgf = RecursiveGaussianFilterP(1)
+  rgf.apply00(st,ss)
+  ss = sub(ss,min(ss))
+  ss = div(ss,max(ss))
+  se = ee.applyEnhance(60,10,sd,u1,u2,ss)
+  se = sub(se,min(se))
+  se = div(se,max(se))
+  #ps = ee.backTrack(350,550,600,450,t)
+  cmin = -1
+  cmax =  1
+  mp1 = ColorMap.GRAY
+  mp2 = ColorMap.JET
+  st = sub(1,st)
+  se = sub(1,se)
+  plot(gx)
+  plot(fd)
+  plot(st,cmin=0.7,cmax=1.0)
+  plot(se,cmin=0.7,cmax=1.0)
+
+def goFaultPik():
+  #gx = readImage(gxfile)
+  #gx = gain(gx)
+  sm = readImage(gxfile)
+  plot(sub(1,sm))
+  sm = pow(sm,8)
+  sm = sub(1,sm)
+  fe = FaultEnhance(4,0.5)
+  st1 = zerofloat(n1,n2)
+  seeds=fe.findSeedsX(1,1,0.3,sm,st1)
+  #se = fe.applyForEnhanceX(20,20,8,seeds,sm)
+  se = fe.enhanceInPolarSpace(40,40,10,seeds,sm)
   se = sub(se,min(se))
   se = div(se,max(se))
   plot(st1)
@@ -267,63 +249,6 @@ def goEdgeEnhance():
   plot2(s1,s2,gx,u=pik2,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
   '''
   #plot2(s1,s2,gx,u=pik3,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp)
-
-def goEdgeTime():
-  gx = readImage(gxfile)
-  gx = sub(gx,min(gx))
-  sm = div(gx,max(gx))
-  sm = sub(1,sm)
-  fe = FaultEnhance(4,1.0)
-  st1 = zerofloat(n1,n2)
-  seeds=fe.findSeedsX(1,1,0.1,sm,st1)
-  lof = LocalOrientFilter(2,2)
-  ets = lof.applyForTensors(gx)
-  st1 = clip(0.001,1.0,st1)
-  st2 = fillfloat(0.001,n1,n2)
-  ets.setEigenvalues(st2,st1)
-  k1 = [600]
-  k2 = [450]
-  f = [1]
-  t = fillfloat(1,n1,n2)
-  p = zerofloat(n1,n2)
-  for i in range(len(k1)):
-    p[k2[i]][k1[i]] = 1
-    t[k2[i]][k1[i]] = 0
-  bd = BlendedGridder2(ets,f,k1,k2)
-  bd.gridNearest(t,p)
-  cmin = -1
-  cmax =  1
-  mp1 = ColorMap.GRAY
-  mp2 = ColorMap.JET
-  print min(t)
-  print max(t)
-  plot(gx,t,cmin=0.0,cmax=max(t),cmap=jetFillExceptMin(0.6),cint=0.2)
-
-def goFaultPik():
-  #gx = readImage(gxfile)
-  #gx = gain(gx)
-  sm = readImage(gxfile)
-  plot(sm,cmin=0.4,cmax=0.98)
-  sm = pow(sm,8)
-  sm = sub(sm,min(sm))
-  sm = div(sm,max(sm))
-  sm = sub(1,sm)
-  fe = FaultEnhance(10,0.6)
-  st = fe.findRidges(0.01,sm)
-  seeds = fe.pickSeeds(4,0.3,st)
-  fd = fe.seedsToImage(seeds,st)
-  plot(sub(1,st),cmin=0.1,cmax=0.98)
-  plot(sub(1,fd),cmin=0.1,cmax=0.98)
-  ss = zerofloat(n1,n2)
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply00(st,ss)
-  ss = sub(ss,min(ss))
-  ss = div(ss,max(ss))
-  se = fe.enhanceInPolarSpace(80,15,seeds,ss)
-  se = sub(se,min(se))
-  se = div(se,max(se))
-  plot(sub(1,st),cmin=0.4,cmax=0.98)
-  plot(sub(1,se),cmin=0.4,cmax=0.98)
 
 def gain(x):
   g = mul(x,x) 
@@ -451,14 +376,20 @@ def hueFillExceptMin(alpha):
 
 backgroundColor = Color.WHITE
 
-def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
+def plot1(f):
+  n1 = len(f)
+  s1 = Sampling(n1)
+  sp = SimplePlot()
+  pv = sp.addPoints(s1,f)
+
+def plot(f,g=None,ps=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
         label=None,neareast=False,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
   n1,n2=len(f[0]),len(f)
   s1,s2=Sampling(n1),Sampling(n2)
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
-  panel.setVInterval(10)
-  panel.setHInterval(10)
+  panel.setVInterval(50)
+  panel.setHInterval(50)
   #panel.setHLabel("Inline (traces)")
   #panel.setVLabel("Time (samples)")
   pxv = panel.addPixels(0,0,s1,s2,f);
@@ -475,13 +406,17 @@ def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
     pv.setColorModel(cmap)
     if cmin and cmax:
       pv.setClips(cmin,cmax)
+  if ps:
+    uv = panel.addPoints(0,0,ps[0],ps[1])
+    uv.setLineColor(Color.YELLOW)
+    uv.setLineWidth(2)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1400,700)
-  frame.setSize(700,500)
+  frame.setSize(n2,n1)
   frame.setFontSize(24)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
@@ -639,56 +574,6 @@ def plot2c(c,s,u,clip=None,perc=None,png=None):
     png += "n"+str(int(10*nrms))
     png += "s"+str(int(10*strainMax))
     frame.paintToPng(720,3.33333,pngDir+"/"+png+".png")
-def plot2X(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
-  n2 = len(f)
-  n1 = len(f[0])
-  f1,f2 = s1.getFirst(),s2.getFirst()
-  d1,d2 = s1.getDelta(),s2.getDelta()
-  panel = panel2Teapot()
-  panel.setHInterval(5.0)
-  panel.setVInterval(5.0)
-  panel.setHLabel("Lateral position (km)")
-  panel.setVLabel("Time (s)")
-  #panel.setHInterval(100.0)
-  #panel.setVInterval(100.0)
-  #panel.setHLabel("Pixel")
-  #panel.setVLabel("Pixel")
-  if label:
-    panel.addColorBar(label)
-  else:
-    panel.addColorBar()
-  panel.setColorBarWidthMinimum(80)
-  pv = panel.addPixels(s1,s2,f)
-  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
-  pv.setColorModel(ColorMap.GRAY)
-  pv.setClips(-2,2)
-  if g:
-    pv = panel.addPixels(s1,s2,g)
-    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
-    pv.setColorModel(cmap)
-    if label:
-      panel.addColorBar(label)
-    else:
-      panel.addColorBar()
-  if cmin and cmax:
-    pv.setClips(cmin,cmax)
-  frame2Teapot(panel,png)
-def panel2Teapot():
-  panel = PlotPanel(1,1,
-    PlotPanel.Orientation.X1DOWN_X2RIGHT)#,PlotPanel.AxesPlacement.NONE)
-  return panel
-def frame2Teapot(panel,png=None):
-  frame = PlotFrame(panel)
-  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
-  #frame.setFontSizeForPrint(8,240)
-  #frame.setSize(1240,774)
-  #frame.setFontSizeForSlide(1.0,0.9)
-  frame.setFontSize(12)
-  frame.setSize(n2*2,n1*3)
-  frame.setVisible(True)
-  if png and pngDir:
-    frame.paintToPng(400,3.2,pngDir+png+".png")
-  return frame
 
 def plot3c(c,s,u,cmin=0.0,cmax=0.0,png=None):
   print "c0: min =",min(c[0])," max =",max(c[0])
