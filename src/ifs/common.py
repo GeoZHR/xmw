@@ -20,7 +20,6 @@ from edu.mines.jtk.util.ArrayMath import *
 
 from ifs import *
 from uff import *
-from unfold import *
 
 #############################################################################
 # Run the function main on the Swing thread
