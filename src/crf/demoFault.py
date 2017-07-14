@@ -84,7 +84,7 @@ def main(args):
   #goSkinTv()
   #goSmooth()
   #goSlip()
-  #goUnfault()
+  goUnfault()
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
@@ -106,11 +106,11 @@ def main(args):
   #goReskin()
   #goSkinDisplay()
   #goSampleClean()
-  goAsciiFaults()
+  #goAsciiFaults()
 def goAsciiFaults():
   gx = readImage(gxfile)
-  sks = readSkins("fsb")
-  plot3x(gx,skins=sks)
+  sks = readSkins("fslb")
+  plot3x(gx,smax=20,skins=[sks[0]])
   '''
   fpt = readImage(fptvfile)
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
@@ -651,9 +651,17 @@ def goUnfault():
     writeImage(fw3file,w3)
   else:
     gw = readImage(gwfile)
+    w1 = readImage(fw1file)
+    w2 = readImage(fw2file)
+    w3 = readImage(fw3file)
   plot3(gx)
   plot3(gw)
-
+  plot3(gx,w1,cmin=0.5,cmax=8.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault throw (samples)")
+  plot3(gx,w2,cmin=0.1,cmax=3.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault heave (samples)")
+  plot3(gx,w3,cmin=0.1,cmax=3.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault heave (samples)")
 
 def goFaultImages():
   gx = readImage(gxfile)
@@ -863,7 +871,7 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   #ipg.setSlices(85,5,43)
   #ipg.setSlices(85,5,102)
   #ipg.setSlices(n1,0,n3) # use only for subset plots
-  ipg.setSlices(n1,376,232)
+  ipg.setSlices(157,376,232)
   if cbar:
     sf.setSize(1037,700)
   else:
@@ -875,11 +883,11 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(2.0)
+  ov.setScale(2.5)
   #ov.setScale(2.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,-0.00,-0.05))
-  ov.setAzimuthAndElevation(65.0,35.0)
+  ov.setAzimuthAndElevation(135.0,55.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:

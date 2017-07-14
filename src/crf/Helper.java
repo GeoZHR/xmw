@@ -13,6 +13,10 @@ import util.*;
 
 public class Helper {
 
+  public float[][][] faultDisplacement(int n1, int n2, int n3, FaultSkin[] skins) {
+    float[][][] fd = new float[n3][n2][n1];
+    return fd;
+  }
 
   public void writeAsciiFault(
     Sampling s1, Sampling s2, Sampling s3, String name, FaultSkin skin) 
