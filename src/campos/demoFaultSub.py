@@ -69,7 +69,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub8/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -80,7 +80,7 @@ def main(args):
   #goScan()
   #goTest()
   #goFaultScan()
-  goThin()
+  #goThin()
   #goSkin()
   #goSkinTv()
   #goSmooth()
@@ -107,6 +107,12 @@ def main(args):
   #goSkinDisplay()
   #goSampleClean()
   #goPad()
+  goSlice()
+def goSlice():
+  gx = readImage(gxfile)
+  gs = copy(300,n2,n3,0,0,0,gx)
+  writeImage("gxTop",gs)
+  plot3(gs)
 def goTest():
   ep = readImage(epfile)
   eps = copy(500,600,n3,50,1050,0,ep)

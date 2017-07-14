@@ -2,6 +2,7 @@ package pik;
 
 import java.util.*;
 import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.util.*;
 import edu.mines.jtk.lapack.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -21,10 +22,81 @@ public class FaultEnhance {
   public FaultEnhance(int gate, float an) {
     _gate = gate;
     _an = an;
-    _prob = new float[gate*2-1];
   }
 
-  public float[][] enhanceInPolarSpace1(int rx, float sigma, 
+  public float[][][] applyTracing(int rx, float sigma, 
+    int minTheta, int maxTheta, float[][][] fx) {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] fe = new float[n3][n2][n1];
+    final float[][][] ph = new float[n3][n2][n1];
+    final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      System.out.println("i2="+i2);
+      float[][] fx2 = new float[n3][n1];
+      float[][] fs2 = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3)
+        fx2[i3] = fx[i3][i2];
+      float[][] ft2 = findRidges(0.001f,fx2);
+      int[][] seeds = pickSeeds(4,0.1f,ft2);
+      rgf.apply00(ft2,fs2);
+      fs2 = sub(fs2,min(fs2));
+      fs2 = div(fs2,max(fs2));
+      float[][][] fph = enhanceInPolarSpace1(rx,sigma,minTheta,maxTheta,seeds,fs2);
+      float[][] fe2 = fph[0];
+      fe2 = sub(fe2,min(fe2));
+      fe2 = div(fe2,max(fe2));
+      fe2 = pow(fe2,0.5f);
+      fe2 = sub(fe2,min(fe2));
+      fe2 = div(fe2,max(fe2));
+      for (int i3=0; i3<n3; ++i3) {
+        fe[i3][i2] = fe2[i3];
+        ph[i3][i2] = fph[2][i3];
+      }
+    }});
+    return fe;
+  }
+
+  public float[][][] applyTracing1(int rx, float sigma, 
+    int minTheta, int maxTheta, float[][][] fx) {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    final float[][][] fe = new float[n3][n2][n1];
+    final float[][][] ph = new float[n3][n2][n1];
+    final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2);
+    Parallel.loop(n1,new Parallel.LoopInt() {
+    public void compute(int i1) {
+      System.out.println("i1="+i1);
+      float[][] fx1 = new float[n3][n2];
+      float[][] fs1 = new float[n3][n2];
+      for (int i3=0; i3<n3; ++i3)
+        for (int i2=0; i2<n2; ++i2)
+          fx1[i3][i2] = fx[i3][i2][i1];
+      float[][] ft1 = findRidges(0.001f,fx1);
+      int[][] seeds = pickSeeds(4,0.1f,ft1);
+      rgf.apply00(ft1,fs1);
+      fs1 = sub(fs1,min(fs1));
+      fs1 = div(fs1,max(fs1));
+      float[][][] fph = enhanceInPolarSpace1(rx,sigma,minTheta,maxTheta,seeds,fs1);
+      float[][] fe1 = fph[0];
+      fe1 = sub(fe1,min(fe1));
+      fe1 = div(fe1,max(fe1));
+      fe1 = pow(fe1,0.5f);
+      fe1 = sub(fe1,min(fe1));
+      fe1 = div(fe1,max(fe1));
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        fe[i3][i2][i1] = fe1[i3][i2];
+        ph[i3][i2][i1] = fph[1][i3][i2];
+      }}
+    }});
+    return fe;
+  }
+
+  public float[][][] enhanceInPolarSpace1(int rx, float sigma, 
     int minTheta, int maxTheta, int[][] seeds, float[][] fx) {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -35,6 +107,7 @@ public class FaultEnhance {
     int[] k2s = new int[np];
     float[] fp = new float[np];
     float[][] gx = new float[n2][n1];
+    float[][] ph = new float[n2][n1];
     float[][] wx = exp(mul(-1,fx));
     RecursiveExponentialFilter.Edges edges =
       RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
@@ -92,15 +165,26 @@ public class FaultEnhance {
           int c2 = i2+d2;
           if(c1>=0&&c1<n1&&c2>=0&&c2<n2) {
             float fpi = fp[ip];
+            float asi = as[ip];
+            if(asi>180) asi -=180;
             gx[c2][c1] += fpi;
+            ph[c2][c1] += fpi*asi;
           }
         }}
       }
     }
-    return gx;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float gxi = gx[i2][i1];
+      if(gxi>0f) {
+        ph[i2][i1] /= gxi;
+      }
+    }}
+
+    return new float[][][]{gx,ph};
   }
 
-  public float[][] enhanceInPolarSpace(
+  public float[][][] enhanceInPolarSpace(
     int rx, float sigma, int[][] seeds, float[][] fx) {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -111,6 +195,7 @@ public class FaultEnhance {
     int[] k2s = new int[np];
     float[] fp = new float[np];
     float[][] gx = new float[n2][n1];
+    float[][] ph = new float[n2][n1];
     float[][] wx = exp(mul(-1,fx));
     RecursiveExponentialFilter.Edges edges =
       RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
@@ -161,12 +246,24 @@ public class FaultEnhance {
           int c1 = i1+d1;
           int c2 = i2+d2;
           if(c1>=0&&c1<n1&&c2>=0&&c2<n2) {
-            gx[c2][c1] += fp[ip];
+            float fpi = fp[ip];
+            float asi = as[ip];
+            if(asi>180) asi-=180;
+            gx[c2][c1] += fpi;
+            ph[c2][c1] += fpi*asi;
           }
         }}
       }
+
     }
-    return gx;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float gxi = gx[i2][i1];
+      if(gxi>0f) {
+        ph[i2][i1] /= gxi;
+      }
+    }}
+    return new float[][][]{gx,ph};
   }
   public float[][] applyPolarTransform(
     int minTheta, float x1, float x2, float rx, float[][] fx) {
@@ -866,6 +963,7 @@ public class FaultEnhance {
     float[] prev = new float[n1];
     float[] next = new float[n1];
     float[] dist = new float[n1];
+    float[] prob = new float[_gate*2-1];
     for (int i1=0; i1<n1; ++i1) {
       dist[i1] = sqrt(i1*i1+_an*_an); 
     }
@@ -896,9 +994,9 @@ public class FaultEnhance {
 		        c =	d;
 		        ic = it;
 		      }
-		      _prob[it]=d;
+		      prob[it]=d;
 	      }
-        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1]);
+        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1],prob);
 	      next[i1]= vs[0];
         what[i2][i1] = vs[1];
 	    }
@@ -921,6 +1019,7 @@ public class FaultEnhance {
     float[] prev = new float[n1];
     float[] next = new float[n1];
     float[] dist = new float[n1];
+    float[] prob = new float[_gate*2-1];
     for (int k1=0; k1<n1; ++k1) {
       dist[k1] = sqrt(k1*k1+_an*_an); 
     }
@@ -953,9 +1052,9 @@ public class FaultEnhance {
 		        c =	d;
 		        kc = kt;
 		      }
-		      _prob[kt]=d;
+		      prob[kt]=d;
 	      }
-        float[] vs = find_minimum(kc,ke-kb-1,kb+1,c,what[k2][k1]);
+        float[] vs = find_minimum(kc,ke-kb-1,kb+1,c,what[k2][k1],prob);
 	      next[k1]= vs[0];
         what[k2][k1] = vs[1];
 	    }
@@ -979,6 +1078,7 @@ public class FaultEnhance {
     float[] prev = new float[n1];
     float[] next = new float[n1];
     float[] dist = new float[n1];
+    float[] prob = new float[_gate*2-1];
     for (int i1=0; i1<n1; ++i1) {
       dist[i1] = sqrt(i1*i1+_an*_an); 
     }
@@ -1009,9 +1109,9 @@ public class FaultEnhance {
 		        c =	d;
 		        ic = it;
 		      }
-		      _prob[it]=d;
+		      prob[it]=d;
 	      }
-        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1]);
+        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1],prob);
 	      next[i1]= vs[0];
         what[i2][i1] = vs[1];
 	    }
@@ -1037,6 +1137,7 @@ public class FaultEnhance {
     float[] prev = new float[n1];
     float[] next = new float[n1];
     float[] dist = new float[n1];
+    float[] prob = new float[_gate*2-1];
     for (int i1=0; i1<n1; ++i1) {
       dist[i1] = sqrt(i1*i1+_an*_an); 
     }
@@ -1067,9 +1168,9 @@ public class FaultEnhance {
 		        c =	d;
 		        ic = it;
 		      }
-		      _prob[it]=d;
+		      prob[it]=d;
 	      }
-        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1]);
+        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1],prob);
 	      next[i1]= vs[0];
         what[i2][i1] = vs[1];
 	    }
@@ -1092,6 +1193,7 @@ public class FaultEnhance {
     float[] prev = new float[n1];
     float[] next = new float[n1];
     float[] dist = new float[n1];
+    float[] prob = new float[_gate*2-1];
     for (int k1=0; k1<n1; ++k1) {
       dist[k1] = sqrt(k1*k1+_an*_an); 
     }
@@ -1125,9 +1227,9 @@ public class FaultEnhance {
 		        c =	d;
 		        kc = kt;
 		      }
-		      _prob[kt]=d;
+		      prob[kt]=d;
 	      }
-        float[] vs = find_minimum(kc,ke-kb-1,kb+1,c,what[k2][k1]);
+        float[] vs = find_minimum(kc,ke-kb-1,kb+1,c,what[k2][k1],prob);
 	      next[k1]= vs[0];
         what[k2][k1] = vs[1];
 	    }
@@ -1150,6 +1252,7 @@ public class FaultEnhance {
     float[] prev = new float[n1];
     float[] next = new float[n1];
     float[] dist = new float[n1];
+    float[] prob = new float[_gate*2-1];
     for (int i1=0; i1<n1; ++i1) {
       dist[i1] = sqrt(i1*i1+_an*_an); 
     }
@@ -1180,9 +1283,9 @@ public class FaultEnhance {
 		        c =	d;
 		        ic = it;
 		      }
-		      _prob[it]=d;
+		      prob[it]=d;
 	      }
-        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1]);
+        float[] vs = find_minimum(ic,ie-ib-1,ib+1,c,what[i2][i1],prob);
 	      next[i1]= vs[0];
         what[i2][i1] = vs[1];
 	    }
@@ -1202,23 +1305,23 @@ public class FaultEnhance {
 
 
   private float[] find_minimum(
-    int ic, int nc, int jc, float c, float pick)
+    int ic, int nc, int jc, float c, float pick, float[] prob)
   {
     float fm, f0, fp, a, b;
     if (0==ic) {
 	    ic++;
 	    fm=c;
-	    f0=_prob[ic];
-	    fp=_prob[ic+1];
+	    f0=prob[ic];
+	    fp=prob[ic+1];
     } else if (nc-1==ic) {
 	    ic--;
-	    fm=_prob[ic-1];
-	    f0=_prob[ic];
+	    fm=prob[ic-1];
+	    f0=prob[ic];
 	    fp=c;
     } else {
-	    fm=_prob[ic-1];
+	    fm=prob[ic-1];
 	    f0=c;
-	    fp=_prob[ic+1];
+	    fp=prob[ic+1];
     }
 
     ic += jc;
@@ -1537,7 +1640,6 @@ public class FaultEnhance {
   // private
   private int _gate;
   private float _an;
-  private float[] _prob;
 
 
 }

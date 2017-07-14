@@ -19,6 +19,7 @@ gxfile = "gx238" # input semblance image
 gxfile = "fxnwc" # input semblance image
 gxfile = "clyde200" # input semblance image
 gxfile = "f3d75s" # input semblance image
+gxfile = "gx396" # input semblance image
 gxfile = "ep56" # input semblance image
 elfile = "el" # picked path using Sergey's method
 smfile = "sm"
@@ -35,7 +36,7 @@ plotOnly = False
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minTheta,maxTheta = 50,85
+minTheta,maxTheta = 65,80
 sigmaTheta = 10
 
 # These parameters control the construction of fault skins.
@@ -61,17 +62,13 @@ def main(args):
 def goScan():
   print "goScan ..."
   gx = readImage(gxfile)
-  gx = gain(gx)
-  writeImage(gxfile,gx)
-  lof = LocalOrientFilterP(4,2)
-  ets = lof.applyForTensors(gx)
-  lsf = LocalSmoothingFilter()
-  ets.setEigenvalues(0.01,1.0)
+  
   if not plotOnly:
     gx = FaultScanner2.taper(10,0,gx)
     fs = FaultScanner2(sigmaTheta)
-    sig1,sig2,smooth=16.0,2.0,4.0
-    fl,ft = fs.scan(minTheta,maxTheta,sig1,sig2,smooth,gx)
+    sig1,sig2=16.0,2.0
+    p2,el = fs.slopes(sig1,sig2,10,gx)
+    fl,ft = fs.scan(minTheta,maxTheta,p2,gx)
     print "fl min =",min(fl)," max =",max(fl)
     print "ft min =",min(ft)," max =",max(ft)
     writeImage(flfile,fl)
@@ -80,8 +77,7 @@ def goScan():
     fl = readImage(flfile)
     ft = readImage(ftfile)
   plot2X(s1,s2,gx)
-  plot2X(s1,s2,gx,g=fl,cmin=0.001,cmax=1,cmap=jetRamp(1.0),
-      label="Fault likelihood")
+  plot2X(s1,s2,gx,g=fl,cmin=0.1,cmax=1,cmap=jetRamp(1.0))
 def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
@@ -184,39 +180,54 @@ def goTimeMarker():
 
 def goSemblance():
   gx = readImage(gxfile)
-  lof = LocalOrientFilter(2,2)
+  lof = LocalOrientFilter(4,1)
   u1 = zerofloat(n1,n2)
   u2 = zerofloat(n1,n2)
   el = zerofloat(n1,n2)
   lof.applyForNormalLinear(gx,u1,u2,el)
   writeImage(smfile,el)
+  plot(el)
 
 def goFaultPik1():
   gx = readImage(gxfile)
   gx = gain(gx)
   sm = readImage(smfile)
-  plot(sm,cmin=0.4,cmax=0.95)
+  plot(sm,cmin=0.3,cmax=0.8)
   sm = pow(sm,2)
+  sm = sub(sm,min(sm))
+  sm = div(sm,max(sm))
   sm = sub(1,sm)
-  fe = FaultEnhance(10,0.3)
-  st = fe.thin2(0.01,sm)
-  seeds = fe.pickSeeds(8,0.1,st)
+  fe = FaultEnhance(4,0.2)
+  st = fe.findRidges(0.01,sm)
+  #st = fe.thin2(0.01,sm)
+  seeds = fe.pickSeeds(4,0.1,st)
   ss = zerofloat(n1,n2)
   rgf = RecursiveGaussianFilterP(2)
   rgf.apply00(st,ss)
+  '''
   ss = sub(ss,min(ss))
   ss = div(ss,max(ss))
-  se = fe.enhanceInPolarSpace1(80,20,65,89,seeds,ss)
+  '''
+  se,ph = fe.enhanceInPolarSpace1(80,20,65,80,seeds,ss)
+  rgf = RecursiveGaussianFilterP(1)
+  #rgf.apply00(se,se)
   se = sub(se,min(se))
   se = div(se,max(se))
-  plot(sub(1,st),cmin=0.4,cmax=0.95)
-  plot(sub(1,se),cmin=0.4,cmax=0.95)
+  se = pow(se,0.5)
+  se = sub(se,min(se))
+  se = div(se,max(se))
+  plot(sub(1,st),cmin=0.3,cmax=0.8)
+  plot(sub(1,se),cmin=0.3,cmax=0.8)
   cmin = -1
   cmax =  1
   mp1 = ColorMap.GRAY
   mp2 = ColorMap.JET
-  plot(gx,sm,cmin=0.3,cmax=1.0,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot(gx,se,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
+  print min(ph)
+  print max(ph)
+  plot(gx,sm,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),cint=0.2)
+  plot(gx,se,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),cint=0.2)
+  plot(gx,ph,cmin=1,cmax=115,cmap=jetFill(1.0))#,label="dip")
+
   '''
   plot(gx,stt,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
   plot2(s1,s2,et,u=pik1,vint=20,hint=20,cmin=0,cmax=0.5,cmap=mp2)
@@ -319,12 +330,12 @@ def goFaultPik():
   rgf.apply00(st,ss)
   ss = sub(ss,min(ss))
   ss = div(ss,max(ss))
-  se = fe.enhanceInPolarSpace(80,15,seeds,ss)
+  se,ph = fe.enhanceInPolarSpace(80,15,seeds,ss)
   se = sub(se,min(se))
   se = div(se,max(se))
   plot(sub(1,st),cmin=0.4,cmax=0.98)
   plot(sub(1,se),cmin=0.4,cmax=0.98)
-
+  plot(sm,ph,cmin=1,cmax=180,cmap=jetFill(1.0))#,label="dip")
 def gain(x):
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(100.0)
@@ -475,6 +486,8 @@ def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
     pv.setColorModel(cmap)
     if cmin and cmax:
       pv.setClips(cmin,cmax)
+    if label:
+      panel.addColorBar(label)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
@@ -482,7 +495,7 @@ def plot(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   frame.setVisible(True);
   #frame.setSize(1400,700)
   frame.setSize(700,500)
-  frame.setFontSize(24)
+  frame.setFontSize(12)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 
@@ -532,7 +545,7 @@ def plot2(s1,s2,c,u=None,us=None,ss=None,cps=None,css=None,vint=1,hint=1,
   frame.setBackground(backgroundColor)
   #frame.setFontSizeForPrint(8,240)
   #frame.setSize(470,1000)
-  frame.setFontSize(24)
+  frame.setFontSize(12)
   frame.setSize(1400,700)
   frame.setVisible(True)
   if png and pngDir:
@@ -647,16 +660,16 @@ def plot2X(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
   panel = panel2Teapot()
   panel.setHInterval(5.0)
   panel.setVInterval(5.0)
-  panel.setHLabel("Lateral position (km)")
-  panel.setVLabel("Time (s)")
+  #panel.setHLabel("Lateral position (km)")
+  #panel.setVLabel("Time (s)")
   #panel.setHInterval(100.0)
   #panel.setVInterval(100.0)
   #panel.setHLabel("Pixel")
   #panel.setVLabel("Pixel")
+  '''
   if label:
     panel.addColorBar(label)
-  else:
-    panel.addColorBar()
+  '''
   panel.setColorBarWidthMinimum(80)
   pv = panel.addPixels(s1,s2,f)
   pv.setInterpolation(PixelsView.Interpolation.LINEAR)
@@ -666,10 +679,12 @@ def plot2X(s1,s2,f,g=None,cmin=None,cmax=None,cmap=None,label=None,png=None):
     pv = panel.addPixels(s1,s2,g)
     pv.setInterpolation(PixelsView.Interpolation.NEAREST)
     pv.setColorModel(cmap)
+    '''
     if label:
       panel.addColorBar(label)
     else:
       panel.addColorBar()
+    '''
   if cmin and cmax:
     pv.setClips(cmin,cmax)
   frame2Teapot(panel,png)
@@ -685,6 +700,7 @@ def frame2Teapot(panel,png=None):
   #frame.setFontSizeForSlide(1.0,0.9)
   frame.setFontSize(12)
   frame.setSize(n2*2,n1*3)
+  frame.setSize(700,500)
   frame.setVisible(True)
   if png and pngDir:
     frame.paintToPng(400,3.2,pngDir+png+".png")

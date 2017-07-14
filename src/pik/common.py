@@ -20,8 +20,8 @@ from edu.mines.jtk.util.ArrayMath import *
 
 from sso import *
 from util import *
-from mef import *
 from acm import *
+from mef import *
 from pik import *
 
 #############################################################################

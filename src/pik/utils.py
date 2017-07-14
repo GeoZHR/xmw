@@ -34,6 +34,7 @@ def setupForSubset(name):
     n1,n2 = 300,1200 #gx238 crf dataset
     n1,n2 = 400,801 #cylde200
     n1,n2 = 222,440 #f3d75s
+    n1,n2 = 300,550 #gx396
     n1,n2 = 380,591 #ep56
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
@@ -54,6 +55,15 @@ def setupForSubset(name):
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="campos":
+    """ edge """
+    print "setupForSubset: edge"
+    pngDir = _pngdir+"fault/3d/campos/"
+    seismicDir = _datdir+"fault/3d/campos/"
+    n1,n2,n3 = 300,600,550 #ep56
+    d1,d2,d3 = 1,1,1 # (s,km/s)
+    f1,f2,f3 = 0,0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   elif name=="xue":
     """ xue """
     print "setupForSubset: xue"
