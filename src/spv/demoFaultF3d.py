@@ -40,22 +40,20 @@ def main(args):
 def goPick():
   gx = readImage3D(gxfile)
   fe = readImage3D(fefile)
-  fp = readImage3D(fpfile)
-  ft = readImage3D(ftfile)
-  osv = OptimalSurfaceVoter(-10,10,20,30)
-  osv.setStrainMax(0.2,0.2)
-  #osv.setErrorSmoothing(2)
-  osv.setShiftSmoothing(2,2)
-  #c1,c2,c3=43,215,213
-  #fpi = fp[c3][c2][c1]
-  #fti = ft[c3][c2][c1]
-  #osv.findSurface(c1,c2,c3,20,30,fti,fpi,fe,fe)
-  ft,pt,tt=osv.thin([fe,fp,ft])
-  fv = osv.applyVoting(8,0.3,ft,pt,tt)
-  fv = sub(fv,min(fv))
-  fv = mul(fv,1/max(fv))
-  #writeImage(fvfile,fv)
-  #fv = readImage3D(fvfile)
+  if not plotOnly:
+    fp = readImage3D(fpfile)
+    ft = readImage3D(ftfile)
+    osv = OptimalSurfaceVoter(-10,10,20,30)
+    osv.setStrainMax(0.2,0.2)
+    #osv.setErrorSmoothing(2)
+    osv.setShiftSmoothing(2,2)
+    ft,pt,tt=osv.thin([fe,fp,ft])
+    fv = osv.applyVoting(4,0.3,ft,pt,tt)
+    fv = sub(fv,min(fv))
+    fv = mul(fv,1/max(fv))
+    #writeImage(fvfile,fv)
+  else:
+    fv = readImage3D(fvfile)
   fv = sub(1,pow(sub(1,fv),8))
   plot3(gx,fe,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="Ray tracing",png="fl")
