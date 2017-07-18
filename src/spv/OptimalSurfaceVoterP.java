@@ -81,8 +81,6 @@ public class OptimalSurfaceVoterP {
     updateSmoothingFilters();
   }
 
-
-
   public FaultCell[] pickSeeds(
     int d, float fm, float[][][] ft, float[][][] pt, float[][][] tt) {
     int n3 = ft.length;
@@ -149,23 +147,29 @@ public class OptimalSurfaceVoterP {
     final int ru = -_lmin;
     final int nv = _rv*2+1;
     final int nw = _rw*2+1;
+    final int[] ct = new int[1];
     final float[][][] fs = smooth(ft);
     final float[][][] fe = new float[n3][n2][n1];
     Stopwatch sw = new Stopwatch();
     sw.start();
-    final Parallel.Unsafe<float[][][][]> fseu = 
-      new Parallel.Unsafe<float[][][][]>();
+    final Parallel.Unsafe<float[][][]> fsu = 
+      new Parallel.Unsafe<float[][][]>();
+    final Parallel.Unsafe<float[][][]> feu = 
+      new Parallel.Unsafe<float[][][]>();
     Parallel.loop(ns,new Parallel.LoopInt() {
     public void compute(int is) {
-      float[][][][] fse = fseu.get();
-      if(fse==null) fseu.set(fse=new float[2][n3][n2][n1]);
-      fse[0] = fs;
-      fse[1] = fe;
+      float[][][] fst = fsu.get();
+      if(fst==null) fsu.set(fst=new float[n3][n2][n1]);
+      fst = fs;
+      float[][][] fet = feu.get();
+      if(fet==null) feu.set(fet=new float[n3][n2][n1]);
+      fet = fe;
       float[][] dws = new float[3][nw];
       float[][] dvs = new float[3][nv];
       float[][] dus = new float[3][nu];
-      if(is%1000==0)
-        System.out.println("is="+is+"/"+ns);
+      ct[0] += 1;
+      if(ct[0]%1000==0)
+        System.out.println("done: "+ct[0]+"/"+ns);
       FaultCell cell = seeds[is];
       int i1 = cell.getI1();
       int i2 = cell.getI2();
@@ -193,10 +197,10 @@ public class OptimalSurfaceVoterP {
         dus[1][ku] = iu*u[1];
         dus[2][ku] = iu*u[2];
       }
-      findSurface(i1,i2,i3,u,dws,dvs,dus,fse[0],fse[1]);
+      findSurface(i1,i2,i3,u,dws,dvs,dus,fst,fet);
     }});
     double timeUsed = sw.time();
-    System.out.println("time used: "+timeUsed);
+    System.out.println("time used: "+timeUsed+" seconds");
     return fe;
   }
 
@@ -455,9 +459,7 @@ public class OptimalSurfaceVoterP {
    */
   public void smoothFaultAttributes(float[][][] fx, float[][][] fs) {
     smoothErrors1(_bstrain1,fx,fs);
-    //normalizeErrors(fs);
     smoothErrors2(_bstrain2,fs,fs);
-    //normalizeErrors(fs);
   }
 
   /**
