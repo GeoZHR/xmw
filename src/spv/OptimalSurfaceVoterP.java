@@ -81,63 +81,7 @@ public class OptimalSurfaceVoterP {
     updateSmoothingFilters();
   }
 
-  public static float[][][][] thin(float[][][][] flpt) {
-    float[][][] f = flpt[0];
-    float[][][] p = flpt[1];
-    float[][][] t = flpt[2];
-    int n1 = f[0][0].length;
-    int n2 = f[0].length;
-    int n3 = f.length;
-    f = copy(f);
-    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
-    rgf.applyX0X(f,f);
-    rgf.applyXX0(f,f);
-    float[][][] ff = new float[n3][n2][n1];
-    float[][][] pp = new float[n3][n2][n1];
-    float[][][] tt = new float[n3][n2][n1];
-    for (int i3=0; i3<n3; ++i3) {
-      int i3m = max(i3-1,0);
-      int i3p = min(i3+1,n3-1);
-      for (int i2=0; i2<n2; ++i2) {
-        int i2m = max(i2-1,0);
-        int i2p = min(i2+1,n2-1);
-        float[] fmm = f[i3m][i2m];
-        float[] fm0 = f[i3m][i2 ];
-        float[] fmp = f[i3m][i2p];
-        float[] f0m = f[i3 ][i2m];
-        float[] f00 = f[i3 ][i2 ];
-        float[] f0p = f[i3 ][i2p];
-        float[] fpm = f[i3p][i2m];
-        float[] fp0 = f[i3p][i2 ];
-        float[] fpp = f[i3p][i2p];
-        float[] p00 = p[i3 ][i2 ];
-        float[] t00 = t[i3 ][i2 ];
-        for (int i1=0; i1<n1; ++i1) {
-          float f000 = f00[i1];
-          float p000 = p00[i1];
-          float t000 = t00[i1];
-          if ((                p000<= 22.5f && f0m[i1]<f000 && f0p[i1]<f000) ||
-              ( 22.5f<=p000 && p000<= 67.5f && fpm[i1]<f000 && fmp[i1]<f000) ||
-              ( 67.5f<=p000 && p000<=112.5f && fp0[i1]<f000 && fm0[i1]<f000) ||
-              (112.5f<=p000 && p000<=157.5f && fpp[i1]<f000 && fmm[i1]<f000) ||
-              (157.5f<=p000 && p000<=202.5f && f0p[i1]<f000 && f0m[i1]<f000) ||
-              (202.5f<=p000 && p000<=247.5f && fmp[i1]<f000 && fpm[i1]<f000) ||
-              (247.5f<=p000 && p000<=292.5f && fm0[i1]<f000 && fp0[i1]<f000) ||
-              (292.5f<=p000 && p000<=337.5f && fmm[i1]<f000 && fpp[i1]<f000) ||
-              (337.5f<=p000                 && f0m[i1]<f000 && f0p[i1]<f000)) {
-            ff[i3][i2][i1] = f000;
-            pp[i3][i2][i1] = p000;
-            tt[i3][i2][i1] = t000;
-          } else {
-            pp[i3][i2][i1] = NO_STRIKE;
-            tt[i3][i2][i1] = NO_DIP;
-          }
-        }
-      }
-    }
-    float[][][][] flptn = new float[][][][]{ff,pp,tt};
-    return flptn;
-  }
+
 
   public FaultCell[] pickSeeds(
     int d, float fm, float[][][] ft, float[][][] pt, float[][][] tt) {
@@ -196,19 +140,31 @@ public class OptimalSurfaceVoterP {
 
   public float[][][] applyVoting(int d, float fm,
     float[][][] ft, float[][][] pt, float[][][] tt) {
-    int n3 = ft.length;
-    int n2 = ft[0].length;
-    int n1 = ft[0][0].length;
-    float[][][] fe = new float[n3][n2][n1];
-    float[][][] fs = new float[n3][n2][n1];
-    FaultCell[] seeds = pickSeeds(d,fm,ft,pt,tt);
-    int ns = seeds.length;
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
-    rgf.apply000(ft,fs);
-    fs = sub(fs,min(fs));
-    fs = mul(fs,1f/max(fs));
-    for (int is=0; is<ns; ++is) {
-      if(is%100==0)
+    final int n3 = ft.length;
+    final int n2 = ft[0].length;
+    final int n1 = ft[0][0].length;
+    final FaultCell[] seeds = pickSeeds(d,fm,ft,pt,tt);
+    final int ns = seeds.length;
+    final int nu = _nl;
+    final int ru = -_lmin;
+    final int nv = _rv*2+1;
+    final int nw = _rw*2+1;
+    final float[][][] fs = smooth(ft);
+    final float[][][] fe = new float[n3][n2][n1];
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    final Parallel.Unsafe<float[][][][]> fseu = 
+      new Parallel.Unsafe<float[][][][]>();
+    Parallel.loop(ns,new Parallel.LoopInt() {
+    public void compute(int is) {
+      float[][][][] fse = fseu.get();
+      if(fse==null) fseu.set(fse=new float[2][n3][n2][n1]);
+      fse[0] = fs;
+      fse[1] = fe;
+      float[][] dws = new float[3][nw];
+      float[][] dvs = new float[3][nv];
+      float[][] dus = new float[3][nu];
+      if(is%1000==0)
         System.out.println("is="+is+"/"+ns);
       FaultCell cell = seeds[is];
       int i1 = cell.getI1();
@@ -216,98 +172,170 @@ public class OptimalSurfaceVoterP {
       int i3 = cell.getI3();
       float tti = cell.getFt();
       float pti = cell.getFp();
-      findSurface(i1,i2,i3,_rv,_rw,tti,pti,fs,fe);
-    }
+      float[] u = faultNormalVectorFromStrikeAndDip(pti,tti);
+      float[] v = faultDipVectorFromStrikeAndDip(pti,tti);
+      float[] w = faultStrikeVectorFromStrikeAndDip(pti,tti);
+      for (int iw=-_rw; iw<=_rw; ++iw) {
+        int kw = iw+_rw;
+        dws[0][kw] = iw*w[0];
+        dws[1][kw] = iw*w[1];
+        dws[2][kw] = iw*w[2];
+      }
+      for (int iv=-_rv; iv<=_rv; ++iv) {
+        int kv = iv+_rv;
+        dvs[0][kv] = iv*v[0];
+        dvs[1][kv] = iv*v[1];
+        dvs[2][kv] = iv*v[2];
+      }
+      for (int iu=-ru; iu<=ru; ++iu) {
+        int ku = iu+ru;
+        dus[0][ku] = iu*u[0];
+        dus[1][ku] = iu*u[1];
+        dus[2][ku] = iu*u[2];
+      }
+      findSurface(i1,i2,i3,u,dws,dvs,dus,fse[0],fse[1]);
+    }});
+    double timeUsed = sw.time();
+    System.out.println("time used: "+timeUsed);
     return fe;
   }
 
   public void findSurface(
-    int c1, int c2, int c3, int rv, int rw, 
-    float ft, float fp, float[][][] fx, float[][][] fe) {
+    int c1, int c2, int c3, float[] u, 
+    float[][] dws, float[][] dvs, float[][] dus, 
+    float[][][] fx, float[][][] fe) {
     int nu = _nl;
     int ru = -_lmin;
-    int nv = rv*2+1;
-    int nw = rw*2+1;
+    int nv = dvs[0].length;
+    int nw = dws[0].length;
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
-    Sampling s1 = new Sampling(n1);
-    Sampling s2 = new Sampling(n2);
-    Sampling s3 = new Sampling(n3);
-    float[][][] fs = new float[nw][nv][nu];
-    float[] u = faultNormalVectorFromStrikeAndDip(fp,ft);
-    float[] v = faultDipVectorFromStrikeAndDip(fp,ft);
-    float[] w = faultStrikeVectorFromStrikeAndDip(fp,ft);
-    for (int iw=-rw; iw<=rw; iw++) {
-    for (int iv=-rv; iv<=rv; iv++) {
-      int um = _lmins[iw+rw][iv+rv];
-      int up = _lmaxs[iw+rw][iv+rv];
-      for (int iu=um; iu<=up; iu++) {
-        float x1 = c1+iu*u[0]+iv*v[0]+iw*w[0];
-        float x2 = c2+iu*u[1]+iv*v[1]+iw*w[1];
-        float x3 = c3+iu*u[2]+iv*v[2]+iw*w[2];
-        fs[iw+rw][iv+rv][iu+ru] = 1-_si.interpolate(s1,s2,s3,fx,x1,x2,x3);
+    float[][][] fs = fillfloat(1f,nu,nv,nw);
+    for (int kw=0; kw<nw; kw++) {
+      float dw1 = dws[0][kw]+c1;
+      float dw2 = dws[1][kw]+c2;
+      float dw3 = dws[2][kw]+c3;
+      for (int kv=0; kv<nv; kv++) {
+        float dv1 = dw1+dvs[0][kv];
+        float dv2 = dw2+dvs[1][kv];
+        float dv3 = dw3+dvs[2][kv];
+        int um = _lmins[kw][kv];
+        int up = _lmaxs[kw][kv];
+        for (int ku=um+ru; ku<=up+ru; ku++) {
+          int i1 = round(dv1+dus[0][ku]);
+          int i2 = round(dv2+dus[1][ku]);
+          int i3 = round(dv3+dus[2][ku]);
+          i1 = min(max(i1,0),n1-1);
+          i2 = min(max(i2,0),n2-1);
+          i3 = min(max(i3,0),n3-1);
+         fs[kw][kv][ku] = 1-fx[i3][i2][i1];
+        }
       }
-    }}
-    float[][] sf = findSurface(fs);
+    }
     float fa = 0.0f;
+    float[][] sf = findSurface(fs);
     ArrayList<Integer> k1s = new ArrayList<Integer>();
     ArrayList<Integer> k2s = new ArrayList<Integer>();
     ArrayList<Integer> k3s = new ArrayList<Integer>();
-    for (int iw=-rw; iw<=rw; ++iw) {
-    for (int iv=-rv; iv<=rv; ++iv) {
-      float iu = sf[iw+rw][iv+rv];
-      float x3 = iu*u[2]+iv*v[2]+iw*w[2]+c3;
-      float x2 = iu*u[1]+iv*v[1]+iw*w[1]+c2;
-      float x1 = iu*u[0]+iv*v[0]+iw*w[0]+c1;
-      int i1 = round(x1);
-      int i2 = round(x2);
-      int i3 = round(x3);
-      boolean inbox = true;
-      if(i1<=0||i1>=n1-1) inbox = false;
-      if(i2<=0||i2>=n2-1) inbox = false;
-      if(i3<=0||i3>=n3-1) inbox = false;
-      if(inbox) {
-        k1s.add(i1);
-        k2s.add(i2);
-        k3s.add(i3);
-        fa += fx[i3][i2][i1];
+    for (int kw=0; kw<nw; ++kw) {
+      float dw1 = dws[0][kw]+c1;
+      float dw2 = dws[1][kw]+c2;
+      float dw3 = dws[2][kw]+c3;
+      for (int kv=0; kv<nv; ++kv) {
+        float iu = sf[kw][kv];
+        int i1 = round(iu*u[0]+dvs[0][kv]+dw1);
+        int i2 = round(iu*u[1]+dvs[1][kv]+dw2);
+        int i3 = round(iu*u[2]+dvs[2][kv]+dw3);
+        boolean inbox = true;
+        if(i1<=0||i1>=n1-1) inbox = false;
+        if(i2<=0||i2>=n2-1) inbox = false;
+        if(i3<=0||i3>=n3-1) inbox = false;
+        if(inbox) {
+          k1s.add(i1);
+          k2s.add(i2);
+          k3s.add(i3);
+          fa += fx[i3][i2][i1];
+        }
       }
-    }}
+    }
     int np = k1s.size();
     fa /= np;
+    boolean alignX2 = false;
+    if(abs(u[2])>abs(u[1])) alignX2 = true;
     for (int ip=0; ip<np; ++ip) {
       int i1 = k1s.get(ip);
       int i2 = k2s.get(ip);
       int i3 = k3s.get(ip);
-      for (int d3=-1;d3<=1;d3++) {
-      for (int d2=-1;d2<=1;d2++) {
-        int p2 = i2+d2;
-        int p3 = i3+d3;
-        p2 = max(p2,0);
-        p3 = max(p3,0);
-        p2 = min(p2,n2-1);
-        p3 = min(p3,n3-1);
-        fe[p3][p2][i1] += fa;
-      }}
+      fe[i3][i2][i1] += fa;
+      if (alignX2) {
+        fe[i3-1][i2][i1] += fa;
+        fe[i3+1][i2][i1] += fa;
+      } else {
+        fe[i3][i2-1][i1] += fa;
+        fe[i3][i2+1][i1] += fa;
+      }
     }
-    /*
-    Sampling sv = new Sampling(nv);
-    Sampling sw = new Sampling(nw);
-    float[] wvu = buildTrigs(sw,sv,sf);
-    int nc = wvu.length;
-    float[] xyz = new float[nc];
-    for (int ic=0; ic<nc; ic+=3) {
-      float iu = wvu[ic+2];
-      float iv = wvu[ic+1]-rv;
-      float iw = wvu[ic  ]-rw;
-      xyz[ic  ] = iu*u[2]+iv*v[2]+iw*w[2]+c3;
-      xyz[ic+1] = iu*u[1]+iv*v[1]+iw*w[1]+c2;
-      xyz[ic+2] = iu*u[0]+iv*v[0]+iw*w[0]+c1;
-    }
-    return xyz;
-    */
   }
+
+  public static float[][][][] thin(float[][][][] flpt) {
+    float[][][] f = flpt[0];
+    float[][][] p = flpt[1];
+    float[][][] t = flpt[2];
+    int n1 = f[0][0].length;
+    int n2 = f[0].length;
+    int n3 = f.length;
+    f = copy(f);
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
+    rgf.applyX0X(f,f);
+    rgf.applyXX0(f,f);
+    float[][][] ff = new float[n3][n2][n1];
+    float[][][] pp = new float[n3][n2][n1];
+    float[][][] tt = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+      int i3m = max(i3-1,0);
+      int i3p = min(i3+1,n3-1);
+      for (int i2=0; i2<n2; ++i2) {
+        int i2m = max(i2-1,0);
+        int i2p = min(i2+1,n2-1);
+        float[] fmm = f[i3m][i2m];
+        float[] fm0 = f[i3m][i2 ];
+        float[] fmp = f[i3m][i2p];
+        float[] f0m = f[i3 ][i2m];
+        float[] f00 = f[i3 ][i2 ];
+        float[] f0p = f[i3 ][i2p];
+        float[] fpm = f[i3p][i2m];
+        float[] fp0 = f[i3p][i2 ];
+        float[] fpp = f[i3p][i2p];
+        float[] p00 = p[i3 ][i2 ];
+        float[] t00 = t[i3 ][i2 ];
+        for (int i1=0; i1<n1; ++i1) {
+          float f000 = f00[i1];
+          float p000 = p00[i1];
+          float t000 = t00[i1];
+          if ((                p000<= 22.5f && f0m[i1]<f000 && f0p[i1]<f000) ||
+              ( 22.5f<=p000 && p000<= 67.5f && fpm[i1]<f000 && fmp[i1]<f000) ||
+              ( 67.5f<=p000 && p000<=112.5f && fp0[i1]<f000 && fm0[i1]<f000) ||
+              (112.5f<=p000 && p000<=157.5f && fpp[i1]<f000 && fmm[i1]<f000) ||
+              (157.5f<=p000 && p000<=202.5f && f0p[i1]<f000 && f0m[i1]<f000) ||
+              (202.5f<=p000 && p000<=247.5f && fmp[i1]<f000 && fpm[i1]<f000) ||
+              (247.5f<=p000 && p000<=292.5f && fm0[i1]<f000 && fp0[i1]<f000) ||
+              (292.5f<=p000 && p000<=337.5f && fmm[i1]<f000 && fpp[i1]<f000) ||
+              (337.5f<=p000                 && f0m[i1]<f000 && f0p[i1]<f000)) {
+            ff[i3][i2][i1] = f000;
+            pp[i3][i2][i1] = p000;
+            tt[i3][i2][i1] = t000;
+          } else {
+            pp[i3][i2][i1] = NO_STRIKE;
+            tt[i3][i2][i1] = NO_DIP;
+          }
+        }
+      }
+    }
+    float[][][][] flptn = new float[][][][]{ff,pp,tt};
+    return flptn;
+  }
+
 
     /**
    * Returns fault dip vector for specified strike and dip angles.
@@ -367,32 +395,6 @@ public class OptimalSurfaceVoterP {
     return new float[]{w1,w2,w3};
   }
 
-
-  private float[] buildTrigs(Sampling sx, Sampling sy, float[][] z){
-    int i = 0;
-    int nx = z.length;
-    int ny = z[0].length;
-    float[] xyz = new float[nx*ny*6*3];
-    for (int ix=0;ix<nx-1; ++ix) {
-      float x0 = (float)sx.getValue(ix  );
-      //if(x0>180f) {continue;}
-      float x1 = (float)sx.getValue(ix+1);
-      for (int iy=0; iy<ny-1; ++iy) {
-        float y0 = (float)sy.getValue(iy  );
-        if(y0<0f||y0>360f) {continue;}
-        float y1 = (float)sy.getValue(iy+1);
-        xyz[i++] = x0;  xyz[i++] = y0;  xyz[i++] = z[ix  ][iy  ];
-        xyz[i++] = x0;  xyz[i++] = y1;  xyz[i++] = z[ix  ][iy+1];
-        xyz[i++] = x1;  xyz[i++] = y0;  xyz[i++] = z[ix+1][iy  ];
-        xyz[i++] = x1;  xyz[i++] = y0;  xyz[i++] = z[ix+1][iy  ];
-        xyz[i++] = x0;  xyz[i++] = y1;  xyz[i++] = z[ix  ][iy+1];
-        xyz[i++] = x1;  xyz[i++] = y1;  xyz[i++] = z[ix+1][iy+1];
-      }
-    }
-    return copy(i,0,xyz);
-  }
-
-
   /**
    * Computes shifts for specified images.
    * @param f input array for the image f.
@@ -407,16 +409,25 @@ public class OptimalSurfaceVoterP {
     final float[][] uf = u;
     for (int is=0; is<_esmooth; ++is)
       smoothFaultAttributes(fx,fx);
-    final Parallel.Unsafe<float[][]> du = new Parallel.Unsafe<float[][]>();
-    Parallel.loop(n2,new Parallel.LoopInt() {
-    public void compute(int i2) {
-      float[][] d = du.get();
-      if (d==null) du.set(d=new float[n1][nl]);
+    float[][] d = new float[n1][nl];
+    for (int i2=0; i2<n2; ++i2) {
       accumulateForward(fx[i2],d);
       backtrackReverse(d,fx[i2],uf[i2]);
-    }});
+    }
     smoothShifts(u,u);
     return u;
+  }
+
+  private float[][][] smooth(float[][][] ft) {
+    int n3 = ft.length;
+    int n2 = ft[0].length;
+    int n1 = ft[0][0].length;
+    float[][][] fs = new float[n3][n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
+    rgf.apply000(ft,fs);
+    fs = sub(fs,min(fs));
+    fs = mul(fs,1f/max(fs));
+    return fs;
   }
 
     /**
@@ -545,68 +556,6 @@ public class OptimalSurfaceVoterP {
   }
 
   /**
-   * Normalizes alignment errors to be in range [0,1].
-   * @param e input/output array of alignment errors.
-   */
-  public static void normalizeErrors(float[][][] e) {
-    final float[][][] ef = e;
-    int n2 = e.length;
-    MinMax mm = Parallel.reduce(n2,new Parallel.ReduceInt<MinMax>() {
-    public MinMax compute(int i2) {
-      int nl = ef[i2][0].length;
-      int n1 = ef[i2].length;
-      float emin =  Float.MAX_VALUE;
-      float emax = -Float.MAX_VALUE;
-      for (int i1=0; i1<n1; ++i1) {
-        for (int il=0; il<nl; ++il) {
-          float ei = ef[i2][i1][il];
-          if (ei<emin) emin = ei;
-          if (ei>emax) emax = ei;
-        }
-      }
-      return new MinMax(emin,emax);
-    }
-    public MinMax combine(MinMax mm1, MinMax mm2) {
-      return new MinMax(min(mm1.emin,mm2.emin),max(mm1.emax,mm2.emax));
-    }});
-    shiftAndScale(mm.emin,mm.emax,e);
-  }
-
-  /**
-   * Shifts and scales alignment errors to be in range [0,1].
-   * @param emin minimum alignment error before normalizing.
-   * @param emax maximum alignment error before normalizing.
-   * @param e input/output array of alignment errors.
-   */
-  private static void shiftAndScale(float emin, float emax, float[][][] e) {
-    final int n2 = e.length;
-    final float eshift = emin;
-    final float escale = (emax>emin)?1.0f/(emax-emin):1.0f;
-    final float[][][] ef = e;
-    Parallel.loop(n2,new Parallel.LoopInt() {
-    public void compute(int i2) {
-      int nl = ef[i2][0].length;
-      int n1 = ef[i2].length;
-      for (int i1=0; i1<n1; ++i1) {
-        for (int il=0; il<nl; ++il) {
-          ef[i2][i1][il] = (ef[i2][i1][il]-eshift)*escale;
-        }
-      }
-    }});
-  }
-
-
-  private static class MinMax {
-    float emin,emax;
-    MinMax(float emin, float emax) {
-      this.emin = emin;
-      this.emax = emax;
-    }
-  }
-
-
-
-    /**
    * Smooths alignment errors in 1st dimension.
    * Does not normalize errors after smoothing.
    * @param b strain parameter in 1st dimension.
@@ -618,10 +567,8 @@ public class OptimalSurfaceVoterP {
     final int bf = b;
     final float[][][] ef = e;
     final float[][][] esf = es;
-    Parallel.loop(n2,new Parallel.LoopInt() {
-    public void compute(int i2) {
+    for (int i2=0; i2<n2; ++i2)
       smoothErrors1(bf,ef[i2],esf[i2]);
-    }});
   }
 
     /**
@@ -687,25 +634,18 @@ public class OptimalSurfaceVoterP {
    * @param es output array of smoothed alignment errors.
    */
   private static void smoothErrors2(int b, float[][][] e, float[][][] es) {
-    final int nl = e[0][0].length;
-    final int n1 = e[0].length;
-    final int n2 = e.length;
-    final int bf = b;
-    final float[][][]  ef = e;
-    final float[][][] esf = es;
-    final Parallel.Unsafe<float[][][]> eeu = 
-      new Parallel.Unsafe<float[][][]>();
-    Parallel.loop(n1,new Parallel.LoopInt() {
-    public void compute(int i1) {
-      float[][][] ee = eeu.get();
-      if (ee==null) eeu.set(ee=new float[4][n2][nl]);
-      float[][]  e1 = ee[0];
-      float[][] es1 = ee[1];
-      float[][] ef1 = ee[2];
-      float[][] er1 = ee[3];
+    int nl = e[0][0].length;
+    int n1 = e[0].length;
+    int n2 = e.length;
+    int bf = b;
+    float[][] e1  = new float[n2][nl];
+    float[][] es1 = new float[n2][nl];
+    float[][] ef1 = new float[n2][nl];
+    float[][] er1 = new float[n2][nl];
+    for (int i1=0; i1<n1; ++i1) {
       for (int i2=0; i2<n2; ++i2) {
-         e1[i2] =  ef[i2][i1];
-        es1[i2] = esf[i2][i1];
+         e1[i2] =  e[i2][i1];
+        es1[i2] = es[i2][i1];
         for (int il=0; il<nl; ++il) {
           ef1[i2][il] = 0.0f;
           er1[i2][il] = 0.0f;
@@ -718,7 +658,7 @@ public class OptimalSurfaceVoterP {
           es1[i2][il] = ef1[i2][il]+er1[i2][il]-e1[i2][il];
         }
       }
-    }});
+    }
   }
 
 
@@ -741,7 +681,7 @@ public class OptimalSurfaceVoterP {
     for (int iw=-_rw; iw<=_rw; ++iw) {
     for (int iv=-_rv; iv<=_rv; ++iv) {
       float wv = sqrt(iw*iw+iv*iv);
-      if(wv>1) {
+      if(wv>2) {
         _lmins[iw+_rw][iv+_rv] = max(-round(wv),_lmin);
         _lmaxs[iw+_rw][iv+_rv] = min( round(wv),_lmax);
       }
@@ -765,10 +705,4 @@ public class OptimalSurfaceVoterP {
   private RecursiveExponentialFilter _ref2; // for smoothing shifts
   private static final float NO_STRIKE = -0.00001f;
   private static final float NO_DIP    = -0.00001f;
-
-
-
-
-
-   
 }

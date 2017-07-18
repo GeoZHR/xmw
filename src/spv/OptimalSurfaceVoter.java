@@ -151,15 +151,11 @@ public class OptimalSurfaceVoter {
     rgf.apply000(ft,fs);
     fs = sub(fs,min(fs));
     fs = mul(fs,1f/max(fs));
-    int nu = _nl;
-    int ru = -_lmin;
-    int nv = _rv*2+1;
-    int nw = _rw*2+1;
-    float[][] dws = new float[3][nw];
-    float[][] dvs = new float[3][nv];
-    float[][] dus = new float[3][nu];
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+
     for (int is=0; is<ns; ++is) {
-      if(is%100==0)
+      if(is%1000==0)
         System.out.println("is="+is+"/"+ns);
       FaultCell cell = seeds[is];
       int i1 = cell.getI1();
@@ -167,91 +163,69 @@ public class OptimalSurfaceVoter {
       int i3 = cell.getI3();
       float tti = cell.getFt();
       float pti = cell.getFp();
-      float[] u = faultNormalVectorFromStrikeAndDip(pti,tti);
-      float[] v = faultDipVectorFromStrikeAndDip(pti,tti);
-      float[] w = faultStrikeVectorFromStrikeAndDip(pti,tti);
-      for (int iw=-_rw; iw<=_rw; ++iw) {
-        int kw = iw+_rw;
-        dws[0][kw] = iw*w[0];
-        dws[1][kw] = iw*w[1];
-        dws[2][kw] = iw*w[2];
-      }
-      for (int iv=-_rv; iv<=_rv; ++iv) {
-        int kv = iv+_rv;
-        dvs[0][kv] = iv*v[0];
-        dvs[1][kv] = iv*v[1];
-        dvs[2][kv] = iv*v[2];
-      }
-      for (int iu=-ru; iu<=ru; ++iu) {
-        int ku = iu+ru;
-        dus[0][ku] = iu*u[0];
-        dus[1][ku] = iu*u[1];
-        dus[2][ku] = iu*u[2];
-      }
-      findSurface(i1,i2,i3,u,dws,dvs,dus,fs,fe);
+      findSurface(i1,i2,i3,_rv,_rw,tti,pti,fs,fe);
     }
+    double timeUsed = sw.time();
+    System.out.println("time used: "+timeUsed);
     return fe;
   }
 
   public void findSurface(
-    int c1, int c2, int c3, float[] u, 
-    float[][] dws, float[][] dvs, float[][] dus, 
-    float[][][] fx, float[][][] fe) {
+    int c1, int c2, int c3, int rv, int rw, 
+    float ft, float fp, float[][][] fx, float[][][] fe) {
     int nu = _nl;
     int ru = -_lmin;
-    int nv = dvs[0].length;
-    int nw = dws[0].length;
+    int nv = rv*2+1;
+    int nw = rw*2+1;
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
-    float[][][] fs = fillfloat(1f,nu,nv,nw);
-    for (int kw=0; kw<nw; kw++) {
-      float dw1 = dws[0][kw]+c1;
-      float dw2 = dws[1][kw]+c2;
-      float dw3 = dws[2][kw]+c3;
-      for (int kv=0; kv<nv; kv++) {
-        float dv1 = dw1+dvs[0][kv];
-        float dv2 = dw2+dvs[1][kv];
-        float dv3 = dw3+dvs[2][kv];
-        int um = _lmins[kw][kv];
-        int up = _lmaxs[kw][kv];
-        for (int ku=um+ru; ku<=up+ru; ku++) {
-          int i1 = round(dv1+dus[0][ku]);
-          int i2 = round(dv2+dus[1][ku]);
-          int i3 = round(dv3+dus[2][ku]);
-          i1 = min(max(i1,0),n1-1);
-          i2 = min(max(i2,0),n2-1);
-          i3 = min(max(i3,0),n3-1);
-         fs[kw][kv][ku] = 1-fx[i3][i2][i1];
-        }
+    float[][][] fs = fillfloat(1f,nu,nv,nw);//new float[nw][nv][nu];
+    float[] u = faultNormalVectorFromStrikeAndDip(fp,ft);
+    float[] v = faultDipVectorFromStrikeAndDip(fp,ft);
+    float[] w = faultStrikeVectorFromStrikeAndDip(fp,ft);
+    for (int iw=-rw,kw=0; iw<=rw; iw++,kw++) {
+    for (int iv=-rv,kv=0; iv<=rv; iv++,kv++) {
+      int um = _lmins[kw][kv];
+      int up = _lmaxs[kw][kv];
+      for (int iu=um,ku=um+ru; iu<=up; iu++,ku++) {
+        int i1 = round(c1+iu*u[0]+iv*v[0]+iw*w[0]);
+        int i2 = round(c2+iu*u[1]+iv*v[1]+iw*w[1]);
+        int i3 = round(c3+iu*u[2]+iv*v[2]+iw*w[2]);
+        i1 = max(i1,0);
+        i2 = max(i2,0);
+        i3 = max(i3,0);
+        i1 = min(i1,n1-1);
+        i2 = min(i2,n2-1);
+        i3 = min(i3,n3-1);
+        fs[kw][kv][ku] = 1-fx[i3][i2][i1];
       }
-    }
+    }}
     float fa = 0.0f;
     float[][] sf = findSurface(fs);
     ArrayList<Integer> k1s = new ArrayList<Integer>();
     ArrayList<Integer> k2s = new ArrayList<Integer>();
     ArrayList<Integer> k3s = new ArrayList<Integer>();
-    for (int kw=0; kw<nw; ++kw) {
-      float dw1 = dws[0][kw]+c1;
-      float dw2 = dws[1][kw]+c2;
-      float dw3 = dws[2][kw]+c3;
-      for (int kv=0; kv<nv; ++kv) {
-        float iu = sf[kw][kv];
-        int i1 = round(iu*u[0]+dvs[0][kv]+dw1);
-        int i2 = round(iu*u[1]+dvs[1][kv]+dw2);
-        int i3 = round(iu*u[2]+dvs[2][kv]+dw3);
-        boolean inbox = true;
-        if(i1<=0||i1>=n1-1) inbox = false;
-        if(i2<=0||i2>=n2-1) inbox = false;
-        if(i3<=0||i3>=n3-1) inbox = false;
-        if(inbox) {
-          k1s.add(i1);
-          k2s.add(i2);
-          k3s.add(i3);
-          fa += fx[i3][i2][i1];
-        }
+    for (int iw=-rw; iw<=rw; ++iw) {
+    for (int iv=-rv; iv<=rv; ++iv) {
+      float iu = sf[iw+rw][iv+rv];
+      float x3 = iu*u[2]+iv*v[2]+iw*w[2]+c3;
+      float x2 = iu*u[1]+iv*v[1]+iw*w[1]+c2;
+      float x1 = iu*u[0]+iv*v[0]+iw*w[0]+c1;
+      int i1 = round(x1);
+      int i2 = round(x2);
+      int i3 = round(x3);
+      boolean inbox = true;
+      if(i1<=0||i1>=n1-1) inbox = false;
+      if(i2<=0||i2>=n2-1) inbox = false;
+      if(i3<=0||i3>=n3-1) inbox = false;
+      if(inbox) {
+        k1s.add(i1);
+        k2s.add(i2);
+        k3s.add(i3);
+        fa += fx[i3][i2][i1];
       }
-    }
+    }}
     int np = k1s.size();
     fa /= np;
     boolean alignX2 = false;
