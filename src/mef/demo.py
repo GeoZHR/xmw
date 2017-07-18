@@ -63,7 +63,7 @@ maxThrow =  15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-plotOnly = False
+plotOnly = True
 pngDir = "../../../png/mef/fake/"
 pngDir = None
 
@@ -71,14 +71,14 @@ pngDir = None
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
-  #goScan()
+  goScan()
   #goSkinF()
   #goSemblance()
   #goOrientScan()
   #goThinE()
   #goSkinE()
   #goTv()
-  goSkinTv()
+  #goSkinTv()
   #goSmooth()
   #goSlip()
   #goTest()
@@ -166,6 +166,29 @@ def goScan():
       clab="Fault strike (degrees)",cint=45,png="fp")
   plot3(gx,convertDips(ft),k3=56,cmin=15,cmax=55,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
+  tt = zerofloat(n1,n2,n3)
+  ts = zerofloat(n1,n2,n3)
+  c1,c2,c3=50,50,50
+  c1,c2,c3=50,50,50
+  tt[c3][c2][c1] = 100
+  rgf = RecursiveGaussianFilter(2)
+  rgf.apply000(tt,tt)
+  u1 = fillfloat(0.3,n1,n2,n3)
+  u2 = fillfloat(0.9,n1,n2,n3)
+  w1 = fillfloat(0.4,n1,n2,n3)
+  w2 = fillfloat(0.8,n1,n2,n3)
+  au = fillfloat(0.01,n1,n2,n3)
+  av = fillfloat(1.0,n1,n2,n3)
+  aw = fillfloat(1.0,n1,n2,n3)
+  et = EigenTensors3(u1,u2,w1,w2,au,av,aw,True)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(et,300,tt,ts)
+  print min(ts)
+  print max(ts)
+  pc = PolarCoordinates(c1,c2,c3,0,20)
+  fr = pc.forwardTransform(ts)
+  plot3(ts,ts,cmap=jetFill(1.0),cmin=min(ts),cmax=max(ts))
+  plot3(fr,fr,cmap=jetFill(1.0),cmin=min(ts),cmax=max(fr))
 
 def goSemblance():
   print "go semblance ..."

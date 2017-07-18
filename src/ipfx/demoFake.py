@@ -99,8 +99,10 @@ def goFbs():
       fs3[i3][i2][i1] = c3
   fb = FaultExtension()
   fe = fb.faultExtension(fs1,fs2,fs3)
+  plot3(gx)
   plot3(gx,fe,cmin=min(fe),cmax=max(fe),cmap=jetRamp(1.0),
         clab="Fault energy")
+  plot3(gx,skins=sk,smax=10.0,slices=[85,5,60],png="skinss1")
 
 def goFakeData():
   #sequence = 'A' # 1 episode of faulting only

@@ -47,13 +47,13 @@ k1 = 51
 k1 = 110
 
 def main(args):
-  #goSeis()
+  goSeis()
   #goSta()
   #goSlope()
   #goSemblance()
   #goSub()
   #go2dPlots()
-  goSubPlots()
+  #goSubPlots()
 def goSubPlots():
   fx = readImage("fxSub")
   eps = readImage("epSub")

@@ -7,8 +7,8 @@ Version: 2016.06.01
 
 
 from utils import * 
-setupForSubset("edge")
 setupForSubset("fault2d")
+setupForSubset("edge")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
@@ -50,10 +50,10 @@ maxThrow = 30.0
 
 def main(args):
   #goSemblance()
-  goFaultPik()
+  #goFaultPik()
   #goTimeMarker()
   #goPolar()
-  #goEdgeEnhance()
+  goEdgeEnhance()
   #goEdgeTime()
   #goCoherence()
   #goScan()

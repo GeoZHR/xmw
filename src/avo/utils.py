@@ -1,7 +1,7 @@
 """
 Jython utilities for fake image processing.
-Author: Dave Hale, Colorado School of Mines
-Version: 2014.06.17
+Author: Xinming Wu, Colorado School of Mines
+Version: 2017.06.17
 """
 from common import *
 
@@ -25,7 +25,7 @@ def setupForSubset(name):
   if name=="fake":
     """ fake image """
     print "setupForSubset: fake"
-    seismicDir = _datdir+"fake/"
+    seismicDir = _datdir+"fake/NLP-ForwardOperators0715_02/"
     n1,n2,n3 = 121,152,153
     s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   elif name=="tp":

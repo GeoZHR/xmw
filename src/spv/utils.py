@@ -1,5 +1,5 @@
 """
-Jython utilities for channel enhancing.
+Jython utilities for edge detection.
 Author: Xinming Wu, Colorado School of Mines
 Version: 2016.01.28
 """
@@ -8,7 +8,7 @@ from common import *
 #############################################################################
 # Internal constants
 
-_datdir = "../../../data/seis/pik/"
+_datdir = "../../../data/seis/spv/"
 _pngdir = "../../../png/pik/"
 
 #############################################################################
@@ -49,9 +49,18 @@ def setupForSubset(name):
     n1,n2 = 651,601 #fxnwc
     n1,n2 = 222,440 #f3d75s
     n1,n2 = 380,591 #ep56
-    n1,n2 = 481,321 #test
     n1,n2 = 1052,698 #teste
+    n1,n2 = 321,481 #test
     #n1,n2 = 321,481 #135069.dat
+    d1,d2 = 1,1 # (s,km/s)
+    f1,f2 = 0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="bsds500":
+    """ bsds500 """
+    print "setupForSubset: bsds500"
+    pngDir = _pngdir+"BSDS500/data/images/test/"
+    seismicDir = _datdir+"BSDS500/data/images/"
+    n1,n2 = 321,481 #test
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
@@ -181,12 +190,39 @@ def getPngDir():
 
 #############################################################################
 # read/write images
+def readImageChannels(basename):
+  """ 
+  Reads three channels of a color image
+  """
+  fileName = seismicDir+basename+".jpg"
+  il = ImageLoader()
+  image = il.readThreeChannels(fileName)
+  return image
+def readColorImage(basename):
+  """ 
+  Reads three channels of a color image
+  """
+  fileName = seismicDir+basename+".jpg"
+  il = ImageLoader()
+  image = il.readColorImage(fileName)
+  return image
+
 def readImage(basename):
   """ 
   Reads an image from a file with specified basename
   """
   fileName = seismicDir+basename+".dat"
   image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+def readImageX(m1,m2,basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(m1,m2)
   ais = ArrayInputStream(fileName)
   ais.readFloats(image)
   ais.close()

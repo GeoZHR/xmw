@@ -125,7 +125,7 @@ def main(args):
   writeImage("semSub",sems)
   '''
 def goPlanarity():
-  print "go semblance ..."
+  print "go planarity ..."
   gx = readImage(gxfile)
   lof = LocalOrientFilterP(3.0,1.0,1.0)
   ep = zerofloat(n1,n2,n3)

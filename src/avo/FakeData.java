@@ -522,7 +522,7 @@ public class FakeData {
    * @param noise rms of noise (relative to signal) added to the image.
    */
   public static float[][][] densityAndVelocity2d(double noise, float[][][] rv) {
-    int n1 = 501;
+    int n1 = 276;
     int n2 = 501;
     float[][][] p = densityAndVelocityFromLogs(n1,n2,rv);
     float[][][] q = densityAndVelocityFromLogs(n1,n2,rv);

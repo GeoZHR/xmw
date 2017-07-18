@@ -1,4 +1,4 @@
-package pik;
+package spv;
 
 import java.util.*;
 import edu.mines.jtk.dsp.*;
@@ -12,12 +12,12 @@ import util.*;
 
 
 /**
- * Edge enhancing with ray tracing
- * @author Xinming Wu and Sergey Fomel
- * @version 2017.06.29
+ * Edge enhancing with shortest path voting
+ * @author Xinming Wu
+ * @version 2017.07.16
  */
 
-public class EdgeEnhance {
+public class ShortestPathVoting2 {
  
   public float[][] seedsToImage(int[][] seeds, float[][] ft) {
     int n2 = ft.length;
@@ -40,6 +40,134 @@ public class EdgeEnhance {
       y[i1] = yi = a*yi + b*x[i1];
   }
 
+  public float[][] votingMap(int r, int sig, int[][] seeds, 
+    float[][] u1, float[][] u2, float[][] ft, float[][] tt) {
+    int n2 = ft.length;
+    int n1 = ft[0].length;
+    int ns = seeds[0].length;
+    float[][] fe = new float[n2][n1];
+    float[][] fs = copy(ft);
+    RecursiveGaussianFilterP rgfs = new RecursiveGaussianFilterP(2);
+    rgfs.apply00(fs,fs);
+    for (int is=0; is<ns; ++is) {
+      System.out.println("is="+is);
+      int k1 = seeds[0][is];
+      int k2 = seeds[1][is];
+      int b1 = max(k1-r,0);
+      int b2 = max(k2-r,0);
+      int e1 = min(k1+r,n1-1);
+      int e2 = min(k2+r,n2-1);
+      int m1 = min(k1-b1,e1-k1);
+      int m2 = min(k2-b2,e2-k2);
+      int ri = min(m1,m2);
+      float pi = (float)(Math.PI/180.0);
+      for (int i2=-ri; i2<=ri; ++i2) {
+      for (int i1=-ri; i1<=ri; ++i1) {
+        float ti = tt[k2][k1]+90f;
+        if(ti>180) ti -= 180;
+        ti *= pi;
+        float t1 = cos(ti);
+        float t2 = sin(ti);
+        float rs = sqrt(i1*i1+i2*i2);
+        if (rs>0f) {
+          float r1 = i1/rs;
+          float r2 = i2/rs;
+          float st = t1*r1+t2*r2;
+          float ct = 1-st*st;
+          ct = 1-ct;
+          fe[k2+i2][k1+i1] = ct;
+        }
+      }}
+    }
+    return fe;
+  }
+
+
+  public float[][] applyEnhance(int r, int sig, int[][] seeds, 
+    float[][] u1, float[][] u2, float[][] ft, float[][] tt) {
+    int n2 = ft.length;
+    int n1 = ft[0].length;
+    int ns = seeds[0].length;
+    float[][] fe = new float[n2][n1];
+    float[][] fs = copy(ft);
+    RecursiveGaussianFilterP rgfs = new RecursiveGaussianFilterP(2);
+    rgfs.apply00(fs,fs);
+    int nr = 2*r+1;
+    float[][] u1r = new float[nr][nr];
+    float[][] u2r = new float[nr][nr];
+    for (int i2=0; i2<nr; ++i2) {
+      for (int i1=0; i1<nr; ++i1) {
+        float d1 = i1-r;
+        float d2 = i2-r;
+        float ds = sqrt(d1*d1+d2*d2);
+        if(ds>0f) {
+          float u1i = -d2/ds;
+          float u2i =  d1/ds;
+          if(u1i<0f) {
+            u1i = -u1i;
+            u2i = -u2i;
+          }
+          u1r[i2][i1] = u1i;
+          u2r[i2][i1] = u2i;
+        }
+    }}
+    for (int is=0; is<ns; ++is) {
+      System.out.println("is="+is);
+      int k1 = seeds[0][is];
+      int k2 = seeds[1][is];
+      int b1 = max(k1-r,0);
+      int b2 = max(k2-r,0);
+      int e1 = min(k1+r,n1-1);
+      int e2 = min(k2+r,n2-1);
+      int m1 = min(k1-b1,e1-k1);
+      int m2 = min(k2-b2,e2-k2);
+      int ri = min(m1,m2);
+      int c1 = ri*2+1;
+      int c2 = ri*2+1;
+
+      float[][] mp = new float[c2][c1];
+      float[][] u1s = new float[c2][c1];
+      float[][] u2s = new float[c2][c1];
+
+      float[][] fc  = copy(c1,c2,k1-ri,k2-ri,ft);
+      float pi = (float)(Math.PI/180.0);
+      for (int i2=-ri; i2<=ri; ++i2) {
+      for (int i1=-ri; i1<=ri; ++i1) {
+        float ti = tt[k2][k1]+90f;
+        if(ti>180) ti -= 180;
+        ti *= pi;
+        float t1 = cos(ti);
+        float t2 = sin(ti);
+        u1s[i2+ri][i1+ri] = t1;
+        u2s[i2+ri][i1+ri] = t2;
+        /*
+        float rs = sqrt(i1*i1+i2*i2);
+        if (rs>0f) {
+          float r1 = i1/rs;
+          float r2 = i2/rs;
+          float st = t1*r1+t2*r2;
+          float ct = 1-st*st;
+          fc[i2+ri][i1+ri] *= ct;
+        }
+        */
+      }}
+      fc  = sub(fc,min(fc));
+      fc  = mul(fc,1f/max(fc));
+      float[][][] ps = applyEnhance(ri,ri,ri-2,u1s,u2s,fc);
+      if(ps!=null) {
+      int np = ps.length;
+      for (int ip=0; ip<np; ++ip)
+        collect(ri,k1,k2,ps[ip],ft,mp);
+      }
+      for (int i2=0; i2<c2; ++i2) {
+      for (int i1=0; i1<c1; ++i1) {
+        if(mp[i2][i1]>0f) {
+          fe[i2+k2-ri][i1+k1-ri] += mp[i2][i1];
+        }
+      }}
+    }
+    return fe;
+  }
 
   public float[][] applyEnhance(int r, int sig, int[][] seeds, 
     float[][] u1, float[][] u2, float[][] ft) {
@@ -84,10 +212,10 @@ public class EdgeEnhance {
       int c2 = ri*2+1;
       float[][] mp = new float[c2][c1];
       float[][] fc  = copy(c1,c2,k1-ri,k2-ri,ft);
-      //float[][] u1s = copy(c1,c2,r-ri,r-ri,u1r);
-      //float[][] u2s = copy(c1,c2,r-ri,r-ri,u2r);
-      float[][] u1s = copy(c1,c2,k1-ri,k2-ri,u1);
-      float[][] u2s = copy(c1,c2,k1-ri,k2-ri,u2);
+      float[][] u1s = copy(c1,c2,r-ri,r-ri,u1r);
+      float[][] u2s = copy(c1,c2,r-ri,r-ri,u2r);
+      //float[][] u1s = copy(c1,c2,k1-ri,k2-ri,u1);
+      //float[][] u2s = copy(c1,c2,k1-ri,k2-ri,u2);
 
       float[][][] ps = applyEnhance(ri,ri,ri-2,u1s,u2s,fc);
       if(ps!=null) {
@@ -110,10 +238,9 @@ public class EdgeEnhance {
     int m2 = mp.length;
     int m1 = mp[0].length;
     int np = ps[0].length;
-    float[] fp  = new float[np];
-    float[] fps = new float[np];
     int n2 = fs.length;
     int n1 = fs[0].length;
+    float fa = 0.0f;
     for (int ip=0; ip<np; ++ip) {
       int i1 = round(ps[0][ip])+k1-ri;
       int i2 = round(ps[1][ip])+k2-ri;
@@ -121,24 +248,20 @@ public class EdgeEnhance {
       i1 = max(i1,0);
       i2 = max(i2,0);
       i2 = min(i2,n2-1);
-      fp[ip] = fs[i2][i1];
+      fa += fs[i2][i1];
     }
-    causalFilter(0.92f,fp,fps);
+    fa /= np;
     for (int ip=0; ip<np; ++ip) {
       int c1 = round(ps[0][ip]);
       int c2 = round(ps[1][ip]);
-      for (int d2=-1;d2<=1;d2++) {
-      for (int d1=-1;d1<=1;d1++) {
-        int p1 = c1+d1;
-        int p2 = c2+d2;
-        p1 = max(p1,0);
-        p2 = max(p2,0);
-        p1 = min(p1,m1-1);
-        p2 = min(p2,m2-1);
-        if (fp[ip]>mp[p2][p1])
-          mp[p2][p1] = fp[ip];
+      for (int d2=-0;d2<=0;d2++){
+      for (int d1=-0;d1<=0;d1++){
+        int i1 = c1+d1;
+        int i2 = c2+d2;
+        if(i1>=0&&i1<m1&&i2>=0&&i2<m2)
+          mp[i2][i1] = fa;;
       }}
-     }
+    }
   }
   public float[][][] applyEnhance(
     int k1, int k2, int r, float[][] u1, float[][] u2, float[][] ft) {
@@ -147,8 +270,8 @@ public class EdgeEnhance {
     int[][] mk = new int[n2][n1];
     float[][] ts = fillfloat(1f,n1,n2);
     ts[k2][k1] = 0.0f;
-    float[][] av = clip(0.1f,1.0f,ft);
-    float[][] au = fillfloat(0.01f,n1,n2);
+    float[][] av = clip(0.05f,1.0f,ft);
+    float[][] au = mul(av,0.1f);//fillfloat(0.01f,n1,n2);
     EigenTensors2 et = new EigenTensors2(u1,u2,au,av);
     TimeMarker2 tm = new TimeMarker2(n1,n2,et);
     tm.apply(ts,mk);
@@ -210,18 +333,20 @@ public class EdgeEnhance {
     k2.add(e2);
     float t1i = 0.0f;
     float t2i = 0.0f;
-    float tsi = 0.0f;
-    while (ti>=10f) {
+    float tsi = 100.0f;
+    int ct = 0;
+    while (ti>=10f&&ct<200) {
       t1i = si.interpolate(s1,s2,t1,e1,e2);
       t2i = si.interpolate(s1,s2,t2,e1,e2);
-      tsi = 1f/sqrt(t1i*t1i+t2i*t2i);
-      t1i *= tsi;
-      t2i *= tsi;
+      tsi = sqrt(t1i*t1i+t2i*t2i);
+      t1i /= tsi;
+      t2i /= tsi;
       e1 -= t1i;
       e2 -= t2i;
       k1.add(e1);
       k2.add(e2);
       ti = si.interpolate(s1,s2,ts,e1,e2);
+      ct++;
     }
     k1.add(b1);
     k2.add(b2);
@@ -266,8 +391,8 @@ public class EdgeEnhance {
     int n1 = ft[0].length;
     ArrayList<Float> fs = new ArrayList<Float>();
     ArrayList<Integer> ks = new ArrayList<Integer>();
-    for (int i2=0;i2<n2;i2+=1) {
-    for (int i1=0;i1<n1;i1+=1) {
+    for (int i2=0; i2<n2; i2++) {
+    for (int i1=0; i1<n1; i1++) {
       if(ft[i2][i1]>fm) {
         ks.add(n1*i2+i1);
         fs.add(ft[i2][i1]);
@@ -282,7 +407,7 @@ public class EdgeEnhance {
       ka[ip] = ks.get(ip);
       fa[ip] = fs.get(ip);
     }
-    quickIndexSort(fa,ia);
+    //quickIndexSort(fa,ia);
     int[][] mark = new int[n2][n1];
     ArrayList<Integer> k1s = new ArrayList<Integer>();
     ArrayList<Integer> k2s = new ArrayList<Integer>();

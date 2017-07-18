@@ -24,15 +24,70 @@ public class FaultEnhance {
     _an = an;
   }
 
-  public float[][][] applyTracing(int rx, float sigma, 
+  public float[][][][] thin1(float[][][] f, float[][][] t) {
+    final int n3 = f.length;
+    final int n2 = f[0].length;
+    final int n1 = f[0][0].length;
+    final float[][][] ft = new float[n3][n2][n1];
+    final float[][][] tt = new float[n3][n2][n1];
+    Parallel.loop(n1,new Parallel.LoopInt() {
+    public void compute(int i1) {
+      float[][] f1 = new float[n3][n2];
+      float[][] t1 = new float[n3][n2];
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        f1[i3][i2] = f[i3][i2][i1];
+        t1[i3][i2] = t[i3][i2][i1];
+      }}
+      float[][][] ftt = thin1(f1,t1);
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        ft[i3][i2][i1] = ftt[0][i3][i2];
+        tt[i3][i2][i1] = ftt[1][i3][i2];
+      }}
+    }});
+    return new float[][][][]{ft,tt};
+  }
+
+
+  public float[][][] thin1(float[][] f, float[][] t) {
+    int n2 = f.length;
+    int n1 = f[0].length;
+    float[][] ff = new float[n2][n1];
+    float[][] tt = new float[n2][n1];
+    float pi = (float)(Math.PI/180.0);
+    SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
+    int r = 5;
+    float[] fs = new float[r*2+1];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float ti = t[i2][i1]*pi;
+      float d1 = -cos(ti);
+      float d2 =  sin(ti);
+      for (int i=-r; i<=r; ++i) 
+        fs[i+r] = si.interpolate(n1,1.0,0.0,n2,1.0,0.0,f,i1+d1*i,i2+d2*i);
+      rgf.apply0(fs,fs);
+      float fi = fs[r];
+      float fp = fs[r+1];
+      float fm = fs[r-1];
+      if(fp<fi&&fm<fi) {
+        ff[i2][i1] = f[i2][i1];
+        tt[i2][i1] = t[i2][i1];
+      }
+    }}
+    return new float[][][]{ff,tt};
+  }
+
+  public float[][][] applyTracing2X(int rx, 
     int minTheta, int maxTheta, float[][][] fx) {
     final int n3 = fx.length;
     final int n2 = fx[0].length;
     final int n1 = fx[0][0].length;
     final float[][][] fe = new float[n3][n2][n1];
-    final float[][][] ph = new float[n3][n2][n1];
     final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2);
-    Parallel.loop(n2,new Parallel.LoopInt() {
+    Parallel.loop(650,900,1,new Parallel.LoopInt() {
     public void compute(int i2) {
       System.out.println("i2="+i2);
       float[][] fx2 = new float[n3][n1];
@@ -44,7 +99,7 @@ public class FaultEnhance {
       rgf.apply00(ft2,fs2);
       fs2 = sub(fs2,min(fs2));
       fs2 = div(fs2,max(fs2));
-      float[][][] fph = enhanceInPolarSpace1(rx,sigma,minTheta,maxTheta,seeds,fs2);
+      float[][][] fph = enhanceInPolarSpace1(rx,minTheta,maxTheta,seeds,fs2);
       float[][] fe2 = fph[0];
       fe2 = sub(fe2,min(fe2));
       fe2 = div(fe2,max(fe2));
@@ -53,14 +108,98 @@ public class FaultEnhance {
       fe2 = div(fe2,max(fe2));
       for (int i3=0; i3<n3; ++i3) {
         fe[i3][i2] = fe2[i3];
-        ph[i3][i2] = fph[2][i3];
       }
     }});
     return fe;
   }
 
-  public float[][][] applyTracing1(int rx, float sigma, 
-    int minTheta, int maxTheta, float[][][] fx) {
+  public float[][][] applyTracing3(int rx, 
+    int minTheta, int maxTheta, float[][][] ft, float[][][] tt) {
+    final int n3 = ft.length;
+    final int n2 = ft[0].length;
+    final int n1 = ft[0][0].length;
+    final float[][][] fe = new float[n3][n2][n1];
+    final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      System.out.println("i3="+i3);
+      float[][] fs3 = new float[n2][n1];
+      float[][] ft3 = new float[n2][n1];
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        boolean ok = false;
+        float tti = tt[i3][i2][i1];
+        if(tti>=0f   && tti<45f  ) ok=true;
+        if(tti>=135f && tti<=180f) ok=true;
+        if(ok) ft3[i2][i1] = ft[i3][i2][i1];
+      }}
+      int[][] seeds = pickSeeds(4,0.3f,ft3);
+      rgf.apply00(ft3,fs3);
+      fs3 = sub(fs3,min(fs3));
+      fs3 = div(fs3,max(fs3));
+      float[][][] fph = enhanceInPolarSpace1(rx,minTheta,maxTheta,seeds,fs3);
+      float[][] fe3 = fph[0];
+      fe3 = sub(fe3,min(fe3));
+      fe3 = div(fe3,max(fe3));
+      fe3 = pow(fe3,0.5f);
+      fe3 = sub(fe3,min(fe3));
+      fe3 = div(fe3,max(fe3));
+      fe[i3] = fe3;
+    }});
+    return fe;
+  }
+
+
+  public float[][][] applyTracing2(int rx, 
+    int minTheta, int maxTheta, float[][][] ft, float[][][] tt) {
+    final int n3 = ft.length;
+    final int n2 = ft[0].length;
+    final int n1 = ft[0][0].length;
+    final float[][][] fe = new float[n3][n2][n1];
+    final RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(2);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      System.out.println("i2="+i2);
+      float[][] ft2 = new float[n3][n1];
+      float[][] fs2 = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3) {
+      for (int i1=0; i1<n1; ++i1) {
+        float tti = tt[i3][i2][i1];
+        if(tti>=45f && tti<=135f)
+          ft2[i3][i1] = ft[i3][i2][i1];
+      }}
+      int[][] seeds = pickSeeds(4,0.3f,ft2);
+      rgf.apply00(ft2,fs2);
+      fs2 = sub(fs2,min(fs2));
+      fs2 = div(fs2,max(fs2));
+      float[][][] fph = enhanceInPolarSpace1(rx,minTheta,maxTheta,seeds,fs2);
+      float[][] fe2 = fph[0];
+      fe2 = sub(fe2,min(fe2));
+      fe2 = div(fe2,max(fe2));
+      fe2 = pow(fe2,0.5f);
+      fe2 = sub(fe2,min(fe2));
+      fe2 = div(fe2,max(fe2));
+      for (int i3=0; i3<n3; ++i3)
+        fe[i3][i2] = fe2[i3];
+    }});
+    return fe;
+  }
+
+  public float[][][] applyTracingV(
+    int rx, int minTheta, int maxTheta, float[][][] fx, float[][][] ft) {
+    float[][][][] ftt = thin1(fx,ft);
+    float[][][] fe2 = applyTracing2(rx,minTheta,maxTheta,ftt[0],ftt[1]);
+    //float[][][] fe3 = applyTracing3(rx,minTheta,maxTheta,ftt[0],ftt[1]);
+    float[][][] fes = fe2;//add(fe2,fe3);
+    fes = sub(fes,min(fes));
+    fes = div(fes,max(fes));
+    fes = pow(fes,0.5f);
+    fes = sub(fes,min(fes));
+    fes = div(fes,max(fes));
+    return fes;
+  }
+
+  public float[][][][] applyTracing1(int rx, float sigma, float[][][] fx) {
     final int n3 = fx.length;
     final int n2 = fx[0].length;
     final int n1 = fx[0][0].length;
@@ -80,7 +219,7 @@ public class FaultEnhance {
       rgf.apply00(ft1,fs1);
       fs1 = sub(fs1,min(fs1));
       fs1 = div(fs1,max(fs1));
-      float[][][] fph = enhanceInPolarSpace1(rx,sigma,minTheta,maxTheta,seeds,fs1);
+      float[][][] fph = enhanceInPolarSpace(rx,seeds,fs1);
       float[][] fe1 = fph[0];
       fe1 = sub(fe1,min(fe1));
       fe1 = div(fe1,max(fe1));
@@ -93,10 +232,10 @@ public class FaultEnhance {
         ph[i3][i2][i1] = fph[1][i3][i2];
       }}
     }});
-    return fe;
+    return new float[][][][] {fe,ph};
   }
 
-  public float[][][] enhanceInPolarSpace1(int rx, float sigma, 
+  public float[][][] enhanceInPolarSpace1(int rx, 
     int minTheta, int maxTheta, int[][] seeds, float[][] fx) {
     int n2 = fx.length;
     int n1 = fx[0].length;
@@ -105,14 +244,10 @@ public class FaultEnhance {
     int np = nr*2;
     int[] k1s = new int[np];
     int[] k2s = new int[np];
-    float[] fp = new float[np];
     float[][] gx = new float[n2][n1];
+    float[][] gm = new float[n2][n1];
     float[][] ph = new float[n2][n1];
     float[][] wx = exp(mul(-1,fx));
-    RecursiveExponentialFilter.Edges edges =
-      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
-    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
-    ref.setEdges(edges);
     for (int is=0; is<ns; ++is) {
       int k1 = seeds[0][is];
       int k2 = seeds[1][is];
@@ -144,6 +279,7 @@ public class FaultEnhance {
         as[ip+nr] = p2[ip+nr]+minTheta;
       }
       float[][] xs = reverseTransform(k1,k2,rs,as);
+      float fpa = 0.0f;
       for (int ip=0; ip<np; ip++) {
         int i1 = round(xs[0][ip]);
         int i2 = round(xs[1][ip]);
@@ -153,9 +289,9 @@ public class FaultEnhance {
         i2 = max(i2,0);
         i1 = min(i1,n1-1);
         i2 = min(i2,n2-1);
-        fp[ip] = fx[i2][i1];
+        fpa += fx[i2][i1];
       }
-      ref.apply(fp,fp);
+      fpa /= np;
       for (int ip=0; ip<np; ++ip) {
         int i1 = k1s[ip];
         int i2 = k2s[ip];
@@ -164,28 +300,22 @@ public class FaultEnhance {
           int c1 = i1+d1;
           int c2 = i2+d2;
           if(c1>=0&&c1<n1&&c2>=0&&c2<n2) {
-            float fpi = fp[ip];
+            gx[c2][c1] += fpa;
             float asi = as[ip];
             if(asi>180) asi -=180;
-            gx[c2][c1] += fpi;
-            ph[c2][c1] += fpi*asi;
+            if (fpa>gm[c2][c1]) {
+              ph[c2][c1] = asi;
+              gm[c2][c1] = fpa;
+            }
           }
         }}
       }
     }
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float gxi = gx[i2][i1];
-      if(gxi>0f) {
-        ph[i2][i1] /= gxi;
-      }
-    }}
-
     return new float[][][]{gx,ph};
   }
 
   public float[][][] enhanceInPolarSpace(
-    int rx, float sigma, int[][] seeds, float[][] fx) {
+    int rx, int[][] seeds, float[][] fx) {
     int n2 = fx.length;
     int n1 = fx[0].length;
     int ns = seeds[0].length;
@@ -193,14 +323,10 @@ public class FaultEnhance {
     int np = nr*2;
     int[] k1s = new int[np];
     int[] k2s = new int[np];
-    float[] fp = new float[np];
     float[][] gx = new float[n2][n1];
+    float[][] gm = new float[n2][n1];
     float[][] ph = new float[n2][n1];
     float[][] wx = exp(mul(-1,fx));
-    RecursiveExponentialFilter.Edges edges =
-      RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE;
-    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
-    ref.setEdges(edges);
     for (int is=0; is<ns; ++is) {
       int k1 = seeds[0][is];
       int k2 = seeds[1][is];
@@ -209,7 +335,7 @@ public class FaultEnhance {
       float gmax = FLT_MAX;
       for (int i2=0; i2<180; i2++) {
         float gsum = sum(gs[i2]);
-        if(gmax>gsum) {
+        if(gsum<gmax) {
           i2p = i2;
           gmax = gsum;
         }
@@ -226,6 +352,7 @@ public class FaultEnhance {
         as[ip+nr] = p2[ip+nr];
       }
       float[][] xs = reverseTransform(k1,k2,rs,as);
+      float fpa = 0.0f;
       for (int ip=0; ip<np; ip++) {
         int i1 = round(xs[0][ip]);
         int i2 = round(xs[1][ip]);
@@ -235,9 +362,9 @@ public class FaultEnhance {
         i2 = max(i2,0);
         i1 = min(i1,n1-1);
         i2 = min(i2,n2-1);
-        fp[ip] = fx[i2][i1];
+        fpa += fx[i2][i1];
       }
-      ref.apply(fp,fp);
+      fpa /= np;
       for (int ip=0; ip<np; ++ip) {
         int i1 = k1s[ip];
         int i2 = k2s[ip];
@@ -246,23 +373,17 @@ public class FaultEnhance {
           int c1 = i1+d1;
           int c2 = i2+d2;
           if(c1>=0&&c1<n1&&c2>=0&&c2<n2) {
-            float fpi = fp[ip];
+            gx[c2][c1] += fpa;
             float asi = as[ip];
             if(asi>180) asi-=180;
-            gx[c2][c1] += fpi;
-            ph[c2][c1] += fpi*asi;
+            if(fpa>gm[c2][c1]) {
+              ph[c2][c1] = asi;
+              gm[c2][c1] = fpa;
+            }
           }
         }}
       }
-
     }
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float gxi = gx[i2][i1];
-      if(gxi>0f) {
-        ph[i2][i1] /= gxi;
-      }
-    }}
     return new float[][][]{gx,ph};
   }
   public float[][] applyPolarTransform(
@@ -692,6 +813,126 @@ public class FaultEnhance {
     }
     return fs;
   }
+
+  public int[][] pickSeeds3(int d, float fm, float[][] ft, float[][] tt) {
+    int n2 = ft.length;
+    int n1 = ft[0].length;
+    ArrayList<Float> fs = new ArrayList<Float>();
+    ArrayList<Integer> ks = new ArrayList<Integer>();
+    for (int i2=0;i2<n2;i2+=1) {
+    for (int i1=0;i1<n1;i1+=1) {
+      float fti = ft[i2][i1];
+      float tti = tt[i2][i1];
+      boolean ok = false;
+      if(tti>=0f   && tti<45f  ) ok=true;
+      if(tti>=135f && tti<=180f) ok=true;
+      if(fti>fm && ok) {
+        fs.add(fti);
+        ks.add(n1*i2+i1);
+      }
+    }}
+    int np = fs.size();
+    int[] ka = new int[np];
+    int[] ia = new int[np];
+    float[] fa = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+      ia[ip] = ip;
+      ka[ip] = ks.get(ip);
+      fa[ip] = fs.get(ip);
+    }
+    quickIndexSort(fa,ia);
+    int[][] mark = new int[n2][n1];
+    ArrayList<Integer> k1s = new ArrayList<Integer>();
+    ArrayList<Integer> k2s = new ArrayList<Integer>();
+    for (int ip=np-1; ip>=0; --ip) {
+      int ki = ka[ia[ip]];
+      int i1 = ki%n1;
+      int i2 = round(ki/n1);
+      int b1 = i1-d; b1=max(b1,0);
+      int b2 = i2-d; b2=max(b2,0);
+      int e1 = i1+d; e1=min(e1,n1-1);
+      int e2 = i2+d; e2=min(e2,n2-1);
+      boolean ok = true;
+      for (int k2=b2;k2<=e2;k2++) {
+      for (int k1=b1;k1<=e1;k1++) {
+        if(mark[k2][k1]==1) {
+          ok=false;
+          break;
+        }
+      }}
+      if(ok) {
+        k1s.add(i1);
+        k2s.add(i2);
+        mark[i2][i1] = 1;
+      }
+    }
+    int ns = k1s.size();
+    int[][] seeds = new int[2][ns];
+    for (int is=0; is<ns; ++is) {
+      seeds[0][is] = k1s.get(is); 
+      seeds[1][is] = k2s.get(is); 
+    }
+    return seeds;
+  }
+
+  public int[][] pickSeeds2(int d, float fm, float[][] ft, float[][] tt) {
+    int n2 = ft.length;
+    int n1 = ft[0].length;
+    ArrayList<Float> fs = new ArrayList<Float>();
+    ArrayList<Integer> ks = new ArrayList<Integer>();
+    for (int i2=0;i2<n2;i2+=1) {
+    for (int i1=0;i1<n1;i1+=1) {
+      float fti = ft[i2][i1];
+      float tti = tt[i2][i1];
+      if(fti>fm && tti>=45f && tti<=135f) {
+        fs.add(fti);
+        ks.add(n1*i2+i1);
+      }
+    }}
+    int np = fs.size();
+    int[] ka = new int[np];
+    int[] ia = new int[np];
+    float[] fa = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+      ia[ip] = ip;
+      ka[ip] = ks.get(ip);
+      fa[ip] = fs.get(ip);
+    }
+    quickIndexSort(fa,ia);
+    int[][] mark = new int[n2][n1];
+    ArrayList<Integer> k1s = new ArrayList<Integer>();
+    ArrayList<Integer> k2s = new ArrayList<Integer>();
+    for (int ip=np-1; ip>=0; --ip) {
+      int ki = ka[ia[ip]];
+      int i1 = ki%n1;
+      int i2 = round(ki/n1);
+      int b1 = i1-d; b1=max(b1,0);
+      int b2 = i2-d; b2=max(b2,0);
+      int e1 = i1+d; e1=min(e1,n1-1);
+      int e2 = i2+d; e2=min(e2,n2-1);
+      boolean ok = true;
+      for (int k2=b2;k2<=e2;k2++) {
+      for (int k1=b1;k1<=e1;k1++) {
+        if(mark[k2][k1]==1) {
+          ok=false;
+          break;
+        }
+      }}
+      if(ok) {
+        k1s.add(i1);
+        k2s.add(i2);
+        mark[i2][i1] = 1;
+      }
+    }
+    int ns = k1s.size();
+    int[][] seeds = new int[2][ns];
+    for (int is=0; is<ns; ++is) {
+      seeds[0][is] = k1s.get(is); 
+      seeds[1][is] = k2s.get(is); 
+    }
+    return seeds;
+  }
+
 
   public int[][] pickSeeds(int d, float fm, float[][] ft) {
     int n2 = ft.length;

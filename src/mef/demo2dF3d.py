@@ -46,8 +46,8 @@ pngDir = None
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goMolet()
-  goScanC()
-  #goScan()
+  #goScanC()
+  goScan()
   #goThin()
   #goFaultCurve()
   #goFaultThrow()
