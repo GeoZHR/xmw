@@ -26,7 +26,7 @@ fttfile = "ftt" # fault dip thinned
 
 pngDir = getPngDir()
 pngDir = None
-plotOnly = True
+plotOnly = False
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minTheta,maxTheta = 65,80

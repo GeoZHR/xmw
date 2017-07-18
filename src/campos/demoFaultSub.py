@@ -80,7 +80,7 @@ def main(args):
   #goScan()
   #goTest()
   #goFaultScan()
-  #goThin()
+  goThin()
   #goSkin()
   #goSkinTv()
   #goSmooth()
@@ -107,7 +107,7 @@ def main(args):
   #goSkinDisplay()
   #goSampleClean()
   #goPad()
-  goSlice()
+  #goSlice()
 def goSlice():
   gx = readImage(gxfile)
   gs = copy(300,n2,n3,0,0,0,gx)

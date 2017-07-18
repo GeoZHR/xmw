@@ -95,18 +95,21 @@ def goFaultOrientScan():
 def goPick():
   gx = readImage3D(gxfile)
   fe = readImage3D(fefile)
-  fp = readImage3D(fpfile)
-  ft = readImage3D(ftfile)
-  osv = OptimalSurfaceVoter(-10,10,30,30)
-  osv.setStrainMax(0.2,0.2)
-  osv.setShiftSmoothing(2,2)
-  ft,pt,tt=osv.thin([fe,fp,ft])
-  fv = osv.applyVoting(4,0.3,ft,pt,tt)
-  fv = sub(fv,min(fv))
-  fv = mul(fv,1/max(fv))
-  writeImage(fvfile,fv)
-  fv = readImage3D(fvfile)
-  fv = pow(fv,0.4)
+  if not plotOnly:
+    fp = readImage3D(fpfile)
+    ft = readImage3D(ftfile)
+    osv = OptimalSurfaceVoterP(-10,10,30,20)
+    osv.setStrainMax(0.2,0.2)
+    #osv.setErrorSmoothing(2)
+    osv.setShiftSmoothing(2,2)
+    ft,pt,tt=osv.thin([fe,fp,ft])
+    fv = osv.applyVoting(4,0.3,ft,pt,tt)
+    fv = sub(fv,min(fv))
+    fv = mul(fv,1/max(fv))
+    writeImage(fvfile,fv)
+  else:
+    fv = readImage3D(fvfile)
+  fv = sub(1,pow(sub(1,fv),8))
   plot3(gx,fe,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="Ray tracing",png="fl")
   plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
