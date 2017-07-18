@@ -26,7 +26,7 @@ fttfile = "ftt" # fault dip thinned
 
 pngDir = getPngDir()
 pngDir = None
-plotOnly = False
+plotOnly = True
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minTheta,maxTheta = 65,80
@@ -211,7 +211,8 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
+  sf = SimpleFrame(AxesOrientation.XRIGHT_YIN_ZDOWN)
+  #sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
     ipg = sf.addImagePanels(s1,s2,s3,f)
@@ -273,23 +274,27 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
     sg.setStates(ss)
     size = 2.0
     sf.world.addChild(sg)
-  ipg.setSlices(106,80,207)
-  ipg.setSlices(56,25,436)
-  #ipg.setSlices(115,25,167)
+  ipg.setSlices(150,5,56)
+  #ipg.setSlices(85,5,43)
+  #ipg.setSlices(85,5,102)
+  #ipg.setSlices(n1,0,n3) # use only for subset plots
+  ipg.setSlices(n1,418,20)
   if cbar:
-    sf.setSize(987,720)
+    sf.setSize(1037,700)
   else:
-    sf.setSize(850,720)
+    sf.setSize(900,700)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.3*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  #zscale = 1.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.4)
+  ov.setScale(1.6)
+  #ov.setScale(2.5)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.20,0.12))
-  ov.setAzimuthAndElevation(-56.0,35.0)
+  ov.setTranslate(Vector3(0.06,0.05,-0.08))
+  ov.setAzimuthAndElevation(30.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
