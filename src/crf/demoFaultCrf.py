@@ -26,7 +26,6 @@ fptfile = "fpt" # fault likelihood thinned
 fttfile = "ftt" # fault dip thinned
 
 
-pngDir = getPngDir()
 pngDir = None
 plotOnly = False
 # These parameters control the scan over fault strikes and dips.
