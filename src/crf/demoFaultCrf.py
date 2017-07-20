@@ -36,17 +36,13 @@ sigmaPhi,sigmaTheta=4,8
 
 
 def main(args):
-  #goPlanarX()
+  goPlanarX()
   #goFaultOrientScan()
   #goSurfaceVoting()
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  writeImage(gxfile,gx)
-  plot3(gx,cmin=-3,cmax=3)
 def goPlanarX():
   gx = readImage(gxfile)
   if not plotOnly:
-    lof = LocalOrientFilter(12,3)
+    lof = LocalOrientFilter(16,4)
     et3 = lof.applyForTensors(gx)
     et3.setEigenvalues(1.0,0.01,0.5)
     fer = FaultEnhancer(sigmaPhi,sigmaTheta)
