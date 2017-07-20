@@ -122,7 +122,7 @@ def gain(x):
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(100.0)
   ref.apply1(g,g)
-  y = zerofloat(n1,n2)
+  y = zerofloat(n1,n2,n3)
   div(x,sqrt(g),y)
   return y
 def normalize(e):
