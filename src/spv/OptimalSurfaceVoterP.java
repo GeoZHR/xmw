@@ -27,11 +27,12 @@ public class OptimalSurfaceVoterP {
    * @param shiftMin lower bound on shift u.
    * @param shiftMax upper bound on shift u.
    */
-  public OptimalSurfaceVoterP(int shiftMin, int shiftMax, int rv, int rw) {
+  public OptimalSurfaceVoterP(int ru, int rv, int rw) {
+    _ru = ru;
     _rv = rv;
     _rw = rw;
-    _lmin = shiftMin;
-    _lmax = shiftMax;
+    _lmin = -ru;
+    _lmax =  ru;
     _nl = 1+_lmax-_lmin;
     updateShiftRanges();
   }
@@ -81,7 +82,6 @@ public class OptimalSurfaceVoterP {
     final FaultCell[] seeds = pickSeeds(d,fm,ft,pt,tt);
     final int ns = seeds.length;
     final int nu = _nl;
-    final int ru = -_lmin;
     final int nv = _rv*2+1;
     final int nw = _rw*2+1;
     final int[] ct = new int[1];
@@ -89,21 +89,11 @@ public class OptimalSurfaceVoterP {
     final float[][][] fe = new float[n3][n2][n1];
     Stopwatch sw = new Stopwatch();
     sw.start();
-    final Parallel.Unsafe<float[][][]> fsu = 
-      new Parallel.Unsafe<float[][][]>();
-    final Parallel.Unsafe<float[][][]> feu = 
-      new Parallel.Unsafe<float[][][]>();
     Parallel.loop(ns,new Parallel.LoopInt() {
     public void compute(int is) {
-      float[][][] fst = fsu.get();
-      if(fst==null) fsu.set(fst=new float[n3][n2][n1]);
-      fst = fs;
-      float[][][] fet = feu.get();
-      if(fet==null) feu.set(fet=new float[n3][n2][n1]);
-      fet = fe;
-      float[][] dws = new float[3][nw];
-      float[][] dvs = new float[3][nv];
-      float[][] dus = new float[3][nu];
+      float[][] rws = new float[3][nw];
+      float[][] rvs = new float[3][nv];
+      float[][] rus = new float[3][nu];
       ct[0] += 1;
       if(ct[0]%1000==0)
         System.out.println("done: "+ct[0]+"/"+ns);
@@ -111,42 +101,36 @@ public class OptimalSurfaceVoterP {
       int i1 = cell.getI1();
       int i2 = cell.getI2();
       int i3 = cell.getI3();
-      float tti = cell.getFt();
-      float pti = cell.getFp();
-      float[] u = faultNormalVectorFromStrikeAndDip(pti,tti);
-      float[] v = faultDipVectorFromStrikeAndDip(pti,tti);
-      float[] w = faultStrikeVectorFromStrikeAndDip(pti,tti);
-      for (int iw=-_rw; iw<=_rw; ++iw) {
-        int kw = iw+_rw;
-        dws[0][kw] = iw*w[0];
-        dws[1][kw] = iw*w[1];
-        dws[2][kw] = iw*w[2];
-      }
-      for (int iv=-_rv; iv<=_rv; ++iv) {
-        int kv = iv+_rv;
-        dvs[0][kv] = iv*v[0];
-        dvs[1][kv] = iv*v[1];
-        dvs[2][kv] = iv*v[2];
-      }
-      for (int iu=-ru; iu<=ru; ++iu) {
-        int ku = iu+ru;
-        dus[0][ku] = iu*u[0];
-        dus[1][ku] = iu*u[1];
-        dus[2][ku] = iu*u[2];
-      }
-      surfaceVoting(i1,i2,i3,u,dws,dvs,dus,fst,fet);
+      float[] u = cell.getFaultNormal();
+      float[] v = cell.getFaultDipVector();
+      float[] w = cell.getFaultStrikeVector();
+      updateVectorMap(_ru,u[0],u[1],u[2],rus[0],rus[1],rus[2]);
+      updateVectorMap(_rv,v[0],v[1],v[2],rvs[0],rvs[1],rvs[2]);
+      updateVectorMap(_rw,w[0],w[1],w[2],rws[0],rws[1],rws[2]);
+      surfaceVoting(i1,i2,i3,u,rus,rvs,rws,fs,fe);
     }});
     double timeUsed = sw.time();
     System.out.println("time used: "+timeUsed+" seconds");
     return fe;
   }
 
+  private void updateVectorMap(
+    int r, float u1, float u2, float u3, 
+    float[] ru1, float[] ru2, float[] ru3) {
+    for (int i=-r; i<=r; ++i) {
+      int k = i+r;
+      ru1[k] = i*u1;
+      ru2[k] = i*u2;
+      ru3[k] = i*u3;
+    }
+  }
+
   public FaultCell[] pickSeeds(
     int d, float fm, float[][][] ft, float[][][] pt, float[][][] tt) {
-    int n3 = ft.length;
-    int n2 = ft[0].length;
-    int n1 = ft[0][0].length;
-    ArrayList<FaultCell> cs = new ArrayList<FaultCell>();
+    final int n3 = ft.length;
+    final int n2 = ft[0].length;
+    final int n1 = ft[0][0].length;
+    final ArrayList<FaultCell> cs = new ArrayList<FaultCell>();
     for (int i3=0; i3<n3; i3++) {
     for (int i2=0; i2<n2; i2++) {
     for (int i1=0; i1<n1; i1++) {
@@ -198,37 +182,18 @@ public class OptimalSurfaceVoterP {
 
   public void surfaceVoting(
     int c1, int c2, int c3, float[] u, 
-    float[][] dws, float[][] dvs, float[][] dus, 
+    float[][] dus, float[][] dvs, float[][] dws, 
     float[][][] fx, float[][][] fe) {
-    int nu = _nl;
-    int ru = -_lmin;
+    int nu = dus[0].length;
     int nv = dvs[0].length;
     int nw = dws[0].length;
     int n3 = fx.length;
     int n2 = fx[0].length;
     int n1 = fx[0][0].length;
+    // get samples in uvw box
     float[][][] fs = fillfloat(1f,nu,nv,nw);
-    for (int kw=0; kw<nw; kw++) {
-      float dw1 = dws[0][kw]+c1;
-      float dw2 = dws[1][kw]+c2;
-      float dw3 = dws[2][kw]+c3;
-      for (int kv=0; kv<nv; kv++) {
-        float dv1 = dw1+dvs[0][kv];
-        float dv2 = dw2+dvs[1][kv];
-        float dv3 = dw3+dvs[2][kv];
-        int um = _lmins[kw][kv];
-        int up = _lmaxs[kw][kv];
-        for (int ku=um+ru; ku<=up+ru; ku++) {
-          int i1 = round(dv1+dus[0][ku]);
-          int i2 = round(dv2+dus[1][ku]);
-          int i3 = round(dv3+dus[2][ku]);
-          i1 = min(max(i1,0),n1-1);
-          i2 = min(max(i2,0),n2-1);
-          i3 = min(max(i3,0),n3-1);
-          fs[kw][kv][ku] = 1-fx[i3][i2][i1];
-        }
-      }
-    }
+    samplesInUvwBox(c1,c2,c3,dus,dvs,dws,fs,fx);
+    // find the optimal fault surface in the uvw box
     float[][] sfu = findSurface(fs);
     float fa = 0.0f;
     ArrayList<Integer> k1s = new ArrayList<Integer>();
@@ -270,6 +235,38 @@ public class OptimalSurfaceVoterP {
       } else {
         fe[i3][i2-1][i1] += fa;
         fe[i3][i2+1][i1] += fa;
+      }
+    }
+  }
+
+  private void samplesInUvwBox(
+    int c1, int c2, int c3,
+    float[][] dus, float[][] dvs, float[][] dws, 
+    float[][][] fb, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    int nw = fb.length;
+    int nv = fb[0].length;
+    for (int kw=0; kw<nw; kw++) {
+      float dw1 = dws[0][kw]+c1;
+      float dw2 = dws[1][kw]+c2;
+      float dw3 = dws[2][kw]+c3;
+      for (int kv=0; kv<nv; kv++) {
+        float dv1 = dw1+dvs[0][kv];
+        float dv2 = dw2+dvs[1][kv];
+        float dv3 = dw3+dvs[2][kv];
+        int um = _lmins[kw][kv]+_ru;
+        int up = _lmaxs[kw][kv]+_ru;
+        for (int ku=um; ku<=up; ku++) {
+          int i1 = round(dv1+dus[0][ku]);
+          int i2 = round(dv2+dus[1][ku]);
+          int i3 = round(dv3+dus[2][ku]);
+          i1 = min(max(i1,0),n1-1);
+          i2 = min(max(i2,0),n2-1);
+          i3 = min(max(i3,0),n3-1);
+          fb[kw][kv][ku] = 1-fx[i3][i2][i1];
+        }
       }
     }
   }
@@ -382,68 +379,7 @@ public class OptimalSurfaceVoterP {
     return flptn;
   }
 
-
-    /**
-   * Returns fault dip vector for specified strike and dip angles.
-   * @param phi fault strike angle, in degrees.
-   * @param theta fault dip angle, in degrees.
-   * @return array {u1,u2,u3} of components for dip vector.
-   */
-  public static float[] faultDipVectorFromStrikeAndDip(
-    double phi, double theta) {
-    double p = toRadians(phi);
-    double t = toRadians(theta);
-    double cp = cos(p);
-    double sp = sin(p);
-    double ct = cos(t);
-    double st = sin(t);
-    float u1 = (float)( st);
-    float u2 = (float)( ct*cp);
-    float u3 = (float)(-ct*sp);
-    return new float[]{u1,u2,u3};
-  }
-
   /**
-   * Returns fault strike vector for specified strike and dip angles.
-   * The dip angle theta is not used, but is provided for consistency.
-   * @param phi fault strike angle, in degrees.
-   * @param theta fault dip angle, in degrees.
-   * @return array {v1,v2,v3} of components for strike vector.
-   */
-  public static float[] faultStrikeVectorFromStrikeAndDip(
-      double phi, double theta) {
-    double p = toRadians(phi);
-    double cp = cos(p);
-    double sp = sin(p);
-    float v1 = 0.0f;
-    float v2 = (float)sp;
-    float v3 = (float)cp;
-    return new float[]{v1,v2,v3};
-  }
-
-  /**
-   * Returns fault normal vector for specified strike and dip angles.
-   * @param phi fault strike angle, in degrees.
-   * @param theta fault dip angle, in degrees.
-   * @return array {w1,w2,w3} of components for normal vector.
-   */
-  public static float[] faultNormalVectorFromStrikeAndDip(
-      double phi, double theta) {
-    double p = toRadians(phi);
-    double t = toRadians(theta);
-    double cp = cos(p);
-    double sp = sin(p);
-    double ct = cos(t);
-    double st = sin(t);
-    float w1 = (float)(-ct);
-    float w2 = (float)( st*cp);
-    float w3 = (float)(-st*sp);
-    return new float[]{w1,w2,w3};
-  }
-
-
-
-    /**
    * Smooths the specified shifts. Smoothing can be performed 
    * in place; input and output arrays can be the same array.
    * @param u input array of shifts to be smoothed.
@@ -706,7 +642,7 @@ public class OptimalSurfaceVoterP {
   private int _nl; // number of lags
   private int _lmin,_lmax; // min,max lags
   private int[][] _lmins,_lmaxs;
-  private int _rv,_rw;
+  private int _ru,_rv,_rw;
   private int _esmooth = 1; // number of nonlinear smoothings of attributes
   private int _bstrain1 = 4; // inverse of bound on slope in 1st dimension
   private int _bstrain2 = 4; // inverse of bound on slope in 2nd dimension

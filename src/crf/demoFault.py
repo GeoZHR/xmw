@@ -16,6 +16,7 @@ p2file = "p2"
 p3file = "p3"
 gxpfile  = "gxp" # input image (maybe after bilateral filtering)
 epfile  = "ep" # fault likelihood
+epxfile  = "epx" # fault likelihood
 eppfile  = "epp" # fault likelihood
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)

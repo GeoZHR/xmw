@@ -46,7 +46,7 @@ def goPick():
     osv = OptimalSurfaceVoterP(-10,10,30,20)
     osv.setStrainMax(0.2,0.2)
     #osv.setErrorSmoothing(2)
-    osv.setShiftSmoothing(2,2)
+    osv.setSurfaceSmoothing(2,2)
     ft,pt,tt=osv.thin([fe,fp,ft])
     fv = osv.applyVoting(4,0.3,ft,pt,tt)
     fv = sub(fv,min(fv))

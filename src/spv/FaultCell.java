@@ -57,6 +57,74 @@ public class FaultCell {
     return _ft;
   }
 
+  public float[] getFaultNormal() {
+    return faultNormalVectorFromStrikeAndDip(_fp,_ft);
+  }
+  public float[] getFaultDipVector() {
+    return faultDipVectorFromStrikeAndDip(_fp,_ft);
+  }
+  public float[] getFaultStrikeVector() {
+    return faultStrikeVectorFromStrikeAndDip(_fp,_ft);
+  }
+
+
+      /**
+   * Returns fault dip vector for specified strike and dip angles.
+   * @param phi fault strike angle, in degrees.
+   * @param theta fault dip angle, in degrees.
+   * @return array {u1,u2,u3} of components for dip vector.
+   */
+  public static float[] faultDipVectorFromStrikeAndDip(
+    double phi, double theta) {
+    double p = toRadians(phi);
+    double t = toRadians(theta);
+    double cp = cos(p);
+    double sp = sin(p);
+    double ct = cos(t);
+    double st = sin(t);
+    float u1 = (float)( st);
+    float u2 = (float)( ct*cp);
+    float u3 = (float)(-ct*sp);
+    return new float[]{u1,u2,u3};
+  }
+
+  /**
+   * Returns fault strike vector for specified strike and dip angles.
+   * The dip angle theta is not used, but is provided for consistency.
+   * @param phi fault strike angle, in degrees.
+   * @param theta fault dip angle, in degrees.
+   * @return array {v1,v2,v3} of components for strike vector.
+   */
+  public static float[] faultStrikeVectorFromStrikeAndDip(
+      double phi, double theta) {
+    double p = toRadians(phi);
+    double cp = cos(p);
+    double sp = sin(p);
+    float v1 = 0.0f;
+    float v2 = (float)sp;
+    float v3 = (float)cp;
+    return new float[]{v1,v2,v3};
+  }
+
+  /**
+   * Returns fault normal vector for specified strike and dip angles.
+   * @param phi fault strike angle, in degrees.
+   * @param theta fault dip angle, in degrees.
+   * @return array {w1,w2,w3} of components for normal vector.
+   */
+  public static float[] faultNormalVectorFromStrikeAndDip(
+      double phi, double theta) {
+    double p = toRadians(phi);
+    double t = toRadians(theta);
+    double cp = cos(p);
+    double sp = sin(p);
+    double ct = cos(t);
+    double st = sin(t);
+    float w1 = (float)(-ct);
+    float w2 = (float)( st*cp);
+    float w3 = (float)(-st*sp);
+    return new float[]{w1,w2,w3};
+  }
 
   /////////////////////////////////////////////////////////////////////////
   // package
