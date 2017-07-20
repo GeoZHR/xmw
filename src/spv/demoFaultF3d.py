@@ -13,7 +13,7 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
 d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 #############################################################################
-gxfile = "gx" # input semblance image
+gxfile = "xs" # input semblance image
 epfile = "ep"  # planarity
 effile = "ef"  # 1-planarity
 fefile = "fe"  # 1-planarity
@@ -31,57 +31,27 @@ plotOnly = False
 # See the class FaultScanner for more information.
 minTheta,maxTheta = 65,80
 minPhi,maxPhi = 0,360
-sigmaPhi,sigmaTheta=4,8
+sigmaPhi,sigmaTheta=3,6
 
 def main(args):
   #goPlanar()
   #goFaultOrientScan()
-  goPick()
-def goPick():
-  gx = readImage3D(gxfile)
-  fe = readImage3D(fefile)
-  if not plotOnly:
-    fp = readImage3D(fpfile)
-    ft = readImage3D(ftfile)
-    osv = OptimalSurfaceVoterP(-10,10,20,30)
-    osv.setStrainMax(0.2,0.2)
-    #osv.setErrorSmoothing(2)
-    osv.setShiftSmoothing(2,2)
-    ft,pt,tt=osv.thin([fe,fp,ft])
-    fv = osv.applyVoting(4,0.3,ft,pt,tt)
-    fv = sub(fv,min(fv))
-    fv = mul(fv,1/max(fv))
-    #writeImage(fvfile,fv)
-  else:
-    fv = readImage3D(fvfile)
-  fv = sub(1,pow(sub(1,fv),8))
-  plot3(gx,fe,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
-  plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
-  '''
-  plot3(gx,ft,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
-  '''
-
+  goSurfaceVoting()
 def goPlanar():
   gx = readImage3D(gxfile)
   if not plotOnly:
-    lof = LocalOrientFilter(4,1,1)
+    lof = LocalOrientFilter(2,1,1)
     u1 = zerofloat(n1,n2,n3)
     u2 = zerofloat(n1,n2,n3)
     u3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
     lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-    fp = pow(ep,2)
-    fp = sub(fp,min(fp))
-    fp = div(fp,max(fp))
-    fp = sub(1,fp)
     writeImage(epfile,ep)
-    writeImage(fpfile,fp)
   else:
-    fp = readImage3D(fpfile)
-  plot3(gx,fp,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
+    ep = readImage3D(epfile)
+  plot3(gx)
+  ep = pow(ep,8)
+  plot3(gx,sub(1,ep),cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="1-planarity",png="fl")
 def goFaultOrientScan():
   gx = readImage3D(gxfile)
@@ -97,12 +67,47 @@ def goFaultOrientScan():
     fe = readImage3D(fefile)
   print min(fe) 
   print max(fe) 
-  plot3(gx,ep,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
-      clab="1-planarity",png="fl")
+  ep = sub(1,pow(ep,8))
+  plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="Planarity",png="ep")
   plot3(gx,fe,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="Ray tracing",png="fl")
   plot3(gx,fp,cmin=1,cmax=360,cmap=jetFill(1.0),
       clab="Fault strike (degrees)",png="ph")
+
+def goSurfaceVoting():
+  gx = readImage3D(gxfile)
+  gx = gain(gx)
+  fe = readImage3D(fefile)
+  ep = readImage3D(epfile)
+  if not plotOnly:
+    fp = readImage3D(fpfile)
+    ft = readImage3D(ftfile)
+    osv = OptimalSurfaceVoter(-10,10,20,30)
+    osv.setStrainMax(0.25,0.25)
+    #osv.setSurfaceSmoothing(2,2)
+    osv.setShiftSmoothing(2,2)
+    ft,pt,tt=osv.thin([fe,fp,ft])
+    fv = osv.applyVoting(4,0.3,ft,pt,tt)
+    fv = sub(fv,min(fv))
+    fv = mul(fv,1/max(fv))
+    writeImage(fvfile,fv)
+  else:
+    fv = readImage3D(fvfile)
+  fv = sub(1,pow(sub(1,fv),8))
+  ep = sub(1,pow(ep,8))
+  plot3(gx)
+  plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="Planarity",png="ep")
+  plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="Surface voting",png="fv")
+  '''
+  plot3(gx,fvp,cmin=1,cmax=180,cmap=jetFill(1.0),
+      clab="Fault strike (degrees)",png="ph")
+
+  plot3(gx,ft,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="Ray tracing",png="fl")
+  '''
 
 def goRayTracing2():
   gx = readImage3D(gxfile)
@@ -139,9 +144,9 @@ def goRayTracing21():
       clab="Ray tracing",png="fl")
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(100.0)
+  ref = RecursiveExponentialFilter(10.0)
   ref.apply1(g,g)
-  y = zerofloat(n1,n2)
+  y = zerofloat(n1,n2,n3)
   div(x,sqrt(g),y)
   return y
 
@@ -278,7 +283,7 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
     size = 2.0
     sf.world.addChild(sg)
   ipg.setSlices(106,80,207)
-  ipg.setSlices(56,25,436)
+  ipg.setSlices(93,25,32)
   #ipg.setSlices(115,25,167)
   if cbar:
     sf.setSize(987,720)
@@ -290,10 +295,10 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   ov = sf.getOrbitView()
   zscale = 0.3*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.4)
+  ov.setScale(1.55)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(0.0,0.20,0.12))
-  ov.setAzimuthAndElevation(-56.0,35.0)
+  ov.setTranslate(Vector3(0.0,0.06,-0.05))
+  ov.setAzimuthAndElevation(45.0,36.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

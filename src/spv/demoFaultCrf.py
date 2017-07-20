@@ -98,9 +98,10 @@ def goPick():
   if not plotOnly:
     fp = readImage3D(fpfile)
     ft = readImage3D(ftfile)
-    osv = OptimalSurfaceVoterP(-10,10,30,20)
+    osv = OptimalSurfaceVoter(-10,10,30,20)
     osv.setStrainMax(0.2,0.2)
     #osv.setErrorSmoothing(2)
+    #osv.setSurfaceSmoothing(2,2)
     osv.setShiftSmoothing(2,2)
     ft,pt,tt=osv.thin([fe,fp,ft])
     fv = osv.applyVoting(4,0.3,ft,pt,tt)

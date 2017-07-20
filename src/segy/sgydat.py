@@ -12,15 +12,14 @@ global n1,n2,n3
 #############################################################################
 def main(args):
   #goAustralia()
-  #goF3d()
+  goF3d()
   #goManba()
   #goAustralia()
-  #goF3d()
   #goHongliu()
   #goF3dUnc()
   #goJake()
   #goNathan()
-  goLulia()
+  #goLulia()
   #goCranfield2007()
   #goCranfield2010()
   #goSeamDepth()
@@ -1968,8 +1967,9 @@ def goF3d():
   '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
-    writeImageX("fx172.dat",x[172])
-    show3d(x,clip=max(x)/10)
+    xs = copy(120,400,420,342,0,0,x) #for spv test
+    writeImageX("xs",xs)
+    show3d(xs,clip=max(xs)/10)
 
 def writeImageX(basename,image):
   """ 

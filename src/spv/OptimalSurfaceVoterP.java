@@ -34,8 +34,6 @@ public class OptimalSurfaceVoterP {
     _lmax = shiftMax;
     _nl = 1+_lmax-_lmin;
     updateShiftRanges();
-    _si = new SincInterpolator();
-    _si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
   }
 
     /**
@@ -53,87 +51,26 @@ public class OptimalSurfaceVoterP {
   }
 
   /**
-   * Sets the number of nonlinear smoothings of alignment errors.
-   * In dynamic warping, alignment errors are smoothed the specified 
-   * number of times, along all dimensions (in order 1, 2, ...), 
-   * before estimating shifts by accumulating and backtracking along 
-   * only the 1st dimension. 
-   * <p> 
-   * The default number of smoothings is zero, which is best for 1D
-   * sequences. For 2D and 3D images, two smoothings are recommended.
+   * Sets the number of nonlinear smoothings of fault attributes.
+   * The default number of smoothings is one.
    * @param esmooth number of nonlinear smoothings.
    */
-  public void setErrorSmoothing(int esmooth) {
+  public void setAttributeSmoothing(int esmooth) {
     _esmooth = esmooth;
   }
 
     /**
-   * Sets extents of smoothing filters used to smooth shifts.
+   * Sets extents of smoothing filters used to smooth an extracted fault surface.
    * Half-widths of smoothing filters are inversely proportional to
    * strain limits, and are scaled by the specified factors. Default 
    * factors are zero, for no smoothing.
    * @param usmooth1 extent of smoothing filter in 1st dimension.
    * @param usmooth2 extent of smoothing filter in 2nd dimension.
    */
-  public void setShiftSmoothing(double usmooth1, double usmooth2) {
+  public void setSurfaceSmoothing(double usmooth1, double usmooth2) {
     _usmooth1 = usmooth1;
     _usmooth2 = usmooth2;
     updateSmoothingFilters();
-  }
-
-  public FaultCell[] pickSeeds(
-    int d, float fm, float[][][] ft, float[][][] pt, float[][][] tt) {
-    int n3 = ft.length;
-    int n2 = ft[0].length;
-    int n1 = ft[0][0].length;
-    ArrayList<FaultCell> cs = new ArrayList<FaultCell>();
-    for (int i3=0; i3<n3; i3++) {
-    for (int i2=0; i2<n2; i2++) {
-    for (int i1=0; i1<n1; i1++) {
-      float fti = ft[i3][i2][i1];
-      float pti = pt[i3][i2][i1];
-      float tti = tt[i3][i2][i1];
-      if(fti>fm) {
-        FaultCell cell = new FaultCell(i1,i2,i3,fti,pti,tti);
-        cs.add(cell);
-      }
-    }}}
-    int np = cs.size();
-    int[] is = new int[np];
-    float[] fs = new float[np];
-    for (int ip=0; ip<np; ++ip) {
-      is[ip] = ip;
-      fs[ip] = cs.get(ip).getFl();
-    }
-    quickIndexSort(fs,is);
-    int[][][] mark = new int[n3][n2][n1];
-    ArrayList<FaultCell> seeds = new ArrayList<FaultCell>();
-    for (int ip=np-1; ip>=0; --ip) {
-      FaultCell cell = cs.get(is[ip]);
-      int i1 = cell.getI1();
-      int i2 = cell.getI2();
-      int i3 = cell.getI3();
-      int b1 = i1-d; b1=max(b1,0);
-      int b2 = i2-d; b2=max(b2,0);
-      int b3 = i3-d; b3=max(b3,0);
-      int e1 = i1+d; e1=min(e1,n1-1);
-      int e2 = i2+d; e2=min(e2,n2-1);
-      int e3 = i3+d; e3=min(e3,n3-1);
-      boolean ok = true;
-      for (int k3=b3;k3<=e3;k3++) {
-      for (int k2=b2;k2<=e2;k2++) {
-      for (int k1=b1;k1<=e1;k1++) {
-        if(mark[k3][k2][k1]==1) {
-          ok=false;
-          break;
-        }
-      }}}
-      if(ok) {
-        seeds.add(cell);
-        mark[i3][i2][i1] = 1;
-      }
-    }
-    return seeds.toArray(new FaultCell[0]);
   }
 
   public float[][][] applyVoting(int d, float fm,
@@ -197,14 +134,69 @@ public class OptimalSurfaceVoterP {
         dus[1][ku] = iu*u[1];
         dus[2][ku] = iu*u[2];
       }
-      findSurface(i1,i2,i3,u,dws,dvs,dus,fst,fet);
+      surfaceVoting(i1,i2,i3,u,dws,dvs,dus,fst,fet);
     }});
     double timeUsed = sw.time();
     System.out.println("time used: "+timeUsed+" seconds");
     return fe;
   }
 
-  public void findSurface(
+  public FaultCell[] pickSeeds(
+    int d, float fm, float[][][] ft, float[][][] pt, float[][][] tt) {
+    int n3 = ft.length;
+    int n2 = ft[0].length;
+    int n1 = ft[0][0].length;
+    ArrayList<FaultCell> cs = new ArrayList<FaultCell>();
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+    for (int i1=0; i1<n1; i1++) {
+      float fti = ft[i3][i2][i1];
+      float pti = pt[i3][i2][i1];
+      float tti = tt[i3][i2][i1];
+      if(fti>fm) {
+        FaultCell cell = new FaultCell(i1,i2,i3,fti,pti,tti);
+        cs.add(cell);
+      }
+    }}}
+    int np = cs.size();
+    int[] is = new int[np];
+    float[] fs = new float[np];
+    for (int ip=0; ip<np; ++ip) {
+      is[ip] = ip;
+      fs[ip] = cs.get(ip).getFl();
+    }
+    quickIndexSort(fs,is);
+    int[][][] mark = new int[n3][n2][n1];
+    ArrayList<FaultCell> seeds = new ArrayList<FaultCell>();
+    for (int ip=np-1; ip>=0; --ip) {
+      FaultCell cell = cs.get(is[ip]);
+      int i1 = cell.getI1();
+      int i2 = cell.getI2();
+      int i3 = cell.getI3();
+      int b1 = i1-d; b1=max(b1,0);
+      int b2 = i2-d; b2=max(b2,0);
+      int b3 = i3-d; b3=max(b3,0);
+      int e1 = i1+d; e1=min(e1,n1-1);
+      int e2 = i2+d; e2=min(e2,n2-1);
+      int e3 = i3+d; e3=min(e3,n3-1);
+      boolean ok = true;
+      for (int k3=b3;k3<=e3;k3++) {
+      for (int k2=b2;k2<=e2;k2++) {
+      for (int k1=b1;k1<=e1;k1++) {
+        if(mark[k3][k2][k1]==1) {
+          ok=false;
+          break;
+        }
+      }}}
+      if(ok) {
+        seeds.add(cell);
+        mark[i3][i2][i1] = 1;
+      }
+    }
+    return seeds.toArray(new FaultCell[0]);
+  }
+
+  public void surfaceVoting(
     int c1, int c2, int c3, float[] u, 
     float[][] dws, float[][] dvs, float[][] dus, 
     float[][][] fx, float[][][] fe) {
@@ -233,12 +225,12 @@ public class OptimalSurfaceVoterP {
           i1 = min(max(i1,0),n1-1);
           i2 = min(max(i2,0),n2-1);
           i3 = min(max(i3,0),n3-1);
-         fs[kw][kv][ku] = 1-fx[i3][i2][i1];
+          fs[kw][kv][ku] = 1-fx[i3][i2][i1];
         }
       }
     }
+    float[][] sfu = findSurface(fs);
     float fa = 0.0f;
-    float[][] sf = findSurface(fs);
     ArrayList<Integer> k1s = new ArrayList<Integer>();
     ArrayList<Integer> k2s = new ArrayList<Integer>();
     ArrayList<Integer> k3s = new ArrayList<Integer>();
@@ -247,12 +239,12 @@ public class OptimalSurfaceVoterP {
       float dw2 = dws[1][kw]+c2;
       float dw3 = dws[2][kw]+c3;
       for (int kv=0; kv<nv; ++kv) {
-        float iu = sf[kw][kv];
+        float iu = sfu[kw][kv];
         int i1 = round(iu*u[0]+dvs[0][kv]+dw1);
         int i2 = round(iu*u[1]+dvs[1][kv]+dw2);
         int i3 = round(iu*u[2]+dvs[2][kv]+dw3);
         boolean inbox = true;
-        if(i1<=0||i1>=n1-1) inbox = false;
+        if(i1< 0||i1>=n1  ) inbox = false;
         if(i2<=0||i2>=n2-1) inbox = false;
         if(i3<=0||i3>=n3-1) inbox = false;
         if(inbox) {
@@ -281,6 +273,56 @@ public class OptimalSurfaceVoterP {
       }
     }
   }
+
+  /**
+   * Returns angle in range [0,360] degrees.
+   * @param phi angle, in degrees.
+   * @return angle in range [0,360] degrees.
+   */
+  public static float range360(double phi) {
+    while (phi<0.0)
+      phi += 360.0;
+    while (phi>=360.0)
+      phi -= 360.0;
+    return (float)phi;
+  }
+
+    /**
+   * Returns angle in range [-180,180] degrees.
+   * @param phi angle.
+   * @return angle in range [-180,180] degrees.
+   */
+  public static float range180(double phi) {
+    while (phi<-180.0)
+      phi += 360.0;
+    while (phi>180.0)
+      phi -= 360.0;
+    return (float)phi;
+  }
+
+
+
+  /**
+   * Extract optimal fault surface from an input fault attribute image.
+   * @param fx input array for the fault attribute image.
+   */
+  public float[][] findSurface(float[][][] fx) {
+    final int n2 = fx.length;
+    final int n1 = fx[0].length;
+    final int nl = fx[0][0].length;
+    final float[][] u = new float[n2][n1];
+    final float[][] uf = u;
+    for (int is=0; is<_esmooth; ++is)
+      smoothFaultAttributes(fx,fx);
+    float[][] d = new float[n1][nl];
+    for (int i2=0; i2<n2; ++i2) {
+      accumulateForward(fx[i2],d);
+      backtrackReverse(d,fx[i2],uf[i2]);
+    }
+    smoothSurface(u,u);
+    return u;
+  }
+
 
   public static float[][][][] thin(float[][][][] flpt) {
     float[][][] f = flpt[0];
@@ -399,40 +441,7 @@ public class OptimalSurfaceVoterP {
     return new float[]{w1,w2,w3};
   }
 
-  /**
-   * Computes shifts for specified images.
-   * @param f input array for the image f.
-   * @param g input array for the image g.
-   * @param u output array of shifts u.
-   */
-  public float[][] findSurface(float[][][] fx) {
-    final int n2 = fx.length;
-    final int n1 = fx[0].length;
-    final int nl = fx[0][0].length;
-    final float[][] u = new float[n2][n1];
-    final float[][] uf = u;
-    for (int is=0; is<_esmooth; ++is)
-      smoothFaultAttributes(fx,fx);
-    float[][] d = new float[n1][nl];
-    for (int i2=0; i2<n2; ++i2) {
-      accumulateForward(fx[i2],d);
-      backtrackReverse(d,fx[i2],uf[i2]);
-    }
-    smoothShifts(u,u);
-    return u;
-  }
 
-  private float[][][] smooth(float[][][] ft) {
-    int n3 = ft.length;
-    int n2 = ft[0].length;
-    int n1 = ft[0][0].length;
-    float[][][] fs = new float[n3][n2][n1];
-    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
-    rgf.apply000(ft,fs);
-    fs = sub(fs,min(fs));
-    fs = mul(fs,1f/max(fs));
-    return fs;
-  }
 
     /**
    * Smooths the specified shifts. Smoothing can be performed 
@@ -440,7 +449,7 @@ public class OptimalSurfaceVoterP {
    * @param u input array of shifts to be smoothed.
    * @param us output array of smoothed shifts.
    */
-  public void smoothShifts(float[][] u, float[][] us) {
+  public void smoothSurface(float[][] u, float[][] us) {
     if (_ref1!=null) {
       _ref1.apply1(u,us);
     } else {
@@ -450,7 +459,6 @@ public class OptimalSurfaceVoterP {
       _ref2.apply2(us,us);
   }
 
-
     /**
    * Smooths (and normalizes) alignment errors.
    * Input and output arrays can be the same array.
@@ -458,8 +466,8 @@ public class OptimalSurfaceVoterP {
    * @param es output array[n2][n1][nl] of smoothed errors.
    */
   public void smoothFaultAttributes(float[][][] fx, float[][][] fs) {
-    smoothErrors1(_bstrain1,fx,fs);
-    smoothErrors2(_bstrain2,fs,fs);
+    smoothFaultAttributes1(_bstrain1,fx,fs);
+    smoothFaultAttributes2(_bstrain2,fs,fs);
   }
 
   /**
@@ -492,7 +500,17 @@ public class OptimalSurfaceVoterP {
     backtrack(-1,_bstrain1,_lmin,d,e,u);
   }
 
-    /**
+  private float[][][] smooth(float[][][] ft) {
+    int n3 = ft.length;
+    int n2 = ft[0].length;
+    int n1 = ft[0][0].length;
+    float[][][] fs = new float[n3][n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
+    rgf.apply000(ft,fs);
+    fs = sub(fs,min(fs));
+    return mul(fs,1f/max(fs));
+  }
+  /**
    * Finds shifts by backtracking in accumulated alignment errors.
    * Backtracking must be performed in the direction opposite to
    * that for which accumulation was performed.
@@ -519,8 +537,8 @@ public class OptimalSurfaceVoterP {
     float dl = d[ii][il];
     for (int jl=1; jl<nl; ++jl) {
       if (d[ii][jl]<dl) {
-        dl = d[ii][jl];
         il = jl;
+        dl = d[ii][jl];
       }
     }
     u[ii] = il+lmin;
@@ -558,29 +576,30 @@ public class OptimalSurfaceVoterP {
   }
 
   /**
-   * Smooths alignment errors in 1st dimension.
-   * Does not normalize errors after smoothing.
+   * Smooths fault attributes in 1st dimension.
    * @param b strain parameter in 1st dimension.
    * @param e input array of alignment errors to be smooothed.
    * @param es output array of smoothed alignment errors.
    */
-  private static void smoothErrors1(int b, float[][][] e, float[][][] es) {
+  private static void smoothFaultAttributes1(
+    int b, float[][][] e, float[][][] es) {
     final int n2 = e.length;
     final int bf = b;
     final float[][][] ef = e;
     final float[][][] esf = es;
     for (int i2=0; i2<n2; ++i2)
-      smoothErrors1(bf,ef[i2],esf[i2]);
+      smoothFaultAttributes1(bf,ef[i2],esf[i2]);
   }
 
     /**
-   * Smooths alignment errors in 1st dimension.
+   * Smooths fault attributes in 1st dimension.
    * Does not normalize errors after smoothing.
    * @param b strain parameter in 1st dimension.
    * @param e input array of alignment errors to be smooothed.
    * @param es output array of smoothed alignment errors.
    */
-  private static void smoothErrors1(int b, float[][] e, float[][] es) {
+  private static void smoothFaultAttributes1(
+    int b, float[][] e, float[][] es) {
     int nl = e[0].length;
     int n1 = e.length;
     float[][] ef = new float[n1][nl];
@@ -592,8 +611,36 @@ public class OptimalSurfaceVoterP {
         es[i1][il] = ef[i1][il]+er[i1][il]-e[i1][il];
   }
 
+ /**
+   * Smooths fault attributes in 2nd dimension.
+   * @param b strain parameter in 2nd dimension.
+   * @param e input array of alignment errors to be smooothed.
+   * @param es output array of smoothed alignment errors.
+   */
+  private static void smoothFaultAttributes2(
+    int b, float[][][] e, float[][][] es) {
+    int bf = b;
+    int n2 = e.length;
+    int n1 = e[0].length;
+    int nl = e[0][0].length;
+    float[][] e1  = new float[n2][nl];
+    float[][] es1 = new float[n2][nl];
+    float[][] ef1 = new float[n2][nl];
+    float[][] er1 = new float[n2][nl];
+    for (int i1=0; i1<n1; ++i1) {
+      for (int i2=0; i2<n2; ++i2) {
+         e1[i2] =  e[i2][i1];
+        es1[i2] = es[i2][i1];
+      }
+      accumulate( 1,bf,e1,ef1);
+      accumulate(-1,bf,e1,er1);
+      for (int i2=0; i2<n2; ++i2)
+      for (int il=0; il<nl; ++il)
+        es1[i2][il] = ef1[i2][il]+er1[i2][il]-e1[i2][il];
+    }
+  }
 
-    /**
+  /**
    * Non-linear accumulation of alignment errors.
    * @param dir accumulation direction, positive or negative.
    * @param b sample offset used to constrain changes in lag.
@@ -628,42 +675,6 @@ public class OptimalSurfaceVoterP {
     }
   }
 
- /**
-   * Smooths alignment errors in 2nd dimension.
-   * Does not normalize errors after smoothing.
-   * @param b strain parameter in 2nd dimension.
-   * @param e input array of alignment errors to be smooothed.
-   * @param es output array of smoothed alignment errors.
-   */
-  private static void smoothErrors2(int b, float[][][] e, float[][][] es) {
-    int nl = e[0][0].length;
-    int n1 = e[0].length;
-    int n2 = e.length;
-    int bf = b;
-    float[][] e1  = new float[n2][nl];
-    float[][] es1 = new float[n2][nl];
-    float[][] ef1 = new float[n2][nl];
-    float[][] er1 = new float[n2][nl];
-    for (int i1=0; i1<n1; ++i1) {
-      for (int i2=0; i2<n2; ++i2) {
-         e1[i2] =  e[i2][i1];
-        es1[i2] = es[i2][i1];
-        for (int il=0; il<nl; ++il) {
-          ef1[i2][il] = 0.0f;
-          er1[i2][il] = 0.0f;
-        }
-      }
-      accumulate( 1,bf,e1,ef1);
-      accumulate(-1,bf,e1,er1);
-      for (int i2=0; i2<n2; ++i2) {
-        for (int il=0; il<nl; ++il) {
-          es1[i2][il] = ef1[i2][il]+er1[i2][il]-e1[i2][il];
-        }
-      }
-    }
-  }
-
-
   private static float min3(float a, float b, float c) {
     return b<=a?(b<=c?b:c):(a<=c?a:c); // if equal, choose b
   }
@@ -690,21 +701,20 @@ public class OptimalSurfaceVoterP {
     }}
   }
 
-
   ///////////////////////////////////////////////////////////////////////////
   // private
   private int _nl; // number of lags
   private int _lmin,_lmax; // min,max lags
   private int[][] _lmins,_lmaxs;
   private int _rv,_rw;
-  private SincInterpolator _si; // for warping with non-integer shifts
-  private int _bstrain1 = 1; // inverse of bound on slope in 1st dimension
-  private int _bstrain2 = 1; // inverse of bound on slope in 2nd dimension
-  private int _esmooth = 1; // number of nonlinear smoothings of errors
-  private double _usmooth1 = 0.0; // extent of smoothing shifts in 1st dim
-  private double _usmooth2 = 0.0; // extent of smoothing shifts in 2nd dim
+  private int _esmooth = 1; // number of nonlinear smoothings of attributes
+  private int _bstrain1 = 4; // inverse of bound on slope in 1st dimension
+  private int _bstrain2 = 4; // inverse of bound on slope in 2nd dimension
+  private double _usmooth1 = 2.0; // extent of smoothing shifts in 1st dim
+  private double _usmooth2 = 2.0; // extent of smoothing shifts in 2nd dim
   private RecursiveExponentialFilter _ref1; // for smoothing shifts
   private RecursiveExponentialFilter _ref2; // for smoothing shifts
   private static final float NO_STRIKE = -0.00001f;
   private static final float NO_DIP    = -0.00001f;
+
 }

@@ -153,7 +153,6 @@ public class OptimalSurfaceVoter {
     fs = mul(fs,1f/max(fs));
     Stopwatch sw = new Stopwatch();
     sw.start();
-
     for (int is=0; is<ns; ++is) {
       if(is%1000==0)
         System.out.println("is="+is+"/"+ns);
@@ -439,9 +438,7 @@ public class OptimalSurfaceVoter {
    */
   public void smoothFaultAttributes(float[][][] fx, float[][][] fs) {
     smoothErrors1(_bstrain1,fx,fs);
-    //normalizeErrors(fs);
     smoothErrors2(_bstrain2,fs,fs);
-    //normalizeErrors(fs);
   }
 
   /**
