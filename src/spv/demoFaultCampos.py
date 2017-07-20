@@ -21,7 +21,8 @@ fpfile = "fp"  # fault strike;
 ftfile = "ft"  # fault dip;
 fvfile = "fv"  # fault dip;
 ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
+fetfile = "fet" # fault likelihood thinned
+fptfile = "fpt" # fault dip thinned
 fttfile = "ftt" # fault dip thinned
 
 pngDir = getPngDir()
@@ -35,30 +36,8 @@ sigmaPhi,sigmaTheta=4,8
 
 def main(args):
   #goPlanar()
-  #goFaultOrientScan()
-  goPick()
-def goPick():
-  gx = readImage3D(gxfile)
-  fe = readImage3D(fefile)
-  if not plotOnly:
-    fp = readImage3D(fpfile)
-    ft = readImage3D(ftfile)
-    osv = OptimalSurfaceVoterP(-10,10,30,20)
-    osv.setStrainMax(0.2,0.2)
-    #osv.setErrorSmoothing(2)
-    osv.setSurfaceSmoothing(2,2)
-    ft,pt,tt=osv.thin([fe,fp,ft])
-    fv = osv.applyVoting(4,0.3,ft,pt,tt)
-    fv = sub(fv,min(fv))
-    fv = mul(fv,1/max(fv))
-    writeImage(fvfile,fv)
-  else:
-    fv = readImage3D(fvfile)
-  fv = sub(1,pow(sub(1,fv),8))
-  plot3(gx,fe,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
-  plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
+  goFaultOrientScan()
+  #goSurfaceVoting()
 
 def goPlanar():
   gx = readImage3D(gxfile)
@@ -69,25 +48,25 @@ def goPlanar():
     u3 = zerofloat(n1,n2,n3)
     ep = zerofloat(n1,n2,n3)
     lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-    fp = pow(ep,2)
-    fp = sub(fp,min(fp))
-    fp = div(fp,max(fp))
-    fp = sub(1,fp)
     writeImage(epfile,ep)
-    writeImage(fpfile,fp)
   else:
     fp = readImage3D(fpfile)
-  plot3(gx,fp,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
+  ep = pow(ep,8)
+  plot3(gx,sub(1,ep),cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="1-planarity",png="fl")
+
 def goFaultOrientScan():
   gx = readImage3D(gxfile)
   ep = readImage3D(epfile)
   fos = FaultOrientScanner3(sigmaPhi,sigmaTheta)
   if not plotOnly:
     fe,fp,ft = fos.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
+    fet,fpt,ftt=fos.thin([fe,fp,ft])
     writeImage(fefile,fe)
     writeImage(fpfile,fp)
-    writeImage(ftfile,ft)
+    writeImage(fetfile,fet)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
   else:
     fp = readImage3D(fpfile)
     fe = readImage3D(fefile)
@@ -96,43 +75,29 @@ def goFaultOrientScan():
   plot3(gx,ep,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
       clab="1-planarity",png="fl")
   plot3(gx,fe,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
+      clab="Enhanced",png="fl")
   plot3(gx,fp,cmin=1,cmax=360,cmap=jetFill(1.0),
       clab="Fault strike (degrees)",png="ph")
 
-def goRayTracing2():
+def goSurfaceVoting():
   gx = readImage3D(gxfile)
-  fp = readImage3D(fpfile)
   if not plotOnly:
-    fe = FaultEnhance(4,0.2)
-    se = fe.applyTracing(80,20,minTheta,maxTheta,fp)
-    writeImage(sefile,se)
+    fet = readImage3D(fetfile)
+    fpt = readImage3D(fptfile)
+    ftt = readImage3D(fttfile)
+    osv = OptimalSurfaceVoterP(-10,10,30,20)
+    osv.setStrainMax(0.2,0.2)
+    osv.setSurfaceSmoothing(2,2)
+    fv = osv.applyVoting(4,0.3,fet,fpt,ftt)
   else:
-    se = readImage3D(sefile)
-  plot3(gx,fp,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
-  plot3(gx,se,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
+    fv = readImage3D(fvfile)
+  ep = readImage3D(epfile)
+  ep = sub(1,pow(ep,8))
+  plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="1-planarity",png="fl")
+  plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="Surface voting",png="fl")
 
-def goRayTracing21():
-  gx = readImage3D(gxfile)
-  fp = readImage3D(sefile)
-  ep = readImage3D(fpfile)
-  if not plotOnly:
-    fp = mul(fp,sub(2,fp))
-    fp = sub(fp,min(fp))
-    fp = div(fp,max(fp))
-    fe = FaultEnhance(10,0.5)
-    se = fe.applyTracing1(80,15,minTheta,maxTheta,fp)
-    writeImage(sefile+"21",se)
-  else:
-    se = readImage3D(sefile+"21")
-  plot3(gx,ep,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
-      clab="Plaanrity",png="fl")
-  plot3(gx,fp,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
-  plot3(gx,se,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
 def gain(x):
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(100.0)

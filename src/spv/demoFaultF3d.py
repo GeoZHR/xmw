@@ -21,7 +21,8 @@ fpfile = "fp"  # fault strike;
 ftfile = "ft"  # fault dip;
 fvfile = "fv"  # fault dip;
 ftfile  = "ft" # fault dip (theta)
-fltfile = "flt" # fault likelihood thinned
+fetfile = "flt" # fault likelihood thinned
+fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
 
 pngDir = getPngDir()
@@ -53,17 +54,19 @@ def goPlanar():
   ep = pow(ep,8)
   plot3(gx,sub(1,ep),cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="1-planarity",png="fl")
+
 def goFaultOrientScan():
   gx = readImage3D(gxfile)
   ep = readImage3D(epfile)
   fos = FaultOrientScanner3(sigmaPhi,sigmaTheta)
   if not plotOnly:
     fe,fp,ft = fos.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
+    fet,fpt,ftt=fos.thin([fe,fp,ft])
     writeImage(fefile,fe)
-    writeImage(fpfile,fp)
-    writeImage(ftfile,ft)
+    writeImage(fetfile,fet)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
   else:
-    fp = readImage3D(fpfile)
     fe = readImage3D(fefile)
   print min(fe) 
   print max(fe) 
@@ -78,23 +81,18 @@ def goFaultOrientScan():
 def goSurfaceVoting():
   gx = readImage3D(gxfile)
   gx = gain(gx)
-  fe = readImage3D(fefile)
-  ep = readImage3D(epfile)
   if not plotOnly:
-    fp = readImage3D(fpfile)
-    ft = readImage3D(ftfile)
+    fet = readImage3D(fetfile)
+    fpt = readImage3D(fptfile)
+    ftt = readImage3D(fttfile)
     osv = OptimalSurfaceVoterP(10,20,30)
     osv.setStrainMax(0.25,0.25)
     osv.setSurfaceSmoothing(2,2)
-    #osv.setShiftSmoothing(2,2)
-    ft,pt,tt=osv.thin([fe,fp,ft])
-    fv = osv.applyVoting(4,0.3,ft,pt,tt)
-    fv = sub(fv,min(fv))
-    fv = mul(fv,1/max(fv))
+    fv = osv.applyVoting(4,0.3,fet,fpt,ftt)
     writeImage(fvfile,fv)
   else:
     fv = readImage3D(fvfile)
-  fv = sub(1,pow(sub(1,fv),8))
+  ep = readImage3D(epfile)
   ep = sub(1,pow(ep,8))
   plot3(gx)
   plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
@@ -104,9 +102,6 @@ def goSurfaceVoting():
   '''
   plot3(gx,fvp,cmin=1,cmax=180,cmap=jetFill(1.0),
       clab="Fault strike (degrees)",png="ph")
-
-  plot3(gx,ft,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
-      clab="Ray tracing",png="fl")
   '''
 
 def goRayTracing2():
