@@ -71,7 +71,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub8/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -84,7 +84,7 @@ def main(args):
   #goSkinTv()
   #goSmooth()
   #goSlip()
-  goUnfault()
+  #goUnfault()
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
@@ -107,6 +107,7 @@ def main(args):
   #goSkinDisplay()
   #goSampleClean()
   #goAsciiFaults()
+  goPlanarX()
 def goAsciiFaults():
   gx = readImage(gxfile)
   sks = readSkins("fslb")
@@ -358,6 +359,22 @@ def goRosePlotsNScale():
   pf.setSize(wx,wy)
   pf.setVisible(True)
   #pf.paintToPng(720,6,pngDir+title+"N"+".png")
+
+def goPlanarX():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    lof = LocalOrientFilter(12,4)
+    et3 = lof.applyForTensors(gx)
+    et3.setEigenvalues(1.0,0.01,0.5)
+    fer = FaultEnhancer(sigmaPhi,sigmaTheta)
+    ep = fer.applyForPlanar(20,et3,gx)
+    writeImage(epxfile,ep)
+    print min(ep)
+    print max(ep)
+  else:
+    ep = readImage(epxfile)
+  plot3(gx,cmin=-3,cmax=3)
+  plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1)
 
 def goPlanar():
   gx = readImage(gxfile)
