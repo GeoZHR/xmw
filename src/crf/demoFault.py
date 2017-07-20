@@ -5,8 +5,8 @@ Version: 2016.01.22
 """
 
 from utils import *
-#setupForSubset("nathan")
-setupForSubset("nathanSub8")
+#setupForSubset("nathanSub8")
+setupForSubset("nathan")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -363,10 +363,12 @@ def goRosePlotsNScale():
 
 def goPlanarX():
   gx = readImage(gxfile)
+  gx = gain(gx)
+  '''
   if not plotOnly:
-    lof = LocalOrientFilter(12,4)
+    lof = LocalOrientFilter(12,3)
     et3 = lof.applyForTensors(gx)
-    et3.setEigenvalues(1.0,0.01,0.5)
+    et3.setEigenvalues(1.0,0.01,0.3)
     fer = FaultEnhancer(sigmaPhi,sigmaTheta)
     ep = fer.applyForPlanar(20,et3,gx)
     writeImage(epxfile,ep)
@@ -374,8 +376,9 @@ def goPlanarX():
     print max(ep)
   else:
     ep = readImage(epxfile)
+  '''
   plot3(gx,cmin=-3,cmax=3)
-  plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1)
+  #plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1)
 
 def goPlanar():
   gx = readImage(gxfile)
