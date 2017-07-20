@@ -36,9 +36,9 @@ sigmaPhi,sigmaTheta=4,8
 
 
 def main(args):
-  goPlanarX()
+  #goPlanarX()
   #goFaultOrientScan()
-  #goPick()
+  goPick()
 def goPlanarX():
   gx = readImage3D(gxfile)
   if not plotOnly:
@@ -99,11 +99,10 @@ def goPick():
   if not plotOnly:
     fp = readImage3D(fpfile)
     ft = readImage3D(ftfile)
-    osv = OptimalSurfaceVoter(-10,10,30,20)
+    osv = OptimalSurfaceVoterP(10,30,20)
     osv.setStrainMax(0.2,0.2)
     #osv.setErrorSmoothing(2)
-    #osv.setSurfaceSmoothing(2,2)
-    osv.setShiftSmoothing(2,2)
+    osv.setSurfaceSmoothing(2,2)
     ft,pt,tt=osv.thin([fe,fp,ft])
     fv = osv.applyVoting(4,0.3,ft,pt,tt)
     fv = sub(fv,min(fv))
