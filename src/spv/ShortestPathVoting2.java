@@ -63,11 +63,9 @@ public class ShortestPathVoting2 {
       float pi = (float)(Math.PI/180.0);
       for (int i2=-ri; i2<=ri; ++i2) {
       for (int i1=-ri; i1<=ri; ++i1) {
-        float ti = tt[k2][k1]+90f;
-        if(ti>180) ti -= 180;
-        ti *= pi;
-        float t1 = cos(ti);
-        float t2 = sin(ti);
+        float ti = tt[k2][k1]*pi;
+        float t1 = sin(ti);
+        float t2 = cos(ti);
         float rs = sqrt(i1*i1+i2*i2);
         if (rs>0f) {
           float r1 = i1/rs;
@@ -111,8 +109,13 @@ public class ShortestPathVoting2 {
           u2r[i2][i1] = u2i;
         }
     }}
-    for (int is=0; is<ns; ++is) {
-      System.out.println("is="+is);
+    final int[] ct = new int[1];
+    //for (int is=0; is<ns; ++is) {
+    Parallel.loop(ns,new Parallel.LoopInt() {
+    public void compute(int is) {
+      ct[0] += 1;
+      if(ct[0]%100==0)
+        System.out.println("done: "+ct[0]+"/"+ns);
       int k1 = seeds[0][is];
       int k2 = seeds[1][is];
       int b1 = max(k1-r,0);
@@ -133,23 +136,11 @@ public class ShortestPathVoting2 {
       float pi = (float)(Math.PI/180.0);
       for (int i2=-ri; i2<=ri; ++i2) {
       for (int i1=-ri; i1<=ri; ++i1) {
-        float ti = tt[k2][k1]+90f;
-        if(ti>180) ti -= 180;
-        ti *= pi;
-        float t1 = cos(ti);
-        float t2 = sin(ti);
+        float ti = tt[k2][k1]*pi;
+        float t1 = sin(ti);
+        float t2 = cos(ti);
         u1s[i2+ri][i1+ri] = t1;
         u2s[i2+ri][i1+ri] = t2;
-        /*
-        float rs = sqrt(i1*i1+i2*i2);
-        if (rs>0f) {
-          float r1 = i1/rs;
-          float r2 = i2/rs;
-          float st = t1*r1+t2*r2;
-          float ct = 1-st*st;
-          fc[i2+ri][i1+ri] *= ct;
-        }
-        */
       }}
       fc  = sub(fc,min(fc));
       fc  = mul(fc,1f/max(fc));
@@ -165,7 +156,7 @@ public class ShortestPathVoting2 {
           fe[i2+k2-ri][i1+k1-ri] += mp[i2][i1];
         }
       }}
-    }
+    }});
     return fe;
   }
 
@@ -254,8 +245,8 @@ public class ShortestPathVoting2 {
     for (int ip=0; ip<np; ++ip) {
       int c1 = round(ps[0][ip]);
       int c2 = round(ps[1][ip]);
-      for (int d2=-0;d2<=0;d2++){
-      for (int d1=-0;d1<=0;d1++){
+      for (int d2=-1;d2<=1;d2++){
+      for (int d1=-1;d1<=1;d1++){
         int i1 = c1+d1;
         int i2 = c2+d2;
         if(i1>=0&&i1<m1&&i2>=0&&i2<m2)
@@ -263,6 +254,7 @@ public class ShortestPathVoting2 {
       }}
     }
   }
+
   public float[][][] applyEnhance(
     int k1, int k2, int r, float[][] u1, float[][] u2, float[][] ft) {
     int n2 = ft.length;

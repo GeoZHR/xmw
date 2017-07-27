@@ -36,8 +36,13 @@ sigmaPhi,sigmaTheta=4,8
 
 def main(args):
   #goPlanar()
-  goFaultOrientScan()
+  #goFaultOrientScan()
   #goSurfaceVoting()
+  gx = readImage3D(gxfile)
+  g2 = zerofloat(n1,n3)
+  for i3 in range(n3):
+    g2[i3] = gx[i3][373]
+  writeImage("gx373",g2)
 
 def goPlanar():
   gx = readImage3D(gxfile)
@@ -85,10 +90,11 @@ def goSurfaceVoting():
     fet = readImage3D(fetfile)
     fpt = readImage3D(fptfile)
     ftt = readImage3D(fttfile)
-    osv = OptimalSurfaceVoterP(-10,10,30,20)
+    osv = OptimalSurfaceVoterP(10,30,20)
     osv.setStrainMax(0.2,0.2)
     osv.setSurfaceSmoothing(2,2)
     fv = osv.applyVoting(4,0.3,fet,fpt,ftt)
+    writeImage(fvfile,fv)
   else:
     fv = readImage3D(fvfile)
   ep = readImage3D(epfile)

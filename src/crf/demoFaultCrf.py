@@ -37,8 +37,8 @@ sigmaPhi,sigmaTheta=4,8
 
 def main(args):
   goPlanarX()
-  #goFaultOrientScan()
-  #goSurfaceVoting()
+  goFaultOrientScan()
+  goSurfaceVoting()
 def goPlanarX():
   gx = readImage(gxfile)
   if not plotOnly:
