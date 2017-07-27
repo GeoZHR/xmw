@@ -39,6 +39,34 @@ def setupForSubset(name):
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="f3d2d":
+    """ 2d fault """
+    print "setupForSubset: 2d fault"
+    pngDir = _pngdir+"fault/2d/f3d/"
+    seismicDir = _datdir+"fault/2d/f3d/"
+    n1,n2 = 222,440 #f3d75s
+    d1,d2 = 1,1 # (s,km/s)
+    f1,f2 = 0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="crf2d":
+    """ costa rica field """
+    print "setupForSubset: crf"
+    pngDir = _pngdir+"fault/2d/crf/"
+    seismicDir = _datdir+"fault/2d/crf/"
+    n1,n2 = 210,825
+    n1,n2 = 180,500
+    d1,d2 = 1,1 # (s,km/s)
+    f1,f2 = 0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="campos2d":
+    """ costa rica field """
+    print "setupForSubset: crf"
+    pngDir = _pngdir+"fault/2d/campos/"
+    seismicDir = _datdir+"fault/2d/campos/"
+    n1,n2 = 300,550
+    d1,d2 = 1,1 # (s,km/s)
+    f1,f2 = 0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
   elif name=="edge":
     """ edge """
     print "setupForSubset: edge"

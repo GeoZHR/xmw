@@ -136,10 +136,13 @@ def goPlanarity():
   plot3(gx,ep,cmin=0.1,cmax=1.0,cmap=jetRamp(1.0),clab="Semblance")
   plot3(ep)
   eps = zerofloat(n2,n3)
+  gxs = zerofloat(n2,n3)
   for i3 in range(n3):
     for i2 in range(n2):
       eps[i3][i2] = ep[i3][i2][56]
+      gxs[i3][i2] = gx[i3][i2][56]
   writeImage("ep56",eps)
+  writeImage("gx56",gxs)
 
 def goSemblance():
   print "go semblance ..."

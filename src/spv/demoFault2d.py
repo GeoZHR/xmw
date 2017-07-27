@@ -13,283 +13,53 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
 d1,d2,d3 = s1.getDelta(),s2.getDelta(),s3.getDelta()
 #############################################################################
-gxfile = "ep56"
+gxfile = "gx56"
+epfile = "ep56"
 fpfile = "fp"
 fefile = "fe"
+ftfile = "ft"
+ptfile = "pt"
+fvfile = "fv"
+fvtfile = "fvt"
 pngDir = getPngDir()
 pngDir = None
 plotOnly = False
 
 def main(args):
-  #goSemblance()
   goFaultOrientScan()
+  goPathVoting()
+
 def goFaultOrientScan():
   gx = readImage(gxfile)
-  fos = FaultOrientScanner2(8,4)
-  '''
-  fe,fp = fos.scan(0,180,sub(1,gx))
-  writeImage(fefile,fe)
-  writeImage(fpfile,fp)
-  '''
-  fe = readImage(fefile)
-  fp = readImage(fpfile)
-  elt,ett = fos.thin([fe,fp])
-  plot(gx,cmin=0.5,cmax=1.0,cmap=ColorMap.GRAY)
-  plot(sub(1,fe),cmap=ColorMap.GRAY)
-  plot(sub(1,elt),cmap=ColorMap.GRAY)
-
-  lof = LocalOrientFilter(2,2)
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  ep = zerofloat(n1,n2)
-  lof.applyForNormalLinear(gx,u1,u2,ep)
-  ee = ShortestPathVoting2()
-  elt = sub(elt,min(elt))
-  elt = div(elt,max(elt))
-  sd = ee.pickSeeds(4,0.3,elt)
-  ss = zerofloat(n1,n2)
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply00(elt,ss)
-  ss = sub(ss,min(ss))
-  ss = div(ss,max(ss))
-  #sd = [[sd[0][300]],[sd[1][300]]]
-  se = ee.applyEnhance(60,15,sd,u1,u2,ss,ett)
-  se = sub(se,min(se))
-  se = mul(se,1/max(se))
-  se = sub(1,se)
-  plot(se,cmin=0.5,cmax=1.0)
-
-def computeGradient(gx):
-  n2 = len(gx)
-  n1 = len(gx[0])
-  g1 = zerofloat(n1,n2)
-  g2 = zerofloat(n1,n2)
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply1X(gx,g1)
-  rgf.applyX1(gx,g2)
-  g1 = mul(g1,g1)
-  g2 = mul(g2,g2)
-  gs = add(g1,g2)
-  gs = sqrt(gs)
-  gs = sub(gs,min(gs))
-  gs = div(gs,max(gs))
-  return gs
-
-
-def goPolar():
-  sm = readImage(smfile)
-  sm = sub(1,sm)
-  '''
+  ep = readImage(epfile)
+  fos = FaultOrientScanner2(10)
+  fe,fp = fos.scan(0,180,ep)
+  ft,pt = fos.thin([fe,fp])
+  writeImage(ftfile,ft)
+  writeImage(ptfile,pt)
+  #plot(fe)
+def goPathVoting():
   gx = readImage(gxfile)
-  ss = copy(100,100,120,100,sm)
-  gs = copy(100,100,120,100,gx)
-  plot(gs,ss,cmin=0.1,cmax=0.5,cmap=jetFillExceptMin(0.6),cint=0.2)
-  k = 1.2
-  n2 = 100
-  for i2 in range(n2):
-    i1 = round(k*i2)
-    if i1<100:
-      ss[i2][i1] = 2
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply00(ss,ss)
-  '''
-  pc = PolarCoordinates(555,125,100,0,360)
-  sc,gx = pc.applyTransform(sm)
-  plot(sm)
-  plot(sc)
-  plot(gx)
-
-def goTimeMarker():
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  fe = FaultEnhance(4,1.0)
-  st1 = zerofloat(n1,n2)
-  seeds=fe.findSeeds(5,1,0.05,sm,st1)
-  lof = LocalOrientFilter(4,2)
-  ets = lof.applyForTensors(gx)
-  ets.setEigenvalues(sm,sm)
-  k1 = [108]
-  k2 = [511]
-  f = [1]
-  t = fillfloat(1,n1,n2)
-  p = zerofloat(n1,n2)
-  for i in range(len(k1)):
-    p[k2[i]][k1[i]] = 1
-    t[k2[i]][k1[i]] = 0
-  bd = BlendedGridder2(ets,f,k1,k2)
-  bd.gridNearest(t,p)
-  u = zerofloat(n1)
-  for i1 in range(n1):
-    tm = t[0][i1]
-    for i2 in range(n2):
-      if(tm>t[i2][i1]):
-        tm = t[i2][i1]
-        u[i1] = i2
-  cmin = -1
-  cmax =  1
-  mp1 = ColorMap.GRAY
-  mp2 = ColorMap.JET
-  plot2(s1,s2,sm,u=u,vint=10,hint=20,cmin=0.0,cmax=0.5,cmap=mp1)
-  plot(gx,t,cmin=0.0,cmax=max(t),cmap=jetFillExceptMin(0.6),cint=0.2)
-
-def goSemblance():
-  gx = readImage(gxfile)
-  lof = LocalOrientFilter(2,2)
-  u1 = zerofloat(n1,n2)
-  u2 = zerofloat(n1,n2)
-  el = zerofloat(n1,n2)
-  lof.applyForNormalLinear(gx,u1,u2,el)
-  writeImage(smfile,el)
-
-def goFaultPik1():
-  gx = readImage(gxfile)
-  gx = gain(gx)
-  sm = readImage(smfile)
-  plot(sub(1,sm))
-  sm = pow(sm,8)
-  sm = sub(1,sm)
-  fe = FaultEnhance(4,0.2)
-  st1 = zerofloat(n1,n2)
-  seeds=fe.findSeeds(1,1,0.3,sm,st1)
-  se = fe.enhanceInPolarSpace1(60,60,10,seeds,sm)
-  se = sub(se,min(se))
-  se = div(se,max(se))
-  plot(st1)
-  plot(se,cmin=0.01,cmax=0.6)
-  cmin = -1
-  cmax =  1
-  mp1 = ColorMap.GRAY
-  mp2 = ColorMap.JET
-  plot(gx,sm,cmin=0.3,cmax=1.0,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot(gx,se,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
-  '''
-  plot(gx,stt,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot2(s1,s2,et,u=pik1,vint=20,hint=20,cmin=0,cmax=0.5,cmap=mp2)
-  plot2(s1,s2,gx,u=pik1,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
-  plot2(s1,s2,gx,u=pik2,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
-  '''
-  #plot2(s1,s2,gx,u=pik3,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp)
-  
-def goEdgeEnhance():
-  gx = readImage(gxfile)
-  '''
-  g1 = zerofloat(n1,n2)
-  g2 = zerofloat(n1,n2)
-  plot(gx,cmap=ColorMap.GRAY)
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply1X(gx,g1)
-  rgf.applyX1(gx,g2)
-  g1 = mul(g1,g1)
-  g2 = mul(g2,g2)
-  gs = add(g1,g2)
-  gs = sqrt(gs)
-  gs = sub(gs,min(gs))
-  sm = div(gs,max(gs))
-  plot(gs,cmap=ColorMap.GRAY)
-  '''
-  gx = sub(gx,min(gx))
-  sm = div(gx,max(gx))
-  sm = sub(1,sm)
-  fe = FaultEnhance(4,0.1)
-  st1 = zerofloat(n1,n2)
-  st = fe.findRidges(0.01,sm)
-  sd = fe.pickSeeds(4,0.1,st)
-  ss = zerofloat(n1,n2)
-  rgf = RecursiveGaussianFilterP(2)
-  rgf.apply00(st,ss)
-  ss = sub(ss,min(ss))
-  ss = div(ss,max(ss))
-  se,ph = fe.enhanceInPolarSpace(60,15,sd,ss)
-  se = sub(se,min(se))
-  se = div(se,max(se))
-  st = sub(1,st)
-  se = sub(1,se)
-  plot(st,cmin=0.7,cmax=1.0)
-  plot(se,cmin=0.7,cmax=1.0)
-def goEdgeTime():
-  gx = readImageChannels(gxfile)
-  m2 = len(gx[0])
-  m1 = len(gx[0][0])
-  el = readImageX(m1,m2,elfile)
-  elt = readImageX(m1,m2,eltfile)
-  ett = readImageX(m1,m2,ettfile)
-  lof = LocalOrientFilter(2,2)
-  u1 = zerofloat(m1,m2)
-  u2 = zerofloat(m1,m2)
-  ep = zerofloat(m1,m2)
-  lof.applyForNormalLinear(gx[0],u1,u2,ep)
-  ee = ShortestPathVoting2()
-  elt = pow(elt,8)
-  elt = sub(elt,min(elt))
-  elt = div(elt,max(elt))
-  sd = ee.pickSeeds(4,0.1,elt)
-  fd = ee.seedsToImage(sd,elt)
-  ss = zerofloat(m1,m2)
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply00(elt,ss)
-  ss = sub(ss,min(ss))
-  ss = div(ss,max(ss))
-  #sd = [[sd[0][10]],[sd[1][10]]]
-  #sd = [[52],[280]]
-  se = ee.applyEnhance(40,15,sd,u1,u2,ss,ett)
-  se = sub(se,min(se))
-  se = mul(se,1/max(se))
-  '''
-  elt = se
-  sd = ee.pickSeeds(4,0.01,elt)
-  fd = ee.seedsToImage(sd,elt)
-  ss = zerofloat(m1,m2)
-  rgf = RecursiveGaussianFilterP(1)
-  rgf.apply00(elt,ss)
-  ss = sub(ss,min(ss))
-  ss = div(ss,max(ss))
-  #sd = [[sd[0][10]],[sd[1][10]]]
-  #sd = [[52],[280]]
-  se = ee.applyEnhance(50,15,sd,u1,u2,ss,ett)
-  se = sub(se,min(se))
-  se = div(se,max(se))
-  '''
-
-  #ps = ee.backTrack(350,550,600,450,t)
-  mp1 = ColorMap.GRAY
-  mp2 = ColorMap.JET
-  elt = sub(1,elt)
-  se = sub(1,se)
-  fd = sub(1,fd)
-  plot(gx[0])
-  plot(elt,cmin=0.1,cmax=1.0)
-  plot(fd,cmin=0.1,cmax=1.0)
-  plot(se,cmin=0.1,cmax=1.0)
-
-def goFaultPik():
-  #gx = readImage(gxfile)
-  #gx = gain(gx)
-  sm = readImage(gxfile)
-  plot(sub(1,sm))
-  sm = pow(sm,8)
-  sm = sub(1,sm)
-  fe = FaultEnhance(4,0.5)
-  st1 = zerofloat(n1,n2)
-  seeds=fe.findSeedsX(1,1,0.3,sm,st1)
-  #se = fe.applyForEnhanceX(20,20,8,seeds,sm)
-  se = fe.enhanceInPolarSpace(40,40,10,seeds,sm)
-  se = sub(se,min(se))
-  se = div(se,max(se))
-  plot(st1)
-  plot(se,cmin=0.01,cmax=0.5)
-  '''
-  cmin = -1
-  cmax =  1
-  mp1 = ColorMap.GRAY
-  mp2 = ColorMap.JET
-  plot(gx,sm,cmin=0.3,cmax=1.0,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot(gx,se,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot(gx,stt,cmin=0.1,cmax=0.3,cmap=jetFillExceptMin(0.6),cint=0.2)
-  plot2(s1,s2,et,u=pik1,vint=20,hint=20,cmin=0,cmax=0.5,cmap=mp2)
-  plot2(s1,s2,gx,u=pik1,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
-  plot2(s1,s2,gx,u=pik2,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp1)
-  '''
-  #plot2(s1,s2,gx,u=pik3,vint=20,hint=20,cmin=cmin,cmax=cmax,cmap=mp)
+  ep = readImage(epfile)
+  if not plotOnly:
+    ft = readImage(ftfile)
+    pt = readImage(ptfile)
+    osv = OptimalPathVoter(20,40)
+    osv.setStrainMax(0.5)
+    osv.setSurfaceSmoothing(1)
+    fv,w1,w2 = osv.applyVoting(3,0.5,ft,pt)
+    fvt = osv.thin(fv,w1,w2)
+    writeImage(fvfile,fv)
+    writeImage(fvtfile,fvt)
+  else:
+    fv  = readImage(fvfile)
+    fvt = readImage(fvtfile)
+  plot(gx,cmin=-2,cmax=2)
+  ep = pow(ep,4)
+  plot(ep,cmin=0.1,cmax=1.0)
+  plot(sub(1,fv),cmin=0.1,cmax=0.8)
+  plot(sub(1,fvt),cmin=0.1,cmax=0.8)
+  plot(gx,fv,cmin=0.2,cmax=0.8,cmap=jetRamp(1.0))
 
 def gain(x):
   n2 = len(x)
@@ -431,21 +201,21 @@ def plot(f,g=None,ps=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   n1,n2=len(f[0]),len(f)
   s1,s2=Sampling(n1),Sampling(n2)
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
-  panel.setVInterval(5)
-  panel.setHInterval(5)
+  panel.setVInterval(50)
+  panel.setHInterval(50)
   #panel.setHLabel("Inline (traces)")
   #panel.setVLabel("Time (samples)")
   pxv = panel.addPixels(0,0,s1,s2,f);
   pxv.setColorModel(ColorMap.GRAY)
-  #pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
   if g:
-    pxv.setClips(-1,1)
+    pxv.setClips(-2,2)
   else:
     if cmin and cmax:
       pxv.setClips(cmin,cmax)
   if g:
     pv = panel.addPixels(s1,s2,g)
-    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    pv.setInterpolation(PixelsView.Interpolation.LINEAR)
     pv.setColorModel(cmap)
     if cmin and cmax:
       pv.setClips(cmin,cmax)
@@ -459,7 +229,7 @@ def plot(f,g=None,ps=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1400,700)
-  frame.setSize(n2,n1)
+  frame.setSize(round(n2*1.1),round(n1*1.1))
   frame.setFontSize(12)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")

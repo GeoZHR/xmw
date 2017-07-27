@@ -7,13 +7,10 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 
 package spv;
 
-import java.util.*;
-import javax.imageio.ImageIO;
-
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.lapack.*;
 import static edu.mines.jtk.util.ArrayMath.*;
-import static edu.mines.jtk.util.Parallel.*;
+import edu.mines.jtk.util.*;
 import util.*;
 
 /**
@@ -28,9 +25,10 @@ public class FaultOrientScanner2 {
    * Constructs a scanner with specified parameters.
    * @param sigmaTheta half-width for smoothing along dip of edges.
    */
-  public FaultOrientScanner2(double sigma1, double sigma2) {
+  public FaultOrientScanner2(double sigma1) {
     _sigma1 = (float)sigma1;
-    _sigma2 = (float)sigma2;
+    _si = new SincInterpolator();
+    _si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
   }
 
   /**
@@ -55,18 +53,44 @@ public class FaultOrientScanner2 {
   }
 
   /**
-   * Scans a specified color image for edge dips.
+   * Scans a specified image for edge dips.
    * @param thetaMin minimum edge dip, in degrees.
    * @param thetaMax maximum edge dip, in degrees.
    * @param g the image to be scanned.
    * @return array {el,et} of edge gradients and dips.
    */
-  public float[][][] scanColorImage(
-    double thetaMin, double thetaMax, float[][][] g) {
-    Sampling st = makeThetaSampling(thetaMin,thetaMax);
-    return scanThetaColor(st,g);
+  public float[][][] scanDip(double thetaMin, double thetaMax, float[][] g) {
+    int n2 = g.length;
+    int n1 = g[0].length;
+    Sampling st1 = makeThetaSampling(90-thetaMax,90-thetaMin);
+    Sampling st2 = makeThetaSampling(90+thetaMin,90+thetaMax);
+    float[][][] fp1 = scanTheta(st1,g);
+    float[][][] fp2 = scanTheta(st2,g);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fx1 = fp1[0][i2][i1];
+      float fx2 = fp2[0][i2][i1];
+      if(fx1<fx2) {
+        fp1[0][i2][i1] = fx2;
+        fp1[1][i2][i1] = fp2[1][i2][i1];
+      }
+    }}
+    return fp1;
   }
 
+
+  public float[][] striveConvert(float[][] fp) {
+    int n2 = fp.length;
+    int n1 = fp[0].length;
+    float[][] fc = new float[n2][n1];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fpi = 90-fp[i2][i1];
+      if(fpi<0f) fpi+=180;
+      fc[i2][i1] = fpi;
+    }}
+    return fc;
+  }
 
   /**
    * Thins fault images to include only ridges in image edges.
@@ -76,36 +100,32 @@ public class FaultOrientScanner2 {
    * @return array {elt,ett} of thinned edge gradeints and dips.
    */
   public float[][][] thin(float[][][] fet) {
-    int n1 = fet[0][0].length;
     int n2 = fet[0].length;
-    float[][] f = fet[0];
-    float[][] t = fet[1];
-    float[][] ff = new float[n2][n1];
-    float[][] tt = new float[n2][n1];
-    float pi = (float)(Math.PI/180.0);
-    SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float ti = t[i2][i1]+90f;
-      if(ti>180) ti -= 180;
-      ti *= pi;
-      float d1 = 0f;
-      float d2 = 0f;
-      d1 = cos(ti);
-      d2 = sin(ti);
-      float x1p = i1+d1;
-      float x2p = i2+d2;
-      float x1m = i1-d1;
-      float x2m = i2-d2;
-      float fi = f[i2][i1];
-      float fp = si.interpolate(n1,1.0,0.0,n2,1.0,0.0,f,x1p,x2p);
-      float fm = si.interpolate(n1,1.0,0.0,n2,1.0,0.0,f,x1m,x2m);
-      if(fp<fi&&fm<fi) {
-        ff[i2][i1] = fi;
-        tt[i2][i1] = t[i2][i1];
+    final int n1 = fet[0][0].length;
+    final float[][] f = fet[0];
+    final float[][] t = fet[1];
+    final float[][] ff = new float[n2][n1];
+    final float[][] tt = new float[n2][n1];
+    final float pi = (float)(Math.PI/180.0);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float ti = t[i2][i1]*pi;
+        float d1 = sin(ti);
+        float d2 = cos(ti);
+        float x1p = i1+d1;
+        float x2p = i2+d2;
+        float x1m = i1-d1;
+        float x2m = i2-d2;
+        float fi = f[i2][i1];
+        float fp = _si.interpolate(n1,1.0,0.0,n2,1.0,0.0,f,x1p,x2p);
+        float fm = _si.interpolate(n1,1.0,0.0,n2,1.0,0.0,f,x1m,x2m);
+        if(fp<fi&&fm<fi) {
+          ff[i2][i1] = fi;
+          tt[i2][i1] = t[i2][i1];
+        }
       }
-    }}
+    }});
     return new float[][][]{ff,tt};
   }
 
@@ -234,7 +254,7 @@ public class FaultOrientScanner2 {
   // private
 
   private float _sigma1;
-  private float _sigma2;
+  private SincInterpolator _si;
 
   private static final float NO_DIP    = -0.00001f;
 
@@ -267,18 +287,23 @@ public class FaultOrientScanner2 {
     final SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     int nt = thetaSampling.getCount();
-    float[][][] rsc = getAngleMap(n1,n2);
-    RecursiveExponentialFilter ref = makeRef(_sigma1);
+    float[][][] rsc = getRotationAngleMap(n1,n2);
+    RecursiveExponentialFilter ref2 = makeRef(1);
+    RecursiveExponentialFilter ref1 = makeRef(_sigma1);
     for (int it=0; it<nt; ++it) {
       System.out.println(it+"/"+(nt-1)+" done...");
       float ti = (float)thetaSampling.getValue(it);
       float theta = toRadians(ti);
-      float[][] gr = rotate(theta,rsc[0],rsc[1],rsc[2],g);
-      ref.apply1(gr,gr);
-      float[][] s2 = unrotate(n1,n2,theta,rsc[0],rsc[1],rsc[2],gr);
+      float[][] gr = rotate(theta,rsc,g);
+      ref2.apply2(gr,gr);
+      ref1.apply1(gr,gr);
+      float[][] s2 = unrotate(n1,n2,theta,rsc,gr);
       for (int i2=0; i2<n2; ++i2) {
       for (int i1=0; i1<n1; ++i1) {
         float st = s2[i2][i1];
+        st *= st;
+        st *= st;
+        st = 1-st;
         if (st>f[i2][i1]) {
           f[i2][i1] = st;
           t[i2][i1] = ti;
@@ -288,240 +313,101 @@ public class FaultOrientScanner2 {
     return new float[][][]{f,t};
   }
 
-  private float[][][] scanThetaColor(Sampling thetaSampling, float[][][] g) {
-    final int n2 = g[0].length;
-    final int n1 = g[0][0].length;
-    final float[][] f = new float[n2][n1];
-    final float[][] t = new float[n2][n1];
-    final SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    int nt = thetaSampling.getCount();
-    float[][][] rsc = getAngleMap(n1,n2);
-    float ss = _sigma2*_sigma2;
-    float a = (1.0f+ss-sqrt(1.0f+2.0f*ss))/ss;
-    RecursiveExponentialFilter ref = makeRef(_sigma1);
-    for (int it=0; it<nt; ++it) {
-      System.out.println(it+"/"+(nt-1)+" done...");
-      float ti = (float)thetaSampling.getValue(it);
-      float theta = toRadians(ti);
-      float[][][] gr = rotate(theta,rsc[0],rsc[1],rsc[2],g);
-      ref.apply1(gr,gr);
-      float[][][] gg = computeGradient(a,gr);
-      float[][][] gu = unrotate(n1,n2,theta,rsc[0],rsc[1],rsc[2],gg);
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        float g0 = gu[0][i2][i1];
-        float g1 = gu[1][i2][i1];
-        float g2 = gu[2][i2][i1];
-        float gm = max(g0,g1,g2);
-        if (gm>f[i2][i1]) {
-          f[i2][i1] = gm;
-          t[i2][i1] = ti;
-        }
-      }}
-    }
-    return new float[][][]{f,t};
+  public float[][] rotate(float theta, 
+    float[][][] rsc, float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    final int nr = rsc[0].length;
+    final int ri = (nr-1)/2;
+    final int h2 = (int)floor(n2/2);
+    final int h1 = (int)floor(n1/2);
+    int r21 = abs(round(h2*cos(theta)+h1*sin(theta)));
+    int r22 = abs(round(h2*cos(theta)-h1*sin(theta)));
+    int r11 = abs(round(h1*cos(theta)-h2*sin(theta)));
+    int r12 = abs(round(h1*cos(theta)+h2*sin(theta)));
+    int r2 = max(r21,r22);
+    int r1 = max(r11,r12);
+    final int m2 = r2*2+1;
+    final int m1 = r1*2+1;
+    final float st = sin(theta);
+    final float ct = cos(theta);
+    final float[][] fr = new float[m2][m1];
+    Parallel.loop(m2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      int k2 = i2+ri-r2;
+      float[] rr2 = rsc[0][k2];
+      float[] ss2 = rsc[1][k2];
+      float[] cc2 = rsc[2][k2];
+      for (int i1=0; i1<m1; ++i1) {
+        int k1 = i1+ri-r1;
+        float rk = rr2[k1]; 
+        float sk = ss2[k1]; 
+        float ck = cc2[k1]; 
+        float sp = sk*ct-ck*st;
+        float cp = ck*ct+sk*st;
+        float x1 = rk*cp+h1;
+        float x2 = rk*sp+h2;
+        fr[i2][i1] = _si.interpolate(n1,1.0,0.0,n2,1.0,0.0,fx,x1,x2);
+      }
+    }});
+    return fr;
   }
 
+  // unrotate a 3D iamge around axis1
+  public float[][] unrotate(int n1, int n2, float theta, 
+    float[][][] rsc, float[][] fr) {
+    final int h2 = (int)floor(n2/2);
+    final int h1 = (int)floor(n1/2);
+    final int nr = rsc[0].length;
+    final int ri = (nr-1)/2;
+    final int m2 = fr.length;
+    final int m1 = fr[0].length;
+    final int r1 = (m1-1)/2;
+    final int r2 = (m2-1)/2;
+    final float st = sin(theta);
+    final float ct = cos(theta);
+    final float[][] fu = new float[n2][n1];
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      int k2 = i2+ri-h2;
+      float[] rr2 = rsc[0][k2];
+      float[] ss2 = rsc[1][k2];
+      float[] cc2 = rsc[2][k2];
+      for (int i1=0; i1<n1; ++i1) {
+        int k1 = i1+ri-h1;
+        float rk = rr2[k1]; 
+        float sk = ss2[k1]; 
+        float ck = cc2[k1]; 
+        float sp = sk*ct+ck*st;
+        float cp = ck*ct-sk*st;
+        float x1 = rk*cp+r1;
+        float x2 = rk*sp+r2;
+        fu[i2][i1] = _si.interpolate(m1,1.0,0.0,m2,1.0,0.0,fr,x1,x2);
+      }
+    }});
+    return fu;
+  }
 
-  public float[][][] getAngleMap(int n1, int n2) {
-    int h2 = (n2-1)/2;
-    int h1 = (n1-1)/2;
-    int nr = 2*round(sqrt(h1*h1+h2*h2))+1;
-    int nh = (nr-1)/2;
+  public float[][][] getRotationAngleMap(int n1, int n2) {
+    int h1 = (int)ceil(n1/2);
+    int h2 = (int)ceil(n2/2);
+    int hr = round(sqrt(h1*h1+h2*h2));
+    int nr = 2*hr+1;
     float[][] sr = new float[nr][nr];
     float[][] cr = new float[nr][nr];
     float[][] rr = new float[nr][nr];
-    for (int k2=-nh; k2<=nh; ++k2) {
-    for (int k1=-nh; k1<=nh; ++k1) {
-      int i1 = k1+nh;
-      int i2 = k2+nh;
+    for (int k2=-hr; k2<=hr; ++k2) {
+    for (int k1=-hr; k1<=hr; ++k1) {
+      int i1 = k1+hr;
+      int i2 = k2+hr;
       float ri = sqrt(k1*k1+k2*k2);
+      if(ri==0f) continue;
       float rc = 1.0f/ri;
       rr[i2][i1] = ri;
-      sr[i2][i1] = k1*rc;
-      cr[i2][i1] = k2*rc;
+      sr[i2][i1] = k2*rc;
+      cr[i2][i1] = k1*rc;
     }}
     return new float[][][]{rr,sr,cr};
   }
-
-  public float[][][] rotate(float theta, 
-    float[][] rr, float[][] sr, float[][] cr, float[][][] gx) {
-    int n2 = gx[0].length;
-    int n1 = gx[0][0].length;
-    int h2 = (n2-1)/2;
-    int h1 = (n1-1)/2;
-    int nr = 2*round(sqrt(h1*h1+h2*h2))+1;
-    int nh = (nr-1)/2;
-    float[][][] gr = new float[3][nr][nr];
-    SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    for (int k2=-nh; k2<=nh; ++k2) {
-    for (int k1=-nh; k1<=nh; ++k1) {
-      int i2 = k2+nh;
-      int i1 = k1+nh;
-      float st = sin(theta);
-      float ct = cos(theta);
-      float rk = rr[i2][i1]; 
-      float sk = sr[i2][i1]; 
-      float ck = cr[i2][i1]; 
-      float sp = sk*ct-ck*st;
-      float cp = ck*ct+sk*st;
-      float x1 = rk*sp+h1;
-      float x2 = rk*cp+h2;
-      gr[0][i2][i1] = si.interpolate(n1,1.0,0.0,n2,1.0,0.0,gx[0],x1,x2);
-      gr[1][i2][i1] = si.interpolate(n1,1.0,0.0,n2,1.0,0.0,gx[1],x1,x2);
-      gr[2][i2][i1] = si.interpolate(n1,1.0,0.0,n2,1.0,0.0,gx[2],x1,x2);
-    }}
-    return gr;
-  }
-
-
-  public float[][] rotate(float theta, 
-    float[][] rr, float[][] sr, float[][] cr, float[][] gx) {
-    int n2 = gx.length;
-    int n1 = gx[0].length;
-    int h2 = (n2-1)/2;
-    int h1 = (n1-1)/2;
-    int nr = 2*round(sqrt(h1*h1+h2*h2))+1;
-    int nh = (nr-1)/2;
-    float[][] gr = new float[nr][nr];
-    SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    for (int k2=-nh; k2<=nh; ++k2) {
-    for (int k1=-nh; k1<=nh; ++k1) {
-      int i2 = k2+nh;
-      int i1 = k1+nh;
-      float st = sin(theta);
-      float ct = cos(theta);
-      float rk = rr[i2][i1]; 
-      float sk = sr[i2][i1]; 
-      float ck = cr[i2][i1]; 
-      float sp = sk*ct-ck*st;
-      float cp = ck*ct+sk*st;
-      float x1 = rk*sp+h1;
-      float x2 = rk*cp+h2;
-      gr[i2][i1] = si.interpolate(n1,1.0,0.0,n2,1.0,0.0,gx,x1,x2);
-    }}
-    return gr;
-  }
-
-  public float[][] unrotate(int n1, int n2, float theta, 
-    float[][] rr, float[][] sr, float[][] cr, float[][] gr) {
-    int h2 = (n2-1)/2;
-    int h1 = (n1-1)/2;
-    int nr = 2*round(sqrt(h1*h1+h2*h2))+1;
-    int nh = (nr-1)/2;
-    float[][] gu = new float[n2][n1];
-    SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    for (int k2=-h2; k2<=h2; ++k2) {
-    for (int k1=-h1; k1<=h1; ++k1) {
-      int i2 = k2+nh;
-      int i1 = k1+nh;
-      float st = sin(theta);
-      float ct = cos(theta);
-      float rk = rr[i2][i1]; 
-      float sk = sr[i2][i1]; 
-      float ck = cr[i2][i1]; 
-      float sp = sk*ct+ck*st;
-      float cp = ck*ct-sk*st;
-      float x1 = rk*sp+nh;
-      float x2 = rk*cp+nh;
-      gu[k2+h2][k1+h1] = si.interpolate(nr,1.0,0.0,nr,1.0,0.0,gr,x1,x2);
-    }}
-    return gu;
-  }
-
-  public float[][][] unrotate(int n1, int n2, float theta, 
-    float[][] rr, float[][] sr, float[][] cr, float[][][] gr) {
-    int h2 = (n2-1)/2;
-    int h1 = (n1-1)/2;
-    int nr = 2*round(sqrt(h1*h1+h2*h2))+1;
-    int nh = (nr-1)/2;
-    float[][][] gu = new float[3][n2][n1];
-    SincInterpolator si = new SincInterpolator();
-    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
-    for (int k2=-h2; k2<=h2; ++k2) {
-    for (int k1=-h1; k1<=h1; ++k1) {
-      int i2 = k2+nh;
-      int i1 = k1+nh;
-      float st = sin(theta);
-      float ct = cos(theta);
-      float rk = rr[i2][i1]; 
-      float sk = sr[i2][i1]; 
-      float ck = cr[i2][i1]; 
-      float sp = sk*ct+ck*st;
-      float cp = ck*ct-sk*st;
-      float x1 = rk*sp+nh;
-      float x2 = rk*cp+nh;
-      gu[0][k2+h2][k1+h1] = si.interpolate(nr,1.0,0.0,nr,1.0,0.0,gr[0],x1,x2);
-      gu[1][k2+h2][k1+h1] = si.interpolate(nr,1.0,0.0,nr,1.0,0.0,gr[1],x1,x2);
-      gu[2][k2+h2][k1+h1] = si.interpolate(nr,1.0,0.0,nr,1.0,0.0,gr[2],x1,x2);
-    }}
-    return gu;
-  }
-
-
-  private float[][] computeGradient(float a, float[][] gs) {
-    int n2 = gs.length;
-    int n1 = gs[0].length;
-    float[][] gc = new float[n2][n1];
-    float[][] ga = new float[n2][n1];
-    float[][] gg = new float[n2][n1];
-    causal2(a,gs,gc);
-    anticausal2(a,gs,ga);
-    for (int i2=0; i2<n2; ++i2)
-    for (int i1=0; i1<n1; ++i1)
-      gg[i2][i1] = abs(gc[i2][i1]-ga[i2][i1]);
-    return gg;
-  }
-
-  private float[][][] computeGradient(float a, float[][][] gs) {
-    int n2 = gs[0].length;
-    int n1 = gs[0][0].length;
-    float[][][] gg = new float[3][n2][n1];
-    for (int i3=0; i3< 3; ++i3) {
-      float[][] gs3 = gs[i3];
-      float[][] gg3 = gg[i3];
-      float[][] gc = new float[n2][n1];
-      float[][] ga = new float[n2][n1];
-      causal2(a,gs3,gc);
-      anticausal2(a,gs3,ga);
-      for (int i2=0; i2<n2; ++i2) {
-      for (int i1=0; i1<n1; ++i1) {
-        gg3[i2][i1] = abs(gc[i2][i1]-ga[i2][i1]);
-      }}
-    }
-    return gg;
-  }
-
-
-
-  // Horizontally causal and anti-causal filters are implemented 
-  // by one-side recursive exponential filters.  
-  private void causal2(float a, float[][] x, float[][] y) {
-    int n2 = x.length;
-    int n1 = x[0].length;
-    float b = 1.0f - a;
-    for (int i1=0; i1<n1; ++i1){ 
-      float yi = y[0][i1] = x[0][i1];
-      for (int i2=1; i2<n2; ++i2) 
-        y[i2][i1] = yi = a*yi + b*x[i2][i1];
-    }
-  }
-
-
- private void anticausal2(float a, float[][] x, float[][] y) {
-    int n2 = x.length;
-    int n1 = x[0].length;
-    float b = 1.0f - a;
-    for(int i1=0; i1<n1; ++i1) {
-      float yi = y[n2-1][i1] = x[n2-1][i1];
-      for(int i2=n2-2; i2>=0; --i2)
-        y[i2][i1] = yi = a*yi + b*x[i2][i1];
-    }
-  }
-
 
 }

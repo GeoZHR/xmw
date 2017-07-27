@@ -1967,9 +1967,9 @@ def goF3d():
   '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
-    xs = copy(120,400,420,342,0,0,x) #for spv test
-    writeImageX("xs",xs)
-    show3d(xs,clip=max(xs)/10)
+    #xs = copy(120,400,420,342,0,0,x) #for spv test
+    #writeImageX("xs",xs)
+    show3d(x,clip=max(x)/10)
 
 def writeImageX(basename,image):
   """ 

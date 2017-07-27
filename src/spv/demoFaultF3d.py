@@ -27,7 +27,7 @@ fttfile = "ftt" # fault dip thinned
 
 pngDir = getPngDir()
 pngDir = None
-plotOnly = False
+plotOnly = True
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minTheta,maxTheta = 65,80
@@ -37,7 +37,8 @@ sigmaPhi,sigmaTheta=3,6
 def main(args):
   #goPlanar()
   #goFaultOrientScan()
-  goSurfaceVoting()
+  #goSurfaceVoting()
+
 def goPlanar():
   gx = readImage3D(gxfile)
   if not plotOnly:
@@ -68,6 +69,7 @@ def goFaultOrientScan():
     writeImage(fttfile,ftt)
   else:
     fe = readImage3D(fefile)
+    fp = readImage3D(fpfile)
   print min(fe) 
   print max(fe) 
   ep = sub(1,pow(ep,8))

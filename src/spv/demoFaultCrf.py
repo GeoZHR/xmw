@@ -38,8 +38,22 @@ sigmaPhi,sigmaTheta=4,8
 
 def main(args):
   #goPlanarX()
-  goFaultOrientScan()
+  #goFaultOrientScan()
   #goSurfaceVoting()
+  gx = readImage3D(epfile)
+  g1 = zerofloat(n1,n3)
+  g2 = zerofloat(n1,n3)
+  g3 = zerofloat(n1,n3)
+  g4 = zerofloat(n1,n3)
+  for i3 in range(n3):
+    g1[i3] = gx[i3][806]
+    g2[i3] = gx[i3][808]
+    g3[i3] = gx[i3][809]
+    g4[i3] = gx[i3][810]
+  writeImage("ep806",g1)
+  writeImage("ep808",g2)
+  writeImage("ep809",g3)
+  writeImage("ep810",g4)
 def goPlanarX():
   gx = readImage3D(gxfile)
   if not plotOnly:
@@ -107,6 +121,7 @@ def goSurfaceVoting():
     osv.setStrainMax(0.2,0.2)
     osv.setSurfaceSmoothing(2,2)
     fv = osv.applyVoting(4,0.3,fet,fpt,ftt)
+    writeImage(fvfile,fv)
   else:
     fv = readImage3D(fvfile)
   ep = readImage3D(epfile)

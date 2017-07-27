@@ -211,8 +211,9 @@ public class FaultScanner2 {
         float t00 = t0[i1];
         if ((fm[i1]<f00 && fp[i1]<f00) ||
             (fp[i1]<f00 && fm[i1]<f00)){
-          ff[i2][i1] = f00;
-          ff[i2m][i1] = fm[i1];
+          ff[i2][i1]  = f00;
+          //ff[i2m][i1] = fm[i1];
+          //ff[i2p][i1] = fp[i1];
           tt[i2][i1] = t00;
         } else {
           tt[i2][i1] = NO_DIP;
