@@ -21,7 +21,7 @@ fpfile = "fp"  # fault strike;
 ftfile = "ft"  # fault dip;
 fvfile = "fv"  # fault dip;
 ftfile  = "ft" # fault dip (theta)
-fetfile = "flt" # fault likelihood thinned
+fetfile = "fet" # fault likelihood thinned
 fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
 

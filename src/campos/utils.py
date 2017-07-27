@@ -27,12 +27,48 @@ def setupForSubset(name):
   global nz,nl,nc
   if name=="campos":
     print "setupForSubset: campos"
-    seismicDir = _datdir+"campos/"
+    seismicDir = _datdir+"campos/part1/"
     #n1,n2,n3 = 600,3765,2302
     n1,n2,n3 = 900,3765,2302
     #n1,n2,n3 = 900,1950,1200
     #n1,n2,n3 = 600,3765,1200 # planarity portion
-    #n1,n2,n3 = 600,2000,1200 # seismic portion
+    n1,n2,n3 = 900,1950,1200 # seismic portion
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 420,0,0
+    f1,f2,f3 = 0,0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="part1":
+    print "setupForSubset: campos part1"
+    seismicDir = _datdir+"campos/part1/"
+    n1,n2,n3 = 900,1950,1200 # seismic portion
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 420,0,0
+    f1,f2,f3 = 0,0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="part2":
+    print "setupForSubset: campos part2"
+    seismicDir = _datdir+"campos/part2/"
+    n1,n2,n3 = 900,1950,1200 # seismic portion
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 420,0,0
+    f1,f2,f3 = 0,0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="part3":
+    print "setupForSubset: campos part3"
+    seismicDir = _datdir+"campos/part3/"
+    n1,n2,n3 = 900,1950,1200 # seismic portion
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
+    #f1,f2,f3 = 420,0,0
+    f1,f2,f3 = 0,0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="part4":
+    print "setupForSubset: campos part4"
+    seismicDir = _datdir+"campos/part4/"
+    n1,n2,n3 = 900,1950,1200 # seismic portion
     d1,d2,d3 = 1.0,1.0,1.0 
     #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
     #f1,f2,f3 = 420,0,0

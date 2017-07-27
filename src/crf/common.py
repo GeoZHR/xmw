@@ -26,6 +26,7 @@ from util import *
 from sso import *
 from he import *
 from mef import *
+from spv import *
 from crf import *
 
 #############################################################################

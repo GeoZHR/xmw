@@ -27,7 +27,7 @@ fttfile = "ftt" # fault dip thinned
 
 
 pngDir = None
-plotOnly = False
+plotOnly = True
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minTheta,maxTheta = 65,80
@@ -36,9 +36,14 @@ sigmaPhi,sigmaTheta=4,8
 
 
 def main(args):
-  goPlanarX()
+  #goPlanarX()
   #goFaultOrientScan()
   #goSurfaceVoting()
+  gx = readImage(gxfile)
+  g2 = zerofloat(n1,n3)
+  for i3 in range(n3):
+    g2[i3] = gx[i3][3366]
+  writeImage("gx3366",g2)
 def goPlanarX():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -97,20 +102,26 @@ def goFaultOrientScan():
 
 def goSurfaceVoting():
   gx = readImage(gxfile)
+  fet = readImage(fetfile)
   if not plotOnly:
     fet = readImage(fetfile)
     fpt = readImage(fptfile)
     ftt = readImage(fttfile)
     osv = OptimalSurfaceVoterP(10,30,20)
-    osv.setStrainMax(0.2,0.2)
+    osv.setStrainMax(0.25,0.25)
     osv.setSurfaceSmoothing(2,2)
     fv = osv.applyVoting(4,0.3,fet,fpt,ftt)
+    writeImage(fvfile,fv)
   else:
     fv = readImage(fvfile)
+  print min(fv) 
+  print max(fv) 
+  '''
   ep = readImage(epfile)
   ep = sub(1,pow(ep,8))
   plot3(gx,ep,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="1-planarity",png="ep")
+  '''
   plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="Surface voting",png="sv")
 

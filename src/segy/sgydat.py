@@ -12,7 +12,7 @@ global n1,n2,n3
 #############################################################################
 def main(args):
   #goAustralia()
-  goF3d()
+  #goF3d()
   #goManba()
   #goAustralia()
   #goHongliu()
@@ -34,7 +34,7 @@ def main(args):
   #goTj()
   #goBag()
   #goCurt()
-  #goCampos()
+  goCampos()
   #goCampos2()
   #goWasson()
 def goCampos2():
@@ -218,8 +218,8 @@ def goCampos():
     #writeImageX(subfile,xs)
     x = readImage(subfile,n1,n2,n3)
     #xs = copy(1000,3100,550,35,0,1752,x)
-    xs = copy(1000,2000,550,35,1086,1752,x)
-    writeImageX(subfile1,xs)
+    #xs = copy(1000,2000,550,35,1086,1752,x)
+    writeImageX("gxSpv",xs)
     show3d(xs,clip=max(xs)/50)
 
 def goCurt():
