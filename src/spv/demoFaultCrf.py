@@ -37,24 +37,10 @@ sigmaPhi,sigmaTheta=4,8
 
 
 def main(args):
-  #goPlanarX()
+  #goPlanar()
   #goFaultOrientScan()
   #goSurfaceVoting()
-  gx = readImage3D(epfile)
-  g1 = zerofloat(n1,n3)
-  g2 = zerofloat(n1,n3)
-  g3 = zerofloat(n1,n3)
-  g4 = zerofloat(n1,n3)
-  for i3 in range(n3):
-    g1[i3] = gx[i3][806]
-    g2[i3] = gx[i3][808]
-    g3[i3] = gx[i3][809]
-    g4[i3] = gx[i3][810]
-  writeImage("ep806",g1)
-  writeImage("ep808",g2)
-  writeImage("ep809",g3)
-  writeImage("ep810",g4)
-def goPlanarX():
+def goPlanar():
   gx = readImage3D(gxfile)
   if not plotOnly:
     lof = LocalOrientFilter(16,4)
@@ -71,21 +57,6 @@ def goPlanarX():
   plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1)
   #plot3(gx,sub(1,ep),cmin=0.1,cmax=0.8,cmap=jetRamp(1.0),
   #    clab="1-planarity",png="fl")
-
-def goPlanar():
-  gx = readImage3D(gxfile)
-  if not plotOnly:
-    lof = LocalOrientFilter(2,1,1)
-    u1 = zerofloat(n1,n2,n3)
-    u2 = zerofloat(n1,n2,n3)
-    u3 = zerofloat(n1,n2,n3)
-    ep = zerofloat(n1,n2,n3)
-    lof.applyForNormalPlanar(gx,u1,u2,u3,ep)
-    writeImage(epfile,ep)
-  else:
-    ep = readImage3D(epfile)
-  plot3(gx,sub(1,ep),cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
-      clab="1-planarity",png="ep")
 
 def goFaultOrientScan():
   gx = readImage3D(gxfile)
