@@ -34,9 +34,9 @@ def main(args):
   #goTj()
   #goBag()
   #goCurt()
-  goCampos()
+  #goCampos()
   #goCampos2()
-  #goWasson()
+  goWasson()
 def goCampos2():
   """
   ***************************************************************************
@@ -559,14 +559,15 @@ def goWasson():
   ***************************************************************************
   """
   firstLook = True # fast, does not read all trace headers
-  secondLook = True # slow, must read all trace headers
+  secondLook = False # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
-  showImage = False # displays the image
+  showImage = True # displays the image
   basedir = "../../../data/seis/beg/xavier/wasson/"
   sgyfile = basedir+"mig32_oxy0_2000.sgy"
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,750
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  n1,n2,n3=501,655,833
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();

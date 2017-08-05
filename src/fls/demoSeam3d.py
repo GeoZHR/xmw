@@ -27,8 +27,8 @@ fsfile = "fs"
 psfile = "ps"
 psdfile = "psd"
 
-pngDir = False
 pngDir = "../../../png/fls/seam/sub3d/"
+pngDir = False
 
 plotOnly = False
 
@@ -36,9 +36,7 @@ def main(args):
   #goEnvelope()
   #goSaltLike()
   #goEnvAndSaltLike()
-  #goPicker3()
-  gx = readImage(gxfile)
-  plot3(gx)
+  goPicker3()
 def goPicker3():
   gx = readImage(gxfile)
   plot3(gx,png="seis")
@@ -56,13 +54,33 @@ def goPicker3():
   pks = sp3.pick3(25,xs,ys,zs,gs,fs)
   lgs = getLineGroups(1,zs,ys,xs)
   rgf1 = RecursiveGaussianFilterP(3)
-  rgf2 = RecursiveGaussianFilterP(12)
-  rgf3 = RecursiveGaussianFilterP(6)
+  rgf2 = RecursiveGaussianFilterP(6)
+  rgf3 = RecursiveGaussianFilterP(3)
   rgf1.apply0XX(fs,fs)
   rgf2.applyX0X(fs,fs)
   rgf3.applyXX0(fs,fs)
   plot3(gx,g=fs,cmin=-0.5,cmax=0.5,png="saltBody")
   plot3(gx,fbs=fs,png="saltBound")
+  '''
+  gx2 = zerofloat(n1,n3)
+  fs2 = zerofloat(n1,n3)
+  for i2 in range(0,n2,50):
+    for i3 in range(n3):
+      gx2[i3] = gx[i3][i2]
+      fs2[i3] = fs[i3][i2]
+    plot2(gx2)
+    plot2(fs2)
+    writeImage("salt"+str(i2),fs2)
+
+  for i2 in range(399,n2,1):
+    for i3 in range(n3):
+      gx2[i3] = gx[i3][i2]
+      fs2[i3] = fs[i3][i2]
+    plot2(gx2)
+    plot2(fs2)
+    writeImage("salt"+str(i2),fs2)
+    #plot2(gx2,xp=pks[i2],clab=str(i2))
+  '''
   '''
   plot3(gs,cmin=0.2,cmax=0.6,lgs=lgs,png="slicesInitial")
   xps,yps,zps=[],[],[]
@@ -152,21 +170,23 @@ def getPiks():
   y1 = [  0, 42, 22,52,281,149,122, 77,  0,  0]
   z1 = [302,197,155,72,231,359,512,353,359,302]
 
-  y2 = [  0,82,222,380,196,130, 45,  0,  0] 
-  z2 = [316,30,109,108,330,510,310,355,316]
+  y2 = [  0,82,222,380,196,130, 35,  0,  0] 
+  z2 = [316,30,109,108,330,510,325,355,316]
 
   y3 = [ 15, 69,49,390,213,154, 98, 41, 15]
   z3 = [319,159,28,129,330,549,349,314,319]
-  y4 = [ 28, 68,47,390,304,203,149, 86, 28]
-  z4 = [306,155,22,113,311,326,549,296,306]
-  y5 = [ 26, 76,48,94,272,379,238,174,139, 74, 26]
-  z5 = [298,150,42,20,101, 44,361,374,416,262,298]
 
-  y6 = [ 38, 81,55,72,268,319,370,351,169, 88, 61, 38]
+  y4 = [ 28, 68,47,390,304,203,149, 86,60, 28]
+  z4 = [306,155,22,113,311,326,549,296,288,306]
+
+  y5 = [ 26, 76,55,48,94,272,379,238,174,139, 74, 26]
+  z5 = [298,150,60,42,20,101, 44,361,374,416,262,298]
+
+  y6 = [ 38, 81,65,72,268,319,370,351,169, 88, 61, 38]
   z6 = [271,151,71,33, 75, 21, 91,239,288,280,263,271]
 
-  y7 = [ 47,86,284,306,364,230, 47]
-  z7 = [294,38, 82, 54,285,253,294]
+  y7 = [ 47, 90,86,284,306,364,230, 47]
+  z7 = [294,110,38, 82, 54,285,253,294]
 
   y8 = [  0, 91,117,105,133,280,312,358,227, 89,  0,  0]
   z8 = [376,140,107, 49, 35, 81, 49,308,241,312,400,376]

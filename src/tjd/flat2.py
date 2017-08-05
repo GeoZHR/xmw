@@ -2,6 +2,7 @@ import sys
 
 from java.awt import *
 from java.io import *
+from java.nio import *
 from java.lang import *
 from javax.swing import *
 
@@ -14,7 +15,6 @@ from edu.mines.jtk.util.ArrayMath import *
 
 from hv import *
 from he import *
-from util import *
 
 seismicDir = "./"
 ffile = "tp73"
@@ -42,6 +42,7 @@ def goHorizonPick2D():
   ploth(s1,s2,wp,png="wp")
   ploth(s1,s2,f,png="seis")
   ploth(s1,s2,f,h=g,k2=k2,k1=k1,png="horizon")
+
 def gain(x):
   g = mul(x,x) 
   ref = RecursiveExponentialFilter(20.0)
@@ -57,7 +58,7 @@ gray = ColorMap.GRAY
 jet = ColorMap.JET
 pngDir = None
 pngDir = "./"
-def ploth(s1,s2,x,h=None,k2=None,k1=None,cmap=ColorMap.GRAY,
+def ploth(s1,s2,x,h=None,k2=None,k1=None,w1=1000,w2=500,cmap=ColorMap.GRAY,
     clab=None,vlabel=None,hlabel=None,
   cmin=0,cmax=0,title=None,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
@@ -65,6 +66,8 @@ def ploth(s1,s2,x,h=None,k2=None,k1=None,cmap=ColorMap.GRAY,
   #  sp.setTitle(title)
   #cb=sp.addColorBar(clab)
   pv = sp.addPixels(s1,s2,x)
+  sp.setHLimits(0,n2-1)
+
   pv.setColorModel(cmap)
   pv.setInterpolation(PixelsView.Interpolation.NEAREST)
   if cmin<cmax:
@@ -88,8 +91,8 @@ def ploth(s1,s2,x,h=None,k2=None,k1=None,cmap=ColorMap.GRAY,
       sp.add(pv)
   sp.setVLabel(vlabel)
   sp.setHLabel(hlabel)
-  sp.setSize(500,1000)
-  sp.setFontSizeForPrint(8.0,200)
+  sp.setSize(w2,w1)
+  sp.setFontSize(16)
   sp.plotPanel.setColorBarWidthMinimum(45)
   if pngDir and png:
     sp.paintToPng(720,2.2222,pngDir+png+".png")
@@ -153,6 +156,15 @@ def readImage(name):
   n1,n2 = s1.count,s2.count
   image = zerofloat(n1,n2)
   ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+def readImageL(name):
+  fileName = seismicDir+name+".dat"
+  n1,n2 = s1.count,s2.count
+  image = zerofloat(n1,n2)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
   return image

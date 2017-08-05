@@ -273,6 +273,24 @@ public class SaltPicker3 {
     }
   }
 
+  public void pointsToImage(
+    float[] ys, float[] zs, float[][] wx) 
+  {
+    int n2 = wx.length;
+    int n1 = wx[0].length;
+    int np = ys.length;
+    for (int ip=0; ip<np; ++ip) {
+      int i2 = round(ys[ip]);
+      int i1 = round(zs[ip]);
+      i2 = max(i2,0);
+      i2 = min(i2,n2-1);
+      i1 = max(i1,0);
+      i1 = min(i1,n1-1);
+      wx[i2][i1] = 1;
+    }
+  }
+
+
   public void signAsignmentH(
     float[][] wx, float[][] fx) {
     int n2 = wx.length;
@@ -319,13 +337,15 @@ public class SaltPicker3 {
     }}
     //despike
     float[][] fs2 = zerofloat(n1,n3);
-    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(10);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(7);
     ref.apply(fx2,fs2);
     for (int i3=0; i3<n3; ++i3) {
     for (int i1=0; i1<n1; ++i1) {
       if(fx2[i3][i1]!=0) {
         if(fs2[i3][i1]>0) fx[i3][k2][i1] =  1f;
         if(fs2[i3][i1]<0) fx[i3][k2][i1] = -1f;
+      } else {
+        fx[i3][k2][i1] = 1f;
       }
     }}
   }

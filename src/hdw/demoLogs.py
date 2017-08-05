@@ -26,8 +26,8 @@ s1,s2,s3=Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
 logDir = "../../../data/seis/hdw/logs/"
 seismicDir = "../../../data/seis/hdw/logs/"
-pngDir =  "../../../png/hdw/logs/seg/"
 pngDir = None
+pngDir =  "../../../png/hdw/logs/seg/"
 
 plotOnly = True
 
@@ -38,7 +38,8 @@ def main(args):
   #goDeepLogSub()
   #goDeepLogs()
   #goDeepLogSubFlatten()
-  goFlatten()
+  #goFlatten()
+  goDeepDensityLogs()
   #goDeepPorosityLogs()
   #goPorisityFlatten()
   #goDensityFlatten()
@@ -209,6 +210,7 @@ def goTime(dp,lgs):
     for i2 in range(n2):
       fls[i3][i2] = max(fl[i3][i2])
   x2s,x3s = getLogPositions(lgs,logType)
+  print len(x2s)
   wh = WellHelper()
   nw = len(dp)
   lm = wh.lengthMap(s2,s3,lgs,dp)
@@ -234,6 +236,7 @@ def goTime(dp,lgs):
   fls = sub(1,fls)
   fls = normalize(fls)
   lm = normalize(lm)
+  plot2(s2,s3,lm,nearest=True,label="Well-log length",png="length")
   lm = pow(lm,4)
   rgf1.apply00(fls,fls)
   rgf2.apply00(lm,lm)
@@ -246,7 +249,7 @@ def goTime(dp,lgs):
   c2 = ids[0]*d2
   c3 = ids[1]*d3
   pv = clip(0.00001,1,pv)
-  plot2(s2,s3,lm,pp=[x2s,x3s],label="Well-log length",png="length")
+  plot2(s2,s3,lm,label="Smoothed well-log length",png="lengthSmoothed")
   plot2(s2,s3,pv,source=[[c2],[c3]],cmin=0.001,cmax=1,label="Pseudo velocity",
           png="pvel")
   plot2(s2,s3,pv,pp=[x2s,x3s],source=[[c2],[c3]],label="Pseudo velocity",png="pvelw")
@@ -464,7 +467,7 @@ def goDensityFlatten():
     ww.setStrainMax(0.1)
     ww.setErrorExtrapolation(ww.ErrorExtrapolation.AVERAGE)
     ww.setErrorExponent(0.125)
-    #plot(sz,sw,dc,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdr")
+    plot(sz,sw,dc,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdr")
     #df = ww.flatten(dc)
     sm = zerofloat(nw)
     df = ww.flatten(dc,sm)
@@ -500,6 +503,7 @@ def goDensityFlatten():
     plot(sz,sw,dce,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdt")
     plot(sz,sw,dfe,wh=wh,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,png="sdf")
     cm = ww.confidence(df)
+    '''
     for kw in range(nw):
       sm = []
       for k2 in range(kw+1):
@@ -507,6 +511,7 @@ def goDensityFlatten():
         sm.append(sz.last-cm[k2]*0.3+0.1)
       plot(sz,sw,dce,wh=wh,k=kw,sm=sm,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,
             png="sdf"+str(kw))
+    '''
 
 def goPorisityFlatten():
   lmin,lmax=-350,350
@@ -520,6 +525,7 @@ def goPorisityFlatten():
   nw = len(dc)
   sw = Sampling(nw,1,1)
   ww = WellFlattener(lmin,lmax)
+  ww.setErrorExponent(0.5)
   ww.setStrainMax(0.1)
   ww.setGate(nw,0.90)
   #ww.setGate(1,0.95)
@@ -1227,7 +1233,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
-def plot2(s1,s2,f,g=None,pp=None,source=None,
+def plot2(s1,s2,f,g=None,pp=None,source=None,nearest=False,
         cmin=None,cmax=None,cmap=None,contour=False,label=None,png=None):
   n2 = len(f)
   n1 = len(f[0])
@@ -1237,7 +1243,6 @@ def plot2(s1,s2,f,g=None,pp=None,source=None,
   panel = panel2Teapot()
   panel.setHLimits(0,f1,l1)
   panel.setVLimits(0,f2,l2)
-
   panel.setHInterval(1.0)
   panel.setVInterval(1.0)
   panel.setHLabel("Inline (km)")
@@ -1247,8 +1252,25 @@ def plot2(s1,s2,f,g=None,pp=None,source=None,
   else:
     panel.addColorBar()
   panel.setColorBarWidthMinimum(45)
+  if nearest:
+    ft = copy(f)
+    for i2 in range(1,n2-1,1):
+      for i1 in range(1,n1-1,1):
+        fti = ft[i2][i1]
+        if(fti):
+          f[i2  ][i1-1] = fti
+          f[i2  ][i1+1] = fti
+          f[i2-1][i1-1] = fti
+          f[i2-1][i1+1] = fti
+          f[i2+1][i1-1] = fti
+          f[i2+1][i1+1] = fti
+          f[i2-1][i1  ] = fti
+          f[i2+1][i1  ] = fti
   pv = panel.addPixels(s1,s2,f)
-  pv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  if nearest:
+    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  else:
+    pv.setInterpolation(PixelsView.Interpolation.LINEAR)
   pv.setColorModel(ColorMap.GRAY)
   if cmap:
     pv.setColorModel(cmap)

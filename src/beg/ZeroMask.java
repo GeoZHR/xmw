@@ -24,6 +24,34 @@ public class ZeroMask {
    * Constructs a zero mask.
    * @param small small value; zeros in mask where labs &lt; small*gabs.
    * @param sigma1 Gaussian window half-width for 1st dimension.
+   * @param x array of image values from which mask is derived.
+   */
+  public ZeroMask(
+    double small, double sigma1,float[][] x) 
+  {
+    _n1 = x[0].length;
+    _n2 = x.length;
+    float[][] t = abs(x);
+    float a = ((sum(t)/_n1)/_n2); // global mean absolute amplitude
+    RecursiveGaussianFilter rgf1 = new RecursiveGaussianFilter(sigma1);
+    float[][] b = zerofloat(_n1,_n2);
+    rgf1.apply0X(t,b);
+    _mask2 = new boolean[_n2][_n1];
+    for (int i2=0; i2<_n2; ++i2) {
+      for (int i1=0; i1<_n1; ++i1) {
+        if (b[i2][i1]<small*a) {
+          _mask2[i2][i1] = false;
+        } else {
+          _mask2[i2][i1] = true;
+        }
+      }
+    }
+  }
+
+  /**
+   * Constructs a zero mask.
+   * @param small small value; zeros in mask where labs &lt; small*gabs.
+   * @param sigma1 Gaussian window half-width for 1st dimension.
    * @param sigma2 Gaussian window half-width for 2nd dimension.
    * @param sigma3 Gaussian window half-width for 3rd dimension.
    * @param x array of image values from which mask is derived.
@@ -135,6 +163,22 @@ public class ZeroMask {
    * @param vfalse value to use where mask is false.
    * @param v array of values to be masked.
    */
+  public void setValue(float vfalse, float[][] v) {
+    for (int i2=0; i2<_n2; ++i2) {
+      for (int i1=0; i1<_n1; ++i1) {
+        if (!_mask2[i2][i1]) {
+          v[i2][i1] = vfalse;
+        }
+      }
+    }
+  }
+
+
+  /**
+   * Applies this mask to a specified array of values.
+   * @param vfalse value to use where mask is false.
+   * @param v array of values to be masked.
+   */
   public void setValue(float vfalse, float[][][] v) {
     for (int i3=0; i3<_n3; ++i3) {
       for (int i2=0; i2<_n2; ++i2) {
@@ -165,4 +209,5 @@ public class ZeroMask {
 
   private int _n1,_n2,_n3;
   private boolean[][][] _mask;
+  private boolean[][] _mask2;
 }

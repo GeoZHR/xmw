@@ -71,7 +71,7 @@ def goPathVoting():
     fvt = readImage(fvtfile)
   plot(gx,cmin=-2,cmax=2,label="Amplitude")
   plot(gx,fv,cmin=0.6,cmax=1.0,cmap=jetRamp(1.0),label="Path voting")
-  plot(gx,fvt,cmin=0.6,cmax=1.0,cmap=jetRamp(1.0),
+  plot(gx,fvt,cmin=0.9,cmax=1.0,cmap=jetRamp(1.0),
        neareast=True,label="Path voting")
 
 def goFaultLikelihood():
