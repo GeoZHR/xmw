@@ -12,6 +12,7 @@ seisDir = getSeismicDir()
 
 gxfile = "gxc"
 gxfile = "gxfull"
+gxfile = "gs"
 p2file = "p2"
 p3file = "p3"
 p2sfile = "p2s"
@@ -50,9 +51,11 @@ def main(args):
   #goCoherence()
   #goCoherenceEnhance()
   #goSemblance()
-  #gx = readImage(gxfile)
-  #plot3(gx)
-  goWriteAsciiHorizons()
+  gx = readImage(gxfile)
+  gs = copy(n1,500,500,0,1500,1000,gx)
+  writeImage("gxSub",gs)
+  plot3(gs)
+  #goWriteAsciiHorizons()
 def goWriteAsciiHorizons():
   ns = 50
   hs = readHorizons(ns,hvsfile)

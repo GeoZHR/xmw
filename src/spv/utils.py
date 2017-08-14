@@ -67,6 +67,15 @@ def setupForSubset(name):
     d1,d2 = 1,1 # (s,km/s)
     f1,f2 = 0,0
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
+  elif name=="tj2d":
+    """ costa rica field """
+    print "setupForSubset: crf"
+    pngDir = _pngdir+"fault/2d/campos/"
+    seismicDir = "../../../data/seis/mhe/tj/"
+    n1,n2 = 187,801
+    d1,d2 = 1,1 # (s,km/s)
+    f1,f2 = 0,0
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n2,d2,f2)
   elif name=="edge":
     """ edge """
     print "setupForSubset: edge"

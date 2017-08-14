@@ -33,10 +33,10 @@ def main(args):
   #goParihaka()
   #goTj()
   #goBag()
-  #goCurt()
+  goCurt()
   #goCampos()
   #goCampos2()
-  goWasson()
+  #goWasson()
 def goCampos2():
   """
   ***************************************************************************
@@ -257,7 +257,7 @@ def goCurt():
   secondLook = False # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
   showImage = True # displays the image
-  basedir = "../../../data/seis/beg/xavier/curt3d/"
+  basedir = "../../../data/seis/beg/xavier/curt/3d/"
   sgyfile = basedir+"FILE2.sgy"
   datfile = basedir+"gx.dat"
   datfile1 = basedir+"gxb.dat"
@@ -289,10 +289,13 @@ def goCurt():
   si.close()
   '''
   if showImage:
-    x = readImage(datfile,n1,n2,n3)
-    xs = copy(n1,1000,1000,0,3260,324,x)
-    writeImageX(datfileSub,xs)
-    show3d(xs,clip=max(xs)/10)
+    #x = readImage(datfile,n1,n2,n3)
+    #xs = copy(n1,1000,1000,0,3260,324,x)
+    #writeImageX(datfileSub,xs)
+    xs = readImage(datfileSub,n1,1000,1000)
+    xs = copy(500,1000,1000,60,0,0,xs)
+    writeImageX("xs.dat",xs)
+    show3d(xs,clip=max(xs)/5)
 
 def goBag():
   """
@@ -520,6 +523,9 @@ def goAustralia():
   n1 = i1max-i1min+1
   n2 = i2max-i2min+1
   n3 = i3max-i3min+1
+  n1 = 1640
+  n2 = 1065
+  n3 = 1905
   x = readImage(datfile,n1,n2,n3)
   show3d(x,clip=max(x)/10)
   show3d(x,clip=1.0)
@@ -1270,7 +1276,10 @@ def goLulia():
   '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
+    print n1
+    print n2
     show3d(x,clip=max(x))
+    writeImageX("lulia561.dat",x[561])
     '''
     xs = copy(250,410,400,0,330,220,x)
     writeImageX(basedir+"gxs.dat",xs)
@@ -1969,8 +1978,11 @@ def goF3d():
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     #xs = copy(120,400,420,342,0,0,x) #for spv test
-    #writeImageX("xs",xs)
-    show3d(x,clip=max(x)/10)
+    #xs = copy(220,400,600,242,0,0,x) #for spv test
+    xs = copy(242,n2,600,220,0,0,x) #for spv test
+    writeImageX("xs",xs)
+    #writeImageX("gx178",x[178])
+    show3d(xs,clip=max(xs)/10)
 
 def writeImageX(basename,image):
   """ 

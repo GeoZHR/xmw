@@ -72,6 +72,7 @@ public final class FlattenHelper {
       for (int iy=0; iy<ny; ++iy)
         si.interpolate(_nz,_dz,_fz,f[ix][iy],_nz,x[ix][iy],g[ix][iy]);
     }});
+    /*
     for (int ix=0; ix<nx; ++ix) {
       for (int iy=0; iy<ny; ++iy) {
         for (int iz=0; iz<nz; ++iz) {
@@ -88,6 +89,7 @@ public final class FlattenHelper {
         }
       }
     }
+    */
     return g;
   }
 

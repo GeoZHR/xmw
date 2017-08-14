@@ -39,10 +39,10 @@ def main(args):
   #goDeepLogs()
   #goDeepLogSubFlatten()
   #goFlatten()
-  goDeepDensityLogs()
+  #goDeepDensityLogs()
   #goDeepPorosityLogs()
   #goPorisityFlatten()
-  #goDensityFlatten()
+  goDensityFlatten()
   #goVelocityFlatten()
   #goVelocityFlattenSlides()
   #goGammaFlatten()
@@ -503,15 +503,13 @@ def goDensityFlatten():
     plot(sz,sw,dce,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdt")
     plot(sz,sw,dfe,wh=wh,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,png="sdf")
     cm = ww.confidence(df)
-    '''
-    for kw in range(nw):
+    for kw in range(nw-1,nw,1):
       sm = []
       for k2 in range(kw+1):
         dce[k2] = dfe[k2]
         sm.append(sz.last-cm[k2]*0.3+0.1)
       plot(sz,sw,dce,wh=wh,k=kw,sm=sm,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,
             png="sdf"+str(kw))
-    '''
 
 def goPorisityFlatten():
   lmin,lmax=-350,350

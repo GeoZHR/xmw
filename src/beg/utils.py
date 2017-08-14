@@ -45,9 +45,9 @@ def setupForSubset(name):
   elif name=="bahamas":
     print "setupForDataset: bahamas"
     seismicDir = _datdir+"xavier/bahamas/"
-    #n1,n2,n3 = 200,2359,4320 #gs
     #n1,n2,n3 = 120,2359,4320 #gxc
     n1,n2,n3 = 381,2359,4320 #gx
+    n1,n2,n3 = 200,2359,4320 #gs
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
     #f1,f2,f3 = 100,2000,6400 (sample,trace,trace)

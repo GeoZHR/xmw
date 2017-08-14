@@ -820,7 +820,7 @@ public class WellFlattener {
         fi -= fa;
         gi -= ga;
         fi -= (fm-fa);
-        gi -= (gm-fa);
+        gi -= (gm-ga);
         fg += fi*gi;
         ff += fi*fi;
         gg += gi*gi;

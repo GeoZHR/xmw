@@ -104,7 +104,7 @@ def main(args):
   #goRefine()
   #goFlattenSlopes()
   #goHorizon()
-  #goResults3D()
+  goResults3D()
   #goMovieSlices()
   #goSlicesX()
 

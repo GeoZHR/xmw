@@ -59,7 +59,7 @@ maxThrow =  15.0
 # otherwise, must create the specified directory before running this script.
 pngDir = "../../../png/ipfx/"
 pngDir = None
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -75,7 +75,28 @@ def main(args):
   #goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
-  goFbs()
+  #goFbs()
+  gx = readImage(gxfile)
+  writeImageL("gx56",gx[56])
+  gt = zerofloat(32,32,n1*n2)
+  k = 0
+  for i2 in range(n2):
+    print i2
+    for i1 in range(n1):
+      for k2 in range(32):
+        m2 = i2+k2-16
+        m2 = max(m2,0)
+        m2 = min(m2,n2-1)
+        for k1 in range(32):
+          m1 = i1+k1-16
+          m1 = max(m1,0)
+          m1 = min(m1,n1-1)
+          gt[k][k2][k1] = gx[56][m2][m1]
+      k = k+1 
+  writeImageL("seist",gt)
+  print len(gt)
+  plot3(gx)
+  plot3(gt)
 def goFbs():
   gx = readImage(gxfile)
   sk = readSkins(fslbase)
@@ -114,7 +135,7 @@ def goFakeData():
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.5 # (rms noise)/(rms signal) ratio
+  noise = 0.0 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
   writeImage(gxfile,gx)
