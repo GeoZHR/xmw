@@ -382,6 +382,43 @@ public class Helper {
     }});
   }
 
+  public void nearestResample(
+    final Sampling s1, final Sampling s2, final Sampling s3, 
+    final float d3i, final float[][][] fx, final float[][][] fi) 
+  {
+    final int n3 = fi.length;
+    final int n2 = fx[0].length;
+    final int n1 = fx[0][0].length;
+    Parallel.loop(60,610,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      double x3i = (i3-60)*d3i;
+      int k3 = s3.indexOfNearest(x3i);
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          fi[i3][i2+1100][i1] = fx[k3][i2][i1];
+        }
+      }
+    }});
+  }
+
+
+  public float[][][] getFlt(float[][][] fl, float[][][] fpt) {
+    int n3 = fl.length;
+    int n2 = fl[0].length;
+    int n1 = fl[0][0].length;
+    float[][][] flt = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(fpt[i3][i2][i1]>=0) {
+        flt[i3][i2][i1] = fl[i3][i2][i1];
+      }
+    }}}
+    return flt;
+  }
+
+
+
   public void rotate(float phi, float[][][] fps) {
     int n3 = fps.length;
     int n2 = fps[0].length;

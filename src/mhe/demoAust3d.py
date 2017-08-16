@@ -56,13 +56,13 @@ def goSlopes():
   plot3(p3)
 
 def goHorizonOne():
-  k1 = [276]
-  k2 = [410]
-  k3 = [309]
-
   k1 = [283]
   k2 = [389]
   k3 = [285]
+
+  k1 = [298]
+  k2 = [459]
+  k3 = [668]
 
   gx  = readImage(gxfile)
   se = GlobalHorizon3()
@@ -87,13 +87,13 @@ def goHorizonOne():
     surf1 = readImage2(mh1file)
     surf2 = readImage2(sh1file)
   mp = ColorMap(-2.0,2.0,gray)
-  #r1,g1,b1 = se.amplitudeRgb(mp,gx,surf1) 
-  #r2,g2,b2 = se.amplitudeRgb(mp,gx,surf2) 
-  cmin = min(surf1)+5
-  cmax = max(surf1)
-  mp = ColorMap(cmin,cmax,jet)
-  r1,g1,b1 = se.heightRgb(mp,surf1) 
-  r2,g2,b2 = se.heightRgb(mp,surf2) 
+  r1,g1,b1 = se.amplitudeRgb(mp,gx,surf1) 
+  r2,g2,b2 = se.amplitudeRgb(mp,gx,surf2) 
+  #cmin = min(surf1)+5
+  #cmax = max(surf1)
+  #mp = ColorMap(cmin,cmax,jet)
+  #r1,g1,b1 = se.heightRgb(mp,surf1) 
+  #r2,g2,b2 = se.heightRgb(mp,surf2) 
   sf1 = [surf1,r1,g1,b1]
   sf2 = [surf2,r2,g2,b2]
   plot3(gx,hz=sf1,ks=[k1,k2,k3],cmap=gray)

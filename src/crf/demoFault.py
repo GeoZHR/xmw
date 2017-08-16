@@ -5,8 +5,8 @@ Version: 2016.01.22
 """
 
 from utils import *
-#setupForSubset("nathanSub8")
-setupForSubset("nathan")
+setupForSubset("nathanSub8")
+#setupForSubset("nathan")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -72,7 +72,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub8/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -108,7 +108,33 @@ def main(args):
   #goSkinDisplay()
   #goSampleClean()
   #goAsciiFaults()
-  goPlanarX()
+  #goPlanarX()
+  goSeisDownSample()
+  #goLikelihoodMask()
+def goSeisDownSample():
+  hp = Helper()
+  fp = readImage(fptmfile)
+  fl = readImage("fltm")
+  c3 = Sampling(n3,12.5,0.0)
+  d3 = 18.75
+  fli = zerofloat(n1,4974,660)
+  fpi = fillfloat(-0.01,n1,4974,660)
+  hp.nearestResample(s1,s2,c3,d3,fp,fpi)
+  hp.nearestResample(s1,s2,c3,d3,fl,fli)
+  writeImage("fpi",fpi)
+  writeImage("fli",fli)
+
+def goSeisResample():
+  hp = Helper()
+  d3 = 12.5
+  gx = readImage(gxfile)
+  c3 = Sampling(n3,18.75,0.0)
+  gi = zerofloat(n1,n2,round(n3*1.5))
+  hp.resample(s1,s2,c3,d3,gx,gi)
+  writeImage("gi",gi)
+  #plot3(gx)
+  #plot3(gx,cmin=-10000,cmax=10000)
+
 def goAsciiFaults():
   gx = readImage(gxfile)
   sks = readSkins("fslb")
@@ -176,6 +202,18 @@ def goStrikeMask():
   writeImage(fptmfile,fp)
   plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
+def goLikelihoodMask():
+  hp = Helper()
+  gx = readImage(gxfile)
+  fl = readImage(fltvfile)
+  fpm = readImage(fptmfile)
+  flm = hp.getFlt(fl,fpm)
+  writeImage("fltm",flm)
+  plot3(gx,fpm,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=10,png="fpt")
+  plot3(gx,flm,cmin=0.01,cmax=1,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",cint=10,png="flt")
+
 def goFaultsAndSurfs():
   #fpt = readImage(fptvfile)
   hu1 = readImage2D(n2,n3,hu1file)
@@ -702,19 +740,17 @@ def goFaultImages():
     #writeImage(fptvfile,fp)
     #writeImage(fttvfile,ft)
   else:
+    fpt = readImage(fptmfile)
     #fl = readImage(fltvfile)
     #ft = readImage(fttvfile)
     #fp = readImage(fptvfile)
-    fp = readImage("fptvmolet")
+    #fp = readImage("fptvmolet")
   '''
   plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
   plot3(gx,ft,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
   '''
-  fpt = readImage(fptvfile)
-  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=10,png="fpt")
   plot3(gx,fpt,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
         clab="Fault strike (degrees)",cint=10,png="fpt")
 

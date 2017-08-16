@@ -14,7 +14,7 @@ def main(args):
   #goAustralia()
   #goF3d()
   #goManba()
-  #goAustralia()
+  goAustralia()
   #goHongliu()
   #goF3dUnc()
   #goJake()
@@ -33,7 +33,7 @@ def main(args):
   #goParihaka()
   #goTj()
   #goBag()
-  goCurt()
+  #goCurt()
   #goCampos()
   #goCampos2()
   #goWasson()
@@ -516,7 +516,7 @@ def goAustralia():
   secondLook = True # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
   showImage = False # displays the image
-  basedir = "../../../data/seis/beg/xavier/"
+  basedir = "../../../data/seis/beg/xavier/australia/"
   sgyfile = basedir+"Austalia_migration_filtered.bri.sgy"
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,1167,4200,5325,1735,2657
@@ -527,8 +527,10 @@ def goAustralia():
   n2 = 1065
   n3 = 1905
   x = readImage(datfile,n1,n2,n3)
-  show3d(x,clip=max(x)/10)
-  show3d(x,clip=1.0)
+  xs = copy(500,880,1325,450,120,125,x)
+  xs = div(xs,40000)
+  writeImageX("xs.dat",xs)
+  show3d(xs,clip=2.0)
 
 def goWasson():
   """

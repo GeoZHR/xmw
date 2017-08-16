@@ -570,8 +570,7 @@ public class GlobalHorizon3 {
   private static void screenLhs(
     float [][] ks, float[][] w, float[][] x, float[][] y) {
     int ns = ks.length;
-    Parallel.loop(ns,new Parallel.LoopInt() { // i3 = 1, 3, 5, ...
-    public void compute(int is) {
+    for (int is=0; is<ns; ++is) {
       int p2 = (int)ks[is][0];
       int p3 = (int)ks[is][1];
       int m2 = (int)ks[is][2];
@@ -585,7 +584,7 @@ public class GlobalHorizon3 {
       dx *= scale*ws;
       y[m3][m2] -= dx;
       y[p3][p2] += dx;
-    }});
+    }
   }
 
   //private static void makeRhs

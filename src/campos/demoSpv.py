@@ -5,7 +5,7 @@ Version: 2016.01.22
 """
 
 from utils import *
-setupForSubset("campos")
+setupForSubset("spvFull")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -23,7 +23,7 @@ fttfile  = "ftt"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,85
+minTheta,maxTheta = 65,80
 sigmaPhi,sigmaTheta = 4,8
 
 # Directory for saved png images. If None, png images will not be saved;
@@ -31,52 +31,21 @@ sigmaPhi,sigmaTheta = 4,8
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub8/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goDataPortion()
-  goPlanar()
+  #gx = readImage(gxfile)
+  #plot3(gx)
+  #goPlanar()
   #getOceanBottom()
   #goMask()
-  #goPlanarPortion()
-  #goSeismicPortion()
-  #goFaultScan()
+  #goFaultOrientScan()
+  #goSurfaceVoting()
   #goFaultCombine()
-  #goThin()
-  #goSkin()
-  #goSkinTv()
-  #goSmooth()
-  #goSlip()
-  #goUnfault()
-  #goFaultImages()
-  #goSurfaces()
-  #goFaultPoints()
-  #goFaultPointsScale()
-  #goSeisResample()
-  #goHorizon()
-  #goRosePlotsWithL1()
-  #goRosePlots()
-  #goRosePlotsScale()
-  #goRosePlotsN()
-  #goRosePlotsNScale()
-  #goResetSurfaces()
-  #goFaultsAndSurfs()
-  #goFaultDensity()
-  #goSetFaultImages()
-  #goStrikeMask()
-  #goPointsCheck()
-  #goReskin()
-  #goSkinDisplay()
-  #goSampleClean()
-  #goPad()
-def goPad():
-  gx = readImage(gxfile)
-  hp = Helper()
-  hp.padValues(0,3247,n2-1,1667,n3-1,gx)
-  writeImage(gxfile,gx)
-  plot3(gx)
+  goFullDisplay()
 def goDataPortion():
   gx = readImage(gxfile)
   g1 = copy(n1,1950,1200,0,      0,      0,gx)
@@ -123,36 +92,65 @@ def goMask():
   writeImage(epfile,ep)
   plot3(ep,cmin=0.1,cmax=0.9)
 
+def goFaultOrientScan():
+  gx = readImage(gxfile)
+  ep = readImage(epfile)
+  fos = FaultOrientScanner3(sigmaPhi,sigmaTheta)
+  if not plotOnly:
+    fe,fp,ft = fos.scan(minPhi,maxPhi,minTheta,maxTheta,ep)
+    fet,fpt,ftt=fos.thin([fe,fp,ft])
+    writeImage(fefile,fe)
+    writeImage(fpfile,fp)
+    writeImage(fetfile,fet)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
+  else:
+    fp = readImage(fpfile)
+    fe = readImage(fefile)
+  print min(fe) 
+  print max(fe) 
+  plot3(gx,ep,cmin=0.1,cmax=0.7,cmap=jetRamp(1.0),
+      clab="1-planarity",png="ep")
+  plot3(gx,fe,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="Enhanced",png="fe")
+  plot3(gx,fp,cmin=1,cmax=360,cmap=jetFill(1.0),
+      clab="Fault strike (degrees)",png="fp")
+
+def goSurfaceVoting():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fet = readImage(fetfile)
+    fpt = readImage(fptfile)
+    ftt = readImage(fttfile)
+    osv = OptimalSurfaceVoterP(10,30,20)
+    osv.setStrainMax(0.2,0.2)
+    osv.setSurfaceSmoothing(2,2)
+    fv = osv.applyVoting(4,0.3,fet,fpt,ftt)
+    writeImage(fvfile,fv)
+  else:
+    fv = readImage(fvfile)
+  plot3(gx)
+  plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+      clab="Surface voting",png="fv")
+
 def goFaultCombine():
-  for ffile in ["fl","fp","ft"]:
-    f1 = readImageX(900,1950,1200,"gx1"+ffile)
-    f2 = readImageX(900,1950,1200,"gx2"+ffile)
-    f3 = readImageX(900,1950,1200,"gx3"+ffile)
-    f4 = readImageX(900,1950,1200,"gx4"+ffile)
-    fc = zerofloat(n1,n2,n3)
-    hp = Helper()
-    hp.combine(f1,f2,f3,f4,fc)
-    writeImage(ffile+"c",fc)
-    plot3(fc,cmin=0,cmax=1)
-  #gx = readImage("gx")
-  #plot3(gx,cmin=-2,cmax=2)
-  #plot3(f1,cmin=-2,cmax=2)
-  #plot3(f2,cmin=-2,cmax=2)
-  #plot3(f3,cmin=-2,cmax=2)
-  #plot3(f4,cmin=-2,cmax=2)
-
-def goPlanarCombine():
-  ep1 = readImageX(600,2000,1200,"gx1ep")
-  ep2 = readImageX(600,2000,1200,"gx2ep")
-  ep3 = readImageX(600,2000,1200,"gx3ep")
-  ep4 = readImageX(600,2000,1200,"gx4ep")
-  epc = zerofloat(n1,n2,n3)
+  f1 = readImageX(900,1950,1200,"fv1")
+  f2 = readImageX(900,1950,1200,"fv2")
+  f3 = readImageX(900,1950,1200,"fv3")
+  f4 = readImageX(900,1950,1200,"fv4")
+  fc = zerofloat(n1,n2,n3)
   hp = Helper()
-  hp.combine(ep1,ep2,ep3,ep4,epc)
-  writeImage(epfile,epc)
-  plot3(epc,cmin=0.1,cmax=0.9)
+  hp.combine(f1,f2,f3,f4,fc)
+  writeImage("fvc",fc)
+  plot3(fc,cmin=0,cmax=1)
 
-
+def goFullDisplay():
+  gx = readImage("gxc")
+  fv = readImage("fvc")
+  gx = gain(gx)
+  plot3(gx)
+  plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+    clab="Surface voting",png="fv")
 
 def like(x):
   n3 = len(x)
@@ -227,7 +225,7 @@ def plot3(f,g=None,cmin=-2,cmax=2,cmap=None,clab=None,cint=None,
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
-  #s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
+  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
   l1,l2,l3 = s1.last,s2.last,s3.last

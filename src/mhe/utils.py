@@ -44,11 +44,10 @@ def setupForSubset(name):
   elif name=="aust":
     print "setupForSubset: aust"
     seismicDir = _datdir+"aust/"
-    n1,n2,n3 = 450,800,600 
+    n1,n2,n3 = 500,880,1325 
     d1,d2,d3 = 1.0,1.0,1.0 
     f1,f2,f3 = 0.0,0.0,0.0
-    #d1,d2,d3 = 0.002,0.025,0.025 # (s,km,km)
-    #f1,f2,f3 = 0.000,5400,10744
+    #f1,f2,f3 = 450,120,125
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
   else:

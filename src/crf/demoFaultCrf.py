@@ -36,20 +36,18 @@ sigmaPhi,sigmaTheta=4,8
 
 
 def main(args):
-<<<<<<< HEAD
   #goPlanarX()
   #goFaultOrientScan()
   #goSurfaceVoting()
   gx = readImage(gxfile)
-  g2 = zerofloat(n1,n3)
-  for i3 in range(n3):
-    g2[i3] = gx[i3][3366]
-  writeImage("gx3366",g2)
-=======
-  goPlanarX()
-  goFaultOrientScan()
-  goSurfaceVoting()
->>>>>>> a05c4797e3d0263e6ada624b329c4eaf9e0eaf27
+  fl = readImage("fli")
+  fp = readImage("fpi")
+  plot3(gx,fp,cmin=0,cmax=180,cmap=hueFillExceptMin(1.0),
+      clab="Surface voting",png="sv")
+
+  plot3(gx,fl,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+      clab="Surface voting",png="sv")
+
 def goPlanarX():
   gx = readImage(gxfile)
   if not plotOnly:
