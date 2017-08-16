@@ -98,7 +98,6 @@ public class GlobalHorizon3 {
     checkControlPoints(k2, k3, surf); 
     VecArrayFloat2 vb    = new VecArrayFloat2(b);
     VecArrayFloat2 vsurf = new VecArrayFloat2(surf);
-    int niter = 50;
     GlobalCorrelationFinder gcf = new GlobalCorrelationFinder(-10,10);
     int dm = 10;
     int dc = 10;
@@ -115,7 +114,6 @@ public class GlobalHorizon3 {
       updateSlopesAndWeights(um,wd,fx,p,q,ep,pc,surf,pi1,qi1,wi1,ui1);
       A2 a2 = new A2(_weight,wi1,pc);
       M2 m2 = new M2(_sigma1,_sigma2,wi1,k2,k3);
-      //if(n>5) {niter=_niter;}
       CgSolver cs = new CgSolver(_small,_niter);
       vb.zero();
       makeRhs(wi1,pi1,qi1,pc,ui1,b);
@@ -391,6 +389,7 @@ public class GlobalHorizon3 {
       _w1 = w1;
       _wp = wp;
       _pc = pc;
+      testSpd();
     }  
     public void apply(Vec vx, Vec vy){
       VecArrayFloat2 v2x = (VecArrayFloat2) vx;
@@ -412,6 +411,28 @@ public class GlobalHorizon3 {
     private float _w1;
     private float[][] _wp;
     private float[][] _pc;
+    public void testSpd() {
+    // symmetric: y'Ax = x'(A'y) = x'Ay
+    // positive-semidefinite: x'Ax >= 0
+      int n2 = _wp.length;
+      int n1 = _wp[0].length;
+      float[][] x = sub(randfloat(n1,n2),0.5f);
+      float[][] y = sub(randfloat(n1,n2),0.5f);
+      float[][] ax = zerofloat(n1,n2);
+      float[][] ay = zerofloat(n1,n2);
+      VecArrayFloat2 vx = new VecArrayFloat2(x);
+      VecArrayFloat2 vy = new VecArrayFloat2(y);
+      VecArrayFloat2 vax = new VecArrayFloat2(ax);
+      VecArrayFloat2 vay = new VecArrayFloat2(ay);
+      apply(vx,vax);
+      apply(vy,vay);
+      double yax = vy.dot(vax);
+      double xay = vx.dot(vay);
+      double xax = vx.dot(vax);
+      double yay = vy.dot(vay);
+      System.out.println("A3: yax="+yax+" xay="+xay);
+      System.out.println("A3: xax="+xax+" yay="+yay);
+    }
   }
 
   // Preconditioner; includes smoothers and (optional) constraints.

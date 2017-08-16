@@ -16,8 +16,8 @@ k1f,k2f,k3f = 48,406,0
 gmin,gmax,gint,glab = -2.0,2.0,0.5,"Amplitude"
 background = Color.WHITE
 
-pngDir = "../../../png/mhe/"
 pngDir = None
+pngDir = "../../../png/mhe/f3d/"
 gxfile = "gx"
 p2file = "p2"
 p3file = "p3"
@@ -26,7 +26,7 @@ mh1file = "mh1"
 mh2file = "mh2"
 sh1file = "sh1"
 sh2file = "sh2"
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #slopes()
@@ -54,13 +54,13 @@ def goHorizonOne():
   k2 = [667,340]
   k3 = [217,302]
   gx  = readImage(gxfile)
+  se = GlobalHorizon3()
   if not plotOnly:
     p2  = readImage(p2file)
     p3  = readImage(p3file)
     ep  = readImage(epfile)
     wp = pow(ep,4.0) 
     lmt = n1-1
-    se = GlobalHorizon3()
     se.setWeights(0.0)
     se.setSmoothings(8.0,8.0)
     se.setCG(0.01,100)
@@ -86,8 +86,9 @@ def goHorizonOne():
   '''
   sf1 = [surf1,r1,g1,b1]
   sf2 = [surf2,r2,g2,b2]
-  plot3(gx,hz=sf1,ks=[k1,k2,k3],cmap=rwb)
-  plot3(gx,hz=sf2,ks=[k1,k2,k3],cmap=rwb)
+  plot3(gx,cmap=rwb,png="seis")
+  plot3(gx,hz=sf1,ks=[k1,k2,k3],cmap=rwb,png="surf1m")
+  plot3(gx,hz=sf2,ks=[k1,k2,k3],cmap=rwb,png="surf1s")
 def goHorizonTwo():
   k1 = [90 ]
   k2 = [413]
@@ -125,8 +126,8 @@ def goHorizonTwo():
   '''
   sf1 = [surf1,r1,g1,b1]
   sf2 = [surf2,r2,g2,b2]
-  plot3(gx,hz=sf1,ks=[k1,k2,k3],cmap=rwb)
-  plot3(gx,hz=sf2,ks=[k1,k2,k3],cmap=rwb)
+  plot3(gx,hz=sf1,ks=[k1,k2,k3],cmap=rwb,png="surfm2")
+  plot3(gx,hz=sf2,ks=[k1,k2,k3],cmap=rwb,png="surfs2")
  
 def display(filename):
   f = readImage(filename)
@@ -323,9 +324,9 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
     tg=TriangleGroup(True,s3,s2,hz[0],hz[1],hz[2],hz[3])
     sf.world.addChild(tg)
   if ks:
-    pg = setPointGroup(ks[0],ks[1],ks[2],9)
+    pg = setPointGroup(ks[0],ks[1],ks[2],18)
     sf.world.addChild(pg)
-  ipg.setSlices(165,868,538)
+  ipg.setSlices(n1-1,n2-1,0)
   if cbar:
     sf.setSize(987,720)
   else:
@@ -336,10 +337,12 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   ov = sf.getOrbitView()
   zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
+  ov.setScale(1.6)
   ov.setScale(1.4)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.08,0.00,0.01))
-  ov.setAzimuthAndElevation(230.0,40.0)
+  ov.setTranslate(Vector3(-0.08,0.00,0.05))
+  ov.setTranslate(Vector3( 0.02,0.00,0.05))
+  ov.setAzimuthAndElevation(130.0,45.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

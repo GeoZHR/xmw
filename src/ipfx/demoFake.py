@@ -75,7 +75,8 @@ def main(args):
   #goUnfaultS()
   #goFlatten()
   #goHorizonExtraction()
-  #goFbs()
+  goFbs()
+  '''
   gx = readImage(gxfile)
   writeImageL("gx56",gx[56])
   gt = zerofloat(32,32,n1*n2)
@@ -97,6 +98,7 @@ def main(args):
   print len(gt)
   plot3(gx)
   plot3(gt)
+  '''
 def goFbs():
   gx = readImage(gxfile)
   sk = readSkins(fslbase)

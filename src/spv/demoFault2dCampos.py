@@ -23,7 +23,7 @@ ptfile = "pt"
 fvfile = "fv"
 fvtfile = "fvt"
 pngDir = getPngDir()
-pngDir = None
+pngDir = "../../../png/spv/2d/campos/"
 plotOnly = False
 
 def main(args):
@@ -31,6 +31,25 @@ def main(args):
   goLinearity()
   goFaultOrientScan()
   goPathVoting()
+def goFaultLikelihood():
+  print "goFaultLikelihood ..."
+  gx = readImage(gxfile)
+  gx = FaultScanner2.taper(10,0,gx)
+  fs = FaultScanner2(20)
+  sig1,sig2,smooth=16.0,2.0,4.0
+  fl,ft = fs.scan(65,80,sig1,sig2,smooth,gx)
+  flt,ftt = fs.thin([fl,ft])
+  print "fl min =",min(fl)," max =",max(fl)
+  print "ft min =",min(ft)," max =",max(ft)
+  plot(gx,fl,cmin=0.6,cmax=1,cmap=jetRamp(1.0),neareast=True,
+       label="Fault Likelihood",png="fl")
+  plot(gx,flt,cmin=0.6,cmax=1,cmap=jetRamp(1.0),neareast=True,
+       label="Fault Likelihood",png="flt")
+  '''
+  plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
+      label="Fault dip (degrees)",png="ft")
+  '''
+
 def goLinearity():
   gx = readImage(gxfile)
   el = zerofloat(n1,n2)
@@ -43,7 +62,7 @@ def goLinearity():
   dst.applyForLinear(gx,el)
   writeImage(elfile,el)
   el = pow(el,8)
-  plot(gx,sub(1,el),cmin=0.6,cmax=1.0,cmap=jetRamp(1.0),label="Linearity")
+  plot(gx,sub(1,el),cmin=0.6,cmax=1.0,cmap=jetRamp(1.0),label="Linearity",png="el")
 
 def goFaultOrientScan():
   gx = readImage(gxfile)
@@ -69,27 +88,11 @@ def goPathVoting():
   else:
     fv = readImage(fvfile)
     fvt = readImage(fvtfile)
-  plot(gx,cmin=-2,cmax=2,label="Amplitude")
-  plot(gx,fv,cmin=0.6,cmax=1.0,cmap=jetRamp(1.0),label="Path voting")
-  plot(gx,fvt,cmin=0.9,cmax=1.0,cmap=jetRamp(1.0),
-       neareast=True,label="Path voting")
+  plot(gx,cmin=-2,cmax=2,label="Amplitude",png="gx")
+  plot(gx,fv,cmin=0.6,cmax=1.0,cmap=jetRamp(1.0),label="Optimal path voting",png="fv")
+  plot(gx,fvt,cmin=0.6,cmax=1.0,cmap=jetRamp(1.0),
+       neareast=True,label="Optimal path voting",png="fvt")
 
-def goFaultLikelihood():
-  print "goFaultLikelihood ..."
-  gx = readImage(gxfile)
-  gx = FaultScanner2.taper(10,0,gx)
-  fs = FaultScanner2(30)
-  sig1,sig2,smooth=16.0,2.0,4.0
-  fl,ft = fs.scan(65,80,sig1,sig2,smooth,gx)
-  flt,ftt = fs.thin([fl,ft])
-  print "fl min =",min(fl)," max =",max(fl)
-  print "ft min =",min(ft)," max =",max(ft)
-  plot(gx,flt,cmin=0.6,cmax=1,cmap=jetRamp(1.0),neareast=True,
-       label="Fault Likelihood")
-  '''
-  plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
-      label="Fault dip (degrees)",png="ft")
-  '''
 
 
 def gain(x):
@@ -264,8 +267,8 @@ def plot(f,g=None,ps=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1400,700)
-  frame.setSize(round(n2*1.8),round(n1*2.0))
-  frame.setFontSize(12)
+  frame.setSize(round(n2*1.5),round(n1*1.5))
+  frame.setFontSize(14)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 

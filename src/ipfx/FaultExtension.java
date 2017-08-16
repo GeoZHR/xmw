@@ -63,6 +63,27 @@ public class FaultExtension {
     return f;
   }
 
+  public float[][][][] getSlipVectors(int n1, int n2, int n3, FaultSkin[] skins) {
+    float[][][] w1 = new float[n3][n2][n1];
+    float[][][] w2 = new float[n3][n2][n1];
+    float[][][] w3 = new float[n3][n2][n1];
+    for (FaultSkin skin: skins) {
+    for (FaultCell cell: skin) {
+      int i1 = cell.getI1();
+      int i2 = cell.getI2();
+      int i3 = cell.getI3();
+      float c2 = cell.getS2();
+      float c3 = cell.getS3();
+      if(c2<0f) {
+        c2 = -c2;
+        c3 = -c3;
+      }
+      w2[i3][i2][i1] = c2;
+      w3[i3][i2][i1] = c3;
+    }}
+    return new float[][][][]{w1,w2,w3};
+  }
+
     // Conjugate-gradient operators.
   private static class A3 implements CgSolver.A {
     A3(Smoother3 s3){

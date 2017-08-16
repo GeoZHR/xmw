@@ -12,7 +12,7 @@ global n1,n2,n3
 #############################################################################
 def main(args):
   #goAustralia()
-  #goF3d()
+  goF3d()
   #goManba()
   goAustralia()
   #goHongliu()
@@ -1981,10 +1981,11 @@ def goF3d():
     x = readImage(datfile,n1,n2,n3)
     #xs = copy(120,400,420,342,0,0,x) #for spv test
     #xs = copy(220,400,600,242,0,0,x) #for spv test
-    xs = copy(242,n2,600,220,0,0,x) #for spv test
-    writeImageX("xs",xs)
+    #xs = copy(242,n2,600,220,0,0,x) #for spv test
+    #writeImageX("xs",xs)
     #writeImageX("gx178",x[178])
-    show3d(xs,clip=max(xs)/10)
+    writeImageX("f3d615.dat",x[615])
+    show3d(x,clip=max(x)/10)
 
 def writeImageX(basename,image):
   """ 

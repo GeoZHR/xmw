@@ -86,6 +86,7 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
+  goFaultExtension()
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
@@ -109,6 +110,7 @@ def main(args):
   #goSampleClean()
   #goAsciiFaults()
   #goPlanarX()
+<<<<<<< HEAD
   goSeisDownSample()
   #goLikelihoodMask()
 def goSeisDownSample():
@@ -135,6 +137,8 @@ def goSeisResample():
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
 
+=======
+>>>>>>> 510f602f4a80b5cdfe4522915d85858e080a2279
 def goAsciiFaults():
   gx = readImage(gxfile)
   sks = readSkins("fslb")
@@ -721,6 +725,21 @@ def goUnfault():
         clab="Fault heave (samples)")
   plot3(gx,w3,cmin=0.1,cmax=3.0,cmap=jetFillExceptMin(1.0),
         clab="Fault heave (samples)")
+
+def goFaultExtension():
+  fe = FaultExtension()
+  gx = readImage(gxfile)
+  if not plotOnly:
+    sk = readSkins(fslbase)
+    print "faults load finish"
+    w1,w2,w3 = fe.getSlipVectors(n1,n2,n3,sk)
+    ex = fe.faultExtension(w1,w2,w3)
+    writeImage("ex",ex)
+  else:
+    ex = readImage("ex")
+  plot3(gx)
+  plot3(gx,ex,cmin=min(ex),cmax=max(ex),cmap=jetRamp(1.0),
+        clab="Fault extension")
 
 def goFaultImages():
   gx = readImage(gxfile)

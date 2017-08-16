@@ -80,10 +80,12 @@ def goFaultLikelihood():
   fs = FaultScanner2(20)
   sig1,sig2,smooth=16.0,2.0,4.0
   p2,ep = fs.slopes(sig1,sig2,5,gx)
-  fl,ft = fs.scan(75,85,p2,gx)
+  fl,ft = fs.scan(75,89,p2,gx)
   flt,ftt = fs.thin([fl,ft])
   print "fl min =",min(fl)," max =",max(fl)
   print "ft min =",min(ft)," max =",max(ft)
+  plot(gx,fl,cmin=0.5,cmax=1,cmap=jetRamp(1.0),neareast=True,
+       label="Fault Likelihood")
   plot(gx,flt,cmin=0.5,cmax=1,cmap=jetFillExceptMin(1.0),neareast=True,
        label="Fault Likelihood")
   '''

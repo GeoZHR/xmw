@@ -8,16 +8,16 @@ n1,n2,n3 = s1.count,s2.count,s3.count
 n1,n2,n3 = s1.count,s2.count,s3.count
 d1,d2,d3 = s1.delta,s2.delta,s3.delta
 #k1,k2,k3 = 88,60,160; azimuth=285; elevation=11 # for 3D view of all horizons
-k1,k2,k3 = 154,950,540; azimuth=240; elevation=25 # for 3D view of strips
+k1,k2,k3 = 354,800,200; azimuth=240; elevation=25 # for 3D view of strips
 fmin,fmax = -5.5,5.5
 k1f,k2f,k3f = 65,406,114
 k1f,k2f,k3f = 48,406,114
-k1f,k2f,k3f = 48,406,0
+k1f,k2f,k3f = 250,640,385
 gmin,gmax,gint,glab = -2.0,2.0,0.5,"Amplitude"
 background = Color.WHITE
 
-pngDir = "../../../png/mhe/"
 pngDir = None
+pngDir = "../../../png/mhe/aust/"
 gxfile = "gx"
 p2file = "p2"
 p3file = "p3"
@@ -31,7 +31,6 @@ plotOnly = True
 def main(args):
   #goSlopes()
   goHorizonOne()
-  #goHorizonTwo()
 
 def goSlopes():
   print "go slopes..."
@@ -56,6 +55,7 @@ def goSlopes():
   plot3(p3)
 
 def goHorizonOne():
+<<<<<<< HEAD
   k1 = [283]
   k2 = [389]
   k3 = [285]
@@ -65,6 +65,14 @@ def goHorizonOne():
   k3 = [668]
 
   gx  = readImage(gxfile)
+=======
+  k1 = [298]
+  k2 = [459]
+  k3 = [668]
+  gx = readImage(gxfile)
+  #gx = gain(gx)
+  #writeImage(gxfile,gx)
+>>>>>>> 510f602f4a80b5cdfe4522915d85858e080a2279
   se = GlobalHorizon3()
   print "go horizonOne..."
   if not plotOnly:
@@ -86,6 +94,7 @@ def goHorizonOne():
   else:
     surf1 = readImage2(mh1file)
     surf2 = readImage2(sh1file)
+<<<<<<< HEAD
   mp = ColorMap(-2.0,2.0,gray)
   r1,g1,b1 = se.amplitudeRgb(mp,gx,surf1) 
   r2,g2,b2 = se.amplitudeRgb(mp,gx,surf2) 
@@ -124,88 +133,29 @@ def goHorizonTwo():
     surf1 = readImage2(mh2file)
     surf2 = readImage2(sh2file)
   mp = ColorMap(-2.0,2.0,gray)
+=======
+  cmin = -2.0
+  cmax =  2.0
+  cmap = gray
+  mp = ColorMap(-2.0,3.0,cmap)
+>>>>>>> 510f602f4a80b5cdfe4522915d85858e080a2279
   r1,g1,b1 = se.amplitudeRgb(mp,gx,surf1) 
-  #r2,g2,b2 = se.amplitudeRgb(mp,gx,surf2) 
-  '''
-  cmin = min(surf1)+5
-  cmax = max(surf1)
-  mp = ColorMap(cmin,cmax,jet)
-  r1,g1,b1 = se.heightRgb(mp,surf1) 
-  r2,g2,b2 = se.heightRgb(mp,surf2) 
-  '''
+  r2,g2,b2 = se.amplitudeRgb(mp,gx,surf2) 
+  #cmin = min(surf1)+5
+  #cmax = max(surf1)
+  #mp = ColorMap(cmin,cmax,jet)
+  #r1,g1,b1 = se.heightRgb(mp,surf1) 
+  #r2,g2,b2 = se.heightRgb(mp,surf2) 
   sf1 = [surf1,r1,g1,b1]
-  #sf2 = [surf2,r2,g2,b2]
-  plot3(gx,hz=sf1,ks=[k1,k2,k3],cmap=gray)
-  #plot3(gx,hz=sf2,ks=[k1,k2,k3],cmap=gray)
- 
-def display(filename):
-  f = readImage(filename)
-  world = World()
-  ipg = addImageToWorld(world,f,cmap=gray)
-  ipg.setSlices(k1,k2,k3)
-  makeFrame(world)
-
-
-def rgbFromHeight(h,r,g,b):
-  n1 = len(h[0])
-  n2 = len(h)
-  ht = zerofloat(n1*n2)
-  mp = ColorMap(-max(h),-min(h),ColorMap.JET)
-  i = 0
-  for i1 in range(n1):
-    for i2 in range(n2):
-      ht[i] = -h[i2][i1]
-      i=i+1
-  htRGB = mp.getRgbFloats(ht)
-  i = 0
-  for i1 in range(n1):
-    for i2 in range(n2):
-      r[i2][i1] = htRGB[i  ] 
-      g[i2][i1] = htRGB[i+1] 
-      b[i2][i1] = htRGB[i+2] 
-      i = i+3
-
-def rgbFromAmplitude(f,h,r,g,b):
-  amp = zerofloat(n2*n3)
-  si = SincInterpolator()
-  #si.setUniform(n1,1,0,n2,1,0,n3,1,0,f)
-  i = 0
-  for i3 in range(n3):
-    for i2 in range(n2):
-      amp[i] = si.interpolate(n1,1,0,n2,1,0,n3,1,0,f,h[i3][i2],i2,i3)
-      i = i+1
-  aMin,aMax = -2.5,2.5
-  mp = ColorMap(aMin,aMax,ColorMap.RED_WHITE_BLUE)
-  ampRGB = mp.getRgbFloats(amp)
-  i = 0
-  for i3 in range(n3):
-    for i2 in range(n2):
-      r[i3][i2] = ampRGB[i  ] 
-      g[i3][i2] = ampRGB[i+1] 
-      b[i3][i2] = ampRGB[i+2] 
-      i = i+3
-
-def displayHorizon(pg,filename):
-  f = readImage(gxfile)
-  f = gain(f)
-  h = readImage2(filename) 
-  r = zerofloat(n2,n3)
-  g = zerofloat(n2,n3)
-  b = zerofloat(n2,n3)
-  #rgbFromHeight(h,r,g,b)
-  rgbFromAmplitude(f,h,r,g,b)
-  world = World()
-  print min(f)
-  print max(f)
-  ipg = addImageToWorld(world,f,cmap=rwb,cmin=-2.5,cmax=2.5)
-  ipg.setSlices(k1,k2,k3)
-  tg  = TriangleGroup(True,s3,s2,add(h,0.0),r,g,b)
-  world.addChild(pg)
-  world.addChild(tg)
-  makeFrame(world,png=filename)
+  sf2 = [surf2,r2,g2,b2]
+  plot3(gx,cmap=cmap,cmin=cmin,cmax=cmax,png="seis")
+  plot3(gx,hz=sf1,ks=[k1,k2,k3],cmap=cmap,cmin=cmin,cmax=cmax,png="surf")
+  #plot3(gx,hz=sf2,ks=[k1,k2,k3],cmap=cmap,cmin=cmin,cmax=cmax)
+  plot3p(s1,s2,s3,gx)
+  plot3p(s1,s2,s3,gx,hv=[surf1])
 def gain(x):
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(20.0)
+  ref = RecursiveExponentialFilter(60.0)
   ref.apply1(g,g)
   y = zerofloat(n1,n2,n3)
   div(x,sqrt(g),y)
@@ -238,63 +188,6 @@ gray = ColorMap.GRAY
 jet = ColorMap.JET
 bwr = ColorMap.BLUE_WHITE_RED
 rwb = ColorMap.RED_WHITE_BLUE
-
-def addImageToWorld(world,image,cmap=gray,cmin=0,cmax=0):
-  ipg = ImagePanelGroup(s1,s2,s3,image)
-  ipg.setColorModel(cmap)
-  if cmin<cmax:
-    ipg.setClips(cmin,cmax)
-  world.addChild(ipg)
-  return ipg
-
-def addImage2ToWorld(world,image1,image2):
-  ipg = ImagePanelGroup2(s1,s2,s3,image1,image2)
-  ipg.setColorModel1(ColorMap.getGray())
-  ipg.setColorModel2(ColorMap.getJet())
-  #ipg.setColorModel2(ColorMap.getHue(0.0,20.0,0.3))
-  world.addChild(ipg)
-  return ipg
-
-def makeFrame(world,png=None):
-  n1,n2,n3 = s1.count,s2.count,s3.count
-  d1,d2,d3 = s1.delta,s2.delta,s3.delta
-  f1,f2,f3 = s1.first,s2.first,s3.first
-  l1,l2,l3 = s1.last,s2.last,s3.last
-  #lightPosition=[-0.18,-0.4,0.8,0.0] # good for horizons 1 and 2
-  lightPosition=[0.2,0.0,0.30,0.0] # good for horizons 1 and 2
-  #lightPosition=[0.,0.,1.0,0.0] #default position
-  frame = SimpleFrame(world)
-  view = frame.getOrbitView()
-  #view.setLightPosition(lightPosition)
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
-  view.setAxesScale(1.0,1.0,zscale)
-  view.setScale(1.1)
-  view.setAzimuth(azimuth)
-  view.setElevation(elevation)
-  view.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  #frame.viewCanvas.setBackground(frame.getBackground())
-  frame.setSize(1000,900)
-  frame.setVisible(True)
-  if png:
-    frame.paintToFile(png+".png")
-  return frame
- 
-def display2(k3,s,png=None):
-  pp = PlotPanel(1,1,
-    PlotPanel.Orientation.X1DOWN_X2RIGHT,
-    PlotPanel.AxesPlacement.LEFT_BOTTOM)
-  pp.setHInterval(10.0)
-  pp.setVInterval(10.0)
-  pp.setHLabel("Crossline (km)")
-  pp.setVLabel("Inline (km)")
-  pv = pp.addPixels(s1,s2,slice12(k3,s))
-  pv.setClips(fmin,fmax)
-  pf = PlotFrame(pp)
-  pf.setFontSizeForPrint(6.0,480)
-  pf.setSize(926,510)
-  pf.setVisible(True)
-  if png and pngDir:
-    pf.paintToPng(300,6,pngDir+png+".png")
 
 def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           slices=None,png=None):
@@ -333,23 +226,23 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
     tg=TriangleGroup(True,s3,s2,hz[0],hz[1],hz[2],hz[3])
     sf.world.addChild(tg)
   if ks:
-    pg = setPointGroup(ks[0],ks[1],ks[2],9)
+    pg = setPointGroup(ks[0],ks[1],ks[2],18)
     sf.world.addChild(pg)
-  ipg.setSlices(165,868,538)
+  ipg.setSlices(498,759,0)
   if cbar:
     sf.setSize(987,720)
   else:
-    sf.setSize(850,720)
+    sf.setSize(850,620)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
-  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
+  zscale = 0.4*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setScale(1.4)
+  ov.setScale(1.6)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.08,0.00,0.01))
-  ov.setAzimuthAndElevation(230.0,40.0)
+  ov.setTranslate(Vector3(-0.00,0.05,0.05))
+  ov.setAzimuthAndElevation(160.0,40.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
@@ -357,52 +250,124 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
  
 
-def plot3f(g,a=None,amin=None,amax=None,amap=None,alab=None,aint=None,
+def plot3p(s1,s2,s3,f,hv=None,k1=None,k2=None,k3=None,cmap=ColorMap.GRAY,
+        cmin=-2,cmax=2,clab=None,cint=0.1,png=None):
+  width,height,cbwm = 1200,800,200
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  orient = PlotPanelPixels3.Orientation.X1DOWN_X3RIGHT;
+  axespl = PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM
+  panel = PlotPanelPixels3(orient,axespl,s1,s2,s3,f)
+  #panel.mosaic.setWidthElastic(0,100)
+  #panel.mosaic.setWidthElastic(1,75)
+  panel.mosaic.setHeightElastic(0,200)
+  #panel.mosaic.setHeightElastic(1,100)
+  panel.setSlice23(k1f)
+  panel.setSlice13(k2f)
+  panel.setSlice12(k3f)
+  #panel.setSlice103(70)
+  panel.setClips(cmin,cmax)
+  if clab:
+    cbar = panel.addColorBar(clab)
+    cbar.setInterval(cint)
+  panel.setColorBarWidthMinimum(50)
+  panel.setLabel1("Samples")
+  panel.setLabel2("Inline (traces)")
+  panel.setLabel3("Crossline (traces)")
+  panel.setInterval2(100)
+  panel.setInterval3(100)
+  panel.setColorModel(ColorMap.GRAY)
+  panel.setLineColor(Color.WHITE)
+  panel.setHLimits(0,s2.first,s2.last)
+  panel.setVLimits(1,s1.first,s1.last)
+  panel.setHLimits(1,s2.first,s2.last)
+  if hv:
+    nh = len(hv)
+    hd = HorizonDisplay()
+    cv12 = hd.slice12(k3f,s2,hv)
+    cv13 = hd.slice13(k2f,s3,hv)
+    cv23 = hd.slice23X(k1f,s2,s3,hv)
+    mp = ColorMap(0,nh,ColorMap.JET)
+    print nh
+    for ih in range(nh):
+      pv12 = PointsView(cv12[ih][1],cv12[ih][0])
+      pv13 = PointsView(cv13[ih][1],cv13[ih][0])
+      pv12.setLineWidth(2.0)
+      pv13.setLineWidth(2.0)
+      #pv12.setLineColor(mp.getColor(ih))
+      #pv13.setLineColor(mp.getColor(ih))
+      pv12.setLineColor(Color.YELLOW)
+      pv13.setLineColor(Color.YELLOW)
+      panel.pixelsView12.tile.addTiledView(pv12)
+      panel.pixelsView13.tile.addTiledView(pv13)
+      nc = len(cv23[ih][0])
+      for ic in range(nc):
+        pv23 = PointsView(cv23[ih][1][ic],cv23[ih][0][ic])
+        pv23.setLineWidth(2.0)
+        #pv23.setLineColor(mp.getColor(ih))
+        pv23.setLineColor(Color.YELLOW)
+        panel.pixelsView23.tile.addTiledView(pv23)
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setBackground(Color(0xfd,0xfe,0xff)) # easy to make transparent
+  frame.setFontSize(16)#ForSlide(1.0,0.8)
+  frame.setSize(width,height)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(1080,4,pngDir+"/"+png+".png")
+
+
+def plot3f(g,hv=None,amin=None,amax=None,amap=None,alab=None,aint=None,
            png=1):
   pp = PlotPanelPixels3(
     PlotPanelPixels3.Orientation.X1DOWN_X3RIGHT,
     PlotPanelPixels3.AxesPlacement.LEFT_BOTTOM,
     s1,s2,s3,g)
-  pp.setSlices(k1f,k2f,k3f)
-  pp.setLabel1("Time (s)")
-  pp.setLabel2("Inline (km)")
-  pp.setLabel3("Crossline (km)")
+  pp.setSlice23(k1f)
+  pp.setSlice13(k2f)
+  pp.setSlice12(k3f)
+  pp.setLabel1("Time (samples)")
+  pp.setLabel2("Inline (samples)")
+  pp.setLabel3("Crossline (samples)")
   pp.mosaic.setHeightElastic(0,180)
   pp.mosaic.setHeightElastic(1, 70)
   pp.setClips(gmin,gmax)
   pp.setColorModel(gray)
-  if a:
-    pp.setLineColor(Color.WHITE)
-    cb = pp.addColorBar(alab)
-    if aint:
-      cb.setInterval(aint)
-  else:
-    pp.setLineColor(Color.YELLOW)
-    cb = pp.addColorBar("Amplitude")
-    cb.setInterval(0.5)
-  pp.setInterval1(0.1)
-  pp.setInterval2(2.0)
-  pp.setInterval3(2.0)
-  if a:
-    pv12 = PixelsView(s1,s2,slice12(k3,a))
-    pv12.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
-    pv12.setInterpolation(PixelsView.Interpolation.NEAREST)
-    pv13 = PixelsView(s1,s3,slice13(k2,a))
-    pv13.setOrientation(PixelsView.Orientation.X1DOWN_X2RIGHT)
-    pv13.setInterpolation(PixelsView.Interpolation.NEAREST)
-    pv23 = PixelsView(s2,s3,slice23(k1f,a))
-    pv23.setOrientation(PixelsView.Orientation.X1RIGHT_X2UP)
-    pv23.setInterpolation(PixelsView.Interpolation.NEAREST)
-    for pv in [pv12,pv13,pv23]:
-      pv.setColorModel(ColorMap.getJet(0.5))
-      if amin!=amax:
-        pv.setClips(amin,amax)
-    pp.pixelsView12.tile.addTiledView(pv12)
-    pp.pixelsView13.tile.addTiledView(pv13)
-    pp.pixelsView23.tile.addTiledView(pv23)
+  pp.setLineColor(Color.WHITE)
+  cb = pp.addColorBar("Amplitude")
+  cb.setInterval(0.5)
+  pp.setInterval1(100.0)
+  pp.setInterval2(100.0)
+  pp.setInterval3(100.0)
+  if hv:
+    nh = len(hv)
+    hd = HorizonDisplay()
+    cv12 = hd.slice12(k3f,s2,hv)
+    cv13 = hd.slice13(k2f,s3,hv)
+    cv23 = hd.slice23X(k1f,s2,s3,hv)
+    mp = ColorMap(0,nh,ColorMap.JET)
+    print nh
+    for ih in range(nh):
+      pv12 = PointsView(cv12[ih][1],cv12[ih][0])
+      pv13 = PointsView(cv13[ih][1],cv13[ih][0])
+      pv12.setLineWidth(2.0)
+      pv13.setLineWidth(2.0)
+      pv12.setLineColor(Color.YELLOW)
+      pv13.setLineColor(Color.YELLOW)
+      #pv12.setLineColor(mp.getColor(ih))
+      #pv13.setLineColor(mp.getColor(ih))
+      pp.pixelsView12.tile.addTiledView(pv12)
+      pp.pixelsView13.tile.addTiledView(pv13)
+      nc = len(cv23[ih][0])
+      for ic in range(nc):
+        pv23 = PointsView(cv23[ih][1][ic],cv23[ih][0][ic])
+        pv23.setLineWidth(2.0)
+        pv23.setLineColor(Color.YELLOW)
+        #pv23.setLineColor(mp.getColor(ih))
+        pp.pixelsView23.tile.addTiledView(pv23)
   pf = PlotFrame(pp)
   pf.setBackground(background)
-  pp.setColorBarWidthMinimum(170)
+  pp.setColorBarWidthMinimum(65)
+  pf.setFontSize(16)
   #pf.setFontSizeForSlide(1.0,0.8)
   pf.setSize(1200,700)
   pf.setVisible(True)

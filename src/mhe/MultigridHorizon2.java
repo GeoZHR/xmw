@@ -81,6 +81,8 @@ public class MultigridHorizon2{
     //float[] cf = new float[np]; // force of constraints
     VecArrayFloat1 vb  = new VecArrayFloat1(b);
     VecArrayFloat1 vcv = new VecArrayFloat1(cv);
+    float[][] cvs = new float[_exniter+1][n2];
+    cvs[0] = copy(cv);
     for (int n=1; n<=_exniter; n++){
       System.out.println(" Iteration "+n+"......");
       updateSlopesAndWeights(p,ep,cv,pi1,wi1);
@@ -96,7 +98,9 @@ public class MultigridHorizon2{
       System.out.println(" Average adjustments per sample = "+ad);
       if (ad<0.01f) break;
       cvt = copy(cv);
+      cvs[n] = copy(cv);
     }
+    //return cvs;
     return vcv.getArray();
     // show the constraint force for each control point,
     // the points with little constraint force are not important, 
@@ -105,7 +109,7 @@ public class MultigridHorizon2{
   }
 
   public float[] curveUpdateFromSlopes (
-     int um, int wd, float[][] f,
+     int um, int wd, int cm, float[][] f,
      float[][] ep, float[][] p2, 
      float[] k1, float[] k2, float[] cv)
   {	
@@ -131,15 +135,19 @@ public class MultigridHorizon2{
     GlobalCorrelationFinder gcf = new GlobalCorrelationFinder(-1,1);
     float[] ui1 = null;
     float[][] pc = null;
+    float du = (um-2f)/_exniter;
+    int ui = um;
+    int kc = round(max(max(k2),n2-min(k2))/(float)_exniter);
     for (int n=1; n<=_exniter; n++){
-      dm = min(dm,60);
+      dm = min(dm,cm);
       System.out.println(" Iteration "+n+"......");
       if (n>1) {
          pc = gcf.getTraceIndexes(5,dm,dc,n2,k2,0.01f);
          int ns = pc.length;
          ui1 = new float[ns];
       }
-      updateSlopesAndWeights(um,wd,f,p2,ep,pc,cv,pi1,wi1,ui1);
+      ui = round(um-du*n);
+      updateSlopesAndWeights(ui,wd,f,p2,ep,pc,cv,pi1,wi1,ui1);
       A1 a1 = new A1(_weight,wi1,pc);
       M1 m1 = new M1(_sigma1,wi1,ks[1]);
       CgSolver cs = new CgSolver(_small,_niter);
@@ -151,11 +159,12 @@ public class MultigridHorizon2{
       float ad = sum(abs(sub(cvt,cv)))/n2; 
       System.out.println(" Average adjustments per sample = "+ad);
       cvt = copy(cv);
-      cvs[n-1] = copy(cv);
+      cvs[n] = copy(cv);
       dm += 20;
-      dc += 20;
+      dc += kc;
     }
     return vcv.getArray();
+    //return cvs;
   
     // show the constraint force for each control point,
     // the points with little constraint force are not important, 
@@ -163,114 +172,45 @@ public class MultigridHorizon2{
     //checkConstraintForce(k2,k3,cf);
   }
 
-
-  /*
-  public float[][] curveUpdateFromSlopes (
-     int um, float[][] f,
-     float[][] ep, float[][] p2, 
-     float[][] pc, float[] k1, float[] k2, float[] cv)
-  {	
-    int ns = pc.length;
-    int n2 = p2.length; 
-    int n1 = p2[0].length; 
-    float lmt = (float)n1-1.f;
-    float[] cvt = copy(cv);
-    float[] b   = new float[n2]; 
-    float[] pi1 = new float[n2]; 
-    float[] wi1 = new float[n2]; 
-    float[] ui1 = new float[ns]; 
-    VecArrayFloat1 vb  = new VecArrayFloat1(b);
-    VecArrayFloat1 vcv = new VecArrayFloat1(cv);
-
-    checkControlPoints(k2,cv); 
-    //float[][] ks = updateConstraints(k1,k2,p,ep,cv);
-    float[][] ks = new float[][]{k1,k2};
-    //int np = k1.length;
-    //float[] cf = new float[np]; // force of constraints
-    float du = (float)um/(float)_exniter;
-    int wd = um;
-    float[][] cvs = new float[_exniter+1][n2];
-    cvs[0] = copy(cv);
-    for (int n=1; n<=_exniter; n++){
-      System.out.println(" Iteration "+n+"......");
-      if(n<=2) {
-        updateSlopesAndWeights(p2,ep,cv,pi1,wi1);
-        A1 a1 = new A1(_weight,wi1,null);
-        M1 m1 = new M1(_sigma1,wi1,ks[1]);
-        CgSolver cs = new CgSolver(_small,_niter);
-        vb.zero();
-        makeRhs(wi1,pi1,null,null,b);
-        cs.solve(a1,m1,vb,vcv);
-      } else {
-        updateSlopesAndWeights(wd,f,p2,ep,pc,cv,pi1,wi1,ui1);
-        A1 a1 = new A1(_weight,wi1,pc);
-        M1 m1 = new M1(_sigma1,wi1,ks[1]);
-        CgSolver cs = new CgSolver(_small,_niter);
-        vb.zero();
-        makeRhs(wi1,pi1,pc,ui1,b);
-        cs.solve(a1,m1,vb,vcv);
-        wd = round(um-(n-2)*du);
-        wd = max(wd,5);
+  // for displaying only
+  public float[][] getCorrelationTraces(
+    int dc, float[][] fx, float[] cv) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    int ns = 0;
+    for (int i2=0; i2<n2; i2+=20)
+      ns++;
+    float[][] fs = new float[ns][];
+    for (int i2=0, is=0; i2<n2; i2+=20, is++) {
+      int cp = round(cv[i2]);
+      int nc = dc*2+1;
+      fs[is] = new float[nc];
+      Random rd = new Random();
+      for (int i1 = cp-dc, p1=0; i1<=cp+dc; i1++, p1++) {
+        if(i1<0||i1>=n1) {
+          int k1 = rd.nextInt(n1);
+          fs[is][p1] = fx[i2][k1];
+        } else {
+          fs[is][p1] = fx[i2][i1];
+        }
       }
-      cv = vcv.getArray();
-      cv = clip(0f,lmt,cv);
-      float ad = sum(abs(sub(cvt,cv)))/n2; 
-      System.out.println(" Average adjustments per sample = "+ad);
-      cvt = copy(cv);
-      cvs[n-1] = copy(cv);
-      if (ad<0.01f&&n>2) break;
     }
-    return cvs;
-  
-    // show the constraint force for each control point,
-    // the points with little constraint force are not important, 
-    // and hence can be removed from the constraints.
-    //checkConstraintForce(k2,k3,cf);
-  }
-  */
-
-  public float[] regrid1(float[] cv) {
-    int n = cv.length;
-    float[] sv = new float[n];
-    FloatList xc = new FloatList();
-    FloatList yc = new FloatList();
-    for (int i=0; i<n; i+=16) {
-      xc.add(i); yc.add(cv[i]);
-    }
-    CubicInterpolator ci = 
-      new CubicInterpolator(CubicInterpolator.Method.SPLINE,xc.trim(),yc.trim());
-    for (int i=0; i<n; i++) {
-      sv[i] = ci.interpolate(i);
-    }
-    FloatList xs = new FloatList();
-    FloatList ys = new FloatList();
-    for (int i=8; i<n; i+=16) {
-      xs.add(i);ys.add(sv[i]);
-    }
-    CubicInterpolator si = 
-      new CubicInterpolator(CubicInterpolator.Method.SPLINE,xs.trim(),ys.trim());
-    for (int i=0; i<n; i++) {
-      sv[i] = si.interpolate1(i);
-    }
-    return sv;
+    return fs;
   }
 
-  public float[] regrid2(float[] cv) {
-    int n = cv.length;
-    float[] sv = new float[n];
-    FloatList xc = new FloatList();
-    FloatList yc = new FloatList();
-    for (int i=0; i<n; i+=16) {
-      xc.add(i); yc.add(cv[i]);
-    }
-    CubicInterpolator ci = 
-      new CubicInterpolator(CubicInterpolator.Method.SPLINE,xc.trim(),yc.trim());
-    for (int i=0; i<n; i++) {
-      sv[i] = ci.interpolate1(i);
-    }
-    return sv;
-  }
 
+  public float[] dipPredict1(int k1, int k2, float[][] p) {
+    int n2 = p.length;
+    int n1 = p[0].length;
+    float[] c = new float[n2];
+    c[k2] = k1;
+    SincInterpolator si = new SincInterpolator();
+    for (int i2=k2-1; i2>=0; i2--)
+      c[i2] = c[i2+1]-si.interpolate(n1,1,0,p[i2+1],c[i2+1]);
+    for (int i2=k2+1; i2<n2; i2++)
+      c[i2] = c[i2-1]+si.interpolate(n1,1,0,p[i2-1],c[i2-1]);
+    return c;
+  }
 
   private static void updateSlopesAndWeights (
     float[][]p, float[][]ep,
