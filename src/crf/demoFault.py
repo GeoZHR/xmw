@@ -5,8 +5,8 @@ Version: 2016.01.22
 """
 
 from utils import *
-#setupForSubset("nathanSub8")
-setupForSubset("nathan")
+setupForSubset("nathanSub8")
+#setupForSubset("nathan")
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 # Names and descriptions of image files used below.
@@ -72,7 +72,7 @@ maxThrow = 25.0
 #pngDir = "../../../png/beg/hongliu/"
 pngDir = None
 pngDir = "../../../png/beg/nathan/sub8/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -86,6 +86,7 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goUnfault()
+  goFaultExtension()
   #goFaultImages()
   #goSurfaces()
   #goFaultPoints()
@@ -108,7 +109,7 @@ def main(args):
   #goSkinDisplay()
   #goSampleClean()
   #goAsciiFaults()
-  goPlanarX()
+  #goPlanarX()
 def goAsciiFaults():
   gx = readImage(gxfile)
   sks = readSkins("fslb")
@@ -683,6 +684,21 @@ def goUnfault():
         clab="Fault heave (samples)")
   plot3(gx,w3,cmin=0.1,cmax=3.0,cmap=jetFillExceptMin(1.0),
         clab="Fault heave (samples)")
+
+def goFaultExtension():
+  fe = FaultExtension()
+  gx = readImage(gxfile)
+  if not plotOnly:
+    sk = readSkins(fslbase)
+    print "faults load finish"
+    w1,w2,w3 = fe.getSlipVectors(n1,n2,n3,sk)
+    ex = fe.faultExtension(w1,w2,w3)
+    writeImage("ex",ex)
+  else:
+    ex = readImage("ex")
+  plot3(gx)
+  plot3(gx,ex,cmin=min(ex),cmax=max(ex),cmap=jetRamp(1.0),
+        clab="Fault extension")
 
 def goFaultImages():
   gx = readImage(gxfile)
