@@ -110,8 +110,7 @@ def main(args):
   #goSampleClean()
   #goAsciiFaults()
   #goPlanarX()
-<<<<<<< HEAD
-  goSeisDownSample()
+  #goSeisDownSample()
   #goLikelihoodMask()
 def goSeisDownSample():
   hp = Helper()
@@ -136,9 +135,6 @@ def goSeisResample():
   writeImage("gi",gi)
   #plot3(gx)
   #plot3(gx,cmin=-10000,cmax=10000)
-
-=======
->>>>>>> 510f602f4a80b5cdfe4522915d85858e080a2279
 def goAsciiFaults():
   gx = readImage(gxfile)
   sks = readSkins("fslb")
