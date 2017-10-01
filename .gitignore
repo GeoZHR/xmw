@@ -14,7 +14,7 @@
 hs_err_pid*
 /bin
 /src/mhe
-#/src/hvc
+/src/hvc
 /src/dfault
 /src/spv
 /workbench.xmi
