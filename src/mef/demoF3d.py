@@ -76,7 +76,7 @@ plotOnly = True
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goPlanarity()
+  #goPlanarity()
   #goSemblance()
   #goOrientScan()
   #goSlopes()
@@ -84,7 +84,7 @@ def main(args):
   #goThin()
   #goTvThin()
   #goThinTv()
-  #goSkin()
+  goSkin()
   #goCells()
   #goTv()
   #goSkinTv()

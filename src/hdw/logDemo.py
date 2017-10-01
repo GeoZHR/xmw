@@ -45,9 +45,9 @@ def main(args):
   #timeMark()
   #goPick()
   #goFlatten()
-  goDw()
+  #goDw()
   #getLogs()
-  #showDensity()
+  showDensity()
 
 def showDensity():
   logs = getLogs()
@@ -63,7 +63,7 @@ def showDensity():
   d1 = 0.5*0.0003048
   d1 = 1
   c1 = Sampling(m1,d1,0)
-  plot2(c1,c2,da,cmin=2.0,cmax=2.8,cmap=ajet)
+  plot2(c1,c2,da,cmin=2.0,cmax=200,cmap=ajet)
 
 def getLogs():
   wlName = logDir+"tpwa"+".dat"
@@ -71,11 +71,12 @@ def getLogs():
   logs = wldata.getAll()
   welllogs=[]
   for log in logs:
-    if(log!=None and log.getCurve("den")!=None):
+    if(log!=None and log.getCurve("ga")!=None):
       zs = log.z
       ns = len(zs)
-      if(log.countValidValues("den")>3000 and zs[ns-1]>5000):
+      if(log.countValidValues("ga")>3000 and zs[ns-1]>5000):
         welllogs.append(log)
+        print log.id
   '''
   logs = []
   for il in range(len(welllogs)):

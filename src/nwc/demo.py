@@ -78,8 +78,8 @@ maxThrow = 30.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 #pngDir = "../../../png/beg/hongliu/"
-#pngDir = "../../../png/nwc/"
-plotOnly = True
+pngDir = "../../../png/nwc/"
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -114,8 +114,8 @@ def main(args):
   plot3(gu1)
   plot3(gu2)
   '''
-  goResults()
-  #goSlices()
+  #goResults()
+  goSlices()
   #goChannel()
   #goReskinx()
 def goReskinx():
@@ -174,12 +174,18 @@ def goChannel():
 def goSlices():
   gu = readImage(gufile)
   gu = gain(gu)
-  gu = mul(gu,-1)
-  plot3(gu,k1=238,cmap=ColorMap.BLUE_WHITE_RED)
+  plot3(gu)
   '''
-  for k1 in range(440,480,1):
-    plot3(gu,k1=k1,png="gu"+str(k1))
+  t1 = readImage("t1")
+  for k1 in range(80,120,1):
+    plot3(gu,t1,k1=k1,cmin=-0.01,cmax=20.0,cmap=jetFillExceptMin(1.0),
+        png="gu"+str(k1))
   '''
+  gu2 = zerofloat(n2,n3)
+  for i3 in range(n3):
+    for i2 in range(n2):
+      gu2[i3][i2] = gu[i3][i2][397]
+  plot2(s2,s3,gu2,cmin=-2,cmax=2,png="gu2")
 def goResults():
   gx = readImage(gxfile)
   gw = readImage("fws1")
@@ -189,14 +195,31 @@ def goResults():
   gw = gain(gw)
   gu = gain(gu)
   plot3(gx,png="gx")
+  t1 = readImage("t1")
   flt = zerofloat(n1,n2,n3)
   fsx = FaultSkinnerX()
   fsx.getFls(sk,flt)
   plot3(gx,skins=sk,clab="Fault likelihood",png="gxf")
   plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gw,png="gw")
-  plot3(gu,png="gu")
+  plot3(gx,t1,cmin=-0.1,cmax=20,cmap=jetFillExceptMin(1.0),png="gxt1")
+  plot3(gw,t1,cmin=-0.1,cmax=20,cmap=jetFillExceptMin(1.0),png="gwt1")
+  plot3(gu,t1,cmin=-0.1,cmax=20,cmap=jetFillExceptMin(1.0),png="gut1")
+  '''
+  gxs = readImage(gsxfile)
+  gs = copy(291,301,371,0,300,0,gx)
+  fs = copy(291,301,371,0,300,0,flt)
+  gss = copy(291,301,371,0,300,0,gxs)
+  for i3 in range(371):
+    for i2 in range(80):
+      for i1 in range(291):
+        fs[i3][i2][i1] = 0
+  writeImageM("fltSub",fs)
+  writeImageM("gxSub",gs)
+  writeImageM("gsSub",gss)
+  plot3(gss,fs,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  '''
 
 
 def goTest():
@@ -587,14 +610,24 @@ def goSlip():
     '''
   else:
     gw = readImage(gwfile)
-    #s1 = readImage(fs1file)
+    t1 = readImage(fs1file)
     skins = readSkins(fslbase)
-    skinr = readSkins(fskr)
-  plot3(gx,skins=skins,smax=30.0)
-  #plot3(gx,skins=skinr)
-  '''
-  plot3(gx,s1,cmin=-10,cmax=10.0,cmap=jetFillExceptMin(1.0),
+  t1 = zerofloat(n1,n2,n3)
+  fd = FaultDisplay()
+  fd.getFs1(skins,t1)
+  skinr = readSkins(fskr)
+  for skin in skins:
+    skin.smooth(5)
+  for skin in skinr:
+    skin.smooth(5)
+  writeImage("t1",t1)
+  print min(t1)
+  print max(t1)
+  plot3(gx,skins=skins,smax=30.0,png="throw")
+  plot3(gx,skins=skinr,png="skinr")
+  plot3(gx,t1,cmin=0.001,cmax=20.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxs1")
+  '''
   plot3(gx,s1,cmin=0.0,cmax=10.0,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1i")
   plot3(gx,s2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
@@ -748,7 +781,7 @@ def convertDips(ft):
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           horizon=None,xyz=None,cells=None,skins=None,smax=0.0,slices=None,
-          k1=n1/2,links=False,curve=False,trace=False,png=None):
+          k1=450,links=False,curve=False,trace=False,png=None):
   n3 = len(f)
   n2 = len(f[0])
   n1 = len(f[0][0])
@@ -844,7 +877,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     ct = 0
     for skin in skins:
       if smax>0.0: # show fault throws
-        cmap = ColorMap(-smax,smax,ColorMap.JET)
+        cmap = ColorMap(0,20,ColorMap.JET)
         xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
       else: # show fault likelihood
         cmap = ColorMap(0.0,1.0,ColorMap.JET)
@@ -880,8 +913,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sg.addChild(lg)
         #ct = ct+1
     sf.world.addChild(sg)
-  #ipg.setSlices(450,530,393)
   ipg.setSlices(k1,596,n3)
+  ipg.setSlices(k1,566,n3)
   if cbar:
     sf.setSize(1037,900)
   else:
@@ -898,7 +931,7 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
   ov.setTranslate(Vector3(0.0,-0.15,-0.01))
   ov.setAzimuthAndElevation(225.0,40.0)
-  ov.setAzimuthAndElevation(255.0,40.0)
+  #ov.setAzimuthAndElevation(255.0,40.0)
   #ov.setAzimuthAndElevation(-55.0,35.0)
   sf.setVisible(True)
   if png and pngDir:
@@ -906,6 +939,27 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
 
+def plot2(s1,s2,f,cmin=None,cmax=None,cint=None,clab=None,title=None,png=None): 
+  f1 = s1.getFirst()
+  f2 = s2.getFirst()
+  d1 = s1.getDelta()
+  d2 = s2.getDelta()
+  n1 = s1.getCount()
+  orientation = PlotPanel.Orientation.X1RIGHT_X2UP;
+  panel = PlotPanel(1,1,orientation,PlotPanel.AxesPlacement.NONE)
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  pxv.setColorModel(ColorMap.GRAY)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  if title:
+    panel.addTitle(title)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  frame.setVisible(True);
+  frame.setSize(round(n1*0.6),round(n2*0.6))
+  if pngDir and png:
+    frame.paintToPng(720,3.333,pngDir+png+".png")
 
 #############################################################################
 run(main)

@@ -255,6 +255,34 @@ public class FaultDisplay {
     }
   }
 
+  public void getFs1(FaultSkin[] sks, float[][][] fs1) {
+    int n3 = fs1.length;
+    int n2 = fs1[0].length;
+    int n1 = fs1[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      fs1[i3][i2][i1] = -100f;
+    }}}
+    for (FaultSkin ski:sks) {
+      if(ski.size()>1000) {
+      for (FaultCell fci:ski) {
+        int i1 = fci.getI1();
+        int m2 = fci.getM2();
+        int m3 = fci.getM3();
+        int p2 = fci.getP2();
+        int p3 = fci.getP3();
+        i1 = min(i1,n1-1); i1 = max(i1,0);
+        m2 = min(m2,n2-1); m2 = max(m2,0);
+        m3 = min(m3,n3-1); m3 = max(m3,0);
+        p2 = min(p2,n2-1); p2 = max(p2,0);
+        p3 = min(p3,n3-1); p3 = max(p3,0);
+        fs1[m3][m2][i1] = fci.getS1();
+        fs1[p3][p2][i1] = fci.getS1();
+      }}
+    }
+  }
+
 
   public void getFtt(
     FaultSkin[] sks, float[][][] gx, float[][][] ft)
