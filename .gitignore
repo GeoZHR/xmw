@@ -15,7 +15,8 @@ hs_err_pid*
 /bin
 /src/mhe
 #/src/hvc
-#/src/dfault
-#/src/spv
+/src/dfault
+/src/spv
+/workbench.xmi
 /.gradle
 /target/
