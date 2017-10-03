@@ -27,6 +27,12 @@ fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
 fskbase = "fsk" # fault skin (basename only)
+v1file = "v1"
+v2file = "v2"
+v3file = "v3"
+w1file = "w1"
+w2file = "w2"
+w3file = "w3"
 h70file = "shb5_hor70"
 h74file = "shb5_hor74"
 h76file = "shb5_hor76"
@@ -63,8 +69,7 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSeisData()
-  #goHorizons()
-  #goSemblance()
+  goSlopeVectors()
   #goSlopes()
   #goScan()
   #goThin()
@@ -80,7 +85,22 @@ def goSeisData():
   gmin,gmax = -2,2
   gmap = ColorMap.GRAY
   plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
-
+def goSlopeVectors():
+  gx = readImage(gxfile)
+  v1 = zerofloat(n1,n2,n3)
+  v2 = zerofloat(n1,n2,n3)
+  v3 = zerofloat(n1,n2,n3)
+  u1 = zerofloat(n1,n2,n3)
+  u2 = zerofloat(n1,n2,n3)
+  u3 = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(4,1)
+  lof.apply(gx,None,None,None,None,None,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
+  writeImage(v1file,v1)
+  writeImage(v2file,v2)
+  writeImage(v3file,v3)
+  writeImage(w1file,w1)
+  writeImage(w2file,w2)
+  writeImage(w3file,w3)
 def goHorizons():
   gx = readImage(gxfile)
   hs = readHorizon(h70file)
