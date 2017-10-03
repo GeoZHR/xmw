@@ -39,6 +39,7 @@ h76file = "shb5_hor76"
 h80file = "shb5_hor80"
 h83file = "shb5_hor83"
 smfile = "sm"
+ddfile = "dd"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
