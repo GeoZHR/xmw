@@ -154,6 +154,11 @@ public class FaultScanner2 {
     return scanC(st,sig1,sig2,smooth,g);
   }
 
+  public float[][][] scan(
+      double thetaMin, double thetaMax,float[][] fx) {
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    return scanTheta(st,fx);
+  }
 
   /**
    * Scans with the specified sampling of fault strikes and dips.
@@ -648,6 +653,61 @@ public class FaultScanner2 {
     }
     return new float[][][]{f,t};
   }
+
+  private float[][][] scanTheta(Sampling thetaSampling, float[][] fx) {
+    final int n2 = fx.length;
+    final int n1 = fx[0].length;
+    final float[][] f = new float[n2][n1];
+    final float[][] t = new float[n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    int nt = thetaSampling.getCount();
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = -1.0f/tan(theta);
+      float[][] fxs = shear(si,shear,fx);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(fxs,fxs);
+      float[][] s2 = unshear(si,shear,fxs);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        if (st>f[i2][i1]) {
+          f[i2][i1] = st;
+          t[i2][i1] = -ti;
+        }
+      }}
+    }
+
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = 1.0f/tan(theta);
+      float[][] fxs = shear(si,shear,fx);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(fxs,fxs);
+      float[][] s2 = unshear(si,shear,fxs);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        if (st>f[i2][i1]) {
+          f[i2][i1] = st;
+          t[i2][i1] = ti;
+        }
+      }}
+    }
+    return new float[][][]{f,t};
+  }
+
 
   private float[][][] scanThetaC(Sampling thetaSampling, float[][][] snd) {
     final int n2 = snd[0].length;

@@ -202,7 +202,7 @@ public class FaultPointGrid {
     }
     FaultPoint cmin = null;
     float dmin = Float.MAX_VALUE;
-      for (int k2=-1; k2<=1; ++k2) {
+      for (int k2=-5; k2<=5; ++k2) {
         FaultPoint c = get(i1+k1,i2+k2);
         if (c!=null) {
           float d1 = c.x1-x1;

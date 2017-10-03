@@ -32,13 +32,21 @@ h74file = "shb5_hor74"
 h76file = "shb5_hor76"
 h80file = "shb5_hor80"
 h83file = "shb5_hor83"
+<<<<<<< HEAD
 smfile = "sm"
+=======
+>>>>>>> 31efcfe16c653f77ffe4ba3b9436970550efe51b
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
+<<<<<<< HEAD
 minTheta,maxTheta = 70,89
 sigmaPhi,sigmaTheta = 4,30
+=======
+minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 4,20
+>>>>>>> 31efcfe16c653f77ffe4ba3b9436970550efe51b
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -62,11 +70,18 @@ plotOnly = False
 def main(args):
   #goSeisData()
   #goHorizons()
+<<<<<<< HEAD
   #goSta()
   #goSemblance()
   #goSlopes()
   goScan()
   goThin()
+=======
+  goSta()
+  #goSlopes()
+  #goScan()
+  #goThin()
+>>>>>>> 31efcfe16c653f77ffe4ba3b9436970550efe51b
   #goSmooth()
   #goSkin()
   #goSlip()
@@ -95,8 +110,13 @@ def goSta():
     el = zerofloat(n1,n2,n3)
     lof = LocalOrientFilter(sig1,sig2)
     et = lof.applyForTensors(gx)
+<<<<<<< HEAD
     sta = StructureTensorAttribute(et,40)
     sta.setEigenvalues(1.0,0.01,0.2)
+=======
+    sta = StructureTensorAttribute(et,20)
+    sta.setEigenvalues(1.0,0.01,0.6)
+>>>>>>> 31efcfe16c653f77ffe4ba3b9436970550efe51b
     sta.applyForPlanarLinear(gx,ep,el)
     writeImage(epfile,ep)
     writeImage(elfile,el)
@@ -104,6 +124,7 @@ def goSta():
     ep = readImage(epfile)
   plot3(ep,cmin=0.2,cmax=1.0,clab="Planarity",cint=0.1,png="ep")
 
+<<<<<<< HEAD
 def goSemblance():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -124,6 +145,8 @@ def goSemblance():
   #sem = div(sem,max(sem))
   plot3(ep,cmin=0.2,cmax=1.0,clab="Semblance",cint=0.1,png="sm")
 
+=======
+>>>>>>> 31efcfe16c653f77ffe4ba3b9436970550efe51b
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)

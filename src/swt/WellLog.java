@@ -618,7 +618,7 @@ public class WellLog {
     float[][] xs = new float[2][nw];
     for (int iw=0; iw<nw; ++iw) {
       float[] zs = ws[iw].z;
-      float[] ds = ws[iw].getCurve("den");
+      float[] ds = ws[iw].getCurve("ga");
       int ns = zs.length;
       xs[0][iw] = ws[iw].x2[0];
       xs[1][iw] = ws[iw].x3[0];

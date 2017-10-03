@@ -38,6 +38,129 @@ def main(args):
   #goCampos()
   #goCampos2()
   #goWasson()
+  #goQuin()
+def goGu():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = /data/seis/f3d/f3draw.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 699003060
+  number of traces = 600515
+  format = 3 (2-byte two's complement integer)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   300, i2max =  1250 (inline indices)
+    i3min =   100, i3max =   750 (crossline indices)
+    xmin =  605.416700, xmax =  629.576300 (x coordinates, in km)
+    ymin = 6073.556400, ymax = 6090.463200 (y coordinates, in km)
+  grid sampling:
+    n1 =   462 (number of samples per trace)
+    n2 =   951 (number of traces in inline direction)
+    n3 =   651 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.025000 (inline sampling interval, in km)
+    d3 = 0.024999 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   300, i3min =   100, x =  605.835500, y = 6073.556400
+    i2max =  1250, i3min =   100, x =  629.576300, y = 6074.219900
+    i2min =   300, i3max =   750, x =  605.381800, y = 6089.799700
+    i2max =  1250, i3max =   750, x =  629.122600, y = 6090.463200
+  grid azimuth: 88.40 degrees
+  ****** end of SEG-Y file info ******
+  good subset with no dead traces
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
+  n1,n2,n3 = 462,951,591
+  ***************************************************************************
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/gu/"
+  sgyfile = basedir+"seis.sgy"
+  datfile = basedir+"seis.dat"
+  #i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,5500,388,1337,1508,2184
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1
+    #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    show3d(x,clip=max(x)/10)
+
+def goQuin():
+  '''
+****** beginning of SEG-Y file info ******
+file name = ../../../data/seis/channel/fake/QuinSy_migPh0time.sgy
+byte order = BIG_ENDIAN
+number of bytes = 1111003600
+number of traces = 250000
+format = 5 (4-byte IEEE floating point)
+units for spatial coordinates: ft (will be converted to km)
+indices and coordinates from trace headers:
+  i2min =     0, i2max =   499 (inline indices)
+  i3min =     0, i3max =   499 (crossline indices)
+  xmin =    0.000000, xmax =    3.802380 (x coordinates, in km)
+  ymin =    0.000000, ymax =    3.802380 (y coordinates, in km)
+grid sampling:
+  n1 =  1051 (number of samples per trace)
+  n2 =   500 (number of traces in inline direction)
+  n3 =   500 (number of traces in crossline direction)
+  d1 = 0.004000 (time sampling interval, in s)
+  d2 = 0.007620 (inline sampling interval, in km)
+  d3 = 0.007620 (crossline sampling interval, in km)
+grid corner points:
+  i2min =     0, i3min =     0, x =    0.000000, y =    0.000000
+  i2max =   499, i3min =     0, x =    3.802380, y =    0.000000
+  i2min =     0, i3max =   499, x =    0.000000, y =    3.802380
+  i2max =   499, i3max =   499, x =    3.802380, y =    3.802380
+grid azimuth: 90.00 degrees
+****** end of SEG-Y file info ******
+  '''
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/channel/fake/"
+  sgyfile = basedir+"QuinSy_migPh0time.sgy"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1050,0,499,0,499
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1
+    #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    gain(100,x)
+    show3d(x,clip=max(x)/2)
+    show3d(x,clip=1.0)
+
 def goCampos2():
   """
   ***************************************************************************

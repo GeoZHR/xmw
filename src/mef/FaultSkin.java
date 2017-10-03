@@ -546,6 +546,63 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
     return skin;
   }
 
+  public void smooth(int n) { 
+    for(int i=0; i<n; ++i) {
+      for (FaultCell cell:_cellList) {
+        FaultCell ca = cell.ca;
+        FaultCell cb = cell.cb;
+        FaultCell cl = cell.cl;
+        FaultCell cr = cell.cr;
+        float cs = 1f;
+        float x1 = cell.x1;
+        float x2 = cell.x2;
+        float x3 = cell.x3;
+        float fl = cell.fl;
+        float s1 = cell.s1;
+        if(ca!=null) {
+          cs += 1f;
+          x1 += ca.x1;
+          x2 += ca.x2;
+          x3 += ca.x3;
+          fl += ca.fl;
+          s1 += ca.s1;
+        }
+        if(cb!=null) {
+          cs += 1f;
+          x1 += cb.x1;
+          x2 += cb.x2;
+          x3 += cb.x3;
+          fl += cb.fl;
+          s1 += cb.s1;
+        }
+        if(cl!=null) {
+          cs += 1f;
+          x1 += cl.x1;
+          x2 += cl.x2;
+          x3 += cl.x3;
+          fl += cl.fl;
+          s1 += cl.s1;
+        }
+        if(cr!=null) {
+          cs += 1f;
+          x1 += cr.x1;
+          x2 += cr.x2;
+          x3 += cr.x3;
+          fl += cr.fl;
+          s1 += cr.s1;
+        }
+        cs = 1f/cs;
+        cell.x1 = x1*cs;
+        cell.x2 = x2*cs;
+        cell.x3 = x3*cs;
+        cell.fl = fl*cs;
+        cell.s1 = s1*cs;
+      }
+    }
+
+  }
+
+
   /**
    * Writes a fault skin to a file with specified name.
    * @param fileName the fault skin file name.
