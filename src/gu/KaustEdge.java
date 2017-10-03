@@ -11,7 +11,7 @@ import static edu.mines.jtk.util.ArrayMath.*;
  */
 public class KaustEdge {
 
-  float[][][] directionalDifference(
+  public float[][][] directionalDifference(
     float[][][] gx, float[][][] v1, float[][][] v2, float[][][] v3,
     float[][][] w1, float[][][] w2, float[][][] w3) {
     final int n3 = gx.length;
