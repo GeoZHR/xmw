@@ -734,7 +734,35 @@ def goFaultExtension():
   else:
     ex = readImage("ex")
   plot3(gx)
-  plot3(gx,ex,cmin=min(ex),cmax=max(ex),cmap=jetRamp(1.0),
+  ex = sub(ex,min(ex))
+  print min(ex)
+  print max(ex)
+  rgf = RecursiveGaussianFilterP(10)
+  g1 = zerofloat(n1,n2,n3)
+  g2 = zerofloat(n1,n2,n3)
+  g3 = zerofloat(n1,n2,n3)
+  rgf.apply100(ex,g1)
+  rgf.apply010(ex,g2)
+  rgf.apply001(ex,g3)
+  g1 = mul(g1,g1)
+  g2 = mul(g2,g2)
+  g3 = mul(g3,g3)
+  gh = add(g2,g3)
+  gs = add(g1,gh)
+  gh = sqrt(gh)
+  gs = sqrt(gs)
+  print min(gh)
+  print max(gh)
+
+  '''
+  plot3(gx,w2,cmin=0.0001,cmax=1,cmap=jetFillExceptMin(1.0),
+        clab="Fault extension")
+  '''
+  plot3(gx,ex,cmin=1,cmax=80,cmap=jetRamp(1.0),
+        clab="Fault extension")
+  plot3(gx,gh,cmin=0.1,cmax=0.3,cmap=jetRamp(1.0),
+        clab="Fault extension")
+  plot3(gx,gs,cmin=0.1,cmax=0.3,cmap=jetRamp(1.0),
         clab="Fault extension")
 
 def goFaultImages():

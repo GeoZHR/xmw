@@ -41,6 +41,18 @@ public class SurfaceDisplay {
     return tgs;
   }
 
+  public void checkNaNs(float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      if(Float.isNaN(fx[i3][i2][i1]))
+        fx[i3][i2][i1] = 0.0f;
+    }}}
+
+  }
 
   public float[][] amplitudeOnHorizon(
     final float[][] hz, final float[][][] fx) 

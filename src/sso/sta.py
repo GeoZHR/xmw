@@ -44,8 +44,8 @@ k1 = 56
 
 def main(args):
   #goLof()
-  goSta()
-  #goSemblance()
+  #goSta()
+  goSemblance()
   #goValley()
 def goValley():
   fx = readImage(fxfile)

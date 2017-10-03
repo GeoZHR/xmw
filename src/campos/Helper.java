@@ -11,6 +11,29 @@ import mef.*;
 import util.*;
 
 public class Helper {
+
+  public float[][] rotate(float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] gx = new float[n1][n2];
+    for (int i1=0; i1<n1; i1++){
+    for (int i2=0; i2<n2; i2++){
+      gx[i1][n2-1-i2] = fx[i2][i1];
+    }}
+    return gx;
+  }
+
+  public float[][] flip2(float[][] fx) {
+    int n2 = fx.length;
+    int n1 = fx[0].length;
+    float[][] gx = new float[n2][n1];
+    for (int i2=0; i2<n2; i2++){
+    for (int i1=0; i1<n1; i1++){
+      gx[n2-i2-1][i1] = fx[i2][i1];
+    }}
+    return gx;
+  }
+
   public void combineX(
     float[][][] gx1, float[][][] gx2, float[][][] gx3, float[][][] gx4, 
     float[][][] gx)

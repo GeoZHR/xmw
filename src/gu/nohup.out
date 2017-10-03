@@ -1,0 +1,4 @@
+ERROR: Second call to constructor of static parser.  You must
+       either use ReInit() or set the JavaCC option STATIC to false
+       during parser generation.
+ ** On entry to DSTEIN parameter number  6 had an illegal value

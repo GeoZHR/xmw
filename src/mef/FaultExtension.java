@@ -35,6 +35,20 @@ public class FaultExtension {
   }
   */
 
+  public float[][][] accumulate2(float[][][] w) {
+    int n3 = w.length;
+    int n2 = w[0].length;
+    int n1 = w[0][0].length;
+    float[][][] c = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i1=0; i1<n1; ++i1) {
+      for (int i2=1; i2<n2; ++i2) {
+        c[i3][i2][i1] = w[i3][i2][i1]+c[i3][i2-1][i1];
+      }
+    }}
+    return c;
+  }
+
     /**
    * @param us[0] array of fault likelihoods.
    * @param us[1] array of 1st component of fault normal vectors.
@@ -75,10 +89,9 @@ public class FaultExtension {
       float c3 = cell.getS3();
       if(c2<0f) {
         c2 = -c2;
-        c3 = -c3;
       }
+      if(c2>20f) c2=0f;
       w2[i3][i2][i1] = c2;
-      w3[i3][i2][i1] = c3;
     }}
     return new float[][][][]{w1,w2,w3};
   }
@@ -367,6 +380,6 @@ public class FaultExtension {
   private float _sigma2 = 6.0f; // precon smoothing extent for 2nd dim
   private float _sigma3 = 6.0f; // precon smoothing extent for 3rd dim
   private float _small = 0.01f; // stop CG iterations if residuals small
-  private int _niter = 100; // maximum number of CG iterations
+  private int _niter = 500; // maximum number of CG iterations
 
 }
