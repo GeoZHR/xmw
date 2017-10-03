@@ -69,7 +69,8 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSeisData()
-  goSlopeVectors()
+  #goSlopeVectors()
+  goKaustEdge()
   #goSlopes()
   #goScan()
   #goThin()
@@ -103,6 +104,13 @@ def goSlopeVectors():
   writeImage(w3file,w3)
 def goKaustEdge():
   gx = readImage(gxfile)
+  dd = zerofloat(n1,n2,n3)
+  ke = KaustEdge()
+  dd = ke.directionalDifference(gx,v1,v2,v3,w1,w2,w3)
+  dd = sub(dd,min(dd))
+  dd = div(dd,max(dd))
+  writeImage(ddfile,dd)
+  plot3(dd,cmin=0.2,cmax=1.0,clab="Kaust Edge",cint=0.1,png="dd")
 def goHorizons():
   gx = readImage(gxfile)
   hs = readHorizon(h70file)
