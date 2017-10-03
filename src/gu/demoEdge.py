@@ -120,7 +120,7 @@ def goKaustEdge():
     writeImage(ddfile,dd)
   else:
     dd = readImage(ddfile)
-  plot3(dd,cmin=0.01,cmax=0.1,clab="Kaust Edge",cint=0.1,png="dd")
+  plot3(dd,cmin=0.01,cmax=0.5,clab="Kaust Edge",cint=0.1,png="dd")
 def goHorizons():
   gx = readImage(gxfile)
   hs = readHorizon(h70file)
