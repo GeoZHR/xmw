@@ -104,6 +104,12 @@ def goSlopeVectors():
   writeImage(w3file,w3)
 def goKaustEdge():
   gx = readImage(gxfile)
+  v1 = readImage(v1file)
+  v2 = readImage(v2file)
+  v3 = readImage(v3file)
+  w1 = readImage(w1file)
+  w2 = readImage(w2file)
+  w3 = readImage(w3file)
   dd = zerofloat(n1,n2,n3)
   ke = KaustEdge()
   dd = ke.directionalDifference(gx,v1,v2,v3,w1,w2,w3)
