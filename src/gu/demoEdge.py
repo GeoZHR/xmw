@@ -90,9 +90,9 @@ def goSlopeVectors():
   v1 = zerofloat(n1,n2,n3)
   v2 = zerofloat(n1,n2,n3)
   v3 = zerofloat(n1,n2,n3)
-  u1 = zerofloat(n1,n2,n3)
-  u2 = zerofloat(n1,n2,n3)
-  u3 = zerofloat(n1,n2,n3)
+  w1 = zerofloat(n1,n2,n3)
+  w2 = zerofloat(n1,n2,n3)
+  w3 = zerofloat(n1,n2,n3)
   lof = LocalOrientFilter(4,1)
   lof.apply(gx,None,None,None,None,None,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
   writeImage(v1file,v1)
@@ -101,6 +101,8 @@ def goSlopeVectors():
   writeImage(w1file,w1)
   writeImage(w2file,w2)
   writeImage(w3file,w3)
+def goKaustEdge():
+  gx = readImage(gxfile)
 def goHorizons():
   gx = readImage(gxfile)
   hs = readHorizon(h70file)
