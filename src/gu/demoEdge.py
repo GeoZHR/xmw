@@ -20,9 +20,15 @@ p3kfile = "p3k" # crossline slopes (known)
 flfile  = "fl" # fault likelihood
 fpfile  = "fp" # fault strike (phi)
 ftfile  = "ft" # fault dip (theta)
+klfile  = "kl" # fault likelihood
+kpfile  = "kp" # fault strike (phi)
+ktfile  = "kt" # fault dip (theta)
 fltfile = "flt" # fault likelihood thinned
 fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
+kltfile = "klt" # fault likelihood thinned
+kptfile = "kpt" # fault strike thinned
+kttfile = "ktt" # fault dip thinned
 fs1file = "fs1" # fault slip (1st component)
 fs2file = "fs2" # fault slip (2nd component)
 fs3file = "fs3" # fault slip (3rd component)
@@ -46,8 +52,8 @@ ddfile = "dd"
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 70,89
 sigmaPhi,sigmaTheta = 4,30
-minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 4,20
+minTheta,maxTheta = 75,89
+sigmaPhi,sigmaTheta = 4,30
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -71,7 +77,8 @@ plotOnly = True
 def main(args):
   #goSeisData()
   #goSlopeVectors()
-  goKaustEdge()
+  #goKaustEdge()
+  goKaustEdgeEnhance()
   #goSlopes()
   #goScan()
   #goThin()
@@ -121,6 +128,26 @@ def goKaustEdge():
   else:
     dd = readImage(ddfile)
   plot3(dd,cmin=0.01,cmax=0.5,clab="Kaust Edge",cint=0.1,png="dd")
+def goKaustEdgeEnhance():
+  gx = readImage(gxfile)
+  dd = readImage(ddfile)
+  dd = KaustEdgeScanner.taper(10,0,0,dd)
+  ks = KaustEdgeScanner(sigmaPhi,sigmaTheta)
+  kl,kp,kt = ks.scan(minPhi,maxPhi,minTheta,maxTheta,dd)
+  print "kl min =",min(kl)," max =",max(kl)
+  print "kp min =",min(kp)," max =",max(kp)
+  print "kt min =",min(kt)," max =",max(kt)
+  writeImage(klfile,kl)
+  writeImage(kpfile,kp)
+  writeImage(ktfile,kt)
+  plot3(gx,clab="Amplitude")
+  plot3(gx,kl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="kl")
+  plot3(gx,kp,cmin=0,cmax=360,cmap=hueFill(1.0),
+        clab="Fault strike (degrees)",cint=45,png="kp")
+  plot3(gx,convertDips(kt),cmin=25,cmax=65,cmap=jetFill(1.0),
+        clab="Fault dip (degrees)",png="kt")
+
 def goHorizons():
   gx = readImage(gxfile)
   hs = readHorizon(h70file)
