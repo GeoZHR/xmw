@@ -226,9 +226,9 @@ def goAmplitudeCurvature():
   else:
     pc = readImage(pcfile)
     nc = readImage(ncfile)
-  plot3(gx,pc,cmin=min(pc)*0.2,cmax=max(pc)*0.2,cmap=jetRamp(1.0),
+  plot3(gx,pc,cmin=min(pc)*0.2,cmax=max(pc)*0.2,cmap=jetFill(1.0),
         clab="Most positive",png="pc")
-  plot3(gx,nc,cmin=min(pc)*0.2,cmax=max(pc)*0.2,cmap=jetRamp(1.0),
+  plot3(gx,nc,cmin=min(pc)*0.2,cmax=max(pc)*0.2,cmap=jetFill(1.0),
         clab="Most negative",png="nc")
 
 
