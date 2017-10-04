@@ -72,7 +72,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = False
+plotOnly = True
 #pngDir = "../../png/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -256,11 +256,14 @@ def goScan():
 def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
-  kl = readImage(klfile)
-  kp = readImage(kpfile)
-  kt = readImage(ktfile)
-  klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
-  writeImage(kltfile,klt)
+  if not plotOnly:
+    kl = readImage(klfile)
+    kp = readImage(kpfile)
+    kt = readImage(ktfile)
+    klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
+    writeImage(kltfile,klt)
+  else:
+    klt = readImage(kltfile)
   plot3(gx,clab="Amplitude")
   plot3(gx,klt,cmin=0.05,cmax=0.1,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
@@ -541,7 +544,7 @@ def plot3(f,g=None,hz=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(95,5,51)
+  ipg.setSlices(95,5,572)
   #ipg.setSlices(95,5,95)
   if cbar:
     sf.setSize(837,700)
