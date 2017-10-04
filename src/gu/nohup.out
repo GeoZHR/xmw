@@ -2,3 +2,132 @@ ERROR: Second call to constructor of static parser.  You must
        either use ReInit() or set the JavaCC option STATIC to false
        during parser generation.
  ** On entry to DSTEIN parameter number  6 had an illegal value
+FaultScanner.scan: done in 4179 seconds
+FaultScanner.scan: done in 3971 seconds
+FaultScanner.scan: done in 4156 seconds
+FaultScanner.scan: done in 5345 seconds
+FaultScanner.scan: done in 5204 seconds
+FaultScanner.scan: done in 4750 seconds
+FaultScanner.scan: done in 4490 seconds
+FaultScanner.scan: done in 4226 seconds
+FaultScanner.scan: done in 3992 seconds
+FaultScanner.scan: done in 3776 seconds
+FaultScanner.scan: done in 3593 seconds
+FaultScanner.scan: done in 3428 seconds
+FaultScanner.scan: done in 3273 seconds
+FaultScanner.scan: done in 3134 seconds
+FaultScanner.scan: done in 3032 seconds
+FaultScanner.scan: done in 2932 seconds
+FaultScanner.scan: done in 2893 seconds
+FaultScanner.scan: done in 2853 seconds
+FaultScanner.scan: done in 2799 seconds
+FaultScanner.scan: done in 2745 seconds
+FaultScanner.scan: done in 2693 seconds
+FaultScanner.scan: done in 2625 seconds
+FaultScanner.scan: done in 2553 seconds
+FaultScanner.scan: done in 2484 seconds
+FaultScanner.scan: done in 2382 seconds
+FaultScanner.scan: done in 2269 seconds
+FaultScanner.scan: done in 2157 seconds
+FaultScanner.scan: done in 2046 seconds
+FaultScanner.scan: done in 1940 seconds
+FaultScanner.scan: done in 1837 seconds
+FaultScanner.scan: done in 1735 seconds
+FaultScanner.scan: done in 1637 seconds
+FaultScanner.scan: done in 1547 seconds
+FaultScanner.scan: done in 1458 seconds
+FaultScanner.scan: done in 1364 seconds
+FaultScanner.scan: done in 1270 seconds
+FaultScanner.scan: done in 1178 seconds
+FaultScanner.scan: done in 1089 seconds
+FaultScanner.scan: done in 999 seconds
+FaultScanner.scan: done in 911 seconds
+FaultScanner.scan: done in 824 seconds
+FaultScanner.scan: done in 739 seconds
+FaultScanner.scan: done in 654 seconds
+FaultScanner.scan: done in 570 seconds
+FaultScanner.scan: done in 487 seconds
+FaultScanner.scan: done in 404 seconds
+FaultScanner.scan: done in 322 seconds
+FaultScanner.scan: done in 241 seconds
+FaultScanner.scan: done in 160 seconds
+FaultScanner.scan: done in 80 seconds
+FaultScanner.scan: done
+kl min = 0.00326003064401  max = 0.326441466808
+kp min = 0.0  max = 352.799987793
+kt min = 75.0  max = 89.0
+Exception in thread "AWT-EventQueue-0" java.awt.HeadlessException: 
+No X11 DISPLAY variable was set, but this program performed an operation which requires it.
+	at java.awt.GraphicsEnvironment.checkHeadless(GraphicsEnvironment.java:204)
+	at java.awt.Window.<init>(Window.java:536)
+	at java.awt.Frame.<init>(Frame.java:420)
+	at java.awt.Frame.<init>(Frame.java:385)
+	at javax.swing.JFrame.<init>(JFrame.java:189)
+	at edu.mines.jtk.sgl.SimpleFrame.<init>(SimpleFrame.java:60)
+	at edu.mines.jtk.sgl.SimpleFrame.<init>(SimpleFrame.java:44)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.python.core.PyReflectedConstructor.constructProxy(PyReflectedConstructor.java:210)
+	at org.python.core.PyReflectedConstructor.__call__(PyReflectedConstructor.java:179)
+	at org.python.core.PyObject.__call__(PyObject.java:345)
+	at org.python.core.PyMethod.instancemethod___call__(PyMethod.java:220)
+	at org.python.core.PyMethod.__call__(PyMethod.java:211)
+	at org.python.core.PyMethod.__call__(PyMethod.java:206)
+	at org.python.core.Deriveds.dispatch__init__(Deriveds.java:19)
+	at org.python.core.PyObjectDerived.dispatch__init__(PyObjectDerived.java:1057)
+	at org.python.core.PyType.type___call__(PyType.java:1565)
+	at org.python.core.PyType.__call__(PyType.java:1548)
+	at org.python.core.PyObject.__call__(PyObject.java:387)
+	at org.python.core.PyObject.__call__(PyObject.java:391)
+	at org.python.pycode._pyx0.plot3$30(demoEdge.py:558)
+	at org.python.pycode._pyx0.call_function(demoEdge.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:301)
+	at org.python.core.PyFunction.function___call__(PyFunction.java:376)
+	at org.python.core.PyFunction.__call__(PyFunction.java:371)
+	at org.python.pycode._pyx0.goKaustEdgeEnhance$6(demoEdge.py:162)
+	at org.python.pycode._pyx0.call_function(demoEdge.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:120)
+	at org.python.core.PyFunction.__call__(PyFunction.java:307)
+	at org.python.pycode._pyx0.main$1(demoEdge.py:83)
+	at org.python.pycode._pyx0.call_function(demoEdge.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:134)
+	at org.python.core.PyFunction.__call__(PyFunction.java:317)
+	at common$py.run$3(/home/xinwu/Home/research/xmw/src/gu/common.py:31)
+	at common$py.call_function(/home/xinwu/Home/research/xmw/src/gu/common.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:301)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:194)
+	at org.python.core.PyFunction.__call__(PyFunction.java:387)
+	at org.python.core.PyMethod.instancemethod___call__(PyMethod.java:220)
+	at org.python.core.PyMethod.__call__(PyMethod.java:211)
+	at org.python.core.PyMethod.__call__(PyMethod.java:201)
+	at org.python.core.PyMethod.__call__(PyMethod.java:196)
+	at org.python.core.PyObject._jcallexc(PyObject.java:3502)
+	at org.python.core.PyObject._jcall(PyObject.java:3534)
+	at org.python.proxies.common$_RunMain$0.run(Unknown Source)
+	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
+	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:756)
+	at java.awt.EventQueue.access$500(EventQueue.java:97)
+	at java.awt.EventQueue$3.run(EventQueue.java:709)
+	at java.awt.EventQueue$3.run(EventQueue.java:703)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:76)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:726)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:201)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+FaultScanner.scan: done in 2704 seconds
+FaultScanner.scan: done in 2378 seconds
+FaultScanner.scan: done in 2206 seconds
+FaultScanner.scan: done in 2102 seconds
+FaultScanner.scan: done in 2067 seconds
+FaultScanner.scan: done in 1983 seconds
+FaultScanner.scan: done in 1910 seconds

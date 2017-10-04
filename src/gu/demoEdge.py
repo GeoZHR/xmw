@@ -56,7 +56,7 @@ minPhi,maxPhi = 0,360
 minTheta,maxTheta = 70,89
 sigmaPhi,sigmaTheta = 4,30
 minTheta,maxTheta = 75,89
-sigmaPhi,sigmaTheta = 4,30
+sigmaPhi,sigmaTheta = 4,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -72,7 +72,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = True
+plotOnly = False
 #pngDir = "../../png/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -82,10 +82,10 @@ def main(args):
   #goSlopeVectors()
   #goKaustEdge()
   #goSlopes()
-  goAmplitudeCurvature()
+  #goAmplitudeCurvature()
   #goPlaneWaveDestruction()
   #goKaustEdgeEnhance()
-  #goThin()
+  goThin()
 
 def goSeisData():
   gx = readImage(gxfile)
@@ -149,10 +149,9 @@ def goKaustEdgeEnhance():
     print "kl min =",min(kl)," max =",max(kl)
     print "kp min =",min(kp)," max =",max(kp)
     print "kt min =",min(kt)," max =",max(kt)
-    writeImage(klfile,kl)
-    writeImage(kpfile,kp)
-    writeImage(ktfile,kt)
-    plot3(gx,clab="Amplitude")
+    writeImage(klfile+"20",kl)
+    writeImage(kpfile+"20",kp)
+    writeImage(ktfile+"20",kt)
   else:
     kl = readImage(klfile)
   plot3(gx,kl,cmin=0.01,cmax=0.2,cmap=jetRamp(1.0),
@@ -263,7 +262,7 @@ def goThin():
   klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
   writeImage(kltfile,klt)
   plot3(gx,clab="Amplitude")
-  plot3(gx,klt,cmin=0.05,cmax=0.2,cmap=jetFillExceptMin(1.0),
+  plot3(gx,klt,cmin=0.05,cmax=0.1,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
 
 def goStat():
