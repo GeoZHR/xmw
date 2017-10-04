@@ -47,6 +47,8 @@ h83file = "shb5_hor83"
 smfile = "sm"
 ddfile = "dd"
 pdfile = "pd"
+pcfile = "pc"
+ncfile = "nc"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -70,7 +72,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = True
+plotOnly = False
 #pngDir = "../../png/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -79,7 +81,8 @@ def main(args):
   #goSeisData()
   #goSlopeVectors()
   #goKaustEdge()
-  goSlopes()
+  #goSlopes()
+  goAmplitudeCurvature()
   #goPlaneWaveDestruction()
   #goKaustEdgeEnhance()
   #goThin()
@@ -211,6 +214,24 @@ def goSlopes():
   writeImage(p3file,p3)
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
+def goAmplitudeCurvature():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ke = KaustEdge()
+    pc,nc = ke.amplitudeCurvature(gx,p2,p3)
+    writeImage(pcfile,pc)
+    writeImage(ncfile,nc)
+  else:
+    pc = readImage(pcfile)
+    nc = readImage(ncfile)
+  plot3(gx,pc,cmin=min(pc)*0.5,cmax=max(pc)*0.5,cmap=jetRamp(1.0),
+        clab="Most positive",png="pc")
+  plot3(gx,mc,cmin=min(pc)*0.5,cmax=max(pc)*0.5,cmap=jetRamp(1.0),
+        clab="Most negative",png="nc")
+
+
 def goScan():
   print "goScan ..."
   p2 = readImage(p2file)
