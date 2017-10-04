@@ -5,6 +5,8 @@ import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
+import java.util.*;
+
 
 
 /**
@@ -66,31 +68,38 @@ public class HorizonDisplay {
   public void fillHoles(float[][] sf) {
     int n2 = sf.length;
     int n1 = sf[0].length;
-    float[] fx = new float[n1*n2];
-    float[] x1 = new float[n1*n2];
-    float[] x2 = new float[n1*n2];
-    int ip = 0;
-    for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<n1; ++i1) {
-      float sfi = sf[i2][i1];
-      if(sfi>0) {
-        x1[ip] = i1;
-        x2[ip] = i2;
-        fx[ip] = sfi;
-        ip++;
-      }
-    }}
-    int np = ip;
-    if (np==n1*n2) return;
-    fx = copy(np,0,fx);
-    x1 = copy(np,0,x1);
-    x2 = copy(np,0,x2);
-     RadialInterpolator2.Biharmonic basis = new RadialInterpolator2.Biharmonic();
-    RadialInterpolator2 si = new RadialInterpolator2(basis,fx,x1,x2);
+    RadialInterpolator2.Biharmonic basis = new RadialInterpolator2.Biharmonic();
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=0; i1<n1; ++i1) {
       float sfi = sf[i2][i1];
       if(sfi==0) {
+        ArrayList<Float> fxa = new ArrayList<Float>();
+        ArrayList<Float> x1a = new ArrayList<Float>();
+        ArrayList<Float> x2a = new ArrayList<Float>();
+        int m2 = max(i2-20,0);
+        int m1 = max(i1-20,0);
+        int p2 = min(i2+20,n2-1);
+        int p1 = min(i1+20,n1-1);
+        for (int k2=m2; k2<=p2; k2+=2) {
+        for (int k1=m1; k1<=p1; k1+=2) {
+          float sfk = sf[k2][k1];
+          if(sfk>0f) {
+            fxa.add(sfk);
+            x1a.add((float)k1);
+            x2a.add((float)k2);
+          }
+        }}
+        int np = fxa.size();
+        float[] fx = new float[np];
+        float[] x1 = new float[np];
+        float[] x2 = new float[np];
+        for (int ip=0; ip<np; ++ip) {
+          fx[ip] = fxa.get(ip);
+          x1[ip] = x1a.get(ip);
+          x2[ip] = x2a.get(ip);
+        }
+        RadialInterpolator2 si = new RadialInterpolator2(basis,fx,x1,x2);
+        //SibsonInterpolator2 si = new SibsonInterpolator2(fx,x1,x2);
         sf[i2][i1] = si.interpolate(i1,i2);
       }
     }}

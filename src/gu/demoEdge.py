@@ -119,8 +119,14 @@ def goPlaneWaveDestruction():
     writeImage(pdfile,pd)
   else:
     pd = readImage(pdfile)
+    ke = KaustEdge()
+    pd = ke.scale(pd)
+  plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="pd")
+  '''
   plot3(gx,pd,cmin=0.05,cmax=0.2,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="kl")
+  '''
 
 def goKaustEdge():
   gx = readImage(gxfile)
@@ -160,16 +166,24 @@ def goKaustEdgeEnhance():
 
 def goHorizons():
   gx = readImage(gxfile)
-  kl = readImage(gxfile)
+  kl = readImage(kltfile)
   gx = mul(gx,-1)
-  hs = readHorizon(h80file)
-  #hs = mul(hs,1000)
+  h70file = "shb5_hor70"
+  h74file = "shb5_hor74"
+  h76file = "shb5_hor76"
+  h80file = "shb5_hor80"
+  h83file = "shb5_hor83"
+  hfile = h74file
+  hs = readHorizon(hfile)
   hd = HorizonDisplay()
   hd.fillHoles(hs)
-  mp = ColorMap(-3.0,3.0,ColorMap.GRAY)
-  r,g,b = hd.amplitudeRgb(mp,gx,hs) 
+  #mp = ColorMap(-3.0,3.0,ColorMap.GRAY)
+  mp = ColorMap(0.2,1.0,ColorMap.JET)
+  r,g,b = hd.amplitudeRgb(mp,kl,hs) 
   hz = [hs,r,g,b]
-  plot3(gx,hz=hz,k1=500,cmin=-3,cmax=3)
+  plot3(gx,hz=hz,k1=n1-1,cmin=-3,cmax=3,png=hfile+"a")
+  plot3(gx,kl,hz=hz,k1=n1-1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
+        png=hfile+"k")
 
 def goSta():
   gx = readImage(gxfile)
@@ -551,7 +565,7 @@ def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(k1,5,572)
+  ipg.setSlices(k1,5,672)
   #ipg.setSlices(95,5,95)
   if cbar:
     sf.setSize(1337,900)
@@ -562,7 +576,7 @@ def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  ov.setAzimuthAndElevation(-65.0,45.0)
+  ov.setAzimuthAndElevation(-55.0,45.0)
   ov.setTranslate(Vector3(-0.08,0.5,0.25))
   ov.setAxesScale(1.0,1.0,0.6)
   ov.setScale(1.75)
