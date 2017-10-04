@@ -79,7 +79,8 @@ pngDir = "../../../png/gu/"
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSeisData()
-  goHorizons()
+  #goHorizons()
+  goHorizons2D()
   #goSlopeVectors()
   #goKaustEdge()
   #goSlopes()
@@ -164,26 +165,71 @@ def goKaustEdgeEnhance():
   plot3(gx,kl,cmin=0.01,cmax=0.2,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="kl")
 
+def goHorizons2D():
+  h70file = "shb5_hor70"
+  h74file = "shb5_hor74"
+  h76file = "shb5_hor76"
+  h80file = "shb5_hor80"
+  #h83file = "shb5_hor83"
+  #h90file = "shb5_hor90"
+  hs = [h70file,h74file,h76file,h80file]
+  if not plotOnly:
+    gx = readImage(gxfile)
+    kl = readImage(kltfile)
+    gx = mul(gx,-1)
+    hd = HorizonDisplay()
+    for hi in hs:
+      hs = readHorizon(hi)
+      sa = hd.amplitudeOnHorizon(gx,hs)
+      sk = hd.amplitudeOnHorizon(kl,hs)
+      writeImage(hi+"a",sa)
+      writeImage(hi+"k",sk)
+  else:
+    for hi in hs:
+      sa = readHorizon(hi+"a")
+      sk = readHorizon(hi+"k")
+      plot2(sa,neareast=True,png=hi+"amp")
+      plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+            neareast=True,png=hi+"frac")
+  '''
+  plot3(gx,kl,hz=hz,k1=n1-1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
+        png=hfile+"k")
+  '''
+
 def goHorizons():
   gx = readImage(gxfile)
-  kl = readImage(kltfile)
+  #kl = readImage(kltfile)
   gx = mul(gx,-1)
   h70file = "shb5_hor70"
   h74file = "shb5_hor74"
   h76file = "shb5_hor76"
   h80file = "shb5_hor80"
   h83file = "shb5_hor83"
-  hfile = h74file
-  hs = readHorizon(hfile)
+  h90file = "shb5_hor90"
+  hs = [h70file,h74file,h76file,h80file,h83file,h90file]
   hd = HorizonDisplay()
-  hd.fillHoles(hs)
-  #mp = ColorMap(-3.0,3.0,ColorMap.GRAY)
-  mp = ColorMap(0.2,1.0,ColorMap.JET)
-  r,g,b = hd.amplitudeRgb(mp,kl,hs) 
+  hs = readHorizon(h80file)
+  mp = ColorMap(-3.0,3.0,ColorMap.GRAY)
+  r,g,b = hd.amplitudeRgb(mp,gx,hs) 
   hz = [hs,r,g,b]
-  plot3(gx,hz=hz,k1=n1-1,cmin=-3,cmax=3,png=hfile+"a")
+  plot3(gx,hz=hz,k1=n1-1,cmin=-3,cmax=3)
+
+  '''
+  for hi in hs:
+    hs = readHorizon(hi)
+    sa = hd.amplitudeOnHorizon(gx,hs)
+    sk = hd.amplitudeOnHorizon(kl,hs)
+    #hd.fillHoles(hs)
+    #mp1 = ColorMap(-3.0,3.0,ColorMap.GRAY)
+    #mp2 = ColorMap(0.2,1.0,ColorMap.JET)
+    #r,g,b = hd.amplitudeRgb(mp1,gx,hs) 
+    #hz = [hs,r,g,b]
+    #plot3(gx,hz=hz,k1=n1-1,cmin=-3,cmax=3)
+    writeImage(hi+"a",sa)
+    writeImage(hi+"a",sk)
   plot3(gx,kl,hz=hz,k1=n1-1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
         png=hfile+"k")
+  '''
 
 def goSta():
   gx = readImage(gxfile)
@@ -455,6 +501,48 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
+
+def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
+        label=None,neareast=False,png=None): 
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  n1,n2=len(f[0]),len(f)
+  s1,s2=Sampling(n1,1,388),Sampling(n2,1,1508)
+  panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
+  panel.setVInterval(50)
+  panel.setHInterval(50)
+  panel.setHLabel("Crossline (traces)")
+  panel.setVLabel("Inline (traces)")
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  pxv.setColorModel(ColorMap.GRAY)
+  pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  if g:
+    pxv.setClips(-3,3)
+  else:
+    if cmin and cmax:
+      pxv.setClips(cmin,cmax)
+  if g:
+    pv = panel.addPixels(s1,s2,g)
+    if neareast:
+      pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    else:
+      pv.setInterpolation(PixelsView.Interpolation.LINEAR)
+    pv.setColorModel(cmap)
+    if cmin and cmax:
+      pv.setClips(cmin,cmax)
+  if label:
+    panel.addColorBar(label)
+  panel.setColorBarWidthMinimum(55)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  #frame.setTitle("normal vectors")
+  frame.setVisible(True);
+  #frame.setSize(1400,700)
+  frame.setSize(round(n2*1),round(n1*1))
+  frame.setFontSize(12)
+  if pngDir and png:
+    frame.paintToPng(720,3.333,pngDir+png+".png")
+
 def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
@@ -577,7 +665,7 @@ def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   ov = sf.getOrbitView()
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
   ov.setAzimuthAndElevation(-55.0,45.0)
-  ov.setTranslate(Vector3(-0.08,0.5,0.25))
+  ov.setTranslate(Vector3(-0.09,0.6,0.25))
   ov.setAxesScale(1.0,1.0,0.6)
   ov.setScale(1.75)
   sf.setVisible(True)

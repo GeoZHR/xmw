@@ -40,6 +40,20 @@ public class HorizonDisplay {
     return new float[][][]{r,g,b};
   }
 
+  public float[][] amplitudeOnHorizon(float[][][] fx, float[][] sf) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][] sa = new float[n3][n2];
+    SincInterpolator si = new SincInterpolator();
+    for (int i3=0; i3<n3; ++i3) { 
+    for (int i2=0; i2<n2; ++i2) {
+      sa[i3][i2] = si.interpolate(n1,1,0,fx[i3][i2],sf[i3][i2]);
+      if(sf[i3][i2]==0f) sa[i3][i2] = Float.NaN;
+    }}
+    return sa;
+  }
+
   public float[][][] amplitudeRgb(
     ColorMap mp, float[][][] fx, float[][] sf) {
     int n3 = fx.length;
