@@ -79,17 +79,10 @@ def main(args):
   #goSeisData()
   #goSlopeVectors()
   #goKaustEdge()
-  goPlaneWaveDestruction()
+  goSlopes()
+  #goPlaneWaveDestruction()
   #goKaustEdgeEnhance()
   #goThin()
-  #goSlopes()
-  #goScan()
-  #goThin()
-  #goSlopes()
-  #goScan()
-  #goSmooth()
-  #goSkin()
-  #goSlip()
 
 def goSeisData():
   gx = readImage(gxfile)
@@ -212,21 +205,12 @@ def goSemblance():
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,1.0,1.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  ke = KaustEdge()
+  p2,p3 = ke.findSlopes(8,2,gx)
   writeImage(p2file,p2)
   writeImage(p3file,p3)
-  writeImage(epfile,ep)
   print "p2  min =",min(p2)," max =",max(p2)
   print "p3  min =",min(p3)," max =",max(p3)
-  print "ep min =",min(ep)," max =",max(ep)
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
-
 def goScan():
   print "goScan ..."
   p2 = readImage(p2file)

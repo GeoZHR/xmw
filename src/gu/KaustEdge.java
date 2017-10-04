@@ -11,6 +11,96 @@ import static edu.mines.jtk.util.ArrayMath.*;
  */
 public class KaustEdge {
 
+  public float[][][][] findSlopes(float sig1, float sig2, float[][][] gx) {
+    final int n3 = gx.length;
+    final int n2 = gx[0].length;
+    final int n1 = gx[0][0].length;
+    final float[][][] p2 = new float[n3][n2][n1];
+    final float[][][] p3 = new float[n3][n2][n1];
+    final PlaneWaveDestructor pd = new PlaneWaveDestructor(-3,3);
+    pd.setSmoothness(sig1,sig2);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      p3[i3] = pd.findSlopes(gx[i3]);
+    }});
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[][] g2i = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3)
+        g2i[i3] = gx[i3][i2];
+      float[][] p2i = pd.findSlopes(g2i);
+      for (int i3=0; i3<n3; ++i3)
+        p2[i3][i2] = p2i[i3];
+    }});
+    return new float[][][][]{p2,p3};
+  }
+
+  public float[][][] applyDestruction2(
+    float[][][] gx, float[][][] p2) {
+    final int n3 = gx.length;
+    final int n2 = gx[0].length;
+    final int n1 = gx[0][0].length;
+    final float[][][] d2 = new float[n3][n2][n1];
+    final PlaneWaveDestructor pd = new PlaneWaveDestructor(-3,3);
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[][] g2i = new float[n3][n1];
+      float[][] p2i = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3) {
+        g2i[i3] = gx[i3][i2];
+        p2i[i3] = p2[i3][i2];
+      }
+      float[][] d2i = pd.applyFilter(p2i,g2i);
+      for (int i3=0; i3<n3; ++i3)
+        d2[i3][i2] = d2i[i3];
+    }});
+    return d2;
+  }
+
+  public float[][][] applyDestruction3(
+    float[][][] gx, float[][][] p3) {
+    final int n3 = gx.length;
+    final int n2 = gx[0].length;
+    final int n1 = gx[0][0].length;
+    final float[][][] d3 = new float[n3][n2][n1];
+    final PlaneWaveDestructor pd = new PlaneWaveDestructor(-3,3);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      d3[i3] = pd.applyFilter(p3[i3],gx[i3]);
+    }});
+    return d3;
+  }
+
+  public float[][][][] amplitudeCurvature(
+    float[][][] gx, float[][][] p2, float[][][] p3) {
+    final int n3 = gx.length;
+    final int n2 = gx[0].length;
+    final int n1 = gx[0][0].length;
+    final float[][][] d2  = applyDestruction2(gx,p2);
+    final float[][][] d3  = applyDestruction3(gx,p3);
+    final float[][][] s2  = applyDestruction2(d2,p2);
+    final float[][][] s3  = applyDestruction3(d3,p3);
+    final float[][][] s23 = applyDestruction3(d2,p3);
+    final float[][][] s32 = applyDestruction2(d3,p2);
+    final float[][][] pc  = new float[n3][n2][n1];
+    final float[][][] nc  = new float[n3][n2][n1];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float s2i = s2[i3][i2][i1]*0.5f;
+      float s3i = s3[i3][i2][i1]*0.5f;
+      float d23 = (s23[i3][i2][i1]+s32[i3][i2][i1])*0.5f;
+      d23 *= d23;
+      float m23 = s2i-s3i;
+      float p23 = s2i+s3i;
+      pc[i3][i2][i1] = p23+sqrt(m23*m23+d23);
+      nc[i3][i2][i1] = p23-sqrt(m23*m23+d23);
+    }}
+    }});
+    return new float[][][][]{pc,nc};
+  }
+
   public float[][][] planeWaveDestruction(float sig1, float sig2, float[][][] gx) {
     final int n3 = gx.length;
     final int n2 = gx[0].length;
