@@ -72,8 +72,8 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = False
-#pngDir = "../../png/"
+plotOnly = True
+pngDir = "../../../png/gu/"
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -263,10 +263,13 @@ def goThin():
     klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
     writeImage(kltfile+"20",klt)
   else:
-    klt = readImage(kltfile+"20")
-  plot3(gx,clab="Amplitude")
-  plot3(gx,klt,cmin=0.05,cmax=0.1,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
+    klt = readImage(kltfile)
+    #ke = KaustEdge()
+    #klt = ke.scale(klt)
+    #writeImage(kltfile,klt)
+  for k1 in range(705,905,10):
+    plot3(gx,klt,k1=k1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
+          png="f"+str(k1))
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -434,7 +437,7 @@ def addColorBar(frame,clab=None,cint=None):
 def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
-def plot3(f,g=None,hz=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
@@ -544,20 +547,21 @@ def plot3(f,g=None,hz=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(95,5,572)
+  ipg.setSlices(k1,5,572)
   #ipg.setSlices(95,5,95)
   if cbar:
-    sf.setSize(837,700)
+    sf.setSize(1337,900)
   else:
-    sf.setSize(700,700)
+    sf.setSize(1200,900)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  ov.setAzimuthAndElevation(-55.0,25.0)
-  ov.setTranslate(Vector3(0.0241,0.0517,0.0103))
-  ov.setScale(1.2)
+  ov.setAzimuthAndElevation(-65.0,45.0)
+  ov.setTranslate(Vector3(-0.08,0.5,0.25))
+  ov.setAxesScale(1.0,1.0,0.6)
+  ov.setScale(1.75)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
