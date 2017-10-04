@@ -317,7 +317,7 @@ public class KaustEdgeScanner {
     final int n1 = fx[0][0].length;
     final int n2 = fx[0].length;
     final int n3 = fx.length;
-    final float[][][] m = new float[n3][n2][n1];
+    //final float[][][] m = new float[n3][n2][n1];
     final float[][][] f = new float[n3][n2][n1];
     final float[][][] p = new float[n3][n2][n1];
     final float[][][] t = new float[n3][n2][n1];
@@ -342,30 +342,30 @@ public class KaustEdgeScanner {
       float[][][][] rftp = scanTheta(thetaSampling,rfx);
       rfx = null; // enable gc to collect this large array
       float[][][][] ftp = r.unrotate(rftp);
-      final float[][][] fs = ftp[0];
-      final float[][][] fp = ftp[1];
-      final float[][][] tp = ftp[2];
+      //final float[][][] fs = ftp[0];
+      final float[][][] fp = ftp[0];
+      final float[][][] tp = ftp[1];
       loop(n3,new LoopInt() {
       public void compute(int i3) {
         for (int i2=0; i2<n2; ++i2) {
-          float[] m32 = m[i3][i2];
+          //float[] m32 = m[i3][i2];
           float[] f32 = f[i3][i2];
           float[] p32 = p[i3][i2];
           float[] t32 = t[i3][i2];
-          float[] fs32 = fs[i3][i2];
+          //float[] fs32 = fs[i3][i2];
           float[] fp32 = fp[i3][i2];
           float[] tp32 = tp[i3][i2];
           for (int i1=0; i1<n1; ++i1) {
-            float fsi = fs32[i1];
+            //float fsi = fs32[i1];
             float fpi = fp32[i1];
             float tpi = tp32[i1];
-            if (fsi<0.0f) fsi = 0.0f; 
-            if (fsi>1.0f) fsi = 1.0f; 
+            //if (fsi<0.0f) fsi = 0.0f; 
+            //if (fsi>1.0f) fsi = 1.0f; 
             if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
             if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
             if (tpi<tmin) tpi = tmin; // for both fault likelihood
             if (tpi>tmax) tpi = tmax; // and fault dip theta
-            m32[i1] += fsi;
+            //m32[i1] += fsi;
             if (fpi>f32[i1]) {
               f32[i1] = fpi;
               p32[i1] = phi;
@@ -377,6 +377,7 @@ public class KaustEdgeScanner {
     }
     //RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(_sigmaTheta*1.5f);
     //rgf.apply000(fx,m);
+    /*
     final float sc = np*thetaSampling.getCount();
     loop(n3,new LoopInt() {
     public void compute(int i3) {
@@ -390,6 +391,7 @@ public class KaustEdgeScanner {
         }
       }
     }});
+    */
     sw.stop();
     trace("FaultScanner.scan: done");
     return new float[][][][]{f,p,t};
@@ -572,7 +574,7 @@ public class KaustEdgeScanner {
   private float[][][][] scanTheta(Sampling thetaSampling, final float[][][] sn) {
     final int n1 = n1(sn), n2 = n2(sn);
     final Sampling st = thetaSampling;
-    final float[][][] m = like(sn);
+    //final float[][][] m = like(sn);
     final float[][][] f = like(sn);
     final float[][][] t = like(sn);
     final SincInterpolator si = new SincInterpolator();
@@ -595,12 +597,12 @@ public class KaustEdgeScanner {
         float[][] s2 = unshear(si,shear,sns);
         for (int i3=0,j3=i3lo(i2,f); i3<n3; ++i3,++j3) {
           float[] s32 = s2[i3];
-          float[] m32 = m[j3][i2];
+          //float[] m32 = m[j3][i2];
           float[] f32 = f[j3][i2];
           float[] t32 = t[j3][i2];
           for (int i1=0; i1<n1; ++i1) {
             float fi = s32[i1];
-            m32[i1] += fi;
+            //m32[i1] += fi;
             if (fi>f32[i1]) {
               f32[i1] = fi;
               t32[i1] = ti;
@@ -609,7 +611,8 @@ public class KaustEdgeScanner {
         }
       }
     }});
-    return new float[][][][]{m,f,t};
+    //return new float[][][][]{m,f,t};
+    return new float[][][][]{f,t};
   }
 
 
