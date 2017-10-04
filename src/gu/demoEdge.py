@@ -46,6 +46,7 @@ h80file = "shb5_hor80"
 h83file = "shb5_hor83"
 smfile = "sm"
 ddfile = "dd"
+pdfile = "pd"
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -78,13 +79,14 @@ def main(args):
   #goSeisData()
   #goSlopeVectors()
   #goKaustEdge()
-  goKaustEdgeEnhance()
-  #goSlopes()
-  #goScan()
+  goPlaneWaveDestruction()
+  #goKaustEdgeEnhance()
   #goThin()
   #goSlopes()
   #goScan()
   #goThin()
+  #goSlopes()
+  #goScan()
   #goSmooth()
   #goSkin()
   #goSlip()
@@ -110,6 +112,19 @@ def goSlopeVectors():
   writeImage(w1file,w1)
   writeImage(w2file,w2)
   writeImage(w3file,w3)
+def goPlaneWaveDestruction():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    ke = KaustEdge()
+    pd = ke.planeWaveDestruction(8,2,gx)
+    pd = sub(pd,min(pd));
+    pd = div(pd,max(pd));
+    writeImage(pdfile,pd)
+  else:
+    pd = readImage(pdfile)
+  plot3(gx,pd,cmin=0.05,cmax=0.2,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="kl")
+
 def goKaustEdge():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -130,23 +145,22 @@ def goKaustEdge():
   plot3(dd,cmin=0.01,cmax=0.5,clab="Kaust Edge",cint=0.1,png="dd")
 def goKaustEdgeEnhance():
   gx = readImage(gxfile)
-  dd = readImage(ddfile)
-  dd = KaustEdgeScanner.taper(10,0,0,dd)
-  ks = KaustEdgeScanner(sigmaPhi,sigmaTheta)
-  kl,kp,kt = ks.scan(minPhi,maxPhi,minTheta,maxTheta,dd)
-  print "kl min =",min(kl)," max =",max(kl)
-  print "kp min =",min(kp)," max =",max(kp)
-  print "kt min =",min(kt)," max =",max(kt)
-  writeImage(klfile,kl)
-  writeImage(kpfile,kp)
-  writeImage(ktfile,kt)
-  plot3(gx,clab="Amplitude")
-  plot3(gx,kl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+  if not plotOnly:
+    pd = readImage(pdfile)
+    pd = KaustEdgeScanner.taper(10,0,0,pd)
+    ks = KaustEdgeScanner(sigmaPhi,sigmaTheta)
+    kl,kp,kt = ks.scan(minPhi,maxPhi,minTheta,maxTheta,pd)
+    print "kl min =",min(kl)," max =",max(kl)
+    print "kp min =",min(kp)," max =",max(kp)
+    print "kt min =",min(kt)," max =",max(kt)
+    writeImage(klfile,kl)
+    writeImage(kpfile,kp)
+    writeImage(ktfile,kt)
+    plot3(gx,clab="Amplitude")
+  else:
+    kl = readImage(klfile)
+  plot3(gx,kl,cmin=0.01,cmax=0.2,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="kl")
-  plot3(gx,kp,cmin=0,cmax=360,cmap=hueFill(1.0),
-        clab="Fault strike (degrees)",cint=45,png="kp")
-  plot3(gx,convertDips(kt),cmin=25,cmax=65,cmap=jetFill(1.0),
-        clab="Fault dip (degrees)",png="kt")
 
 def goHorizons():
   gx = readImage(gxfile)
@@ -238,20 +252,14 @@ def goScan():
 def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
-  fl = readImage(flfile)
-  fp = readImage(fpfile)
-  ft = readImage(ftfile)
-  flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-  writeImage(fltfile,flt)
-  writeImage(fptfile,fpt)
-  writeImage(fttfile,ftt)
+  kl = readImage(klfile)
+  kp = readImage(kpfile)
+  kt = readImage(ktfile)
+  klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
+  writeImage(kltfile,klt)
   plot3(gx,clab="Amplitude")
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+  plot3(gx,klt,cmin=0.05,cmax=0.2,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
-  plot3(gx,convertDips(ftt),cmin=25,cmax=65,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
 
 def goStat():
   def plotStat(s,f,slabel=None):

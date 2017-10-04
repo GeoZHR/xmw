@@ -18,6 +18,7 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from sso import *
+from ipf import *
 from gu import *
 
 #############################################################################

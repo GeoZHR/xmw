@@ -11,6 +11,42 @@ import static edu.mines.jtk.util.ArrayMath.*;
  */
 public class KaustEdge {
 
+  public float[][][] planeWaveDestruction(float sig1, float sig2, float[][][] gx) {
+    final int n3 = gx.length;
+    final int n2 = gx[0].length;
+    final int n1 = gx[0][0].length;
+    final float[][][] d2 = new float[n3][n2][n1];
+    final float[][][] d3 = new float[n3][n2][n1];
+    final float[][][] ds = new float[n3][n2][n1];
+    final PlaneWaveDestructor pd = new PlaneWaveDestructor(-3,3);
+    pd.setSmoothness(sig1,sig2);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      float[][] p3 = pd.findSlopes(gx[i3]);
+      d3[i3] = pd.applyFilter(p3,gx[i3]);
+    }});
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[][] g2i = new float[n3][n1];
+      for (int i3=0; i3<n3; ++i3)
+        g2i[i3] = gx[i3][i2];
+      float[][] p2i = pd.findSlopes(g2i);
+      float[][] d2i = pd.applyFilter(p2i,g2i);
+      for (int i3=0; i3<n3; ++i3)
+        d2[i3][i2] = d2i[i3];
+    }});
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float d2i = d2[i3][i2][i1];
+      float d3i = d3[i3][i2][i1];
+      ds[i3][i2][i1] = sqrt(d2i*d2i+d3i*d3i);
+    }}
+    }});
+    return ds;
+  }
+
   public float[][][] directionalDifference(
     float[][][] gx, float[][][] v1, float[][][] v2, float[][][] v3,
     float[][][] w1, float[][][] w2, float[][][] w3) {
