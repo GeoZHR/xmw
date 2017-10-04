@@ -79,13 +79,14 @@ pngDir = "../../../png/gu/"
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goSeisData()
+  goHorizons()
   #goSlopeVectors()
   #goKaustEdge()
   #goSlopes()
   #goAmplitudeCurvature()
   #goPlaneWaveDestruction()
   #goKaustEdgeEnhance()
-  goThin()
+  #goThin()
 
 def goSeisData():
   gx = readImage(gxfile)
@@ -159,13 +160,16 @@ def goKaustEdgeEnhance():
 
 def goHorizons():
   gx = readImage(gxfile)
-  hs = readHorizon(h70file)
-  hs = mul(hs,1000)
+  kl = readImage(gxfile)
+  gx = mul(gx,-1)
+  hs = readHorizon(h80file)
+  #hs = mul(hs,1000)
   hd = HorizonDisplay()
-  mp = ColorMap(-2.0,2.0,ColorMap.GRAY)
+  hd.fillHoles(hs)
+  mp = ColorMap(-3.0,3.0,ColorMap.GRAY)
   r,g,b = hd.amplitudeRgb(mp,gx,hs) 
   hz = [hs,r,g,b]
-  plot3(gx,hz=hz,cmin=-2,cmax=2)
+  plot3(gx,hz=hz,k1=500,cmin=-3,cmax=3)
 
 def goSta():
   gx = readImage(gxfile)

@@ -2,6 +2,9 @@ package gu;
 
 import edu.mines.jtk.awt.*;
 import edu.mines.jtk.dsp.*;
+import edu.mines.jtk.interp.*;
+import static edu.mines.jtk.util.ArrayMath.*;
+
 
 
 /**
@@ -58,6 +61,39 @@ public class HorizonDisplay {
       b[i3][i2] = rgb[k++];
     }}
     return new float[][][]{r,g,b};
+  }
+
+  public void fillHoles(float[][] sf) {
+    int n2 = sf.length;
+    int n1 = sf[0].length;
+    float[] fx = new float[n1*n2];
+    float[] x1 = new float[n1*n2];
+    float[] x2 = new float[n1*n2];
+    int ip = 0;
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float sfi = sf[i2][i1];
+      if(sfi>0) {
+        x1[ip] = i1;
+        x2[ip] = i2;
+        fx[ip] = sfi;
+        ip++;
+      }
+    }}
+    int np = ip;
+    if (np==n1*n2) return;
+    fx = copy(np,0,fx);
+    x1 = copy(np,0,x1);
+    x2 = copy(np,0,x2);
+     RadialInterpolator2.Biharmonic basis = new RadialInterpolator2.Biharmonic();
+    RadialInterpolator2 si = new RadialInterpolator2(basis,fx,x1,x2);
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float sfi = sf[i2][i1];
+      if(sfi==0) {
+        sf[i2][i1] = si.interpolate(i1,i2);
+      }
+    }}
   }
 
 }
