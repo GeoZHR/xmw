@@ -72,7 +72,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = True
+plotOnly = False
 #pngDir = "../../png/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -257,13 +257,13 @@ def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    kl = readImage(klfile)
-    kp = readImage(kpfile)
-    kt = readImage(ktfile)
+    kl = readImage(klfile+"20")
+    kp = readImage(kpfile+"20")
+    kt = readImage(ktfile+"20")
     klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
-    writeImage(kltfile,klt)
+    writeImage(kltfile+"20",klt)
   else:
-    klt = readImage(kltfile)
+    klt = readImage(kltfile+"20")
   plot3(gx,clab="Amplitude")
   plot3(gx,klt,cmin=0.05,cmax=0.1,cmap=jetFillExceptMin(1.0),
         clab="Fault likelihood",png="flt")
