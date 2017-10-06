@@ -10,8 +10,8 @@ s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.getCount(),s2.getCount(),s3.getCount()
 method = "b" # blended
 logSet = "d" # deep logs only
-logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax = 2.4,5.6
 logType = "d"; logLabel = "Density (g/cc)"; vmin,vmax = 2.0,2.8
+logType = "v"; logLabel = "Velocity (km/s)"; vmin,vmax = 2.4,5.6
 #logType = "p"; logLabel = "Porosity"; vmin,vmax = 0.0,0.4
 #logType = "g"; logLabel = "Gamma ray (API units)"; vmin,vmax = 0.0,200.0
 smin,smax = -5.5,5.5
@@ -57,6 +57,7 @@ horizons = [
 """
 
 pngDir = "../../../png/figi/"
+pngDir = False
 
 #k1,k2,k3 = 228,170,74 # 2D displays
 #k1,k2,k3 = 228,170,106 # 2D displays
@@ -68,12 +69,12 @@ k1,k2,k3 = 366,15,96 # 3D displays
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 80,85
-sigmaPhi,sigmaTheta = 5,20
+sigmaPhi,sigmaTheta = 8,60
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
-lowerLikelihood = 0.2
-upperLikelihood = 0.5
+lowerLikelihood = 0.6
+upperLikelihood = 0.8
 minSkinSize = 3500
 
 # These parameters control the computation of fault dip slips.
@@ -81,22 +82,20 @@ minSkinSize = 3500
 minThrow =  0.0
 maxThrow = 20.0
 
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
-  #goReSkin()
+  goReSkin()
   #goSmooth()
   #goSlip()
   #goInterp()
   #goInterpO()
   #goFigures()
   #goImpedance()
-  goTest()
-
 def goSlopes():
   print "goSlopes ..."
   gx = readImage(gxfile)
@@ -182,8 +181,9 @@ def goSkin():
   ft = readImage(ftfile)
   fs = FaultSkinner()
   fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-  fs.setMaxDeltaStrike(10)
-  fs.setMaxPlanarDistance(0.1)
+  fs.setMaxDeltaStrike(360)
+  fs.setMaxDeltaDip(10)
+  fs.setMaxPlanarDistance(0.2)
   fs.setMinSkinSize(minSkinSize)
   cells = fs.findCells([fl,fp,ft])
   skins = fs.findSkins(cells)
@@ -196,6 +196,9 @@ def goSkin():
   writeSkins(fskbase,skins)
   plot3(gx,cells=cells,png="cells")
   plot3(gx,skins=skins)
+  for iskin,skin in enumerate(skins):
+    plot3(gx,skins=[skin],links=True,clab="skin"+str(iskin))
+
 
 def goReSkin():
   print "goReSkin ..."
@@ -219,9 +222,20 @@ def goReSkin():
   for skin in skins:
     skin.smoothCellNormals(4)
   plot3(gx,skins=skins,png="skins")
-  plot3(gx,skins=skins,links=True,png="links")
+  fsx = FaultSkinnerX()
+  flc = zerofloat(n1,n2,n3)
+  fsx.getFl(skins,flc)
+  writeImage("flc",flc)
+  print n1
+  print n2
+  print n3
+  plot3(gx,flc,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="fl")
+
+  '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
+  '''
 
 def goSmooth():
   print "goSmooth ..."
@@ -316,8 +330,11 @@ def goInterp():
   else:
     gx = readImage(gxfile)
     fq = readImage(fqfile)
+  p = readImage(gfile)
   display(gx,fq,vmin,vmax,logType,png=logType+"New")
   plot3(gx,fq,cmin=vmin,cmax=vmax,cmap=jetFill(0.3),
+        clab=logLabel,png=logType)
+  plot3(gx,p,cmin=vmin,cmax=vmax,cmap=jetFill(0.3),
         clab=logLabel,png=logType)
 
 
@@ -584,6 +601,12 @@ def convertDips(ft):
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
+  n3 = len(f)
+  n2 = len(f[0])
+  n1 = len(f[0][0])
+  s1 = Sampling(n1)
+  s2 = Sampling(n2)
+  s3 = Sampling(n3)
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first

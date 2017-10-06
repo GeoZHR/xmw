@@ -110,6 +110,7 @@ def goSlopeVectors():
   writeImage(w1file,w1)
   writeImage(w2file,w2)
   writeImage(w3file,w3)
+
 def goPlaneWaveDestruction():
   gx = readImage(gxfile)
   if not plotOnly:
@@ -122,8 +123,8 @@ def goPlaneWaveDestruction():
     pd = readImage(pdfile)
     ke = KaustEdge()
     pd = ke.scale(pd)
-  plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),
-        clab="Fault likelihood",png="pd")
+    writeImage(pdfile,pd)
+  plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),png="pd")
   '''
   plot3(gx,pd,cmin=0.05,cmax=0.2,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="kl")
@@ -176,29 +177,30 @@ def goHorizons2D():
   if not plotOnly:
     gx = readImage(gxfile)
     kl = readImage(kltfile)
+    pd = readImage(pdfile)
     gx = mul(gx,-1)
     hd = HorizonDisplay()
     for hi in hs:
       hs = readHorizon(hi)
       sa = hd.amplitudeOnHorizon(gx,hs)
       sk = hd.amplitudeOnHorizon(kl,hs)
+      sd = hd.amplitudeOnHorizon(pd,hs)
       writeImage(hi+"a",sa)
       writeImage(hi+"k",sk)
+      writeImage(hi+"d",sd)
   else:
     for hi in hs:
       sa = readHorizon(hi+"a")
+      sd = readHorizon(hi+"d")
       sk = readHorizon(hi+"k")
-      plot2(sa,neareast=True,png=hi+"amp")
+      plot2(sa,neareast=True,png=hi+"amplitude")
+      plot2(sa,sd,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+            neareast=True,png=hi+"diffraction")
       plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
-            neareast=True,png=hi+"frac")
-  '''
-  plot3(gx,kl,hz=hz,k1=n1-1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
-        png=hfile+"k")
-  '''
-
+            neareast=True,png=hi+"fracture")
 def goHorizons():
   gx = readImage(gxfile)
-  #kl = readImage(kltfile)
+  kl = readImage(kltfile)
   gx = mul(gx,-1)
   h70file = "shb5_hor70"
   h74file = "shb5_hor74"
@@ -206,13 +208,17 @@ def goHorizons():
   h80file = "shb5_hor80"
   h83file = "shb5_hor83"
   h90file = "shb5_hor90"
-  hs = [h70file,h74file,h76file,h80file,h83file,h90file]
+  hs = [h70file,h74file,h76file,h80file]
   hd = HorizonDisplay()
   hs = readHorizon(h80file)
-  mp = ColorMap(-3.0,3.0,ColorMap.GRAY)
-  r,g,b = hd.amplitudeRgb(mp,gx,hs) 
-  hz = [hs,r,g,b]
-  plot3(gx,hz=hz,k1=n1-1,cmin=-3,cmax=3)
+  ha = readHorizon(h80file+'a')
+  hk = readHorizon(h80file+'k')
+  xyza,rgba=hd.buildTrigs(s3,s2,n1,-3,3,hs,ha)
+  xyzk,rgbk=hd.buildTrigs(s3,s2,n1,0.0,1,hs,hk)
+  tga=TriangleGroup(True,xyza,rgba)
+  tgk=TriangleGroup(True,xyzk,rgbk)
+  plot3(gx,tgs=tga,k1=n1-1,cmin=-3,cmax=3)
+  plot3(kl,tgs=tgk,k1=n1-1,cmin=0.0,cmax=1)
 
   '''
   for hi in hs:
@@ -543,7 +549,7 @@ def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 
-def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+def plot3(f,g=None,hz=None,tgs=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])
@@ -582,6 +588,9 @@ def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   if hz:
     tg=TriangleGroup(True,s3,s2,hz[0],hz[1],hz[2],hz[3])
     sf.world.addChild(tg)
+  if tgs:
+    sf.world.addChild(tgs)
+
   if xyz:
     pg = PointGroup(0.2,xyz)
     ss = StateSet()
@@ -664,8 +673,8 @@ def plot3(f,g=None,hz=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
   ov.setWorldSphere(BoundingSphere(0.5*n1,0.5*n2,0.5*n3,radius))
-  ov.setAzimuthAndElevation(-55.0,45.0)
-  ov.setTranslate(Vector3(-0.09,0.6,0.25))
+  ov.setAzimuthAndElevation(-65.0,45.0)
+  ov.setTranslate(Vector3(-0.08,0.5,0.25))
   ov.setAxesScale(1.0,1.0,0.6)
   ov.setScale(1.75)
   sf.setVisible(True)
