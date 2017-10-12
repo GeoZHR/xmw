@@ -1,7 +1,7 @@
 """
 Jython utilities for fake image processing.
-Author: Xinming Wu, Colorado School of Mines
-Version: 2017.06.17
+Author: Dave Hale, Colorado School of Mines
+Version: 2014.06.17
 """
 from common import *
 
@@ -25,7 +25,7 @@ def setupForSubset(name):
   if name=="fake":
     """ fake image """
     print "setupForSubset: fake"
-    seismicDir = _datdir+"fake/NLP-ForwardOperators0715_02/"
+    seismicDir = _datdir+"fake/"
     n1,n2,n3 = 121,152,153
     s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   elif name=="tp":
@@ -154,6 +154,18 @@ def readImage2DL(n1,n2,name):
   ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
   ais.close()
+  return image
+
+def writeImage(name,image):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  fileName = seismicDir+name+".dat"
+  aos = ArrayOutputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  aos.writeFloats(image)
+  aos.close()
   return image
 
 def writeImageL(name,image):

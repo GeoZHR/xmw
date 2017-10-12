@@ -19,17 +19,17 @@ rvFile2 = "rv2"
 rvFile3 = "rv3"
 rvFile5 = "rv5"
 rvFile6 = "rv6"
-raFile = "RCMFOAas002"
-rbFile = "RCMFOAbs002"
-rpFile = "RCMFOAps002"
+raFile = "RCMFOAas001"
+rbFile = "RCMFOAbs001"
+rpFile = "RCMFOAps001"
 '''
 raFile = "SDMFOAas"
 rbFile = "SDMFOAbs"
 rpFile = "SDMFOAps"
 '''
-saFile = "AasInterp002"
-sbFile = "AbsInterp002"
-spFile = "ApsInterp002"
+saFile = "AasInterp001"
+sbFile = "AbsInterp001"
+spFile = "ApsInterp001"
 sxFile = "SeismicDataZeroOffset"
 
 
@@ -42,73 +42,17 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goLogCorrelation()
-  #goModels()
-  goInterpolation()
-  #goModelsWithLogs()
+  goModels()
+  #goInterpolation()
   #goModelSmooth()
-def goModelsWithLogs():
-  la = readImage2DL(276,3,"Logs")
-  sz = Sampling(276)
-  sw = Sampling(1)
-  hp = Helper()
-  #lar = hp.resampleLogs(501,la)
-  #sr = Sampling(501)
-  lar = la
-
-  plotLogs(sz,sw,[la[2]],wh=400,wv=800,cmin=2.0,cmax=2.7,
-    hint=2,vlab="Depth (Samples)",cbar="Density")
-  plotLogs(sz,sw,[la[0]],wh=400,wv=800,cmin=2800,cmax=4000,
-    hint=2,vlab="Depth (Samples)",cbar="Vp")
-  plotLogs(sz,sw,[la[1]],wh=400,wv=800,cmin=1000,cmax=2400,
-    hint=2,vlab="Depth (Samples)",cbar="Vs")
-  '''
-  plotLogs(sr,sw,[lar[2]],wh=400,wv=800,cmin=2.0,cmax=2.7,
-    hint=2,vlab="Depth (Samples)",cbar="Density (resampled)")
-  plotLogs(sr,sw,[lar[0]],wh=400,wv=800,cmin=2800,cmax=4000,
-    hint=2,vlab="Depth (Samples)",cbar="Vp (resampled)")
-  plotLogs(sr,sw,[lar[1]],wh=400,wv=800,cmin=1000,cmax=2400,
-    hint=2,vlab="Depth (Samples)",cbar="Vs (resampled)")
-  '''
-
-  rh0 = lar[2]
-  vp0 = lar[0]
-  vs0 = lar[1]
-  rh1 = mul(1.002,rh0)
-  rh2 = mul(0.995,rh0)
-  rh3 = mul(0.990,rh0)
-
-  vp1 = mul(1.010,vp0)
-  vp2 = mul(0.980,vp0)
-  vp3 = mul(0.950,vp0)
-
-  vs1 = mul(1.020,vs0)
-  vs2 = mul(0.980,vs0)
-  vs3 = mul(0.950,vs0)
-
-  lars = zerofloat(276,4,3)
-  lars[0] = [rh0,rh1,rh2,rh3]
-  lars[1] = [vp0,vp1,vp2,vp3]
-  lars[2] = [vs0,vs1,vs2,vs3]
-  rvs = FakeData.densityAndVelocity2d(0.0,lars)
-  s1,s2=Sampling(276),Sampling(501)
-  plotLogs(s1,s2,rvs[0],wh=700,wv=600,cmin=2.0,cmax=2.7,
-    hint=2,vlab="Depth (Samples)",cbar="Density",png="Rho")
-  plotLogs(s1,s2,rvs[1],wh=700,wv=600,cmin=2500,cmax=5000,
-    hint=2,vlab="Depth (Samples)",cbar="Vp",png="Vp")
-  plotLogs(s1,s2,rvs[2],wh=700,wv=600,cmin=900,cmax=2300,
-    hint=2,vlab="Depth (Samples)",cbar="Vs",png="Vs")
-  writeImageL("Rho",rvs[0])
-  writeImageL("Vp",rvs[1])
-  writeImageL("Vs",rvs[2])
-
 
 def goModelSmooth():
-  n1,n2=276,501
-  rh = readImage2DL(n1,n2,"Rho")
-  vp = readImage2DL(n1,n2,"Vp")
-  vs = readImage2DL(n1,n2,"Vs")
-  #vp = div(304800.0,vp)
-  #vs = div(304800.0,vs)
+  n1,n2=501,501
+  rh = readImage2D(n1,n2,"Rho")
+  vp = readImage2D(n1,n2,"Vp")
+  vs = readImage2D(n1,n2,"Vs")
+  vp = div(304800.0,vp)
+  vs = div(304800.0,vs)
   sx = readImage2DL(n1,n2,sxFile)
   lof = LocalOrientFilter(3.0,1.0)
   tensors = lof.applyForTensors(sx)
@@ -212,8 +156,8 @@ def goModels():
   rv21 = copy(rv2)
   rv22 = copy(rv2)
   rv23 = copy(rv2)
-  mul(rv21[0],0.99,rv21[0])
-  mul(rv22[0],1.005,rv22[0])
+  mul(rv21[0],1.005,rv21[0])
+  mul(rv22[0],1.000,rv22[0])
   mul(rv23[0],0.99,rv23[0])
 
   mul(rv21[1],1.01,rv21[1])
@@ -236,6 +180,14 @@ def goModels():
     hint=2,vlab="Depth (Samples)",cbar="Vs")
   lar = hp.resampleLogs(501,7,la)
   rvs = FakeData.densityAndVelocity2d(0.0,lar)
+  lof = LocalOrientFilter(3.0,1.0)
+  tensors = lof.applyForTensors(rvs[0])
+  tensors.setEigenvalues(0.2,1.0)
+  lsf = LocalSmoothingFilter()
+  #lsf.applySmoothS(rvs[0],rvs[0])
+  lsf.apply(tensors,6,rvs[0],rvs[0])
+  lsf.apply(tensors,6,rvs[1],rvs[1])
+  lsf.apply(tensors,6,rvs[2],rvs[2])
   s1,s2=Sampling(501),Sampling(501)
   plotLogs(s1,s2,rvs[0],wh=700,wv=600,cmin=2.0,cmax=2.7,
     hint=2,vlab="Depth (Samples)",cbar="Density",png="Rho")
@@ -247,16 +199,15 @@ def goModels():
   writeImage("Vp",rvs[1])
   writeImage("Vs",rvs[2])
 def goInterpolation():
-  n1,n2,nt=201,501,15
+  n1,n2,nt=501,501,15
   s1,s2=Sampling(n1),Sampling(n2)
-  sx = readImage2DL(n1,n2,sxFile)
-  ra = readImage3D(n1,2,nt,raFile)
-  rb = readImage3D(n1,2,nt,rbFile)
-  rp = readImage3D(n1,2,nt,rpFile)
-  #x2s = [60,180,320,480]
-  x2s = [180,480]
+  sx = readImage2D(n1,n2,sxFile)
+  ra = readImage3D(n1,4,nt,raFile)
+  rb = readImage3D(n1,4,nt,rbFile)
+  rp = readImage3D(n1,4,nt,rpFile)
+  x2s = [60,180,320,420]
   if not plotOnly:
-    lof = LocalOrientFilter(2.0,1.0)
+    lof = LocalOrientFilter(3.0,1.0)
     tensors = lof.applyForTensors(sx)
     tensors.setEigenvalues(0.001,1.0)
     sa = zerofloat(n1,n2,nt)
@@ -360,8 +311,8 @@ def plotLogs(sz,sw,fx,wh=500,wv=800,cmin=None,cmax=None,
   sp.setHLabel("Lateral position (samples)")
   sp.addColorBar(cbar)
   sp.plotPanel.setColorBarWidthMinimum(85)
-  sp.setHLimits(sw.first-sw.delta/2,sw.last)
-  sp.setVLimits(sz.first,sz.last)
+  #sp.setHLimits(sw.first-sw.delta/2,sw.last)
+  #sp.setVLimits(sz.first,sz.last)
   pv = sp.addPixels(sz,sw,fx)
   pv.setInterpolation(PixelsView.Interpolation.NEAREST)
   pv.setColorModel(cjet)
@@ -473,10 +424,9 @@ def plot2(f,x1,x2,s,s1,s2,g=None,gmin=None,gmax=None,
                 label=None,png=None,et=None):
   n2 = len(s)
   n1 = len(s[0])
-  s1,s2=Sampling(n1),Sampling(n2)
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT,
     PlotPanel.AxesPlacement.LEFT_TOP)
-  panel.setVLimits(0,n1-1)
+  panel.setVLimits(0,500)
   panel.setHInterval(100)
   panel.setVInterval(100)
   panel.setHLabel("Lateral position (sample)")

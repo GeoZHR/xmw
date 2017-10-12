@@ -8,7 +8,6 @@ package avo;
 
 import java.io.*;
 import java.util.*;
-import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
@@ -50,21 +49,6 @@ public class Helper {
     }
     return las;
   }
-
-  public float[][] resampleLogs(int m1, float[][] las) {
-    int nw = las.length;
-    int n1 = las[0].length;
-    float[][] lar = new float[nw][m1];
-    Sampling s1 = new Sampling(n1);
-    float dm1 = (float)n1/(float)m1;
-    SincInterpolator si = new SincInterpolator();
-    for (int iw=0; iw<nw; ++iw) {
-    for (int i1=0; i1<m1; ++i1) {
-      lar[iw][i1] = si.interpolate(s1,las[iw],i1*dm1);
-    }}
-    return lar;
-  }
-
 
   public float[][][] resampleLogs(
     int m1, int d1, float[][][] las) 

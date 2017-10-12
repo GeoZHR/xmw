@@ -11,9 +11,9 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
-  goGu()
+  #goGu()
   #goAustralia()
-  #goF3d()
+  goF3d()
   #goManba()
   #goAustralia()
   #goHongliu()
@@ -2175,7 +2175,9 @@ def goF3d():
     #xs = copy(242,n2,600,220,0,0,x) #for spv test
     #writeImageX("xs",xs)
     #writeImageX("gx178",x[178])
-    writeImageX("f3d615.dat",x[615])
+    #writeImageX("f3d615.dat",x[615])
+    x = copy(300,200,100,80,540,112,x)
+    writeImageX("xs.dat",x)
     show3d(x,clip=max(x)/10)
 
 def writeImageX(basename,image):

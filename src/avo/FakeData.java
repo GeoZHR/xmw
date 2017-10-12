@@ -15,6 +15,7 @@ import edu.mines.jtk.mosaic.*;
 import edu.mines.jtk.sgl.*;
 import edu.mines.jtk.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
+import util.*;
 
 import static ipf.FaultGeometry.*;
 
@@ -522,8 +523,9 @@ public class FakeData {
    * @param noise rms of noise (relative to signal) added to the image.
    */
   public static float[][][] densityAndVelocity2d(double noise, float[][][] rv) {
-    int n1 = 276;
+    int n1 = 501;
     int n2 = 501;
+    enhanceContrast(rv);
     float[][][] p = densityAndVelocityFromLogs(n1,n2,rv);
     float[][][] q = densityAndVelocityFromLogs(n1,n2,rv);
     Sinusoidal2 fold = new Sinusoidal2(0.0f,0.04f,2.0e-2f,5.0e-5f);
@@ -543,6 +545,20 @@ public class FakeData {
     vs = apply(shear,vs);
     vs = combine(n1/6,q[2],vs);
     return new float[][][]{rh,vp,vs};
+  }
+
+  private static void enhanceContrast(float[][][] rv) {
+    int n3 = rv.length;
+    int n2 = rv[0].length;
+    int n1 = rv[0][0].length;
+    float[][][] rg = new float[n3][n2][n1];
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(1);
+    rgf.apply1XX(rv,rg);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=1; i1<n1; ++i1) {
+      rv[i3][i2][i1] = rv[i3][i2][i1-1]+2f*rg[i3][i2][i1];
+    }}}
   }
 
 
