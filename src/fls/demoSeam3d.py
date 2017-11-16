@@ -27,16 +27,23 @@ fsfile = "fs"
 psfile = "ps"
 psdfile = "psd"
 
-pngDir = "../../../png/fls/seam/sub3d/"
 pngDir = False
+pngDir = "../../../png/fls/seam/sub3d/"
 
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goEnvelope()
   #goSaltLike()
   #goEnvAndSaltLike()
-  goPicker3()
+  #goPicker3()
+  goSlices()
+def goSlices():
+  gx = readImage(gxfile)
+  fs = readImage(fsfile)
+  ks = [70,80,325,330]
+  for k3 in ks:
+    plot2x(gx[k3],phi=fs[k3],png="slice"+str(k3))
 def goPicker3():
   gx = readImage(gxfile)
   plot3(gx,png="seis")
@@ -59,6 +66,7 @@ def goPicker3():
   rgf1.apply0XX(fs,fs)
   rgf2.applyX0X(fs,fs)
   rgf3.applyXX0(fs,fs)
+  writeImage(fsfile,fs)
   plot3(gx,g=fs,cmin=-0.5,cmax=0.5,png="saltBody")
   plot3(gx,fbs=fs,png="saltBound")
   '''
@@ -260,6 +268,49 @@ def addColorBar(frame,clab=None,cint=None):
   cbar.setBackground(Color.WHITE)
   frame.add(cbar,BorderLayout.EAST)
   return cbar
+
+def plot2x(f,phi=None,cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 
+  orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
+  panel = PlotPanel(1,1,orientation);
+  #panel.setVInterval(0.2)
+  n2 = len(f)
+  n1 = len(f[0])
+  s2 = Sampling(n2)
+  s1 = Sampling(n1)
+  panel.setHLabel("Inline (traces)")
+  panel.setVLabel("Depth (samples)")
+  panel.setHLimits(0,0,n2-1)
+  panel.setVLimits(0,0,n1-1)
+  pxv = panel.addPixels(0,0,s1,s2,f);
+  #pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
+  pxv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pxv.setColorModel(ColorMap.GRAY)
+  if cmin and cmax:
+    pxv.setClips(cmin,cmax)
+  else:
+    pxv.setClips(min(f),max(f))
+  #panel.setTitle("normal vectors")
+  if phi:
+    cv = panel.addContours(phi)
+    cv.setContours([0])
+    cv.setLineColor(Color.YELLOW)
+    cv.setLineWidth(6.0)
+  if(clab):
+    cb = panel.addColorBar();
+    cb.setLabel(clab)
+  panel.setColorBarWidthMinimum(40)
+  moc = panel.getMosaic();
+  frame = PlotFrame(panel);
+  frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
+  frame.setVisible(True);
+  if w1 and w2:
+    frame.setSize(w2,w1)
+  else:
+    frame.setSize(round(n2*0.8),round(n1*0.8))
+  #frame.setSize(1190,760)
+  frame.setFontSize(14)
+  if pngDir and png:
+    frame.paintToPng(360,3.333,pngDir+png+".png")
 
 def plot2(f,xp=None,ps=None,xs=None,xu=None,nr=50,phi=None,v1=None,v2=None,
         cmin=None,cmax=None,w1=None,w2=None,clab=None,png=None): 

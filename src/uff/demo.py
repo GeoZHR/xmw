@@ -71,19 +71,20 @@ maxThrow =  25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/uff/"
-plotOnly = False
+plotOnly = True
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goFakeData()
   #goSlopes()
-  goScan()
-  goThin()
-  goSkin()
+  #goScan()
+  #goThin()
+  #goSkin()
   #goSmooth()
   #goSlip()
-  #goUnfaultS()
+  goUnfaultS()
+  #goFlatten()
   #goUnfaultC()
   #go2dFault()
   #goSub2d()
@@ -374,7 +375,7 @@ def goUnfaultS():
     t1 = readImage(ft1file)
     t2 = readImage(ft2file)
     t3 = readImage(ft3file)
-  plot3(gx)
+  plot3(gx,png="gx")
   plot3(fw,clab="Amplitude",png="ufs")
   plot3(gx,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),
         clab="Vertical shift (samples)",png="gxs1")
@@ -382,6 +383,22 @@ def goUnfaultS():
         clab="Inline shift (samples)",png="gxs2")
   plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
         clab="Crossline shift (samples)",png="gxs3")
+
+def goFlatten():
+  findShifts = True
+  fx = readImage(fwsfile)
+  p2 = copy(fx)
+  p3 = copy(fx)
+  ep = copy(fx)
+  lsf = LocalSlopeFinder(8.0,2.0)
+  lsf.findSlopes(fx,p2,p3,ep);
+  ep = pow(ep,6.0)
+  fl = Flattener3()
+  fl.setIterations(0.01,100)
+  fm = fl.getMappingsFromSlopes(s1,s2,s3,p2,p3,ep)
+  gt = fm.flatten(fx)
+  plot3(fx,png="fx")
+  plot3(gt,png="gt")
 
 def goUnfaultC():
   if not plotOnly:

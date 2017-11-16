@@ -11,9 +11,10 @@ global n1,n2,n3
 
 #############################################################################
 def main(args):
+  goTianjin()
   #goGu()
   #goAustralia()
-  goF3d()
+  #goF3d()
   #goManba()
   #goAustralia()
   #goHongliu()
@@ -207,7 +208,75 @@ def goCampos2():
   i1min,i1max,i2min,i2max,i3min,i3max = 0,454,9392,13140,25770,27153
   n1,n2,n3 = 1+i1max-i1min,1+(i2max-i2min),1+(i3max-i3min)
   n1,n2,n3=455,1875,1384
-  #goGeng()
+def goTianjin():
+  """
+  ***************************************************************************
+  ****** beginning of SEG-Y file info ******
+  file name = /data/seis/f3d/f3draw.sgy
+  byte order = BIG_ENDIAN
+  number of bytes = 699003060
+  number of traces = 600515
+  format = 3 (2-byte two's complement integer)
+  units for spatial coordinates: m (will be converted to km)
+  indices and coordinates from trace headers:
+    i2min =   300, i2max =  1250 (inline indices)
+    i3min =   100, i3max =   750 (crossline indices)
+    xmin =  605.416700, xmax =  629.576300 (x coordinates, in km)
+    ymin = 6073.556400, ymax = 6090.463200 (y coordinates, in km)
+  grid sampling:
+    n1 =   462 (number of samples per trace)
+    n2 =   951 (number of traces in inline direction)
+    n3 =   651 (number of traces in crossline direction)
+    d1 = 0.004000 (time sampling interval, in s)
+    d2 = 0.025000 (inline sampling interval, in km)
+    d3 = 0.024999 (crossline sampling interval, in km)
+  grid corner points:
+    i2min =   300, i3min =   100, x =  605.835500, y = 6073.556400
+    i2max =  1250, i3min =   100, x =  629.576300, y = 6074.219900
+    i2min =   300, i3max =   750, x =  605.381800, y = 6089.799700
+    i2max =  1250, i3max =   750, x =  629.122600, y = 6090.463200
+  grid azimuth: 88.40 degrees
+  ****** end of SEG-Y file info ******
+  good subset with no dead traces
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
+  n1,n2,n3 = 462,951,591
+  ***************************************************************************
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/tianjin/"
+  sgyfile = basedir+"Tianjing_Den_0_3000_2ms.sgy"
+  sgyfile = basedir+"Tianjing_Vp_0_3000_2ms.sgy"
+  sgyfile = basedir+"Tianjing_PSTM_0_3000_2ms.sgy"
+  datfile = basedir+"rou.dat"
+  datfile = basedir+"vp.dat"
+  datfile = basedir+"gx.dat"
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,1770,2860,520,1110
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,1340,2430,520,1110
+  n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1
+    #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2,n3)
+    #gain(100,x)
+    #show3d(x,clip=max(x)/2)
+    show3d(x,xmin=2.2,xmax=2.7)
+
 def goGeng():
   """
   ***************************************************************************
@@ -2294,9 +2363,9 @@ def goSch():
   ***************************************************************************
   """
   firstLook = False # fast, does not read all trace headers
-  secondLook = False # slow, must read all trace headers
-  writeImage = True # reads all traces, writes an image
-  showImage = True # displays the image
+  secondLook = True # slow, must read all trace headers
+  writeImage = False # reads all traces, writes an image
+  showImage = False # displays the image
   basedir = "/data/dhale/sch/"
   sgyfile = basedir+"sgy/pack_0.sgy"
   #datfile = basedir+"dat/s1/g0.dat" # subset 1
@@ -2336,12 +2405,14 @@ def show2d(f,clip=None,title=None):
     sp.setTitle(title)
   sp.setSize(600,1100)
   
-def show3d(f,clip=None):
+def show3d(f,clip=None,xmin=None,xmax=None):
   print "show3d: f min =",min(f)," max =",max(f)
   frame = SimpleFrame()
   ipg = frame.addImagePanels(f)
   if clip:
     ipg.setClips(-clip,clip)
+  if xmin and xmax:
+    ipg.setClips(xmin,xmax)
   frame.orbitView.setScale(2.0)
   frame.setSize(1000,1000)
 
