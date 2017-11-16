@@ -15,6 +15,7 @@ gxfile = "gx"
 gdfile = "rou"
 gsfile = "gxs"
 dsfile = "gds"
+gcfile = "gxc"
 p2file = "p2"
 p3file = "p3"
 epfile = "ep"
@@ -24,16 +25,25 @@ epfile = "ep"
 pngDir = None
 pngDir = "../../../png/bh/"
 plotOnly = False
-# Processing begins here. When experimenting with one part of this demo, we
-# can comment out earlier parts that have already written results to files.
+minPhi,maxPhi = 0,360
+minTheta,maxTheta = 65,89
+sigmaPhi,sigmaTheta = 10,35
+
+# These parameters control the construction of fault skins.
+# See the class FaultSkinner for more information.
+lowerLikelihood = 0.02
+upperLikelihood = 0.6
+minSkinSize = 4000
+
+# These parameters control the computation of fault dip slips.
+# See the class FaultSlipper for more information.
+minThrow = 0.0
+maxThrow = 30.0
+
 def main(args):
-  #goDen()
-  #goLogCorrelation()
-  #goModels()
-  #goInterpolation()
-  #goModelSmooth()
-  goTopBottomHorizons()
-  #goSlopes()
+  #goTopBottomHorizons()
+  goSlopes()
+  goScan()
 def goDen():
   gx = readImage3D(n1,n2,n3,gxfile)
   gd = readImage3D(n1,n2,n3,gdfile)
@@ -53,9 +63,90 @@ def goTopBottomHorizons():
   hp = Helper()
   hs = hp.getTopBottomHorizons(ds)
   gc = hp.getSection(hs,gs)
+  writeImage(gcfile,gc)
   plot3(gs)
   plot3(gs,ds,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0))
   plot3(gc,ds,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0))
+
+def goSlopes():
+  print "goSlopes ..."
+  gx = readImage(gcfile)
+  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
+  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  zm = ZeroMask(0.10,1,1,1,gx)
+  zero,tiny=0.0,0.01
+  zm.setValue(zero,p2)
+  zm.setValue(zero,p3)
+  zm.setValue(tiny,ep)
+  print "p2  min =",min(p2)," max =",max(p2)
+  print "p3  min =",min(p3)," max =",max(p3)
+  print "ep min =",min(ep)," max =",max(ep)
+  '''
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+        clab="Planarity")
+  '''
+
+def goScan():
+  print "goScan ..."
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    gx = readImage(gcfile)
+    zm = ZeroMask(0.10,1,1,1,gx)
+    zero,tiny=0.0,0.01
+    zm.setValue(tiny,gx)
+    gx = FaultScanner.taper(10,0,0,gx)
+    fs = FaultScanner(sigmaPhi,sigmaTheta)
+    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
+    print "fl min =",min(fl)," max =",max(fl)
+    print "fp min =",min(fp)," max =",max(fp)
+    print "ft min =",min(ft)," max =",max(ft)
+    writeImage(flfile,fl)
+    writeImage(fpfile,fp)
+    writeImage(ftfile,ft)
+  else:
+    gx = readImage(gxfile)
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+  '''
+  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
+      clab="Fault likelihood",png="fl")
+  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+      clab="Fault strike (degrees)",cint=45,png="fp")
+  plot3(gx,ft,cmin=65,cmax=89,cmap=jetFill(1.0),
+      clab="Fault dip (degrees)",png="ft")
+  '''
+
+def goThin():
+  print "goThin ..."
+  gx = readImage(gxfile)
+  if not plotOnly:
+    fl = readImage(flfile)
+    fp = readImage(fpfile)
+    ft = readImage(ftfile)
+    flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
+    writeImage(fltfile,flt)
+    writeImage(fptfile,fpt)
+    writeImage(fttfile,ftt)
+  else:
+    flt = readImage(fltfile)
+    fpt = readImage(fptfile)
+    ftt = readImage(fttfile)
+  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
+        clab="Fault dip (degrees)",png="ftt")
+  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=45,png="fpt")
+
 def goSlopes():
   gx = readImage3D(n1,n2,n3,gsfile)
   p2 = zerofloat(n1,n2,n3)
