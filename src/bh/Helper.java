@@ -46,4 +46,20 @@ public class Helper {
     return gf;
   }
 
+  public float[][][] getSection(float[][][] hx, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    float[][][] gs = new float[n3][n2][n1];
+    int hm = round(max(hx));
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int b1 = max(0,   round(hx[0][i3][i2]-10));
+      int e1 = min(n1-1,round(hx[1][i3][i2]+10));
+    for (int i1=b1; i1<=e1; ++i1) {
+      gs[i3][i2][i1] = gx[i3][i2][i1];
+    }}}
+    return gs;
+  }
+
 }
