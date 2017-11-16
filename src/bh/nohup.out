@@ -1,0 +1,318 @@
+*sys-package-mgr*: processing new jar, '/home/xinwu/Home/research/jtk/core/build/libs/edu-mines-jtk-1.0.0.jar'
+*sys-package-mgr*: processing new jar, '/home/xinwu/Home/research/libs/arpack-java.jar'
+*sys-package-mgr*: processing new jar, '/home/xinwu/Home/research/libs/netlib-java.jar'
+*sys-package-mgr*: processing new jar, '/home/xinwu/Home/research/libs/gluegen-rt.jar'
+*sys-package-mgr*: processing new jar, '/home/xinwu/Home/research/libs/jogl-all.jar'
+*sys-package-mgr*: processing new jar, '/home/xinwu/Home/research/libs/junit.jar'
+*sys-package-mgr*: processing new jar, '/home/xinwu/Home/research/libs/jythonlib.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/resources.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/rt.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/jsse.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/jce.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/charsets.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/cldrdata.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/dnsns.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/jaccess.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/localedata.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/nashorn.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/sunec.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/sunjce_provider.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/sunpkcs11.jar'
+*sys-package-mgr*: processing new jar, '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.91-1.b14.el7_2.x86_64/jre/lib/ext/zipfs.jar'
+setupForSubset: bh
+goScan ...
+Exception in thread "AWT-EventQueue-0" 	at java.io.FileInputStream.open0(Native Method)
+	at java.io.FileInputStream.open(FileInputStream.java:195)
+	at java.io.FileInputStream.<init>(FileInputStream.java:138)
+	at java.io.FileInputStream.<init>(FileInputStream.java:93)
+	at edu.mines.jtk.io.ArrayInputStream.<init>(ArrayInputStream.java:54)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.python.core.PyReflectedConstructor.constructProxy(PyReflectedConstructor.java:210)
+
+java.io.FileNotFoundException: java.io.FileNotFoundException: ../../../data/seis/tianjin/gxc.dat (No such file or directory)
+setupForSubset: bh
+Exception in thread "AWT-EventQueue-0" java.awt.HeadlessException: 
+No X11 DISPLAY variable was set, but this program performed an operation which requires it.
+	at java.awt.GraphicsEnvironment.checkHeadless(GraphicsEnvironment.java:204)
+	at java.awt.Window.<init>(Window.java:536)
+	at java.awt.Frame.<init>(Frame.java:420)
+	at java.awt.Frame.<init>(Frame.java:385)
+	at javax.swing.JFrame.<init>(JFrame.java:189)
+	at edu.mines.jtk.sgl.SimpleFrame.<init>(SimpleFrame.java:60)
+	at edu.mines.jtk.sgl.SimpleFrame.<init>(SimpleFrame.java:44)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.python.core.PyReflectedConstructor.constructProxy(PyReflectedConstructor.java:210)
+	at org.python.core.PyReflectedConstructor.__call__(PyReflectedConstructor.java:179)
+	at org.python.core.PyObject.__call__(PyObject.java:345)
+	at org.python.core.PyMethod.instancemethod___call__(PyMethod.java:220)
+	at org.python.core.PyMethod.__call__(PyMethod.java:211)
+	at org.python.core.PyMethod.__call__(PyMethod.java:206)
+	at org.python.core.Deriveds.dispatch__init__(Deriveds.java:19)
+	at org.python.core.PyObjectDerived.dispatch__init__(PyObjectDerived.java:1057)
+	at org.python.core.PyType.type___call__(PyType.java:1565)
+	at org.python.core.PyType.__call__(PyType.java:1548)
+	at org.python.core.PyObject.__call__(PyObject.java:387)
+	at org.python.core.PyObject.__call__(PyObject.java:391)
+	at org.python.pycode._pyx0.plot3$33(demo.py:729)
+	at org.python.pycode._pyx0.call_function(demo.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:301)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:127)
+	at org.python.core.PyFunction.__call__(PyFunction.java:317)
+	at org.python.pycode._pyx0.goTopBottomHorizons$3(demo.py:69)
+	at org.python.pycode._pyx0.call_function(demo.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:120)
+	at org.python.core.PyFunction.__call__(PyFunction.java:307)
+	at org.python.pycode._pyx0.main$1(demo.py:46)
+	at org.python.pycode._pyx0.call_function(demo.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:134)
+	at org.python.core.PyFunction.__call__(PyFunction.java:317)
+	at common$py.run$3(/home/xinwu/Home/research/xmw/src/bh/common.py:33)
+	at common$py.call_function(/home/xinwu/Home/research/xmw/src/bh/common.py)
+	at org.python.core.PyTableCode.call(PyTableCode.java:165)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:301)
+	at org.python.core.PyBaseCode.call(PyBaseCode.java:194)
+	at org.python.core.PyFunction.__call__(PyFunction.java:387)
+	at org.python.core.PyMethod.instancemethod___call__(PyMethod.java:220)
+	at org.python.core.PyMethod.__call__(PyMethod.java:211)
+	at org.python.core.PyMethod.__call__(PyMethod.java:201)
+	at org.python.core.PyMethod.__call__(PyMethod.java:196)
+	at org.python.core.PyObject._jcallexc(PyObject.java:3502)
+	at org.python.core.PyObject._jcall(PyObject.java:3534)
+	at org.python.proxies.common$_RunMain$0.run(Unknown Source)
+	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
+	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:756)
+	at java.awt.EventQueue.access$500(EventQueue.java:97)
+	at java.awt.EventQueue$3.run(EventQueue.java:709)
+	at java.awt.EventQueue$3.run(EventQueue.java:703)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:76)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:726)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:201)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+setupForSubset: bh
+goScan ...
+FaultScanner.scan: done in 7184 seconds
+FaultScanner.scan: done in 6897 seconds
+FaultScanner.scan: done in 6758 seconds
+FaultScanner.scan: done in 6620 seconds
+FaultScanner.scan: done in 6500 seconds
+FaultScanner.scan: done in 6407 seconds
+FaultScanner.scan: done in 6322 seconds
+FaultScanner.scan: done in 6235 seconds
+FaultScanner.scan: done in 6159 seconds
+FaultScanner.scan: done in 6098 seconds
+FaultScanner.scan: done in 6035 seconds
+FaultScanner.scan: done in 5980 seconds
+FaultScanner.scan: done in 5916 seconds
+FaultScanner.scan: done in 5855 seconds
+FaultScanner.scan: done in 5789 seconds
+FaultScanner.scan: done in 5730 seconds
+FaultScanner.scan: done in 5670 seconds
+FaultScanner.scan: done in 5609 seconds
+FaultScanner.scan: done in 5551 seconds
+FaultScanner.scan: done in 5496 seconds
+FaultScanner.scan: done in 5441 seconds
+FaultScanner.scan: done in 5385 seconds
+FaultScanner.scan: done in 5327 seconds
+FaultScanner.scan: done in 5273 seconds
+FaultScanner.scan: done in 2882 seconds
+FaultScanner.scan: done in 2887 seconds
+FaultScanner.scan: done in 2890 seconds
+FaultScanner.scan: done in 2890 seconds
+FaultScanner.scan: done in 2887 seconds
+FaultScanner.scan: done in 2882 seconds
+FaultScanner.scan: done in 2875 seconds
+FaultScanner.scan: done in 2866 seconds
+FaultScanner.scan: done in 2855 seconds
+FaultScanner.scan: done in 2845 seconds
+FaultScanner.scan: done in 2830 seconds
+FaultScanner.scan: done in 2815 seconds
+FaultScanner.scan: done in 2798 seconds
+FaultScanner.scan: done in 2781 seconds
+FaultScanner.scan: done in 2762 seconds
+FaultScanner.scan: done in 2741 seconds
+FaultScanner.scan: done in 2720 seconds
+FaultScanner.scan: done in 2697 seconds
+FaultScanner.scan: done in 2673 seconds
+FaultScanner.scan: done in 2648 seconds
+FaultScanner.scan: done in 2622 seconds
+FaultScanner.scan: done in 2596 seconds
+FaultScanner.scan: done in 2568 seconds
+FaultScanner.scan: done in 2540 seconds
+FaultScanner.scan: done in 2511 seconds
+FaultScanner.scan: done in 2481 seconds
+FaultScanner.scan: done in 2450 seconds
+FaultScanner.scan: done in 2419 seconds
+FaultScanner.scan: done in 2388 seconds
+FaultScanner.scan: done in 2356 seconds
+FaultScanner.scan: done in 2323 seconds
+FaultScanner.scan: done in 2290 seconds
+FaultScanner.scan: done in 2256 seconds
+FaultScanner.scan: done in 2223 seconds
+FaultScanner.scan: done in 2189 seconds
+FaultScanner.scan: done in 2154 seconds
+FaultScanner.scan: done in 2120 seconds
+FaultScanner.scan: done in 2085 seconds
+FaultScanner.scan: done in 2049 seconds
+FaultScanner.scan: done in 2013 seconds
+FaultScanner.scan: done in 1976 seconds
+FaultScanner.scan: done in 1939 seconds
+FaultScanner.scan: done in 1902 seconds
+FaultScanner.scan: done in 1864 seconds
+FaultScanner.scan: done in 1826 seconds
+FaultScanner.scan: done in 1788 seconds
+FaultScanner.scan: done in 1749 seconds
+FaultScanner.scan: done in 1710 seconds
+FaultScanner.scan: done in 923 seconds
+FaultScanner.scan: done in 889 seconds
+FaultScanner.scan: done in 855 seconds
+FaultScanner.scan: done in 821 seconds
+FaultScanner.scan: done in 786 seconds
+FaultScanner.scan: done in 751 seconds
+FaultScanner.scan: done in 716 seconds
+FaultScanner.scan: done in 681 seconds
+FaultScanner.scan: done in 645 seconds
+FaultScanner.scan: done in 609 seconds
+FaultScanner.scan: done in 573 seconds
+FaultScanner.scan: done in 536 seconds
+FaultScanner.scan: done in 500 seconds
+FaultScanner.scan: done in 462 seconds
+FaultScanner.scan: done in 425 seconds
+FaultScanner.scan: done in 388 seconds
+FaultScanner.scan: done in 350 seconds
+FaultScanner.scan: done in 312 seconds
+FaultScanner.scan: done in 274 seconds
+FaultScanner.scan: done in 235 seconds
+FaultScanner.scan: done in 196 seconds
+FaultScanner.scan: done in 158 seconds
+FaultScanner.scan: done in 119 seconds
+FaultScanner.scan: done in 79 seconds
+FaultScanner.scan: done in 40 seconds
+FaultScanner.scan: done
+fl min = 0.00420704716817  max = 1.0
+fp min = 0.0  max = 360.0
+ft min = 65.0  max = 89.0
+Exception in thread "AWT-EventQueue-0" Traceback (most recent call last):
+  File "/home/xinwu/Home/research/xmw/src/bh/common.py", line 33, in run
+    self.main(sys.argv)
+  File "demo.py", line 46, in main
+    goScan()
+  File "demo.py", line 113, in goScan
+    writeImage(flfile,fl)
+NameError: global name 'flfile' is not defined
+setupForSubset: bh
+goScan ...
+FaultScanner.scan: done in 6946 seconds
+FaultScanner.scan: done in 6656 seconds
+FaultScanner.scan: done in 6476 seconds
+FaultScanner.scan: done in 6354 seconds
+FaultScanner.scan: done in 6257 seconds
+FaultScanner.scan: done in 6203 seconds
+FaultScanner.scan: done in 6157 seconds
+FaultScanner.scan: done in 6103 seconds
+FaultScanner.scan: done in 6046 seconds
+FaultScanner.scan: done in 5991 seconds
+FaultScanner.scan: done in 5929 seconds
+FaultScanner.scan: done in 5871 seconds
+FaultScanner.scan: done in 5813 seconds
+FaultScanner.scan: done in 5758 seconds
+FaultScanner.scan: done in 5702 seconds
+FaultScanner.scan: done in 5646 seconds
+FaultScanner.scan: done in 5589 seconds
+FaultScanner.scan: done in 5537 seconds
+FaultScanner.scan: done in 5484 seconds
+FaultScanner.scan: done in 5427 seconds
+FaultScanner.scan: done in 5371 seconds
+FaultScanner.scan: done in 5318 seconds
+FaultScanner.scan: done in 5263 seconds
+FaultScanner.scan: done in 5210 seconds
+FaultScanner.scan: done in 2846 seconds
+FaultScanner.scan: done in 2852 seconds
+FaultScanner.scan: done in 2854 seconds
+FaultScanner.scan: done in 2854 seconds
+FaultScanner.scan: done in 2853 seconds
+FaultScanner.scan: done in 2849 seconds
+FaultScanner.scan: done in 2843 seconds
+FaultScanner.scan: done in 2834 seconds
+FaultScanner.scan: done in 2824 seconds
+FaultScanner.scan: done in 2812 seconds
+FaultScanner.scan: done in 2798 seconds
+FaultScanner.scan: done in 2783 seconds
+FaultScanner.scan: done in 2767 seconds
+FaultScanner.scan: done in 2750 seconds
+FaultScanner.scan: done in 2732 seconds
+FaultScanner.scan: done in 2712 seconds
+FaultScanner.scan: done in 2692 seconds
+FaultScanner.scan: done in 2670 seconds
+FaultScanner.scan: done in 2647 seconds
+FaultScanner.scan: done in 2622 seconds
+FaultScanner.scan: done in 2596 seconds
+FaultScanner.scan: done in 2570 seconds
+FaultScanner.scan: done in 2543 seconds
+FaultScanner.scan: done in 2516 seconds
+FaultScanner.scan: done in 2487 seconds
+FaultScanner.scan: done in 2458 seconds
+FaultScanner.scan: done in 2428 seconds
+FaultScanner.scan: done in 2398 seconds
+FaultScanner.scan: done in 2366 seconds
+FaultScanner.scan: done in 2335 seconds
+FaultScanner.scan: done in 2303 seconds
+FaultScanner.scan: done in 2270 seconds
+FaultScanner.scan: done in 2238 seconds
+FaultScanner.scan: done in 2204 seconds
+FaultScanner.scan: done in 2170 seconds
+FaultScanner.scan: done in 2136 seconds
+FaultScanner.scan: done in 2102 seconds
+FaultScanner.scan: done in 2066 seconds
+FaultScanner.scan: done in 2031 seconds
+FaultScanner.scan: done in 1995 seconds
+FaultScanner.scan: done in 1959 seconds
+FaultScanner.scan: done in 1922 seconds
+FaultScanner.scan: done in 1886 seconds
+FaultScanner.scan: done in 1848 seconds
+FaultScanner.scan: done in 1811 seconds
+FaultScanner.scan: done in 1773 seconds
+FaultScanner.scan: done in 1735 seconds
+FaultScanner.scan: done in 1696 seconds
+FaultScanner.scan: done in 916 seconds
+FaultScanner.scan: done in 882 seconds
+FaultScanner.scan: done in 849 seconds
+FaultScanner.scan: done in 815 seconds
+FaultScanner.scan: done in 780 seconds
+FaultScanner.scan: done in 746 seconds
+FaultScanner.scan: done in 711 seconds
+FaultScanner.scan: done in 676 seconds
+FaultScanner.scan: done in 640 seconds
+FaultScanner.scan: done in 604 seconds
+FaultScanner.scan: done in 568 seconds
+FaultScanner.scan: done in 532 seconds
+FaultScanner.scan: done in 496 seconds
+FaultScanner.scan: done in 459 seconds
+FaultScanner.scan: done in 422 seconds
+FaultScanner.scan: done in 385 seconds
+FaultScanner.scan: done in 347 seconds
+FaultScanner.scan: done in 309 seconds
+FaultScanner.scan: done in 271 seconds
+FaultScanner.scan: done in 233 seconds
+FaultScanner.scan: done in 195 seconds
+FaultScanner.scan: done in 156 seconds
+FaultScanner.scan: done in 118 seconds
+FaultScanner.scan: done in 79 seconds
+FaultScanner.scan: done in 40 seconds
+FaultScanner.scan: done
+fl min = 0.00420704716817  max = 1.0
+fp min = 0.0  max = 360.0
+ft min = 65.0  max = 89.0

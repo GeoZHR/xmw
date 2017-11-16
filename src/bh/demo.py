@@ -22,15 +22,18 @@ epfile = "ep"
 flfile = "fl"
 fpfile = "fp"
 ftfile = "ft"
+fltfile = "flt"
+fptfile = "fpt"
+fttfile = "ftt"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 pngDir = "../../../png/bh/"
+pngDir = None
 plotOnly = False
-minPhi,maxPhi = 0,360
-minTheta,maxTheta = 65,89
-sigmaPhi,sigmaTheta = 10,35
+minPhi,maxPhi = 0,90
+minTheta,maxTheta = 65,85
+sigmaPhi,sigmaTheta = 10,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -47,6 +50,7 @@ def main(args):
   #goTopBottomHorizons()
   #goSlopes()
   goScan()
+  #goThin()
 def goDen():
   gx = readImage3D(n1,n2,n3,gxfile)
   gd = readImage3D(n1,n2,n3,gdfile)
@@ -119,18 +123,16 @@ def goScan():
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
-  '''
   plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
       clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=360,cmap=hueFill(1.0),
+  plot3(gx,fp,cmin=0,cmax=90,cmap=jetFill(1.0),
       clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,ft,cmin=65,cmax=89,cmap=jetFill(1.0),
+  plot3(gx,ft,cmin=65,cmax=85,cmap=jetFill(1.0),
       clab="Fault dip (degrees)",png="ft")
-  '''
 
 def goThin():
   print "goThin ..."
-  gx = readImage(gxfile)
+  gx = readImage(gcfile)
   if not plotOnly:
     fl = readImage(flfile)
     fp = readImage(fpfile)
@@ -147,8 +149,8 @@ def goThin():
         clab="Fault likelihood",png="flt")
   plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
         clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fpt,cmin=0,cmax=360,cmap=hueFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=45,png="fpt")
+  plot3(gx,fpt,cmin=0,cmax=90,cmap=jetFillExceptMin(1.0),
+        clab="Fault strike (degrees)",cint=15,png="fpt")
 
 def goSlopes():
   gx = readImage3D(n1,n2,n3,gsfile)

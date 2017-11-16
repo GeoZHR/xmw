@@ -21,6 +21,7 @@ from edu.mines.jtk.util.ArrayMath import *
 from util import *
 from hdw import *
 from bh import *
+from ipfx import *
 
 #############################################################################
 # Run the function main on the Swing thread
