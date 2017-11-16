@@ -19,6 +19,9 @@ gcfile = "gxc"
 p2file = "p2"
 p3file = "p3"
 epfile = "ep"
+flfile = "fl"
+fpfile = "fp"
+ftfile = "ft"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
@@ -42,7 +45,7 @@ maxThrow = 30.0
 
 def main(args):
   #goTopBottomHorizons()
-  goSlopes()
+  #goSlopes()
   goScan()
 def goDen():
   gx = readImage3D(n1,n2,n3,gxfile)
@@ -112,7 +115,7 @@ def goScan():
     writeImage(fpfile,fp)
     writeImage(ftfile,ft)
   else:
-    gx = readImage(gxfile)
+    gx = readImage(gcfile)
     fl = readImage(flfile)
     fp = readImage(fpfile)
     ft = readImage(ftfile)
