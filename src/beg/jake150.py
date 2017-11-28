@@ -94,7 +94,7 @@ def main(args):
   #goSkinTv()
   #goReSkin()
   #goSmooth()
-  goSlip()
+  #goSlip()
   #goUnfaultS()
   #goFlattenWeights()
   #goHorizonExtraction1()
@@ -110,8 +110,9 @@ def main(args):
   #goFillHoles()
   #goTest()
   #goTest1()
-  '''
   gx = readImage(gxfile)
+  plot3(gx)
+  '''
   sk = readSkins(fsfbase)
   plot3(gx)
   plot3(gx,skins=sk)

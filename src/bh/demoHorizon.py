@@ -51,13 +51,15 @@ minThrow = 0.0
 maxThrow = 30.0
 
 def main(args):
-  goTopBottomHorizons()
-  #goSlopes()
+  goSlopes()
+  #goHorizonOne()
   #goScan()
   #goThin()
   #goSkin()
   #goSmooth()
   #goSlip()
+  #goTopBottomHorizons()
+
 def goDen():
   gx = readImage3D(n1,n2,n3,gxfile)
   gd = readImage3D(n1,n2,n3,gdfile)
@@ -71,6 +73,47 @@ def goDen():
   writeImage("gxs",gs)
   plot3(gs)
   plot3(gs,ds,cmin=2.2,cmax=2.7,cmap=jetRamp(0.4))
+
+def goSlopes():
+  print "goSlopes ..."
+  gx = readImage(gsfile)
+  p2 = zerofloat(n1,n2,n3)
+  p3 = zerofloat(n1,n2,n3)
+  ep = zerofloat(n1,n2,n3)
+  sigma1,sigma2,sigma3,pmax = 8.0,2.0,2.0,5.0
+  lsf = LocalSlopeFinder(sigma1,sigma2,sigma3,pmax)
+  lsf.findSlopes(gx,p2,p3,ep)
+  ep = pow(ep,6)
+  writeImage(p2file,p2)
+  writeImage(p3file,p3)
+  writeImage(epfile,ep)
+  print "p2  min =",min(p2)," max =",max(p2)
+  print "p3  min =",min(p3)," max =",max(p3)
+  print "ep min =",min(ep)," max =",max(ep)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+        clab="Planarity")
+
+def goHorizonOne():
+  gx = readImage(gsfile)
+  p2 = readImage(p2file)
+  p3 = readImage(p3file)
+  ep = readImage(epfile)
+  ep = pow(ep,6)
+  print "p2  min =",min(p2)," max =",max(p2)
+  print "p3  min =",min(p3)," max =",max(p3)
+  print "ep min =",min(ep)," max =",max(ep)
+  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Inline slope (sample/sample)",png="p2")
+  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
+        clab="Crossline slope (sample/sample)",png="p3")
+  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
+        clab="Planarity")
+
+
 def goTopBottomHorizons():
   gs = readImage3D(n1,n2,n3,"gxs")
   ds = readImage3D(n1,n2,n3,"gds")
@@ -82,30 +125,6 @@ def goTopBottomHorizons():
   plot3(gs,ds,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0))
   plot3(gc,ds,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0))
 
-def goSlopes():
-  print "goSlopes ..."
-  gx = readImage(gcfile)
-  sigma1,sigma2,sigma3,pmax = 16.0,2.0,2.0,5.0
-  p2,p3,ep = FaultScanner.slopes(sigma1,sigma2,sigma3,pmax,gx)
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
-  zm = ZeroMask(0.10,1,1,1,gx)
-  zero,tiny=0.0,0.01
-  zm.setValue(zero,p2)
-  zm.setValue(zero,p3)
-  zm.setValue(tiny,ep)
-  print "p2  min =",min(p2)," max =",max(p2)
-  print "p3  min =",min(p3)," max =",max(p3)
-  print "ep min =",min(ep)," max =",max(ep)
-  '''
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
-  '''
 
 def goScan():
   print "goScan ..."
@@ -269,18 +288,6 @@ def goUnfaultS():
     fw = readImage("fwt")
   plot3(gx,png="gxuf")
   plot3(fw,png="fwuf")
-
-def goSlopes():
-  gx = readImage3D(n1,n2,n3,gsfile)
-  p2 = zerofloat(n1,n2,n3)
-  p3 = zerofloat(n1,n2,n3)
-  ep = zerofloat(n1,n2,n3)
-  sigma1,sigma2=4.0,2.0
-  lsf = LocalSlopeFinder(sigma1,sigma2,sigma2,5) 
-  lsf.findSlopes(gx,p2,p3,ep);
-  writeImage(p2file,p2)
-  writeImage(p3file,p3)
-  writeImage(epfile,ep)
 
 def goModelSmooth():
   n1,n2=501,501

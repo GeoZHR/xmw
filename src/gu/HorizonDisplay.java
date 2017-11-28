@@ -17,6 +17,17 @@ import java.util.*;
 public class HorizonDisplay {
  
 
+  public float[][] getTimeSlice(int k1, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    float[][] g1 = new float[n3][n2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      g1[i3][i2] = gx[i3][n2-i2-1][k1];
+    }}
+    return g1;
+  }
+
   public float[][][] heightRgb(
     ColorMap mp, float[][] sf) {
     int n3 = sf.length;

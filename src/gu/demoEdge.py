@@ -55,8 +55,8 @@ ncfile = "nc"
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 70,89
 sigmaPhi,sigmaTheta = 4,30
-minTheta,maxTheta = 75,89
-sigmaPhi,sigmaTheta = 4,20
+minTheta,maxTheta = 75,90
+sigmaPhi,sigmaTheta = 6,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -72,7 +72,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = True
+plotOnly = False
 pngDir = "../../../png/gu/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -80,14 +80,16 @@ pngDir = "../../../png/gu/"
 def main(args):
   #goSeisData()
   #goHorizons()
-  goHorizons2D()
+  #goHorizons2D()
+  #goTimeSlices()
   #goSlopeVectors()
   #goKaustEdge()
   #goSlopes()
   #goAmplitudeCurvature()
   #goPlaneWaveDestruction()
-  #goKaustEdgeEnhance()
+  goKaustEdgeEnhance()
   #goThin()
+  #goSemblance()
 
 def goSeisData():
   gx = readImage(gxfile)
@@ -115,17 +117,16 @@ def goPlaneWaveDestruction():
   gx = readImage(gxfile)
   if not plotOnly:
     ke = KaustEdge()
-    pd = ke.planeWaveDestruction(8,2,gx)
+    pd = ke.planeWaveDestruction(8,12,gx)
     pd = sub(pd,min(pd));
     pd = div(pd,max(pd));
-    writeImage(pdfile,pd)
-  else:
-    pd = readImage(pdfile)
     ke = KaustEdge()
     pd = ke.scale(pd)
-    writeImage(pdfile,pd)
-  plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),png="pd")
+    writeImage(pdfile+"12",pd)
+  else:
+    pd = readImage(pdfile)
   '''
+  plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),png="pd")
   plot3(gx,pd,cmin=0.05,cmax=0.2,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="kl")
   '''
@@ -158,26 +159,51 @@ def goKaustEdgeEnhance():
     print "kl min =",min(kl)," max =",max(kl)
     print "kp min =",min(kp)," max =",max(kp)
     print "kt min =",min(kt)," max =",max(kt)
-    writeImage(klfile+"20",kl)
-    writeImage(kpfile+"20",kp)
-    writeImage(ktfile+"20",kt)
+    writeImage(klfile+"620",kl)
+    writeImage(kpfile+"620",kp)
+    writeImage(ktfile+"620",kt)
   else:
     kl = readImage(klfile)
   plot3(gx,kl,cmin=0.01,cmax=0.2,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="kl")
+def goTimeSlices():
+  gx = readImage(gxfile)
+  kl1 = readImage(kltfile+"20")
+  kl2 = readImage(kltfile+"630")
+  hd = HorizonDisplay()
+  ke = KaustEdge()
+  kl1 = ke.scale(kl1)
+  for i1 in range(640,740,20):
+    sa = hd.getTimeSlice(i1,gx)
+    sk1 = hd.getTimeSlice(i1,kl1)
+    sk2 = hd.getTimeSlice(i1,kl2)
+    sk2 = pow(sk2,0.5)
+    #sa = mul(sa,-1)
+    #plot2(sa,neareast=True,png=str(i1)+"amplitude")
+    plot2(sa,sk1,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+          neareast=True,png=str(i1)+"fracture")
+    plot2(sa,sk2,cmap=jetFillExceptMin(1.0),cmin=0.6,cmax=1,
+          neareast=True,png=str(i1)+"fracture")
+
 
 def goHorizons2D():
-  h70file = "shb5_hor70"
+  #h70file = "shb5_hor70"
+  h74file = "ShunB5_Hor_T74"
+  h76file = "ShunB5_Hor_T76"
+  h80file = "ShunB5_Hor_T80"
+  h83file = "ShunB5_Hor_T83"
   h74file = "shb5_hor74"
   h76file = "shb5_hor76"
   h80file = "shb5_hor80"
-  #h83file = "shb5_hor83"
+  h83file = "shb5_hor83"
+
   #h90file = "shb5_hor90"
-  hs = [h70file,h74file,h76file,h80file]
+  hs = [h74file,h76file,h80file,h83file]
   if not plotOnly:
     gx = readImage(gxfile)
-    kl = readImage(kltfile)
-    pd = readImage(pdfile)
+    kl = readImage(kltfile+"420")
+    kl = pow(kl,0.5)
+    pd = readImage(pdfile+"12")
     gx = mul(gx,-1)
     hd = HorizonDisplay()
     for hi in hs:
@@ -185,9 +211,9 @@ def goHorizons2D():
       sa = hd.amplitudeOnHorizon(gx,hs)
       sk = hd.amplitudeOnHorizon(kl,hs)
       sd = hd.amplitudeOnHorizon(pd,hs)
-      writeImage(hi+"a",sa)
-      writeImage(hi+"k",sk)
-      writeImage(hi+"d",sd)
+      writeHorizon(hi+"a",sa)
+      writeHorizon(hi+"k",sk)
+      writeHorizon(hi+"d",sd)
   else:
     for hi in hs:
       sa = readHorizon(hi+"a")
@@ -196,7 +222,7 @@ def goHorizons2D():
       plot2(sa,neareast=True,png=hi+"amplitude")
       plot2(sa,sd,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
             neareast=True,png=hi+"diffraction")
-      plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+      plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.5,cmax=1,
             neareast=True,png=hi+"fracture")
 def goHorizons():
   gx = readImage(gxfile)
@@ -327,19 +353,25 @@ def goThin():
   print "goThin ..."
   gx = readImage(gxfile)
   if not plotOnly:
-    kl = readImage(klfile+"20")
-    kp = readImage(kpfile+"20")
-    kt = readImage(ktfile+"20")
+    kl = readImage(klfile+"420")
+    kp = readImage(kpfile+"420")
+    kt = readImage(ktfile+"420")
     klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
-    writeImage(kltfile+"20",klt)
+    writeImage(kltfile+"420",klt)
   else:
-    klt = readImage(kltfile)
-    #ke = KaustEdge()
-    #klt = ke.scale(klt)
+    klt = readImage(kltfile+"420")
+    klt1 = readImage(kltfile+"20")
+    ke = KaustEdge()
+    klt1 = ke.scale(klt1)
     #writeImage(kltfile,klt)
+    klt = pow(klt,0.5)
+  plot3(gx,klt1,k1=500,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
+  plot3(gx,klt, k1=500,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
+  '''
   for k1 in range(705,905,10):
     plot3(gx,klt,k1=k1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
           png="f"+str(k1))
+  '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
