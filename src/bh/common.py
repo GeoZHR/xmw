@@ -19,7 +19,7 @@ from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
 from util import *
-from hdw import *
+from mhe import *
 from mef import *
 from bh import *
 

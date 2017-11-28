@@ -29,27 +29,13 @@ fskbase = "fsk"
 gwfile = "gw"
 fwfile = "fw"
 gsxfile = "gsc"
+sf1file = "sf1"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = "../../../png/bh/"
 pngDir = None
 plotOnly = False
-minPhi,maxPhi = 0,80
-minTheta,maxTheta = 65,89
-sigmaPhi,sigmaTheta = 15,50
-
-# These parameters control the construction of fault skins.
-# See the class FaultSkinner for more information.
-lowerLikelihood = 0.02
-upperLikelihood = 0.6
-minSkinSize = 4000
-
-# These parameters control the computation of fault dip slips.
-# See the class FaultSlipper for more information.
-minThrow = 0.0
-maxThrow = 30.0
-
 def main(args):
   #goSlopes()
   goHorizonOne()
@@ -98,21 +84,33 @@ def goSlopes():
         clab="Planarity")
 
 def goHorizonOne():
+  k1 = [173,183,185,187,248,291,242,249,250,256,251]
+  k2 = [134,242,355,218,261,348,446,608,699,853,908]
+  k3 = [236,433,270,536,160, 61,295,327,327,432,306]
   gx = readImage(gsfile)
-  p2 = readImage(p2file)
-  p3 = readImage(p3file)
-  ep = readImage(epfile)
-  ep = pow(ep,6)
-  print "p2  min =",min(p2)," max =",max(p2)
-  print "p3  min =",min(p3)," max =",max(p3)
-  print "ep min =",min(ep)," max =",max(ep)
-  plot3(gx,p2, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Inline slope (sample/sample)",png="p2")
-  plot3(gx,p3, cmin=-1,cmax=1,cmap=bwrNotch(1.0),
-        clab="Crossline slope (sample/sample)",png="p3")
-  plot3(gx,sub(1,ep),cmin=0,cmax=1,cmap=jetRamp(1.0),
-        clab="Planarity")
-
+  gh = GlobalHorizon3()
+  if not plotOnly:
+    p2 = readImage(p2file)
+    p3 = readImage(p3file)
+    ep = readImage(epfile)
+    lmt = n1-1
+    gh.setWeights(0)
+    gh.setSmoothings(8,8)
+    gh.setCG(0.01,100)
+    gh.setExternalIterations(20)
+    sf1 = gh.surfaceInitialization(n2,n3,lmt,k1,k2,k3)
+    sf1 = gh.surfaceUpdateFromSlopesAndCorrelations(8,20,gx,ep,p2,p3,k2,k3,sf1)
+    writeImage(sf1file,sf1) 
+  else:
+    sf1 = readImage2D(n2,n3,sf1file)
+  plot3(gx,ks=[k1,k2,k3],cmap=gray,clab="Amplitude",png="seis")
+  mp = ColorMap(-1.5,1.5,gray)
+  r1,g1,b1 = gh.amplitudeRgb(mp,gx,sf1) 
+  surf1 = [sf1,r1,g1,b1]
+  plot3(gx,hz=surf1,ks=[k1,k2,k3],cmap=gray,png="surf1m")
+  hp = Helper();
+  hm = hp.horizonToImage(n1,sf1)
+  plot3(gx,g=hm,ks=[k1,k2,k3],cmap=jetFillExceptMin(1),png="surf1m")
 
 def goTopBottomHorizons():
   gs = readImage3D(n1,n2,n3,"gxs")
@@ -125,395 +123,6 @@ def goTopBottomHorizons():
   plot3(gs,ds,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0))
   plot3(gc,ds,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0))
 
-
-def goScan():
-  print "goScan ..."
-  if not plotOnly:
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
-    gx = readImage(gcfile)
-    #zm = ZeroMask(0.10,1,1,1,gx)
-    #zero,tiny=0.0,0.01
-    #zm.setValue(tiny,gx)
-    gx = FaultScanner.taper(10,0,0,gx)
-    fs = FaultScanner(sigmaPhi,sigmaTheta)
-    fl,fp,ft = fs.scan(minPhi,maxPhi,minTheta,maxTheta,p2,p3,gx)
-    print "fl min =",min(fl)," max =",max(fl)
-    print "fp min =",min(fp)," max =",max(fp)
-    print "ft min =",min(ft)," max =",max(ft)
-    writeImage(flfile,fl)
-    writeImage(fpfile,fp)
-    writeImage(ftfile,ft)
-  else:
-    gx = readImage(gcfile)
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-  plot3(gx,fl,cmin=0.25,cmax=1,cmap=jetRamp(1.0),
-      clab="Fault likelihood",png="fl")
-  plot3(gx,fp,cmin=0,cmax=90,cmap=jetFill(1.0),
-      clab="Fault strike (degrees)",cint=45,png="fp")
-  plot3(gx,ft,cmin=65,cmax=85,cmap=jetFill(1.0),
-      clab="Fault dip (degrees)",png="ft")
-
-def goThin():
-  print "goThin ..."
-  gx = readImage(gcfile)
-  if not plotOnly:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-    flt,fpt,ftt = FaultScanner.thin([fl,fp,ft])
-    writeImage(fltfile,flt)
-    writeImage(fptfile,fpt)
-    writeImage(fttfile,ftt)
-  else:
-    flt = readImage(fltfile)
-    fpt = readImage(fptfile)
-    ftt = readImage(fttfile)
-  plot3(gx,flt,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault likelihood",png="flt")
-  plot3(gx,ftt,cmin=65,cmax=85,cmap=jetFillExceptMin(1.0),
-        clab="Fault dip (degrees)",png="ftt")
-  plot3(gx,fpt,cmin=0,cmax=90,cmap=jetFillExceptMin(1.0),
-        clab="Fault strike (degrees)",cint=15,png="fpt")
-
-def goSkin():
-  print "goSkin ..."
-  gx = readImage(gcfile)
-  if not plotOnly:
-    fl = readImage(flfile)
-    fp = readImage(fpfile)
-    ft = readImage(ftfile)
-    fs = FaultSkinner()
-    zm = ZeroMask(0.1,1,1,1,gx)
-    zero,tiny=0.0,0.01
-    zm.setValue(zero,fl)
-    zm.setValue(zero,fp)
-    zm.setValue(zero,ft)
-    fs.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fs.setMaxDeltaStrike(10)
-    fs.setMaxPlanarDistance(0.2)
-    fs.setMinSkinSize(minSkinSize)
-    cells = fs.findCells([fl,fp,ft])
-    skins = fs.findSkins(cells)
-    for skin in skins:
-      skin.smoothCellNormals(4)
-    fd = FaultDisplay()
-    #skins = fd.getLowerFaults(350,skins)
-    plot3(gx,skins=skins)
-    print "total number of skins =",len(skins)
-    print "number of cells in skins =",FaultSkin.countCells(skins)
-    removeAllSkinFiles(fskbase)
-    writeSkins(fskbase,skins)
-
-def goSmooth():
-  print "goSmooth ..."
-  flstop = 0.1
-  fsigma = 8.0
-  fl = readImage(flfile)
-  gx = readImage(gcfile)
-  skins = readSkins(fskbase)
-  flt = zerofloat(n1,n2,n3)
-  fsx = FaultSkinnerX()
-  fsx.getFl(skins,flt)
-  p2,p3,ep = FaultScanner.slopes(8.0,1.0,1.0,5.0,gx)
-  gsx = FaultScanner.smooth(flstop,fsigma,p2,p3,flt,gx)
-  writeImage(gsxfile,gsx)
-  plot3(gsx,png="gsx")
-
-def goSlip():
-  print "goSlip ..."
-  gx = readImage(gcfile)
-  if not plotOnly:
-    gsx = readImage(gsxfile)
-    p2 = readImage(p2file)
-    p3 = readImage(p3file)
-    skins = readSkins(fskbase)
-    fsl = FaultSlipper(gsx,p2,p3)
-    fsl.setOffset(2.0) # the default is 2.0 samples
-    fsl.setZeroSlope(False) # True only if we want to show the error
-    fsl.computeDipSlips(skins,minThrow,maxThrow)
-    print "  dip slips computed, now reskinning ..."
-    print "  number of skins before =",len(skins),
-    fsk = FaultSkinner() # as in goSkin
-    fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
-    fsk.setMinSkinSize(minSkinSize)
-    fsk.setMinMaxThrow(minThrow,maxThrow)
-    #skins = fsk.reskin(skins)
-    print ", after =",len(skins)
-    removeAllSkinFiles(fslbase)
-    writeSkins(fslbase,skins)
-    smark = -999.999
-    s1,s2,s3 = fsl.getDipSlips(skins,smark)
-    s1,s2,s3 = fsl.interpolateDipSlips([s1,s2,s3],smark)
-    gw = fsl.unfault([s1,s2,s3],gx)
-    writeImage(gwfile,gw)
-  else:
-    gw = readImage(gwfile)
-    skins = readSkins(fslbase)
-  t1 = zerofloat(n1,n2,n3)
-  fd = FaultDisplay()
-  fd.getFs1(skins,t1)
-  plot3(gx,t1,cmin=0.001,cmax=20.0,cmap=jetFillExceptMin(1.0),
-        clab="Fault throw (samples)",png="gxs1")
-
-def goUnfaultS():
-  print "goUnfault ..."
-  gx = readImage(gcfile)
-  if not plotOnly:
-    fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,4.0,4.0)
-    et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
-
-    wp = fillfloat(1.0,n1,n2,n3)
-    skins = readSkins(fslbase)
-    fsc = FaultSlipConstraints(skins)
-    sp = fsc.screenPoints(wp)
-    mul(sp[3][0],10,sp[3][0])
-
-    uf = UnfaultS(8.0,8.0)
-    uf.setIters(100)
-    uf.setTensors(et)
-    [t1,t2,t3] = uf.findShifts(sp,wp)
-    #uf.convertShifts(40,[t1,t2,t3])
-    uf.applyShifts([t1,t2,t3],gx,fw)
-    writeImage(fwsfile,fw)
-    writeImage(sw1file,t1)
-    writeImage(sw2file,t2)
-    writeImage(sw3file,t3)
-  else :
-    gw = readImage(gwfile)
-    fw = readImage("fwt")
-  plot3(gx,png="gxuf")
-  plot3(fw,png="fwuf")
-
-def goModelSmooth():
-  n1,n2=501,501
-  rh = readImage2D(n1,n2,"Rho")
-  vp = readImage2D(n1,n2,"Vp")
-  vs = readImage2D(n1,n2,"Vs")
-  vp = div(304800.0,vp)
-  vs = div(304800.0,vs)
-  sx = readImage2DL(n1,n2,sxFile)
-  lof = LocalOrientFilter(3.0,1.0)
-  tensors = lof.applyForTensors(sx)
-  tensors.setEigenvalues(0.8,1.0)
-  lsf = LocalSmoothingFilter()
-  rh1 = zerofloat(n1,n2)
-  rh2 = zerofloat(n1,n2)
-  vp1 = zerofloat(n1,n2)
-  vp2 = zerofloat(n1,n2)
-  vs1 = zerofloat(n1,n2)
-  vs2 = zerofloat(n1,n2)
-  lsf.applySmoothS(rh,rh1)
-  lsf.applySmoothS(vp,vp1)
-  lsf.applySmoothS(vs,vs1)
-  lsf.apply(tensors,600,rh1,rh2)
-  lsf.apply(tensors,600,vp1,vp2)
-  lsf.apply(tensors,600,vs1,vs2)
-  s1,s2=Sampling(n1),Sampling(n2)
-  writeImageL("rhs600",rh2)
-  writeImageL("vps600",vp2)
-  writeImageL("vss600",vs2)
-
-  plotLogs(s1,s2,rh,wh=700,wv=600,cmin=2.0,cmax=2.7,
-    hint=2,vlab="Depth (Samples)",cbar="Density",png="Rh")
-  plotLogs(s1,s2,vp,wh=700,wv=600,cmin=2500,cmax=5000,
-    hint=2,vlab="Depth (Samples)",cbar="Vp",png="Vp")
-  plotLogs(s1,s2,vs,wh=700,wv=600,cmin=900,cmax=2300,
-    hint=2,vlab="Depth (Samples)",cbar="Vs",png="Vs")
-  plotLogs(s1,s2,rh2,wh=700,wv=600,cmin=2.0,cmax=2.7,
-    hint=2,vlab="Depth (Samples)",cbar="Density",png="Rh2")
-  plotLogs(s1,s2,vp2,wh=700,wv=600,cmin=2500,cmax=5000,
-    hint=2,vlab="Depth (Samples)",cbar="Vp",png="Vp2")
-  plotLogs(s1,s2,vs2,wh=700,wv=600,cmin=900,cmax=2300,
-    hint=2,vlab="Depth (Samples)",cbar="Vs",png="Vs2")
-
-def goLogCorrelation():
-  lmin,lmax=-350,0
-  rv2 = readTxtLogs(logFile2)
-  rv3 = readTxtLogs(logFile3)
-  rv5 = readTxtLogs(logFile5)
-  rv6 = readTxtLogs(logFile6)
-  print len(rv2[0])
-  print len(rv3[0])
-  print len(rv5[0])
-  print len(rv6[0])
-  writeImage(rvFile2,rv2) #np2 = 4450
-  writeImage(rvFile3,rv3) #np3 = 3760
-  writeImage(rvFile5,rv5) #np5 = 4367
-  writeImage(rvFile6,rv6) #np6 = 3800
-  hp = Helper()
-  las = hp.sortLogs(rv2,rv5,rv6,rv3)
-  las = copy(2500,4,3,0,0,0,las)
-  nz = len(las[0][0])
-  logs = las
-  logs = zerofloat(nz,3,3)
-  logs[0][0] = las[0][0]
-  logs[0][1] = las[0][2]
-  logs[0][2] = las[0][3]
-  logs[1][0] = las[1][0]
-  logs[1][1] = las[1][2]
-  logs[1][2] = las[1][3]
-  logs[2][0] = las[2][0]
-  logs[2][1] = las[2][2]
-  logs[2][2] = las[2][3]
-  nz = len(logs[0][0])
-  nw = len(logs[0])
-  sz = Sampling(nz,1,1)
-  sw = Sampling(nw,1,1)
-  ww = WellFlattener(lmin,lmax)
-  ww.setErrorExponent(0.125)
-  ww.setStrainMax(1.0)
-  nl = lmax-lmin+1
-  flogs = ww.flatten(logs)
-  sl = Sampling(nl)
-  s1 = Sampling(nz)
-  clab1 = "Density (g/cc)"
-  clab2 = "Vp"
-  clab3 = "Vs"
-  plotLogs(sz,sw,logs[0],cmin=2.,cmax=2.7,cbar=clab1,png="den")
-  plotLogs(sz,sw,logs[1],cmin=60,cmax=115,cbar=clab2,png="vp")
-  plotLogs(sz,sw,logs[2],cmin=140,cmax=250,cbar=clab3,png="vs")
-  vlab = "Relative geologic time"
-  plotLogs(sz,sw,flogs[0],cmin=2.,cmax=2.7,cbar=clab1,png="denf")
-  plotLogs(sz,sw,flogs[1],cmin=60,cmax=115,cbar=clab2,png="vpf")
-  plotLogs(sz,sw,flogs[2],cmin=140,cmax=250,cbar=clab3,png="vsf")
-
-def goModels():
-  rv2 = readTxtLogs(logFile2)
-  rv3 = readTxtLogs(logFile3)
-  rv5 = readTxtLogs(logFile5)
-  rv6 = readTxtLogs(logFile6)
-  print len(rv2[0])
-  print len(rv3[0])
-  print len(rv5[0])
-  print len(rv6[0])
-  writeImage(rvFile2,rv2) #np2 = 4450
-  writeImage(rvFile3,rv3) #np3 = 3760
-  writeImage(rvFile5,rv5) #np5 = 4367
-  writeImage(rvFile6,rv6) #np6 = 3800
-  hp = Helper()
-  rv21 = copy(rv2)
-  rv22 = copy(rv2)
-  rv23 = copy(rv2)
-  mul(rv21[0],1.005,rv21[0])
-  mul(rv22[0],1.000,rv22[0])
-  mul(rv23[0],0.99,rv23[0])
-
-  mul(rv21[1],1.01,rv21[1])
-  mul(rv22[1],0.98,rv22[1])
-  mul(rv23[1],0.94,rv23[1])
-
-  mul(rv21[2],1.02,rv21[2])
-  mul(rv22[2],0.96,rv22[2])
-  mul(rv23[2],0.93,rv23[2])
-  la = hp.sortLogs(rv2,rv21,rv22,rv23)
-  fx = zerofloat(4450,4)
-  nz = 4450
-  sz = Sampling(len(la[0][0]))
-  sw = Sampling(4)
-  plotLogs(sz,sw,la[0],wh=400,wv=800,cmin=2.0,cmax=2.7,
-    hint=2,vlab="Depth (Samples)",cbar="Density")
-  plotLogs(sz,sw,la[1],wh=400,wv=800,cmin=60,cmax=115,
-    hint=2,vlab="Depth (Samples)",cbar="Vp")
-  plotLogs(sz,sw,la[2],wh=400,wv=800,cmin=140,cmax=250,
-    hint=2,vlab="Depth (Samples)",cbar="Vs")
-  lar = hp.resampleLogs(501,7,la)
-  rvs = FakeData.densityAndVelocity2d(0.0,lar)
-  lof = LocalOrientFilter(3.0,1.0)
-  tensors = lof.applyForTensors(rvs[0])
-  tensors.setEigenvalues(0.2,1.0)
-  lsf = LocalSmoothingFilter()
-  #lsf.applySmoothS(rvs[0],rvs[0])
-  lsf.apply(tensors,6,rvs[0],rvs[0])
-  lsf.apply(tensors,6,rvs[1],rvs[1])
-  lsf.apply(tensors,6,rvs[2],rvs[2])
-  s1,s2=Sampling(501),Sampling(501)
-  plotLogs(s1,s2,rvs[0],wh=700,wv=600,cmin=2.0,cmax=2.7,
-    hint=2,vlab="Depth (Samples)",cbar="Density",png="Rho")
-  plotLogs(s1,s2,rvs[1],wh=700,wv=600,cmin=70,cmax=115,
-    hint=2,vlab="Depth (Samples)",cbar="Vp",png="Vp")
-  plotLogs(s1,s2,rvs[2],wh=700,wv=600,cmin=140,cmax=250,
-    hint=2,vlab="Depth (Samples)",cbar="Vs",png="Vs")
-  writeImage("Rho",rvs[0])
-  writeImage("Vp",rvs[1])
-  writeImage("Vs",rvs[2])
-def goInterpolation():
-  n1,n2,nt=501,501,15
-  s1,s2=Sampling(n1),Sampling(n2)
-  sx = readImage2D(n1,n2,sxFile)
-  ra = readImage3D(n1,4,nt,raFile)
-  rb = readImage3D(n1,4,nt,rbFile)
-  rp = readImage3D(n1,4,nt,rpFile)
-  x2s = [60,180,320,420]
-  if not plotOnly:
-    lof = LocalOrientFilter(3.0,1.0)
-    tensors = lof.applyForTensors(sx)
-    tensors.setEigenvalues(0.001,1.0)
-    sa = zerofloat(n1,n2,nt)
-    sb = zerofloat(n1,n2,nt)
-    sp = zerofloat(n1,n2,nt)
-    fnull = -1.0
-    for it in range(nt):
-      fa,x1,x2=getPoints(ra[it],x2s)
-      fb,x1,x2=getPoints(rb[it],x2s)
-      fp,x1,x2=getPoints(rp[it],x2s)
-      pa = goSimpleGridder(s1,s2,fa,x1,x2,fnull)
-      pb = goSimpleGridder(s1,s2,fb,x1,x2,fnull)
-      pp = goSimpleGridder(s1,s2,fp,x1,x2,fnull)
-      qa = goBlendGridder(tensors,pa,fa,x1,x2,fnull)
-      qb = goBlendGridder(tensors,pb,fb,x1,x2,fnull)
-      qp = goBlendGridder(tensors,pp,fp,x1,x2,fnull)
-      sa[it],sb[it],sp[it] = qa,qb,qp
-    writeImageL(saFile,sa)
-    writeImageL(sbFile,sb)
-    writeImageL(spFile,sp)
-  else:
-    sa = readImage3D(n1,n2,nt,saFile)
-    sb = readImage3D(n1,n2,nt,sbFile)
-    sp = readImage3D(n1,n2,nt,spFile)
-  kt = 13
-  fa,x1,x2=getPoints(ra[kt],x2s)
-  fb,x1,x2=getPoints(rb[kt],x2s)
-  fp,x1,x2=getPoints(rp[kt],x2s)
-  plot2(fa,x1,x2,sx,s1,s2,gmin=0.5,gmax=1,label="Aas",png="ra")
-  plot2(fb,x1,x2,sx,s1,s2,gmin=-0.8,gmax=-0.1,label="Abs",png="rb")
-  plot2(fp,x1,x2,sx,s1,s2,gmin=-1,gmax=1,label="Aps",png="rp")
-  plot2(fa,x1,x2,sx,s1,s2,g=sa[kt],gmin=0.5,gmax=1,label="Aas",png="rai")
-  plot2(fb,x1,x2,sx,s1,s2,g=sb[kt],gmin=-0.8,gmax=-0.1,label="Abs",png="rbi")
-  plot2(fp,x1,x2,sx,s1,s2,g=sp[kt],gmin=-1,gmax=1,label="Aps",png="rpi")
-
-def getPoints(rx,x2s):
-  n2 = len(rx)
-  n1 = len(rx[0])
-  fx = zerofloat(n1*n2)
-  x1 = zerofloat(n1*n2)
-  x2 = zerofloat(n1*n2)
-  for i2 in range(n2):
-    for i1 in range(n1):
-      x1[n1*i2+i1] = i1
-      x2[n1*i2+i1] = x2s[i2]
-      fx[n1*i2+i1] = rx[i2][i1]
-  return fx,x1,x2
-
-def goBlendGridder(tensors,px,fx,x1,x2,fnull):
-  smooth = 100.0
-  bg = BlendedGridder2(fx,x1,x2)
-  bg.setSmoothness(smooth)
-  bg.setTimeMax(FLT_MAX)
-  bg.setTensors(tensors)
-  dx = bg.gridNearest(fnull,px)
-  qx = copy(px)
-  bg.gridBlended(dx,px,qx)
-  return qx
-
-def goSimpleGridder(s1,s2,fx,x1,x2,fnull):
-  sg = SimpleGridder2(fx,x1,x2)
-  sg.setNullValue(fnull)
-  return sg.grid(s1,s2)
 
 def like(x):
   n2 = len(x)
@@ -537,6 +146,10 @@ def gain(x):
 
 #############################################################################
 # graphics
+gray = ColorMap.GRAY
+jet = ColorMap.JET
+bwr = ColorMap.BLUE_WHITE_RED
+rwb = ColorMap.RED_WHITE_BLUE
 #############################################################################
 # plotting
 backgroundColor = Color.WHITE
@@ -631,6 +244,34 @@ def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
   ss.add(ps)
   pg.setStates(ss)
   return pg
+
+def setPointGroup(k1,k2,k3,size):
+  np  = len(k1)
+  xyz = zerofloat(np*3)
+  rgb = zerofloat(np*3)
+  ki = 0
+  for i in range(np):
+    xyz[ki  ] = k3[i]
+    xyz[ki+1] = k2[i]
+    xyz[ki+2] = k1[i]
+    rgb[ki  ]  = 0#1/225 
+    rgb[ki+1]  = 1#225/225 
+    rgb[ki+2]  = 0#1/225 
+    ki = ki+3
+  pg = PointGroup(size,xyz,rgb);
+  states = StateSet();
+  cs = ColorState();
+  cs.setColor(Color.GREEN);
+  states.add(cs);
+  lms = LightModelState();
+  lms.setTwoSide(True);
+  states.add(lms);
+  ms = MaterialState();
+  ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE);
+  ms.setShininess(100.0);
+  states.add(ms);
+  pg.setStates(states);
+  return pg;
 
 def plot1s(s1,ys,rs=None,vmin=None,vmax=None,color=Color.RED,
   hlabel="Seismic traces",vlabel="time (ms)",png=None):
@@ -755,14 +396,12 @@ def makePointSets(cmap,f,x1,x2):
     il += 1
   return fs,x1s,x2s
 
-def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          hs=None,skins=None,smax=0.0,slices=None, htgs=None,
-          et=None,size=20,samples=None,png=None):
-  n3 = len(f)
-  n2 = len(f[0])
-  n1 = len(f[0][0])
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
-  d1,d2,d3=s1.getDelta(),s2.getDelta(),s3.getDelta()
+def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+          slices=None,png=None):
+  n1,n2,n3 = s1.count,s2.count,s3.count
+  d1,d2,d3 = s1.delta,s2.delta,s3.delta
+  f1,f2,f3 = s1.first,s2.first,s3.first
+  l1,l2,l3 = s1.last,s2.last,s3.last
   sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
   cbar = None
   if g==None:
@@ -772,14 +411,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-1.,1.) # use for subset plots
+      ipg.setClips(-1.5,1.5) # use for subset plots
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-1.,1.)
+    ipg.setClips1(-1.5,1.5)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -790,186 +428,30 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
       ipg.addColorMap2Listener(cbar)
     sf.world.addChild(ipg)
   if cbar:
-    cbar.setWidthMinimum(137)
-  if htgs:
-    for htg in htgs:
-      sf.world.addChild(htg)
-  if hs:
-    for hi in hs:
-      tg = TriangleGroup(True,s3,s2,hi)
-      tg.setColor(Color.CYAN)
-      sf.world.addChild(tg)
-  if skins:
-    sg = Group()
-    ss = StateSet()
-    lms = LightModelState()
-    lms.setLocalViewer(True)
-    lms.setTwoSide(True)
-    ss.add(lms)
-    ms = MaterialState()
-    ms.setSpecular(Color.GRAY)
-    ms.setShininess(100.0)
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    if not smax:
-      ms.setEmissiveBack(Color(0.0,0.0,0.5))
-    ss.add(ms)
-    sg.setStates(ss)
-    size = 2.0
-    ct = 0
-    for skin in skins:
-      if smax>0.0: # show fault throws
-        cmap = ColorMap(0.0,smax,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
-      else: # show fault likelihood
-        cmap = ColorMap(0.0,1.0,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
-      qg = QuadGroup(xyz,uvw,rgb)
-      qg.setStates(None)
-      sg.addChild(qg)
-    sf.world.addChild(sg)
-  ipg.setSlices(106,138,59)
-  #ipg.setSlices(92,140,59)
-  if et:
-    addTensorsInImage(ipg.getImagePanel(Axis.X),et,size)
-    addTensorsInImage(ipg.getImagePanel(Axis.Y),et,size)
-    addTensorsInImage(ipg.getImagePanel(Axis.Z),et,size)
-  if samples:
-    fx,x1,x2,x3 = samples
-    vmin,vmax,vmap= 6000,16000,ColorMap.JET
-    pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
-    sf.world.addChild(pg)
-  if cbar:
-    sf.setSize(887,700)
-  else:
-    sf.setSize(750,700)
-  vc = sf.getViewCanvas()
-  vc.setBackground(Color.WHITE)
-  radius = 0.48*sqrt(n1*n1+n2*n2+n3*n3)
-  zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
-  ov = sf.getOrbitView()
-  ov.setAxesScale(1.0,1.0,zscale)
-  ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
-  ov.setAzimuthAndElevation(120.0,25.0)
-  ov.setTranslate(Vector3(0.02,0.16,-0.27))
-  ov.setScale(1.25)
-  sf.setVisible(True)
-  if png and pngDir:
-    sf.paintToFile(pngDir+png+".png")
-    if cbar:
-      cbar.paintToPng(720,1,pngDir+png+"cbar.png")
-
-def plot3c(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
-          skins=None,smax=0.0,slices=None, htgs=None,hz=None,mk=-1,
-          et=None,w=True,samples=None,png=None):
-  n3 = len(f)
-  n2 = len(f[0])
-  n1 = len(f[0][0])
-  s1,s2,s3=Sampling(n1),Sampling(n2),Sampling(n3)
-  d1,d2,d3=s1.getDelta(),s2.getDelta(),s3.getDelta()
-  sf = SimpleFrame(AxesOrientation.XRIGHT_YOUT_ZDOWN)
-  cbar = None
-  if g==None:
-    ipg = sf.addImagePanels(s1,s2,s3,f)
-    if cmap!=None:
-      ipg.setColorModel(cmap)
-    if cmin!=None and cmax!=None:
-      ipg.setClips(cmin,cmax)
-    else:
-      #ipg.setClips(-2.0,2.0)
-      ipg.setClips(-2.0,1.5) # use for subset plots
-    if clab:
-      cbar = addColorBar(sf,clab,cint)
-      ipg.addColorMapListener(cbar)
-  else:
-    ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-2.0,1.5)
-    if cmin!=None and cmax!=None:
-      ipg.setClips2(cmin,cmax)
-    if cmap==None:
-      cmap = jetFill(0.8)
-    ipg.setColorModel2(cmap)
-    if clab:
-      cbar = addColorBar(sf,clab,cint)
-      ipg.addColorMap2Listener(cbar)
-    sf.world.addChild(ipg)
-  if cbar:
-    cbar.setWidthMinimum(85)
-  if htgs:
-    for htg in htgs:
-      sf.world.addChild(htg)
-  if et:
-    tv = TensorView()
-    if w:
-      hs = tv.applyForSegmentsW(2,et,hz)
-    else:
-      hs = tv.applyForSegmentsV(2,et,hz,skins)
-    cp = ColorMap(0,1,ColorMap.JET)
-    vi = fillfloat(0.9,6)
-    cb = cp.getRgbFloats(vi)
-    for hi in hs:
-      lg = LineGroup(hi,cb)
-      ss = StateSet()
-      lg.setStates(ss)
-      ls = LineState()
-      ls.setWidth(8)
-      ls.setSmooth(False)
-      ss.add(ls)
-      sf.world.addChild(lg)
-  '''
-  if skins:
-    sg = Group()
-    ss = StateSet()
-    lms = LightModelState()
-    lms.setLocalViewer(True)
-    lms.setTwoSide(True)
-    ss.add(lms)
-    ms = MaterialState()
-    ms.setSpecular(Color.GRAY)
-    ms.setShininess(100.0)
-    ms.setColorMaterial(GL_AMBIENT_AND_DIFFUSE)
-    if not smax:
-      ms.setEmissiveBack(Color(0.0,0.0,0.5))
-    ss.add(ms)
-    sg.setStates(ss)
-    size = 2.0
-    for skin in skins:
-      if smax>0.0: # show fault throws
-        cmap = ColorMap(0.0,smax,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForThrow(size,cmap,False)
-      else: # show fault likelihood
-        cmap = ColorMap(0.0,1.0,ColorMap.JET)
-        xyz,uvw,rgb = skin.getCellXyzUvwRgbForLikelihood(size,cmap,False)
-      qg = QuadGroup(xyz,uvw,rgb)
-      qg.setStates(None)
-      sg.addChild(qg)
-    sf.world.addChild(sg)
-  '''
-  ipg.setSlices(n1,138,59)
-  #ipg.setSlices(92,140,59)
+    cbar.setWidthMinimum(100)
   if hz:
-    sd = SurfaceDisplay()
-    ts = sd.horizonWithAmplitude(mk,[cmin,cmax],hz,f)
-    tg = TriangleGroup(True,ts[0],ts[1])
+    tg=TriangleGroup(True,s3,s2,hz[0],hz[1],hz[2],hz[3])
     sf.world.addChild(tg)
-  if samples:
-    fx,x1,x2,x3 = samples
-    vmin,vmax,vmap= 6000,16000,ColorMap.JET
-    pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
+  if ks:
+    pg = setPointGroup(ks[0],ks[1],ks[2],10)
     sf.world.addChild(pg)
+  ipg.setSlices(n1-1,n2-1,0)
   if cbar:
-    sf.setSize(852,700)
+    sf.setSize(967,720)
   else:
-    sf.setSize(750,700)
+    sf.setSize(850,720)
   vc = sf.getViewCanvas()
   vc.setBackground(Color.WHITE)
-  radius = 0.48*sqrt(n1*n1+n2*n2+n3*n3)
-  zscale = 0.80*max(n2*d2,n3*d3)/(n1*d1)
+  radius = 0.5*sqrt(n1*n1+n2*n2+n3*n3)
   ov = sf.getOrbitView()
+  zscale = 0.5*max(n2*d2,n3*d3)/(n1*d1)
   ov.setAxesScale(1.0,1.0,zscale)
-  ov.setWorldSphere(BoundingSphere(0.5*n1,0.4*n2,0.4*n3,radius))
-  ov.setAzimuthAndElevation(115.0,40.0)
-  ov.setTranslate(Vector3(0.02,0.16,-0.3))
-  ov.setScale(1.5)
+  ov.setScale(1.6)
+  ov.setScale(1.4)
+  ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
+  ov.setTranslate(Vector3(-0.08,0.00,0.05))
+  ov.setTranslate(Vector3( 0.02,0.00,0.05))
+  ov.setAzimuthAndElevation(130.0,45.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")
