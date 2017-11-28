@@ -51,8 +51,8 @@ minThrow = 0.0
 maxThrow = 30.0
 
 def main(args):
-  goSlopes()
-  #goHorizonOne()
+  #goSlopes()
+  goHorizonOne()
   #goScan()
   #goThin()
   #goSkin()
