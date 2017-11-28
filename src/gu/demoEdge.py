@@ -53,7 +53,7 @@ ncfile = "nc"
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
-minTheta,maxTheta = 70,89
+minTheta,maxTheta = 75,90
 sigmaPhi,sigmaTheta = 4,30
 minTheta,maxTheta = 75,89
 sigmaPhi,sigmaTheta = 4,20
@@ -71,8 +71,8 @@ maxThrow = 15.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
+plotOnly = False
 pngDir = None
-plotOnly = True
 pngDir = "../../../png/gu/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -80,7 +80,8 @@ pngDir = "../../../png/gu/"
 def main(args):
   #goSeisData()
   #goHorizons()
-  goHorizons2D()
+  #goHorizons2D()
+  goTimeSlices()
   #goSlopeVectors()
   #goKaustEdge()
   #goSlopes()
@@ -120,10 +121,10 @@ def goPlaneWaveDestruction():
     pd = div(pd,max(pd));
     writeImage(pdfile,pd)
   else:
-    pd = readImage(pdfile)
-    ke = KaustEdge()
-    pd = ke.scale(pd)
-    writeImage(pdfile,pd)
+    pd = readImage(pdfile+"12")
+    #ke = KaustEdge()
+    #pd = ke.scale(pd)
+    #writeImage(pdfile,pd)
   plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),png="pd")
   '''
   plot3(gx,pd,cmin=0.05,cmax=0.2,cmap=jetRamp(1.0),
@@ -166,59 +167,83 @@ def goKaustEdgeEnhance():
   plot3(gx,kl,cmin=0.01,cmax=0.2,cmap=jetRamp(1.0),
         clab="Fault likelihood",png="kl")
 
+def goTimeSlices():
+  gx = readImage(gxfile)
+  kl = readImage(kltfile+"20")
+  hd = HorizonDisplay()
+  for k1 in range(640,740,20):
+    gx1 = hd.getTimeSlice(k1,gx)
+    kl1 = hd.getTimeSlice(k1,kl)
+    gx1 = mul(gx1,-1)
+    gx1 = hd.flip1(gx1)
+    kl1 = hd.flip1(kl1)
+    ke = KaustEdge()
+    kl1 = ke.scale(kl1)
+    plot2(gx1,neareast=True,png=str(k1)+"amplitude")
+    plot2(gx1,kl1,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+            neareast=True,png=str(k1)+"fracture")
+
 def goHorizons2D():
-  h70file = "shb5_hor70"
-  h74file = "shb5_hor74"
-  h76file = "shb5_hor76"
-  h80file = "shb5_hor80"
-  #h83file = "shb5_hor83"
-  #h90file = "shb5_hor90"
-  hs = [h70file,h74file,h76file,h80file]
+  #h70file = "shb5_hor70"
+  h74file = "ShunB5_Hor_T74"
+  h76file = "ShunB5_Hor_T76"
+  h80file = "ShunB5_Hor_T80"
+  h83file = "ShunB5_Hor_T83"
+  hs = [h74file,h76file,h80file,h83file]
   if not plotOnly:
     gx = readImage(gxfile)
-    kl = readImage(kltfile)
-    pd = readImage(pdfile)
-    gx = mul(gx,-1)
+    kl = readImage(kltfile+"20")
+    ke = KaustEdge()
+    kl = ke.scale(kl)
     hd = HorizonDisplay()
     for hi in hs:
       hs = readHorizon(hi)
+      print max(hs)
+      print min(hs)
       sa = hd.amplitudeOnHorizon(gx,hs)
       sk = hd.amplitudeOnHorizon(kl,hs)
-      sd = hd.amplitudeOnHorizon(pd,hs)
-      writeImage(hi+"a",sa)
-      writeImage(hi+"k",sk)
-      writeImage(hi+"d",sd)
+      sa = mul(sa,-1)
+      writeHorizon(hi+"a",sa)
+      writeHorizon(hi+"k",sk)
+      plot2(sa,neareast=True,png=hi+"amplitude")
+      plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+            neareast=True,png=hi+"fracture")
   else:
     for hi in hs:
       sa = readHorizon(hi+"a")
-      sd = readHorizon(hi+"d")
       sk = readHorizon(hi+"k")
       plot2(sa,neareast=True,png=hi+"amplitude")
-      plot2(sa,sd,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
-            neareast=True,png=hi+"diffraction")
       plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
             neareast=True,png=hi+"fracture")
 def goHorizons():
   gx = readImage(gxfile)
-  kl = readImage(kltfile)
+  #kl = readImage(kltfile)
   gx = mul(gx,-1)
   h70file = "shb5_hor70"
+  h70file = "ShunB5_Hor_T70"
   h74file = "shb5_hor74"
+  h74file = "ShunB5_Hor_T74"
   h76file = "shb5_hor76"
+  h76file = "ShunB5_Hor_T76"
   h80file = "shb5_hor80"
+  h80file = "ShunB5_Hor_T80"
   h83file = "shb5_hor83"
+  h83file = "ShunB5_Hor_T83"
   h90file = "shb5_hor90"
   hs = [h70file,h74file,h76file,h80file]
   hd = HorizonDisplay()
-  hs = readHorizon(h80file)
-  ha = readHorizon(h80file+'a')
-  hk = readHorizon(h80file+'k')
+  hs = readHorizon(h83file)
+  ha = zerofloat(n2,n3)
+  print min(hs)
+  print max(hs)
+  #ha = readHorizon(h70file+'a')
+  #hk = readHorizon(h80file+'k')
   xyza,rgba=hd.buildTrigs(s3,s2,n1,-3,3,hs,ha)
-  xyzk,rgbk=hd.buildTrigs(s3,s2,n1,0.0,1,hs,hk)
+  #xyzk,rgbk=hd.buildTrigs(s3,s2,n1,0.0,1,hs,hk)
   tga=TriangleGroup(True,xyza,rgba)
-  tgk=TriangleGroup(True,xyzk,rgbk)
+  #tgk=TriangleGroup(True,xyzk,rgbk)
   plot3(gx,tgs=tga,k1=n1-1,cmin=-3,cmax=3)
-  plot3(kl,tgs=tgk,k1=n1-1,cmin=0.0,cmax=1)
+  #plot3(kl,tgs=tgk,k1=n1-1,cmin=0.0,cmax=1)
 
   '''
   for hi in hs:
@@ -333,13 +358,20 @@ def goThin():
     klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
     writeImage(kltfile+"20",klt)
   else:
-    klt = readImage(kltfile)
+    klt1 = readImage(kltfile+"420")
+    #klt2 = readImage(kltfile+"20")
     #ke = KaustEdge()
-    #klt = ke.scale(klt)
+    #klt2 = ke.scale(klt2)
     #writeImage(kltfile,klt)
+    klt1 = pow(klt1,0.5)
+  plot3(gx)
+  plot3(gx,klt1,k1=500,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
+  #plot3(gx,klt2,k1=500,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
+  '''
   for k1 in range(705,905,10):
     plot3(gx,klt,k1=k1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
           png="f"+str(k1))
+  '''
 
 def goStat():
   def plotStat(s,f,slabel=None):
@@ -514,8 +546,8 @@ def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   n1,n2=len(f[0]),len(f)
   s1,s2=Sampling(n1,1,388),Sampling(n2,1,1508)
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
-  panel.setVInterval(50)
-  panel.setHInterval(50)
+  panel.setVInterval(100)
+  panel.setHInterval(100)
   panel.setHLabel("Crossline (traces)")
   panel.setVLabel("Inline (traces)")
   pxv = panel.addPixels(0,0,s1,s2,f);
@@ -526,6 +558,8 @@ def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   else:
     if cmin and cmax:
       pxv.setClips(cmin,cmax)
+    else:
+      pxv.setClips(-3,3)
   if g:
     pv = panel.addPixels(s1,s2,g)
     if neareast:
@@ -545,11 +579,12 @@ def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   frame.setVisible(True);
   #frame.setSize(1400,700)
   frame.setSize(round(n2*1),round(n1*1))
-  frame.setFontSize(12)
+  frame.setFontSize(16)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 
-def plot3(f,g=None,hz=None,tgs=None,k1=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
+def plot3(f,g=None,hz=None,tgs=None,k1=500,cmin=None,
+        cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,
           links=False,curve=False,trace=False,png=None):
   n1 = len(f[0][0])

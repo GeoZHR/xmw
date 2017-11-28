@@ -547,6 +547,32 @@ public class FakeData {
     return new float[][][]{rh,vp,vs};
   }
 
+  public static float[][][] densityAndVelocity2dx(double noise, float[][][] rv) {
+    int n1 = 273;
+    int n2 = 501;
+    //enhanceContrast(rv);
+    float[][][] p = densityAndVelocityFromLogs(n1,n2,rv);
+    float[][][] q = densityAndVelocityFromLogs(n1,n2,rv);
+    Sinusoidal2 fold = new Sinusoidal2(0.0f,0.04f,2.0e-2f,5.0e-5f);
+    VerticalShear2 shear = new VerticalShear2(new Linear1(0.0f,0.1f));
+    float[][] rh = apply(fold,p[0]);
+    rh = combine(n1/3,q[0],rh);
+    rh = apply(shear,rh);
+    rh = combine(n1/6,q[0],rh);
+
+    float[][] vp = apply(fold,p[1]);
+    vp = combine(n1/3,q[1],vp);
+    vp = apply(shear,vp);
+    vp = combine(n1/6,q[1],vp);
+
+    float[][] vs = apply(fold,p[2]);
+    vs = combine(n1/3,q[2],vs);
+    vs = apply(shear,vs);
+    vs = combine(n1/6,q[2],vs);
+    return new float[][][]{rh,vp,vs};
+  }
+
+
   private static void enhanceContrast(float[][][] rv) {
     int n3 = rv.length;
     int n2 = rv[0].length;

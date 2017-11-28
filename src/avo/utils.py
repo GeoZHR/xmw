@@ -27,6 +27,7 @@ def setupForSubset(name):
     print "setupForSubset: fake"
     seismicDir = _datdir+"fake/"
     n1,n2,n3 = 121,152,153
+    n1,n2,n3 = 273,1001,153
     s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   elif name=="tp":
     """ subset of Teapot dome """

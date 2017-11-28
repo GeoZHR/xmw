@@ -42,9 +42,64 @@ plotOnly = False
 # can comment out earlier parts that have already written results to files.
 def main(args):
   #goLogCorrelation()
-  goModels()
+  #goModels()
   #goInterpolation()
   #goModelSmooth()
+  goModelsWithOneLog()
+
+def goModelsWithOneLog():
+  lgs = readImage2DL(n1,3,"Logs")
+  #div(304800,lgs[0],lgs[0])
+  #div(304800,lgs[1],lgs[1])
+
+  print len(lgs[0])
+  la = zerofloat(n1,4,3)
+  hp = Helper()
+  rv21 = zerofloat(n1,3)
+  rv22 = zerofloat(n1,3)
+  rv23 = zerofloat(n1,3)
+  mul(lgs[2],1.005,la[0][0])
+  mul(lgs[2],1.000,la[0][1])
+  mul(lgs[2], 0.99,la[0][2])
+  mul(lgs[2], 0.96,la[0][3])
+
+  mul(lgs[0],1.01,la[1][0])
+  mul(lgs[0],0.98,la[1][1])
+  mul(lgs[0],0.94,la[1][2])
+  mul(lgs[0],0.90,la[1][3])
+
+  mul(lgs[1],1.02,la[2][0])
+  mul(lgs[1],0.96,la[2][1])
+  mul(lgs[1],0.93,la[2][2])
+  mul(lgs[1],0.90,la[2][3])
+  nz = 273
+  sz = Sampling(len(la[0][0]))
+  sw = Sampling(4)
+  plotLogs(sz,sw,la[0],wh=400,wv=800,cmin=2.0,cmax=2.7,
+    hint=2,vlab="Depth (Samples)",cbar="Density")
+  plotLogs(sz,sw,la[1],wh=400,wv=800,cmin=2500,cmax=5000,
+    hint=2,vlab="Depth (Samples)",cbar="Vp")
+  plotLogs(sz,sw,la[2],wh=400,wv=800,cmin=900,cmax=2300,
+    hint=2,vlab="Depth (Samples)",cbar="Vs")
+  rvs = FakeData.densityAndVelocity2dx(0.0,la)
+  lof = LocalOrientFilter(4.0,2.0)
+  tensors = lof.applyForTensors(rvs[0])
+  tensors.setEigenvalues(0.1,1.0)
+  lsf = LocalSmoothingFilter()
+  #lsf.applySmoothS(rvs[0],rvs[0])
+  lsf.apply(tensors,6,rvs[0],rvs[0])
+  lsf.apply(tensors,6,rvs[1],rvs[1])
+  lsf.apply(tensors,6,rvs[2],rvs[2])
+  s1,s2=Sampling(273),Sampling(501)
+  plotLogs(s1,s2,rvs[0],wh=700,wv=600,cmin=2.0,cmax=2.7,
+    hint=2,vlab="Depth (Samples)",cbar="Density",png="Rho")
+  plotLogs(s1,s2,rvs[1],wh=700,wv=600,cmin=2500,cmax=5000,
+    hint=2,vlab="Depth (Samples)",cbar="Vp",png="Vp")
+  plotLogs(s1,s2,rvs[2],wh=700,wv=600,cmin=900,cmax=2300,
+    hint=2,vlab="Depth (Samples)",cbar="Vs",png="Vs")
+  writeImage("Rho",rvs[0])
+  writeImage("Vp",rvs[1])
+  writeImage("Vs",rvs[2])
 
 def goModelSmooth():
   n1,n2=501,501

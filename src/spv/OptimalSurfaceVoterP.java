@@ -75,6 +75,19 @@ public class OptimalSurfaceVoterP {
     updateSmoothingFilters();
   }
 
+  public float[][][] byteToFloat(byte[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    int n1 = gx[0][0].length;
+    float[][][] gf = new float[n3][n2][n1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gf[i3][i2][i1] = (float)gx[i3][i2][i1];
+    }}}
+    return gf;
+  }
+
   public float[][][][] applyVoting(int d, float fm,
     float[][][] ft, float[][][] pt, float[][][] tt) {
     final int n3 = ft.length;
@@ -200,6 +213,17 @@ public class OptimalSurfaceVoterP {
     return new float[][][][]{fp,ft};
   }
 
+  public void getFaultValues(FaultSkin[] skins, byte[][][] fs) {
+    byte k = 0;
+    for(FaultSkin skin:skins) {
+      k++;
+      for(FaultCell cell:skin) {
+        int i1 = cell.i1;
+        int i2 = cell.i2;
+        int i3 = cell.i3;
+        fs[i3][i2][i1] = k;
+    }}
+  }
     /**
    * Thins fault images to include only ridges in fault likelihoods.
    * After thinning, may be only one voxel wide. Thinned fault strikes and

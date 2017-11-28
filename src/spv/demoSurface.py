@@ -28,8 +28,8 @@ fptfile = "fpt" # fault strike thinned
 fttfile = "ftt" # fault dip thinned
 fskfile = "skin"
 
-pngDir = None
 pngDir = getPngDir()
+pngDir = None
 plotOnly = False
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -38,12 +38,12 @@ minPhi,maxPhi = 0,360
 sigmaPhi,sigmaTheta=3,6
 
 def main(args):
-  #goUvxBox()
+  goUvxBox()
   #goPlanar()
-  goSurface()
+  #goSurface()
   #goTranspose()
 def goUvxBox():
-  gx = readImage3D("f3draw")
+  gx = readImage3DX(462,951,651,"f3draw")
   c1,c2,c3=230,632,162
   u = [0,-0.5*sqrt(2),-0.5*sqrt(2)]
   v = [1,0,0]
@@ -53,7 +53,9 @@ def goUvxBox():
   gx = os.transpose21(gb)
   gx = gain(gx)
   gx = copy(155,101,101,145,0,0,gx)
-  writeImage(gxfile,gx)
+  #writeImage(gxfile,gx)
+  print min(gx)
+  print max(gx)
   plot3(gx)
 def goPlanar():
   gx = readImage3D(gxfile)

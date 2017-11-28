@@ -137,6 +137,25 @@ public class KaustEdge {
     return ds;
   }
 
+  public float[][] scale(float[][] fl) {
+    final int n2 = fl.length;
+    final int n1 = fl[0].length;
+    final float[][] fs = new float[n2][n1];
+    Parallel.loop(n2,new Parallel.LoopInt() {
+    public void compute(int i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float fli = fl[i2][i1];
+      fli  = min(0.1f,fli);
+      fli *= 10f;
+      fli *= fli;
+      fli *= fli;
+      fs[i2][i1] = fli;
+    }
+    }});
+    return fs;
+  }
+
+
   public float[][][] scale(float[][][] fl) {
     final int n3 = fl.length;
     final int n2 = fl[0].length;

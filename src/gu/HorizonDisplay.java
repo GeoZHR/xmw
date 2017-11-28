@@ -17,6 +17,43 @@ import java.util.*;
 public class HorizonDisplay {
  
 
+  public float[][] getTimeSlice(int k1, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    float[][] g1 = new float[n3][n2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      g1[i3][i2] = gx[i3][i2][k1];
+    }}
+    return g1;
+  }
+
+  public float[][] getTimeSliceW(int k1, int d1, float[][][] gx) {
+    int n3 = gx.length;
+    int n2 = gx[0].length;
+    float[][] g1 = new float[n3][n2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      float c = 0f;
+      for (int i1=k1-d1; i1<=k1+d1; i1++) {
+        g1[i3][i2] = gx[i3][i2][k1];
+      }
+    }}
+    return g1;
+  }
+
+
+  public float[][] flip1(float[][] gx) {
+    int n2 = gx.length;
+    int n1 = gx[0].length;
+    float[][] gf = new float[n2][n1];
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      gf[i2][i1] = gx[i2][n1-i1-1];
+    }}
+    return gf;
+  }
+
   public float[][][] heightRgb(
     ColorMap mp, float[][] sf) {
     int n3 = sf.length;

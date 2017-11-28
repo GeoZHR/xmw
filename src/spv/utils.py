@@ -162,6 +162,19 @@ def setupForSubset(name):
     #f1,f2,f3 = 0.472,0.0,0.0 # = 0.000,0.000,0.000
     f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  elif name=="anadarko":
+    print "setupForSubset: anadarko"
+    pngDir = _pngdir+"3d/anadarko/"
+    seismicDir = _datdir+"fault/3d/anadarko/"
+    n1,n2,n3 = 640,480,333
+    n1,n2,n3 = 333,480,640
+    d1,d2,d3 = 1.0,1.0,1.0 
+    #j1,j2,j3 = 344,0,0
+    #d1,d2,d3 = 0.004,0.025,0.024999 # (s,km,km)
+    #f1,f2,f3 = 0.472,0.0,0.0 # = 0.000,0.000,0.000
+    f1,f2,f3 = 0.0,0.0,0.0 # = 0.000,0.000,0.000
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+
   elif name=="xue":
     """ xue """
     print "setupForSubset: xue"
@@ -297,6 +310,18 @@ def readImageX(m1,m2,basename):
   ais.close()
   return image
 
+def readImage3DX(m1,m2,m3,basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(m1,m2,m3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+
 def readImage3D(basename):
   """ 
   Reads an image from a file with specified basename
@@ -308,7 +333,7 @@ def readImage3D(basename):
   ais.close()
   return image
 
-def readImageL(basename):
+def readImage3DL(basename):
   """ 
   Reads an image from a file with specified basename
   """
@@ -316,6 +341,17 @@ def readImageL(basename):
   image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
   ais.readFloats(image)
+  ais.close()
+  return image
+
+def readImageL(basename):
+  """ 
+  Reads an image from a file with specified basename
+  """
+  fileName = seismicDir+basename+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readInts(image)
   ais.close()
   return image
 
@@ -360,6 +396,7 @@ def writeImage(basename,image):
   fileName = seismicDir+basename+".dat"
   aos = ArrayOutputStream(fileName)
   aos.writeFloats(image)
+  #aos.writeBytes(image)
   aos.close()
   return image
 
