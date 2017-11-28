@@ -19,6 +19,7 @@ from edu.mines.jtk.util.ArrayMath import *
 
 from sso import *
 from ipf import *
+from util import *
 from gu import *
 
 #############################################################################

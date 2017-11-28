@@ -109,12 +109,12 @@ def main(args):
   #goPSS()
   #goFaultSlopes()
   #goFaultSurfer()
-  goSkinMerge()
+  #goSkinMerge()
   #goFillHoles()
   #goTest()
   #goTest1()
   #goSkinBig()
-  #goFlatten()
+  goFlatten()
   #goResults()
   #fw = readImage("gx")
   '''
@@ -673,6 +673,7 @@ def goHorizonExtraction3():
 def goFlatten():
   fx = readImage("gw150")
   #fx = readImage("gx")
+  '''
   p2 = zerofloat(n1,n2,n3)
   p3 = zerofloat(n1,n2,n3)
   ep = zerofloat(n1,n2,n3)
@@ -693,7 +694,6 @@ def goFlatten():
   gt = gain(gt)
   plot3(fx)
   plot3(gt)
-  '''
 
 
 def goFlattenC():

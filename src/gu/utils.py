@@ -68,6 +68,15 @@ def readHorizon(name):
   ais.readFloats(image)
   ais.close()
   return image
+def writeHorizon(name):
+  """ 
+  Reads a horizon from a file with specified name.
+  """
+  fileName = horizonDir+name+".dat"
+  aos = ArrayOutputStream(fileName)#,ByteOrder.LITTLE_ENDIAN)
+  aos.writeFloats(image)
+  aos.close()
+  return image
 
 def writeHorizon(name,image):
   """ 
