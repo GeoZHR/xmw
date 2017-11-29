@@ -16,8 +16,8 @@ _datdir = "../../../data/seis/gu/"
 seismicDir = _datdir
 horizonDir = _datdir+"shb5_hor/"
 n1,n2,n3 = 1400,950,677
-d1,d2,d3 = 1,1,1
-f1,f2,f3 = 1500,0,0
+d1,d2,d3 = 0.001,1,1
+f1,f2,f3 = 4,388,1508
 s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
 
 def getSamplings():

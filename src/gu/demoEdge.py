@@ -66,7 +66,7 @@ maxThrow = 15.0
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 pngDir = None
-plotOnly = False
+plotOnly = True
 pngDir = "../../../png/gu/"
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -75,14 +75,15 @@ def main(args):
   #goSeisData()
   #goHorizons()
   #goHorizons2D()
-  goTimeSlices()
+  #goInlineSlices()
+  #goTimeSlices()
   #goSlopeVectors()
   #goKaustEdge()
   #goSlopes()
   #goAmplitudeCurvature()
   #goPlaneWaveDestruction()
   #goKaustEdgeEnhance()
-  #goThin()
+  goThin()
   #goSemblance()
 
 def goSeisData():
@@ -90,6 +91,7 @@ def goSeisData():
   gmin,gmax = -2,2
   gmap = ColorMap.GRAY
   plot3(gx,cmin=gmin,cmax=gmax,cmap=gmap,clab="Amplitude",png="gx")
+
 def goSlopeVectors():
   gx = readImage(gxfile)
   v1 = zerofloat(n1,n2,n3)
@@ -162,62 +164,76 @@ def goKaustEdgeEnhance():
         clab="Fault likelihood",png="kl")
 def goTimeSlices():
   gx = readImage(gxfile)
-  kl1 = readImage(kltfile+"20")
-  kl2 = readImage(kltfile+"630")
+  kl = readImage(kltfile+"20")
   hd = HorizonDisplay()
   ke = KaustEdge()
-  kl1 = ke.scale(kl1)
   for i1 in range(640,740,20):
     sa = hd.getTimeSlice(i1,gx)
-    sk1 = hd.getTimeSlice(i1,kl1)
-    sk2 = hd.getTimeSlice(i1,kl2)
-    sk2 = pow(sk2,0.5)
-    #sa = mul(sa,-1)
-    #plot2(sa,neareast=True,png=str(i1)+"amplitude")
-    plot2(sa,sk1,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
-          neareast=True,png=str(i1)+"fracture")
-    plot2(sa,sk2,cmap=jetFillExceptMin(1.0),cmin=0.6,cmax=1,
-          neareast=True,png=str(i1)+"fracture")
-
+    sk = hd.getTimeSlice(i1,kl)
+    sk = ke.scale(sk)
+    sa = mul(sa,-1)
+    sa = hd.flip1(sa)
+    sk = hd.flip1(sk)
+    plot2(sa,neareast=True,cint=0.5,label="Amplitude",png=str(i1)+"amplitude")
+    plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+          neareast=True,cint=0.1,label="Fracture probability",png=str(i1)+"fracture")
+def goInlineSlices():
+  gx = readImage(gxfile)
+  kl = readImage(kltfile+"20")
+  hd = HorizonDisplay()
+  ke = KaustEdge()
+  k2s = [638,675,933]
+  for k2 in k2s:
+    sa = hd.getInlineSlice(k2,gx)
+    sk = hd.getInlineSlice(k2,kl)
+    sk = ke.scale(sk)
+    sa = mul(sa,-1)
+    plot2(sa,c1=s1,c2=s3,neareast=True,vlabel="Time (s)",
+           vint=0.1,cint=0.5,label="Amplitude",png="ampInline"+str(k2))
+    plot2(sa,sk,c1=s1,c2=s3,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+          neareast=True,vlabel="Time (s)",vint=0.1, 
+          cint=0.1,label="Fracture probability",
+          png="fractureInline"+str(k2))
 
 def goHorizons2D():
   #h70file = "shb5_hor70"
-  h74file = "ShunB5_Hor_T74"
-  h76file = "ShunB5_Hor_T76"
-  h80file = "ShunB5_Hor_T80"
-  h83file = "ShunB5_Hor_T83"
   h74file = "shb5_hor74"
   h76file = "shb5_hor76"
   h80file = "shb5_hor80"
   h83file = "shb5_hor83"
+  h74file = "ShunB5_Hor_T74"
+  h76file = "ShunB5_Hor_T76"
+  h80file = "ShunB5_Hor_T80"
+  h83file = "ShunB5_Hor_T83"
 
   #h90file = "shb5_hor90"
   hs = [h74file,h76file,h80file,h83file]
   if not plotOnly:
     gx = readImage(gxfile)
-    kl = readImage(kltfile+"420")
-    kl = pow(kl,0.5)
-    pd = readImage(pdfile+"12")
-    gx = mul(gx,-1)
+    kl = readImage(kltfile+"20")
     hd = HorizonDisplay()
     for hi in hs:
       hs = readHorizon(hi)
       sa = hd.amplitudeOnHorizon(gx,hs)
       sk = hd.amplitudeOnHorizon(kl,hs)
-      sd = hd.amplitudeOnHorizon(pd,hs)
+      hd = HorizonDisplay()
+      sa = mul(sa,-1)
+      ke = KaustEdge()
+      sk = ke.scale(sk)
+      sa = hd.flip1(sa)
+      sk = hd.flip1(sk)
       writeHorizon(hi+"a",sa)
       writeHorizon(hi+"k",sk)
-      writeHorizon(hi+"d",sd)
+      plot2(sa,neareast=True,png=hi+"amplitude")
+      plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+            neareast=True,png=hi+"fracture")
   else:
     for hi in hs:
       sa = readHorizon(hi+"a")
-      sd = readHorizon(hi+"d")
       sk = readHorizon(hi+"k")
-      plot2(sa,neareast=True,png=hi+"amplitude")
-      plot2(sa,sd,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
-            neareast=True,png=hi+"diffraction")
-      plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.5,cmax=1,
-            neareast=True,png=hi+"fracture")
+      plot2(sa,neareast=True,cint=0.5,label="Amplitude",png=hi+"amplitude")
+      plot2(sa,sk,cmap=jetFillExceptMin(1.0),cmin=0.2,cmax=1,
+            neareast=True,cint=0.1,label="Fracture probability",png=hi+"fracture")
 def goHorizons():
   gx = readImage(gxfile)
   kl = readImage(kltfile)
@@ -230,9 +246,9 @@ def goHorizons():
   h90file = "shb5_hor90"
   hs = [h70file,h74file,h76file,h80file]
   hd = HorizonDisplay()
-  hs = readHorizon(h80file)
-  ha = readHorizon(h80file+'a')
-  hk = readHorizon(h80file+'k')
+  hs = readHorizon(h76file)
+  ha = readHorizon(h76file+'a')
+  hk = readHorizon(h76file+'k')
   xyza,rgba=hd.buildTrigs(s3,s2,n1,-3,3,hs,ha)
   xyzk,rgbk=hd.buildTrigs(s3,s2,n1,0.0,1,hs,hk)
   tga=TriangleGroup(True,xyza,rgba)
@@ -353,14 +369,14 @@ def goThin():
     klt,kpt,ktt = FaultScanner.thin([kl,kp,kt])
     writeImage(kltfile+"420",klt)
   else:
-    klt = readImage(kltfile+"420")
-    klt1 = readImage(kltfile+"20")
+    klt = readImage(kltfile+"20")
     ke = KaustEdge()
-    klt1 = ke.scale(klt1)
+    klt = ke.scale(klt)
+    gx = mul(gx,-1)
     #writeImage(kltfile,klt)
-    klt = pow(klt,0.5)
-  plot3(gx,klt1,k1=500,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
-  plot3(gx,klt, k1=500,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0))
+  plot3(gx,k1=658,clab="Amplitude",png="s"+str(658))
+  plot3(gx,klt,k1=658,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
+        clab="Fracture probability",png="f"+str(658))
   '''
   for k1 in range(705,905,10):
     plot3(gx,klt,k1=k1,cmin=0.2,cmax=1,cmap=jetFillExceptMin(1.0),
@@ -534,17 +550,16 @@ def convertDips(ft):
   return FaultScanner.convertDips(0.2,ft) # 5:1 vertical exaggeration
 
 
-def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
-        label=None,neareast=False,png=None): 
+def plot2(f,g=None,c1=s2,c2=s3,cmap=None,cmin=None,cmax=None,cint=None,
+        label=None,hlabel="Crossline (traces)", vlabel="Inline (traces)", 
+        hint=100, vint=100, neareast=True,png=None): 
   orientation = PlotPanel.Orientation.X1DOWN_X2RIGHT;
-  n1,n2=len(f[0]),len(f)
-  s1,s2=Sampling(n1,1,388),Sampling(n2,1,1508)
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
-  panel.setVInterval(50)
-  panel.setHInterval(50)
-  panel.setHLabel("Crossline (traces)")
-  panel.setVLabel("Inline (traces)")
-  pxv = panel.addPixels(0,0,s1,s2,f);
+  panel.setVInterval(vint)
+  panel.setHInterval(hint)
+  panel.setHLabel(hlabel)
+  panel.setVLabel(vlabel)
+  pxv = panel.addPixels(0,0,c1,c2,f);
   pxv.setColorModel(ColorMap.GRAY)
   pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
   if g:
@@ -552,8 +567,10 @@ def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   else:
     if cmin and cmax:
       pxv.setClips(cmin,cmax)
+    else:
+      pxv.setClips(-3,3)
   if g:
-    pv = panel.addPixels(s1,s2,g)
+    pv = panel.addPixels(c1,c2,g)
     if neareast:
       pv.setInterpolation(PixelsView.Interpolation.NEAREST)
     else:
@@ -562,16 +579,17 @@ def plot2(f,g=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
     if cmin and cmax:
       pv.setClips(cmin,cmax)
   if label:
-    panel.addColorBar(label)
+    cbar = panel.addColorBar(label)
+    if cint:
+      cbar.setInterval(cint)
   panel.setColorBarWidthMinimum(55)
   moc = panel.getMosaic();
   frame = PlotFrame(panel);
   frame.setDefaultCloseOperation(PlotFrame.EXIT_ON_CLOSE);
-  #frame.setTitle("normal vectors")
   frame.setVisible(True);
   #frame.setSize(1400,700)
-  frame.setSize(round(n2*1),round(n1*1))
-  frame.setFontSize(12)
+  frame.setSize(len(f)+55,len(f[0]))
+  frame.setFontSize(16)
   if pngDir and png:
     frame.paintToPng(720,3.333,pngDir+png+".png")
 
@@ -688,7 +706,7 @@ def plot3(f,g=None,hz=None,tgs=None,k1=None,cmin=None,cmax=None,cmap=None,clab=N
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(k1,5,672)
+  ipg.setSlices(k1,5,676)
   #ipg.setSlices(95,5,95)
   if cbar:
     sf.setSize(1337,900)
