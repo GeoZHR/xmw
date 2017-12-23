@@ -509,7 +509,6 @@ public class FaultSkin implements Iterable<FaultCell>,Serializable {
         cell.fl = fl*cs;
       }
     }
-
   }
 
   /**

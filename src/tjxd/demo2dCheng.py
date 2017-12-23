@@ -4,7 +4,7 @@ Author: Xinming Wu, Colorado School of Mines
 Version: 2016.07.20
 """
 from utils2 import *
-setupForSubset("fake")
+setupForSubset("fakeNew")
 s1,s2,s3= getSamplings()
 n1,n2= s1.count,s2.count
 
@@ -22,7 +22,7 @@ fttfile = "ftt" # fault dip thinned
 
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
-minTheta,maxTheta = 10,45
+minTheta,maxTheta = 65,89
 sigmaTheta = 20
 
 # These parameters control the construction of fault skins.
@@ -31,7 +31,7 @@ lowerLikelihood = 0.1
 upperLikelihood = 0.50
 minSize = 10
 
-minThrow = -35
+minThrow = -35*8
 maxThrow =  0
 
 # Directory for saved png images. If None, png images will not be saved;
@@ -46,28 +46,176 @@ def main(args):
   #goFault()
   #goScan()
   #goFaultThrow()
-  goInterp()
-  goMigVel()
+  #goInterp()
+  #goMigVel()
+  #goHorizonsB()
+  goRgtInterp()
+  #goRgtInterpSub()
+  #goFlatten()
+  #goLogVelocity()
+def goHorizonsB():
+  sigma1,sigma2=8.0,2.0
+  pmax = 5
+  m2 = 1570
+  gx = readImage2D(n1,m2,"fxs")
+  p2 = zerofloat(n1,m2)
+  el = zerofloat(n1,m2)
+  lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
+  lsf.findSlopes(gx,p2,el) # estimate slopes and linearity
+  wp = fillfloat(1,n1,m2)
+  for i1 in range(135):
+    wp[370][i1] = 0.02
+    wp[371][i1] = 0.05
+    wp[369][i1] = 0.05
+    wp[820][i1] = 0.02
+    wp[821][i1] = 0.05
+    wp[819][i1] = 0.05
+  he2 = MultigridHorizon2()
+  he2.setSmoothing(12)
+  he2.setWeight(0.001)
+  he2.setExternalIterations(20)
+  # pick a horizon with 2 control points
+  k11,k12=[42,9,1,27,47],[90,188,200,700,1180]  
+  k21,k22=[50,21,47,64],[125,320,659,1180]  
+  k31,k32=[75,30,59,76],[60,275,642,1250]  
+  k41,k42=[ 96,48,66,97],[60,245,600,1280]  
+  k51,k52=[78,94,116,114],[190,555,1090,1560]  
+  k61,k62=[130,130,122],[80,485,1000]  
+  k71,k72=[140,140,140],[10,620,900]  
+  k1s = [k11,k21,k31,k41,k51,k61,k71]
+  k2s = [k12,k22,k32,k42,k52,k62,k72]
+  cv1s,cv2s,cv3s = [],[],[]
+  p1s,p2s = [],[]
+  np = len(k1s)
+  for ip in range(np):
+    k1 = k1s[ip]
+    k2 = k2s[ip]
+    cv1i = he2.curveInitialization(m2,n1-1,k1,k2)
+    cv2i = copy(cv1i)
+    cv1i = he2.curveUpdateFromSlopes(wp,p2,k1,k2,cv1i);
+    cv1s.append(cv1i)
+    for ik in range(len(k1)):
+      p1s.append(k1[ik])
+      p2s.append(k2[ik])
+  hp = Helper()
+  np = len(cv1s[0])
+  hs = []
+  for iv in range(len(cv1s)):
+    hs.append(cv1s[iv][np-1])
+  for i2 in range(900):
+    hs[len(hs)-1][i2] = 140
+  tx = hp.rgtInterpolate(n1,m2,hs)
+  c2 = Sampling(m2)
+  fl = readImage2D(n1,n2,flfile)
+  fx = readImage2D(n1,n2,gxfile)
+  txs = hp.unfaultBlocker(2,fl,tx)
+  txs = hp.unfaultBlocker(1,fl,txs)
+  writeImage("tx",txs)
+  print len(txs)
+  print len(txs[0])
+  plots(s1,c2,gx,hs=cv1s,k2=p2s,k1=p1s,label="Amplitude",png="hs")
+  plot2x(gx,s1,c2,g=tx,gmin=0,gmax=180,label="Relative geologic time",png="rgt")
+  plot2x(txs,s1,s2,g=txs,gmin=0,gmax=180,label="Relative geologic time",png="rgt")
+
+def goLogVelocity():
+  vt = readImage2D(n1,n2,"vt")
+  vm = readImage2D(n1,n2,"vm")
+  vt = mul(vt,0.001)
+  vm = mul(vm,0.001)
+  vs = zerofloat(n1)
+  rgf = RecursiveGaussianFilterP(2)
+  rgf.apply0(vt[50],vs)
+  vd = sub(vs,vm[50])
+  plot1s(s1,vt[50],vm[50],png="logVel")
+  plot1s(s1,vs,vm[50],png="logVels")
+  plot1s(s1,vd,vd,vmin=-0.5,vmax=2.0,hlabel="Velocity update (km/s)",png="logVelUpdate")
+
+def goFlatten():
+  gx = readImage2D(n1,n2,gxfile)
+  gx = gain(gx)
+  fx = zerofloat(n1,n2)
+  c2 = 50
+  dw = DynamicWarping(-50,0)
+  dw.setStrainMax(0.25)
+  for k2 in range(50,n2,1):
+    sk = dw.findShifts(gx[c2],gx[k2])
+    fx[k2] = dw.applyShifts(sk,gx[k2])
+  plot2x(gx,s1,s2,label="Amplitude",png="seis")
+  plot2x(fx,s1,s2,label="Amplitude",png="seis")
+def goHorizons():
+  sigma1,sigma2=8.0,2.0
+  pmax = 5
+  gx = readImage2D(n1,n2,gxfile)
+  gx = gain(gx)
+  p2 = zerofloat(n1,n2)
+  el = zerofloat(n1,n2)
+  lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
+  lsf.findSlopes(gx,p2,el) # estimate slopes and linearity
+  fl = readImage2D(n1,n2,flfile)
+  wp = sub(1,fl)
+  he2 = MultigridHorizon2()
+  he2.setSmoothing(12)
+  he2.setWeight(0.001)
+  he2.setExternalIterations(20)
+  # pick a horizon with 2 control points
+  k11,k12=[44,9,0,24,45],[60,188,340,380,580]  
+  k21,k22=[50,21,44,61],[125,320,338,580]  
+  k31,k32=[75,30,60,75],[60,275,322,580]  
+  k41,k42=[ 96,48,93,96],[60,245,275,620]  
+  k51,k52=[78,116],[190,620]  
+  k61,k62=[137],[620]  
+  k1s = [k11,k21,k31,k41,k51,k61]
+  k2s = [k12,k22,k32,k42,k52,k62]
+  cv1s,cv2s,cv3s = [],[],[]
+  p1s,p2s = [],[]
+  np = len(k1s)
+  for ip in range(np):
+    k1 = k1s[ip]
+    k2 = k2s[ip]
+    cv1i = he2.curveInitialization(n2,n1-1,k1,k2)
+    cv2i = copy(cv1i)
+    cv1i = he2.curveUpdateFromSlopes(18,15,60,gx,wp,p2,k1,k2,cv1i);
+    cv1s.append(cv1i)
+    for ik in range(len(k1)):
+      p1s.append(k1[ik])
+      p2s.append(k2[ik])
+  hp = Helper()
+  np = len(cv1s[0])
+  hs = []
+  for iv in range(len(cv1s)):
+    hs.append(cv1s[iv][np-1])
+  tx = hp.rgtInterpolate(n1,n2,hs)
+  writeImage("tx",tx)
+  plots(s1,s2,gx,hs=cv1s,k2=p2s,k1=p1s,label="Amplitude",png="hs")
+  plot2x(gx,s1,s2,g=tx,gmin=0,gmax=180,label="Relative geologic time",png="rgt")
 def goMigVel():
   gx = readImage2D(n1,n2,gxfile)
   gx = gain(gx)
-  vx = readImage2D(401,801,"vel_mode")
-  c1 = Sampling(401)
-  c2 = Sampling(801)
   plot2x(gx,s1,s2,label="Amplitude",png="seis")
-  plot2x(vx,c1,c2,g=vx,gmin=2500,gmax=6000,label="Velocity",png="migVel")
+  #plot2x(vx,c1,c2,g=vx,gmin=2500,gmax=6000,label="Velocity",png="migVel")
 def goFault():
-  p11 = [  0, 10, 42, 45,125]
-  p12 = [360,354,300,270,125]
-  p21 = [  5, 57, 76,115,139]
-  p22 = [450,341,266,190,131]
+  p11 = [  0, 10, 35, 49,110,125,n1-1]
+  p12 = [370,354,300,250,160,125,20]
+  p21 = [  0, 57, 76,115,139,n1-1]
+  p22 = [470,341,266,190,131,50]
   gx = readImage2D(n1,n2,gxfile)
   gx = gain(gx)
   hpr = Helper()
-  fl = hpr.fault(n1,n2,[p11,p21],[p12,p22])
+  fl = zerofloat(n1,n2)
+  hpr.fault(1,n1,n2,[p21],[p22],fl)
+  hpr.fault(2,n1,n2,[p11],[p12],fl)
+  fxs = hpr.faultBlocker(1,fl,gx)
+  fxs = hpr.faultBlocker(2,fl,fxs)
+  m2 = len(fxs)
+  c2 = Sampling(m2)
   writeImage(flfile,fl)
   plot2(s1,s2,gx,g=fl,cmin=0.20,cmax=1,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
+  writeImage("fxs",fxs)
+  print m2
+  plot2(s1,s2,gx)
+  plot2(s1,c2,fxs)
+
 def goInterp():
   vx = readImage2D(n1,n2,"vel")
   gx = readImage2D(n1,n2,gxfile)
@@ -89,8 +237,95 @@ def goInterp():
   e2 = Sampling(21,40,1)
   plotTensors(gx,s1,s2,d=et,dscale=3.5,ne=20,e1=e1,e2=e2,cmin=0,cmax=0,png="tensors")
 
+def goRgtInterp():
+  tx = readImage2D(n1,n2,"tx")
+  vt = readImage2D(n1,n2,"vt")
+  vm = readImage2D(n1,n2,"vm")
+  vt = mul(vt,0.001)
+  vm = mul(vm,0.001)
+  vs = zerofloat(n1)
+  rgf = RecursiveGaussianFilterP(8)
+  rgf.apply0(vt[50],vs)
+  vd = sub(vs,vm[50])
+
+  gx = readImage2D(n1,n2,gxfile)
+  x1,x2,fx = getWell(50)
+  gx = gain(gx)
+  hp = Helper()
+  vi = hp.interpWithRgt(50,vd,tx)
+  lof = LocalOrientFilter(4,2)
+  ets = lof.applyForTensors(gx)
+  ets.setEigenvalues(0.02,1.0)
+  plot2x(gx,s1,s2,f=vd,x1=x1,x2=x2,gmin=-0.5,gmax=2.0,label="Velocity (km/s)",png="seisAndLogs")
+  plot2x(gx,s1,s2,g=vi,f=vd,x1=x1,x2=x2,gmin=-0.5,gmax=2.0,label="Velocity update (km/s)",png="interpVelS8")
+  plot2x(gx,s1,s2,g=vt,gmin=2.5,gmax=6.5,label="Velocity (km/s)",png="trueVel")
+  vm = readImage2D(n1,n2,"vm")
+  vm = mul(0.001,vm)
+  vu = add(vi,vm)
+  writeImage("vu8",vu)
+  plot2x(gx,s1,s2,g=vu,gmin=2.5,gmax=6.5,label="Updated migration velocity (km/s)",png="updatedVelS8")
+  plot2x(gx,s1,s2,g=vm,gmin=2.5,gmax=6.5,label="Initial migration velocity (km/s)",png="initialVel")
+def goRgtInterpSub():
+  vt = readImage2D(n1,n2,"vt")
+  vm = readImage2D(n1,n2,"vm")
+  vt = mul(vt,0.001)
+  vm = mul(vm,0.001)
+  vs = zerofloat(n1)
+  rgf = RecursiveGaussianFilterP(2)
+  rgf.apply0(vt[130],vs)
+  vd = sub(vs,vm[130])
+
+  tx = readImage2D(n1,n2,"tx")
+  fl = readImage2D(n1,n2,flfile)
+  gx = readImage2D(n1,n2,gxfile)
+  b1,e1=30,110
+  x1,x2,fx = getWellSub(130,b1,e1)
+  gx = gain(gx)
+  hp = Helper()
+  vi = hp.interpWithRgt(130,vd,tx)
+  wpx = sub(1,fl)
+  vd = copy(70,20,vd)
+  vss = hp.maskout(130,130,b1,e1,vi,tx)
+  print max(vss)
+  plot2x(gx,s1,s2,f=vd,x1=x1,x2=x2,gmin=-0.5,gmax=2.0,label="Velocity (km/s)",png="seisAndLogsSub")
+  plot2x(gx,s1,s2,g=vss,f=vd,x1=x1,x2=x2,gmin=-0.5,gmax=2.0,cmap=jetFillExceptMin(1.0),
+          label="Velocity update (km/s)",png="interpVelSub2")
+  plot2x(gx,s1,s2,g=vt,gmin=2.5,gmax=6.5,label="Velocity (km/s)",png="trueVel")
+  vm = readImage2D(n1,n2,"vm")
+  vm = mul(0.001,vm)
+  vu = add(vi,vm)
+  vus = hp.maskout(130,400,b1,e1,vu,tx)
+  plot2x(gx,s1,s2,g=vus,gmin=2.5,gmax=6.5,cmap=jetFillExceptMin(1.0),label="Updated migration velocity (km/s)",png="updatedVelSub2")
+  plot2x(gx,s1,s2,g=vm,gmin=2.5,gmax=6.5,label="Initial migration velocity (km/s)",png="initialVel")
+
+def getWell(k2):
+  vx = readImage2D(n1,n2,"vt")
+  x1 = zerofloat(n1)
+  x2 = zerofloat(n1)
+  fx = zerofloat(n1)
+  k = 0
+  for i1 in range(n1):
+    x1[k] = i1
+    x2[k] = k2
+    fx[k] = vx[k2][i1]
+    k = k+1
+  return x1,x2,fx
+
+def getWellSub(k2,b1,e1):
+  vx = readImage2D(n1,n2,"vt")
+  x1 = zerofloat(e1)
+  x2 = zerofloat(e1)
+  fx = zerofloat(e1)
+  k = 0
+  for i1 in range(b1,e1,1):
+    x1[k] = i1
+    x2[k] = k2
+    fx[k] = vx[k2][i1]
+    k = k+1
+  return x1,x2,fx
+
 def getWells(k1,k2):
-  vx = readImage2D(n1,n2,"vel")
+  vx = readImage2D(n1,n2,"vt")
   x1 = zerofloat(n1*2)
   x2 = zerofloat(n1*2)
   fx = zerofloat(n1*2)
@@ -122,16 +357,22 @@ def getTensors():
 def goScan():
   print "goScan ..."
   gx = readImage2D(n1,n2,gxfile)
-  p11 = [ 10, 42, 45,125]
-  p12 = [354,300,266,125]
-  p21 = [  2, 57, 79,115,129]
+  p11 = [  0, 10*8, 42*8, 45*8,125*8]
+  p12 = [370,354,285,270,125]
+  p21 = [  2*8, 57*8, 79*8,115*8,129*8]
   p22 = [463,346,260,192,152]
   gx = readImage2D(n1,n2,gxfile)
   gx = gain(gx)
   hpr = Helper()
-  fxs = hpr.fault(n1,n2,[p11,p21],[p12,p22])
+  fxs = hpr.fault(n1*8,n2,[p11,p21],[p12,p22])
+  gxi = zerofloat(n1*8,n2)
+  s1i = Sampling(n1*8,0.125,0)
+  si = SincInterpolator()
+  s1p = Sampling(n1*8,1,0)
+  for i2 in range(n2):
+    si.interpolate(s1,gx[i2],s1i,gxi[i2])
+  writeImage("gxi",gxi)
   if not plotOnly:
-    gx = FaultScanner2.taper(10,0,gx)
     fs = FaultScanner2(sigmaTheta)
     fl,ft = fs.scan(minTheta,maxTheta,fxs)
     print "fl min =",min(fl)," max =",max(fl)
@@ -143,7 +384,7 @@ def goScan():
     ft = readImage2D(n1,n2,ftfile)
   fl = sub(fl,min(fl))
   fl = div(fl,max(fl))
-  plot2(s1,s2,gx,g=fl,cmin=0.10,cmax=1,cmap=jetRamp(1.0),
+  plot2(s1p,s2,gxi,g=fl,cmin=0.10,cmax=1,cmap=jetRamp(1.0),
       label="Fault likelihood",png="fl")
   '''
   plot2(s1,s2,gx,g=abs(ft),cmin=minTheta,cmax=maxTheta,cmap=jetFill(1.0),
@@ -214,54 +455,48 @@ def goFaultCurve():
   plot2(s1,s2,gx,g=flt,cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0))
 
 def goFaultThrow():
-  gs = readImage2D(n1,n2,"vel")
-  gx = readImage2D(n1,n2,gxfile)
-  gx = gain(gx)
-  fl = readImage2D(n1,n2,flfile)
-  ft = readImage2D(n1,n2,ftfile)
+  m1 = n1*8
+  gx = readImage2D(m1,n2,"gxi")
+  fl = readImage2D(m1,n2,flfile)
+  ft = readImage2D(m1,n2,ftfile)
   fc = FaultCurver()
   fc.setMinCurveSize(minSize)
   fc.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   ps = fc.findPoints([fl,ft])
   cc = fc.findCurves(ps)
   cs = [cc[1],cc[0]]
-  ftt = zerofloat(n1,n2)
-  flt = zerofloat(n1,n2)
+  ftt = zerofloat(m1,n2)
+  flt = zerofloat(m1,n2)
   FaultCurve.getFlsImage(cc,flt)
-  plot2(s1,s2,gx,g=flt,cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0))
-  wp = sub(1,flt);
-  wp = pow(wp,10)
-  lsp = LocalSlopeFinder(8,2,5)
-  el = zerofloat(n1,n2)
-  p2 = zerofloat(n1,n2)
-  lsp.findSlopes(gs,p2,el)
-  #gs = goSmooth()
-  plot2(s1,s2,gs,cmin=2500,cmax=5500)
-  fcr = FaultCorrelater(gs,p2)
+  s1i = Sampling(m1)
+  plot2(s1i,s2,gx,g=flt,cmin=0.1,cmax=1,cmap=jetFillExceptMin(1.0))
+  lsp = LocalSlopeFinder(64,2,5)
+  el = zerofloat(m1,n2)
+  p2 = zerofloat(m1,n2)
+  lsp.findSlopes(gx,p2,el)
+  fcr = FaultCorrelater(gx,p2)
   fcr.setZeroSlope(False) # True only if we want to show the error
   fcr.setOffset(2)
   fcr.computeThrow([cs[0]],minThrow,maxThrow)
+  '''
   fcr.setOffset(4)
   fcr.computeThrow([cs[1]],minThrow,maxThrow)
-  fst = zerofloat(n1,n2)
+  '''
+  fst = zerofloat(m1,n2)
   FaultCurve.getFsImage(cs,fst)
-  fs1 = fillfloat(-1000,n1,n2)
-  fs2 = fillfloat(-1000,n1,n2)
+  fs1 = fillfloat(-1000,m1,n2)
+  fs2 = fillfloat(-1000,m1,n2)
   FaultCurve.getFsImage(cs,fs1,fs2)
-  writeImage("seis",gx)
-  writeImage("slip1",fs1)
-  writeImage("slip2",fs2)
   print min(fst)
   print max(fst)
-  plot2(s1,s2,gx)
   smark = -999.999
   gw = copy(gx)
+  plot2(s1i,s2,gx,label="Amplitude",png="gx")
   for ci in cs:
-    p1,p2 = fcr.getDipSlips(n1,n2,[ci],smark)
+    p1,p2 = fcr.getDipSlips(m1,n2,[cs[0]],smark)
     p1,p2 = fcr.interpolateDipSlips([p1,p2],smark)
     gw = fcr.unfault([p1,p2],gw)
-  writeImage("gw",gw)
-  plot2(s1,s2,gw,label="Amplitude",png="gw")
+  plot2(s1i,s2,gw,label="Amplitude",png="gw")
   return cs
 
 def goTensors():
@@ -415,6 +650,68 @@ def bwrRamp(alpha):
 def grayRamp(alpha):
   return ColorMap.setAlpha(ColorMap.GRAY,rampfloat(0.0,alpha/256,256))
 
+def plot1s(s1,vt,vm,vmin=2.5,vmax=6.5,hlabel="Velocity (km/s)", vlabel="Depth (sample)",png=None):
+  sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+  sp.setVLimits(0,187)
+  sp.setHLimits(vmin,vmax)
+  sp.setHInterval(1)
+  sp.setVInterval(50)
+  pv1 = sp.addPoints(s1,vt)
+  pv1.setLineColor(Color.RED)
+  pv1.setLineWidth(3.0)
+  pv2 = sp.addPoints(s1,vm)
+  pv2.setLineColor(Color.BLACK)
+  pv2.setLineWidth(3.0)
+  sp.setSize(300,500)
+  sp.setHLabel(hlabel)
+  sp.setVLabel(vlabel)
+  sp.setFontSize(18) #for print
+  if png and pngDir:
+    sp.paintToPng(720,3.3,pngDir+png+".png")
+
+
+def plots(s1,s2,fx,hs=None,k2=None,k1=None,v1=None,v2=None,
+         w1=1000,w2=500,cmap=ColorMap.GRAY,cmin=0,cmax=0,label=None,png=None):
+  np = len(hs[0])
+  m2 = len(fx)
+  for ip in range(np-1,np):
+    sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
+    pv = sp.addPixels(s1,s2,fx)
+    sp.setHLimits(0,m2-1)
+    sp.setVLimits(0,n1-1)
+    sp.setHLabel("Lateral position (sample)")
+    sp.setVLabel("Depth (sample)")
+    if label:
+      sp.addColorBar(label)
+    else:
+      sp.addColorBar()
+    pv.setColorModel(cmap)
+    pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+    pv.setClips(-2,2)
+    for ik in range(len(hs)):
+      hi = hs[ik][ip]
+      x = rampfloat(0,1,m2)
+      pvh = sp.addPoints(hi,x)
+      pvh.setLineColor(Color.YELLOW)
+      pvh.setLineWidth(3.0)
+      sp.add(pvh)
+    '''
+    for ik in range(len(k2)):
+      pv = PointsView([k1[ik]],[k2[ik]])
+      pv.setOrientation(PointsView.Orientation.X1DOWN_X2RIGHT)
+      pv.setLineStyle(PointsView.Line.NONE)
+      pv.setMarkStyle(PointsView.Mark.HOLLOW_CIRCLE)
+      pv.setMarkColor(Color.RED)
+      pv.setMarkSize(8)
+      pv.setLineWidth(4)
+      sp.add(pv)
+    '''
+    sp.setSize(900,500)
+    sp.setFontSize(18)
+    sp.plotPanel.setColorBarWidthMinimum(80)
+    if pngDir and png:
+      sp.paintToPng(720,2.2222,pngDir+png+str(ip)+".png")
+
 def plotTensors(g,s1,s2,d=None,dscale=1,ne=20,mk=None,e1=None,e2=None,cmin=0,cmax=0,png=None):
   sp = SimplePlot(SimplePlot.Origin.UPPER_LEFT)
   sp.setBackground(backgroundColor)
@@ -448,7 +745,7 @@ def plotTensors(g,s1,s2,d=None,dscale=1,ne=20,mk=None,e1=None,e2=None,cmin=0,cma
     #sp.paintToPng(720,3.3,pngDir+png+".png")
 
 
-def plot2x(s,s1,s2,g=None,f=None,x1=None,x2=None,gmin=None,gmax=None,label=None,png=None,et=None):
+def plot2x(s,s1,s2,g=None,f=None,x1=None,x2=None,gmin=None,gmax=None,cmap=jetFill(1.0),label=None,png=None,et=None):
   n2 = len(s)
   n1 = len(s[0])
   s1,s2=Sampling(n1),Sampling(n2)
@@ -477,7 +774,7 @@ def plot2x(s,s1,s2,g=None,f=None,x1=None,x2=None,gmin=None,gmax=None,label=None,
   if g:
     pv = panel.addPixels(s1,s2,g)
     pv.setInterpolation(PixelsView.Interpolation.LINEAR)
-    pv.setColorModel(ColorMap.getJet(alpha))
+    pv.setColorModel(cmap)
     if gmin:
       pv.setClips(gmin,gmax)
   if x1 and x2:
@@ -538,8 +835,8 @@ def plot2(s1,s2,f,g=None,cmin=None,cmax=None,cmap1=ColorMap.GRAY,cmap=None,label
   f1,f2 = s1.getFirst(),s2.getFirst()
   d1,d2 = s1.getDelta(),s2.getDelta()
   panel = panel2Teapot()
-  panel.setHInterval(5.0)
-  panel.setVInterval(5.0)
+  panel.setHInterval(50.0)
+  panel.setVInterval(50.0)
   panel.setHLabel("Lateral position (km)")
   panel.setVLabel("Time (s)")
   #panel.setHInterval(100.0)
@@ -577,7 +874,7 @@ def frame2Teapot(panel,png=None):
   #frame.setSize(1240,774)
   #frame.setFontSizeForSlide(1.0,0.9)
   frame.setFontSize(12)
-  frame.setSize(n2,n1*2)
+  frame.setSize(660,800)
   frame.setVisible(True)
   if png and pngDir:
     frame.paintToPng(400,3.2,pngDir+png+".png")

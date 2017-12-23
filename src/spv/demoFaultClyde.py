@@ -29,8 +29,8 @@ fptfile = "fpt" # fault dip thinned
 fttfile = "ftt" # fault dip thinned
 fskfile = "skin"
 
-pngDir = None
 pngDir = getPngDir()
+pngDir = None
 plotOnly = False
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -44,8 +44,8 @@ def main(args):
   #goSurfaceVoting()
   #goFvPlanar()
   #goSkins()
-  #goFaultLikelihood()
-  goFaultSkins()
+  goFaultLikelihood()
+  #goFaultSkins()
 
 def goPlanar():
   gx = readImage3D(gxfile)

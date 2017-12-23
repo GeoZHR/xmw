@@ -29,8 +29,8 @@ vtfile = "vt"
 epvfile = "epv"
 
 
-pngDir = getPngDir()
 pngDir = None
+pngDir = getPngDir()
 plotOnly = True
 # These parameters control the scan over fault strikes and dips.
 # See the class FaultScanner for more information.
@@ -46,9 +46,10 @@ def main(args):
   #goFaultOrientScan()
   #goSurfaceVoting()
   #goFvPlanar()
-  showSub1()
+  #showSub1()
   #showSub2()
   #showSub3()
+  goSkins()
 def goPlanar():
   gx = readImage3D(gxfile)
   if not plotOnly:
@@ -217,6 +218,7 @@ def goSkins():
       clab="Surface voting",png="fe")
 
   '''
+  '''
   gx = copy(n1,410,500,0,510,324,gx)
   fv = copy(n1,410,500,0,510,324,fv)
   vp = copy(n1,410,500,0,510,324,vp)
@@ -224,23 +226,27 @@ def goSkins():
   ep = copy(n1,410,500,0,510,324,ep)
   '''
   gx = copy(n1,410,500,0,510,0,gx)
-  vp = copy(n1,410,500,0,510,0,pt)
+  vp = copy(n1,410,500,0,510,0,vp)
   vt = copy(n1,410,500,0,510,0,vt)
   fv = copy(n1,410,500,0,510,0,fv)
   ep = copy(n1,410,500,0,510,0,ep)
-  '''
   ft,pt,tt = osv.thin([fv,vp,vt])
-  plot3(gx)
+  plot3(gx,clab="Amplitude",png="seis")
+  '''
   plot3(gx,ft,cmin=0.25,cmax=1.0,cmap=jetFillExceptMin(1.0),
       clab="Surface voting",png="fe")
   fsk = FaultSkinner()
+  fsk.setGrowing(10,0.1)
   seeds = fsk.findSeeds(10,0.7,ep,ft,pt,tt)
   skins = fsk.findSkins(0.5,2000,seeds,fv,vp,vt)
   for skin in skins:
     skin.smooth(5)
-  plot3(gx,fv,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
+  for skin in skins:
+    skin.updateStrike()
+  plot3(gx,fv,au=140,k2=330,cmin=0.25,cmax=1.0,cmap=jetRamp(1.0),
       clab="Surface voting",png="fe")
-  plot3(gx,skinx=skins)
+  plot3(gx,au=140,k2=330,skinx=skins, png="skinSub3")
+  '''
 def goFvPlanar():
   fv = readImage3D(fvfile)
   u1 = zerofloat(n1,n2,n3)
@@ -371,10 +377,10 @@ def plot3(f,g=None,k1=120,k2=298,k3=39,au=300,cmin=-2,cmax=2,
     ss.add(ms)
     sg.setStates(ss)
     for skin in skinx:
-      cmap = ColorMap(0.25,1.0,ColorMap.JET)
-      #cmap = ColorMap(0,180,ColorMap.JET)
-      tg = skin.getTriMesh(cmap)
-      sg.addChild(tg)
+      #cmap = ColorMap(0.25,1.0,ColorMap.JET)
+      cmap = ColorMap(0,180,ColorMap.JET)
+      qg = skin.getQuadMeshStrike(cmap)
+      sg.addChild(qg)
     sf.world.addChild(sg)
   ipg.setSlices(k1,k2,k3)
   if cbar:

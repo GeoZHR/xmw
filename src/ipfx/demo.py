@@ -41,7 +41,7 @@ u1file = "u1" # relateive geologic time volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,20
+sigmaPhi,sigmaTheta = 20,40
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -63,12 +63,12 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goFakeData()
+  goFakeData()
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
-  goReSkin()
+  #goReSkin()
   '''
   goSmooth()
   goSlip()
@@ -306,12 +306,19 @@ def goReSkin():
     skins = fsx.findSkinsXX(cells,fl)
     removeAllSkinFiles(fskgood)
     writeSkins(fskgood,skins)
-  skins = readSkins(fskgood)
+  #skins = readSkins(fskgood)
+  flt = zerofloat(n1,n2,n3)
+  fsx.getFl(skins,flt)
+  writeImage(fltfile,flt)
+  plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  '''
   for skin in skins:
     skin.smoothCellNormals(4)
   plot3(gx,skins=skins,png="skinsNew")
   plot3(gx,skins=skins,links=True,png="skinsNewLinks")
   #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
+  '''
   '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))

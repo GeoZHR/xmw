@@ -33,9 +33,9 @@ sf1file = "sf1"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = "../../../png/bh/"
 pngDir = None
-plotOnly = False
+pngDir = "../../../png/bh/"
+plotOnly = True
 def main(args):
   #goSlopes()
   goHorizonOne()
@@ -84,33 +84,42 @@ def goSlopes():
         clab="Planarity")
 
 def goHorizonOne():
-  k1 = [173,183,185,187,248,291,242,249,250,256,251]
-  k2 = [134,242,355,218,261,348,446,608,699,853,908]
-  k3 = [236,433,270,536,160, 61,295,327,327,432,306]
+  k1 = [173,183,185,187,248,291,242,249,250,256,251,263,285,299,281,262,297, 313,340,348, 284,363,249,260,255,269,262]
+  k2 = [134,242,355,218,261,348,446,608,699,853,908,777,623,618,803,853,873,1039,799,672,1031,630,759,714,809,640,661]
+  k3 = [236,433,270,536,160, 61,295,327,327,432,306,324,125, 85,119,188,103, 103, 29, 24, 171,0.0,284,233,350,192,195]
   gx = readImage(gsfile)
+  dx = readImage(dsfile)
   gh = GlobalHorizon3()
+  dxc = copy(dx)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
+    ep = pow(ep,3)
+    ep = sub(ep,min(ep))
+    ep = div(ep,max(ep))
     lmt = n1-1
     gh.setWeights(0)
     gh.setSmoothings(8,8)
     gh.setCG(0.01,100)
     gh.setExternalIterations(20)
     sf1 = gh.surfaceInitialization(n2,n3,lmt,k1,k2,k3)
-    sf1 = gh.surfaceUpdateFromSlopesAndCorrelations(8,20,gx,ep,p2,p3,k2,k3,sf1)
+    sf1 = gh.surfaceUpdateFromSlopesAndCorrelations(5,20,gx,ep,p2,p3,k2,k3,sf1)
     writeImage(sf1file,sf1) 
   else:
     sf1 = readImage2D(n2,n3,sf1file)
-  plot3(gx,ks=[k1,k2,k3],cmap=gray,clab="Amplitude",png="seis")
-  mp = ColorMap(-1.5,1.5,gray)
+  plot3(gx,cmap=gray,clab="Amplitude",png="seis")
+  mp = ColorMap(-1,1,gray)
   r1,g1,b1 = gh.amplitudeRgb(mp,gx,sf1) 
   surf1 = [sf1,r1,g1,b1]
-  plot3(gx,hz=surf1,ks=[k1,k2,k3],cmap=gray,png="surf1m")
+  plot3(gx,hz=surf1,cmap=gray,png="sfSeis")
   hp = Helper();
-  hm = hp.horizonToImage(n1,sf1)
-  plot3(gx,g=hm,ks=[k1,k2,k3],cmap=jetFillExceptMin(1),png="surf1m")
+  hp.horizonToImage(4,sf1,dx)
+  plot3(gx,g=dxc,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0),clab="Density",png="den")
+  mp = ColorMap(2.2,2.7,jet)
+  r2,g2,b2 = gh.amplitudeRgb(mp,dxc,sf1) 
+  surf2 = [sf1,r2,g2,b2]
+  plot3(gx,dxc,hz=surf2,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0),clab="Density",png="sfDen")
 
 def goTopBottomHorizons():
   gs = readImage3D(n1,n2,n3,"gxs")
@@ -411,13 +420,13 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-1.5,1.5) # use for subset plots
+      ipg.setClips(-1,1) # use for subset plots
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-1.5,1.5)
+    ipg.setClips1(-1,1)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -435,7 +444,7 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   if ks:
     pg = setPointGroup(ks[0],ks[1],ks[2],10)
     sf.world.addChild(pg)
-  ipg.setSlices(n1-1,n2-1,0)
+  ipg.setSlices(n1-1,85,n3-1)
   if cbar:
     sf.setSize(967,720)
   else:
@@ -449,9 +458,8 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   ov.setScale(1.6)
   ov.setScale(1.4)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.08,0.00,0.05))
-  ov.setTranslate(Vector3( 0.02,0.00,0.05))
-  ov.setAzimuthAndElevation(130.0,45.0)
+  ov.setTranslate(Vector3(-0.08,0.05,0.05))
+  ov.setAzimuthAndElevation(-50.0,50.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

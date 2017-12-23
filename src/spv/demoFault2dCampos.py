@@ -24,6 +24,7 @@ fvfile = "fv"
 fvtfile = "fvt"
 pngDir = getPngDir()
 pngDir = "../../../png/spv/2d/campos/"
+pngDir = None
 plotOnly = False
 
 def main(args):

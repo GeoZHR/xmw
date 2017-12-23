@@ -32,6 +32,13 @@ def setupForSubset(name):
     d1,d2,d3 = 1.,1.,1.0 
     f1,f2,f3 = 0.0,0.0,150
     s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
+  if name=="fakeNew":
+    print "setupForSubset: fakeNew"
+    seismicDir = _datdir+"fakeNew/"
+    n1,n2,n3 = 187,801,201
+    d1,d2,d3 = 1.,1.,1.0 
+    f1,f2,f3 = 0.0,0.0,150
+    s1,s2,s3 = Sampling(n1,d1,f1),Sampling(n2,d2,f2),Sampling(n3,d3,f3)
   if name=="tpd":
     print "setupForSubset: costa rica"
     seismicDir = _datdir+"swt/csm/seismicz/subz_401_4_600/2d/"
