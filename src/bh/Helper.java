@@ -62,18 +62,17 @@ public class Helper {
     return gs;
   }
 
-  public float[][][] horizonToImage(int n1, float[][] hz) {
-    int n3 = hz.length;
-    int n2 = hz[0].length;
-    float[][][] hm = new float[n3][n2][n1];
+  public void horizonToImage(float v, float[][] hz, float[][][] hm) {
+    int n3 = hm.length;
+    int n2 = hm[0].length;
+    int n1 = hm[0][0].length;
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
       int i1 = round(hz[i3][i2]);
       i1 = max(i1,0);
       i1 = min(i1,n1-1);
-      hm[i3][i2][i1] = 1;
+      hm[i3][i2][i1] = v;
     }}
-    return hm;
   }
 
 }

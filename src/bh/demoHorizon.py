@@ -84,22 +84,27 @@ def goSlopes():
         clab="Planarity")
 
 def goHorizonOne():
-  k1 = [173,183,185,187,248,291,242,249,250,256,251]
-  k2 = [134,242,355,218,261,348,446,608,699,853,908]
-  k3 = [236,433,270,536,160, 61,295,327,327,432,306]
+  k1 = [173,183,185,187,248,291,242,249,250,256,251,263,285,299,281,262,297, 313,340,348, 284,363,249,260,255,269,262]
+  k2 = [134,242,355,218,261,348,446,608,699,853,908,777,623,618,803,853,873,1039,799,672,1031,630,759,714,809,640,661]
+  k3 = [236,433,270,536,160, 61,295,327,327,432,306,324,125, 85,119,188,103, 103, 29, 24, 171,0.0,284,233,350,192,195]
   gx = readImage(gsfile)
+  dx = readImage(dsfile)
   gh = GlobalHorizon3()
+  dxc = copy(dx)
   if not plotOnly:
     p2 = readImage(p2file)
     p3 = readImage(p3file)
     ep = readImage(epfile)
+    ep = pow(ep,3)
+    ep = sub(ep,min(ep))
+    ep = div(ep,max(ep))
     lmt = n1-1
     gh.setWeights(0)
     gh.setSmoothings(8,8)
     gh.setCG(0.01,100)
     gh.setExternalIterations(20)
     sf1 = gh.surfaceInitialization(n2,n3,lmt,k1,k2,k3)
-    sf1 = gh.surfaceUpdateFromSlopesAndCorrelations(8,20,gx,ep,p2,p3,k2,k3,sf1)
+    sf1 = gh.surfaceUpdateFromSlopesAndCorrelations(5,20,gx,ep,p2,p3,k2,k3,sf1)
     writeImage(sf1file,sf1) 
   else:
     sf1 = readImage2D(n2,n3,sf1file)
@@ -109,8 +114,12 @@ def goHorizonOne():
   surf1 = [sf1,r1,g1,b1]
   plot3(gx,hz=surf1,ks=[k1,k2,k3],cmap=gray,png="surf1m")
   hp = Helper();
-  hm = hp.horizonToImage(n1,sf1)
-  plot3(gx,g=hm,ks=[k1,k2,k3],cmap=jetFillExceptMin(1),png="surf1m")
+  hp.horizonToImage(4,sf1,dx)
+  plot3(gx,g=dx,ks=[k1,k2,k3],cmin=2.2,cmax=2.7,cmap=jetRamp(0.6),png="surf1m")
+  mp = ColorMap(2.2,2.7,jet)
+  r2,g2,b2 = gh.amplitudeRgb(mp,dxc,sf1) 
+  surf2 = [sf1,r2,g2,b2]
+  plot3(gx,dxc,hz=surf2,cmin=2.2,cmax=2.7,cmap=jetRamp(0.4))
 
 def goTopBottomHorizons():
   gs = readImage3D(n1,n2,n3,"gxs")
