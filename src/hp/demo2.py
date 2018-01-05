@@ -13,7 +13,10 @@ from edu.mines.jtk.mosaic import *
 from edu.mines.jtk.util import *
 from edu.mines.jtk.util.ArrayMath import *
 
+from he  import *
+from util  import *
 from hp  import *
+from sso  import *
 _dataDir = "../../../data/seis/hp/2d/"
 _pngDir = None
 _pngDir = "../../../png/hp/2d/"
@@ -21,12 +24,102 @@ _pngDir = "../../../png/hp/2d/"
 
 def main(args):
   #goCrfPick()
-  goF3dPick()
+  #goF3dClassifier()
   #goF3dClustering()
   #goF3dPickPredict()
   #goCurtPick()
   #goTpdPick()
   #goSlopeDisp()
+  goShapeCoherence()
+def goShapeCoherence():
+  ffile = "f3d178Sub2"
+  global s1,s2
+  global n1,n2
+  global seismicDir,pngDir
+  pngDir = _pngDir+"f3d/"
+  seismicDir = _dataDir+"f3d/"
+  s1 = Sampling(242,1.0,0.0)
+  s2 = Sampling(951,1.0,0.0)
+  n1,n2 = s1.count,s2.count
+  f = readImage(ffile)
+  f = gain(f)
+  g = copy(f)
+  wp = zerofloat(n1,n2)
+  p2 = zerofloat(n1,n2)
+  pmax = 5
+  sigma1,sigma2=4.0,2.0
+  lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
+  lsf.findSlopes(f,p2,wp) # estimate slopes and linearity
+  sc = ShapeCoherence()
+  ch = sc.applyForCoherenceD(5,1,p2,g)
+  plot2(g)
+  print min(ch)
+  print max(ch)
+  #plot2(g,ch,cmin=0.01,cmax=1.0,cmap=jetRamp(1.0))
+  plot2(ch,cmin=0.01,cmax=1.0)
+  cv = Covariance()
+  em,es=cv.covarianceEigen(10,p2,g)
+  #plot2(g,div(em,es),cmin=0.01,cmax=1.0,cmap=jetRamp(1.0))
+  plot2(div(em,es),cmin=0.01,cmax=1.0)
+
+def goF3dClassifier():
+  ffile = "f3d178Sub2"
+  global s1,s2
+  global n1,n2
+  global seismicDir,pngDir
+  pngDir = _pngDir+"f3d/"
+  seismicDir = _dataDir+"f3d/"
+  s1 = Sampling(242,1.0,0.0)
+  s2 = Sampling(951,1.0,0.0)
+  n1,n2 = s1.count,s2.count
+  f = readImage(ffile)
+  f = gain(f)
+  g = copy(f)
+  wp = zerofloat(n1,n2)
+  p2 = zerofloat(n1,n2)
+  pmax = 5
+  sigma1,sigma2=4.0,2.0
+  lsf = LocalSlopeFinder(sigma1,sigma2,pmax)
+  lsf.findSlopes(f,p2,wp) # estimate slopes and linearity
+  lof = LocalOrientFilter(8,2)
+  ets = lof.applyForTensors(f)
+  ets.setEigenvalues(0.1,1.0)
+  lsf = LocalSmoothingFilter()
+  lsf.apply(ets,8,f,f)
+  hc2 = HorizonClassifier2(10,5)
+  hc2.setGaussianWeights(5,2)
+  ths = hc2.findTroughs(f)
+  tfs = hc2.getPmap(n1,n2,ths)
+  hps = hc2.initialPick(175,385,ths,p2,f)
+  #hps = hc2.initialPick(174,240,ths,p2,f)
+  #hps = hc2.initialPick(132,345,ths,p2,f)
+  #hps = hc2.initialPick(92,250,ths,p2,f)
+  #hps = hc2.initialPick(38,350,ths,p2,f)
+  hpm = hc2.getPmap(n1,n2,hps)
+  print min(hpm)
+  print max(hpm)
+  plot2(g,tfs,cmin=0.1,cmax=max(tfs),cmap=jetFillExceptMin(1.0),
+        neareast=True)
+  plot2(g,hpm,cmin=min(hpm),cmax=1,cmap=jetFillExceptMin(1.0),
+        neareast=True)
+
+  '''
+
+  dps = hp2.setDataPoints(15,3,mks[1],f)
+
+  #hp2.setLinkConstraints(mks[1],dps,f)
+  print "points done"
+  ics = hp2.setInitialClusters(15,3,mks[1],f)
+  print "initial clusters done"
+  kmc = CKMeanClusterer()
+  kmc.setConvergence(100,0.1)
+  mpt = copy(mks[1])
+  ccs = kmc.applyClustering(True,mpt,ics,dps)
+  cpm = hp2.getClusterMap(n1,n2,mks[1],ccs)
+  plot2(g,cpm,cmin=0.1,cmax=max(cpm),cmap=jetFillExceptMin(1.0),
+        neareast=True,label="PTZ marks",png="mps")
+  '''
+
 def goF3dClustering():
   ffile = "f3d178Sub2"
   global s1,s2
@@ -387,18 +480,18 @@ def plot2(f,g=None,ps=None,t=None,cmap=None,cmin=None,cmax=None,cint=None,
   n1,n2=len(f[0]),len(f)
   s1,s2=Sampling(n1),Sampling(n2)
   panel = PlotPanel(1,1,orientation)#,PlotPanel.AxesPlacement.NONE)
-  panel.setVInterval(50)
-  panel.setHInterval(50)
+  #panel.setVInterval(50)
+  #panel.setHInterval(50)
   panel.setHLabel("Inline (traces)")
   panel.setVLabel("Depth (samples)")
   pxv = panel.addPixels(0,0,s1,s2,f);
   pxv.setColorModel(ColorMap.GRAY)
   pxv.setInterpolation(PixelsView.Interpolation.LINEAR)
   if g:
-    pxv.setClips(-2,1.5)
+    pxv.setClips(-1.5,1.5)
   else:
     if cmin and cmax:
-      pxv.setClips(-2,1.5)
+      pxv.setClips(cmin,cmax)
   if g:
     pv = panel.addPixels(s1,s2,g)
     if neareast:
