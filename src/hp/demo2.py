@@ -24,13 +24,13 @@ _pngDir = "../../../png/hp/2d/"
 
 def main(args):
   #goCrfPick()
-  #goF3dClassifier()
+  goF3dClassifier()
   #goF3dClustering()
   #goF3dPickPredict()
   #goCurtPick()
   #goTpdPick()
   #goSlopeDisp()
-  goShapeCoherence()
+  #goShapeCoherence()
 def goShapeCoherence():
   ffile = "f3d178Sub2"
   global s1,s2

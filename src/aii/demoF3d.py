@@ -31,20 +31,20 @@ fptfile = "fpt" # fault strike thinned
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
 plotOnly = True
-pngDir = None
 pngDir = "../../../png/aii/f3d/"
+pngDir = None
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  #goLogs()
+  goLogs()
   #goSeisTraces()
   #goTie()
   #goWellSeisFit()
   #goLinearity()
   #goImpedance()
   #goReflectivity() # displya only
-  goInitial() # displya only
+  #goInitial() # displya only
 def goInitial():
   m2 = 4
   px = readImage(pxfile)
@@ -258,8 +258,8 @@ def goLogs():
   r2 = rx[619][545]
   r3 = rx[339][704]
   r4 = rx[141][ 84]
-  frs = [r1,r2,r3,r4]
-  plot1s(s1,wrs,rs=frs)
+  #frs = [r1,r2,r3,r4]
+  #plot1s(s1,wrs,rs=frs)
   samples=wp,k1,k2,k3
   plot3X(rx,cmin=min(rx)/10,cmax=max(rx)/10,samples=samples)
 

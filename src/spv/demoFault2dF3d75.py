@@ -27,10 +27,17 @@ pngDir = None
 plotOnly = False
 
 def main(args):
+  '''
   goFaultLikelihood()
   goLinearity()
   goFaultOrientScan()
   goPathVoting()
+  '''
+  gx = readImage(gxfile)
+  gg = gain(gx)
+  writeImageL("f3dSeisL",gg)
+  plot(gx)
+  plot(gg)
 def goLinearity():
   gx = readImage(gxfile)
   el = zerofloat(n1,n2)
@@ -98,7 +105,7 @@ def gain(x):
   n2 = len(x)
   n1 = len(x[0])
   g = mul(x,x) 
-  ref = RecursiveExponentialFilter(20.0)
+  ref = RecursiveExponentialFilter(10.0)
   ref.apply(g,g)
   y = zerofloat(n1,n2)
   div(x,sqrt(g),y)

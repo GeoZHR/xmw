@@ -91,7 +91,10 @@ def main(args):
   #goSlip()
   #goUnfaultS()
   #goDisplay()
-  goFaultImages()
+  #goFaultImages()
+  fx = readImage(gxfile)
+  plot3(fx)
+  #writeImageL("gx176",fx[176])
 def goDisplay():
   '''
   gx = readImage(gxfile)

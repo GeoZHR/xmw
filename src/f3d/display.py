@@ -7,6 +7,7 @@ from utils import *
 sys.setrecursionlimit(1500)
 setupForSubset("sub1")
 #setupForSubset("unc")
+setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
 #n1,n2,n3 = s1.count,s2.count,s3.count
 n1,n2,n3 = 362,951,591
@@ -66,7 +67,7 @@ maxThrow = 20.0
 
 
 # Directory for saved png images. If None, png images will not be saved.
-#pngDir = None
+pngDir = None
 pngDir = "../../../png/f3d/"
 plotOnly = True
 
@@ -76,7 +77,7 @@ def main(args):
   #goFaults()
   #goSalts()
   #goUncs()
-  goSurfaces()
+  #goSurfaces()
   #goDisplay()
   #goSlopes()
   #goScan()
@@ -92,6 +93,47 @@ def main(args):
   #goUncConvert()
   #goFlatten()
   #goHorizons()
+  goSeisAndWell()
+def goSeisAndWell():
+  gx = readImage3D(362,951,591,gxfile)
+  wp,k1,k2,k3,wps,wrs = getF3dLogs()
+  samples=wp,k1,k2,k3
+  print min(wp)
+  print max(wp)
+  plot3(gx,png="seis")
+  hz1 = readImage2D(n2,n3,hz1file)
+  hz2 = readImage2D(n2,n3,hz2file)
+  plot3(gx,hs=[hz1,hz2],samples=samples,png="seis+horizon+Well")
+
+
+def getF3dLogs():
+  m2 = 4 # number of logs
+  m1 = 2121 # number of samples for each log
+  x2 = [ 33,545,704, 84]
+  x3 = [259,619,339,141]
+  logs = readImage2D(m1,m2,'logs')
+  k1 = []
+  k2 = []
+  k3 = []
+  fp = []
+  fp = []
+  wrs = zerofloat(m1,m2)
+  wps = zerofloat(m1,m2)
+  for i2 in range(m2):
+    for i1 in range(m1-1):
+      if(logs[i2][i1]!=-999.25):
+        k1.append(i1*0.2)
+        k2.append(x2[i2])
+        k3.append(x3[i2])
+        fp.append(0.5*log(logs[i2][i1]))
+        if(logs[i2][i1+1]!=-999.25):
+          wps[i2][i1] = 0.5*log(logs[i2][i1])
+          wrs[i2][i1] = 0.5*(log(logs[i2][i1+1])-log(logs[i2][i1]))
+      else:
+        print i1
+        print i2
+  return fp,k1,k2,k3,wps,wrs
+
 def goSurfaces():
   gx = readImage3D(362,951,591,gxfile)
   sf = readImage3D(242,611,591,sffile)
@@ -489,11 +531,31 @@ def rgbFromHeight(h,r,g,b):
       g[i2][i1] = htRGB[i+1] 
       b[i2][i1] = htRGB[i+2] 
       i = i+3
+def makePointGroup(f,x1,x2,x3,cmin,cmax,cbar):
+  n = len(x1)
+  xyz = zerofloat(3*n)
+  copy(n,0,1,x3,0,3,xyz)
+  copy(n,0,1,x2,1,3,xyz)
+  copy(n,0,1,x1,2,3,xyz)
+  rgb = None
+  if cmin<cmax:
+    cmap = ColorMap(cmin,cmax,ColorMap.getJet(1.0))
+    if cbar:
+      cmap.addListener(cbar)
+    rgb = cmap.getRgbFloats(f)
+  pg = PointGroup(xyz,rgb)
+  ps = PointState()
+  ps.setSize(12)
+  ps.setSmooth(False)
+  ss = StateSet()
+  ss.add(ps)
+  pg.setStates(ss)
+  return pg
 
 def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
           xyz=None,cells=None,skins=None,smax=0.0,slices=None,
           links=False,curve=False,trace=False,slt=None,uv=None,
-          hs=None,uncs=None,uncx=None,png=None):
+          hs=None,uncs=None,uncx=None,samples=None,png=None):
   n1,n2,n3 = s1.count,s2.count,s3.count
   d1,d2,d3 = s1.delta,s2.delta,s3.delta
   f1,f2,f3 = s1.first,s2.first,s3.first
@@ -527,6 +589,13 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
     sf.world.addChild(ipg)
   if cbar:
     cbar.setWidthMinimum(120)
+  if samples:
+    fx,x1,x2,x3 = samples
+    vmin,vmax,vmap= 2500,5500,ColorMap.JET
+    vmin,vmax,vmap= 3.90,4.35,ColorMap.JET
+    pg = makePointGroup(fx,x1,x2,x3,vmin,vmax,None)
+    sf.world.addChild(pg)
+
   if xyz:
     pg = PointGroup(0.2,xyz)
     ss = StateSet()
@@ -649,10 +718,14 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         ss.add(ls)
         sf.world.addChild(lg)
   if hs:
-    for hi in hs:
-      tg = TriangleGroup(True,s3,s2,hi)
-      tg.setColor(Color.YELLOW)
-      sf.world.addChild(tg)
+    #for hi in hs:
+    tg = TriangleGroup(True,s3,s2,hs[1])
+    tg.setColor(Color.YELLOW)
+    sf.world.addChild(tg)
+    tg = TriangleGroup(True,s3,s2,hs[0])
+    tg.setColor(Color.CYAN)
+    sf.world.addChild(tg)
+
   if skins:
     sg = Group()
     ss = StateSet()

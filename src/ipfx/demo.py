@@ -165,12 +165,13 @@ def goFakeData():
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.5 # (rms noise)/(rms signal) ratio
+  noise = 0.3 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
-  writeImage(gxfile,gx)
-  writeImage(p2kfile,p2)
-  writeImage(p3kfile,p3)
+  #writeImage(gxfile,gx)
+  #writeImage(p2kfile,p2)
+  #writeImage(p3kfile,p3)
+  writeImageL("fakeNoise50",gx[50])
   print "gx min =",min(gx)," max =",max(gx)
   print "p2 min =",min(p2)," max =",max(p2)
   print "p3 min =",min(p3)," max =",max(p3)
