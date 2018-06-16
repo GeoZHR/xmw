@@ -37,8 +37,8 @@ dvtDir = "../../../data/seis/tjxd/3d/logs/dvt/"
 logType = "velocity"
 wmin,wmax=1.8,6.0
 
-plotOnly = False
 plotOnly = True
+plotOnly = False
 
 def main(args):
   #goSubset()
@@ -46,8 +46,8 @@ def main(args):
   #goFlatten()
   #goCorrection(4,2,1,20,0.5,0.5)
   #goCorrection(4,2,2,5,0.25,0.5)
-  #goCurvature()
-  goRgtInterp()
+  #goRgtInterp()
+  goCurvature()
 
 def goSubset():
   gx = readImage3D(gxfile)
@@ -151,11 +151,9 @@ def goCorrection(sig1,sig2,k,smax,strain,w1):
 def goCurvature():
   gx = readImage3D(gxfile)
   if not plotOnly:
-    gt = readImage3D(gtfile)
-    her = HorizonExtraction(s1,s2,s3,None,gt)
-    hv = her.horizonVolumeFromRgtx(s1,gt)
+    x1 = readImage3D("xc3")
     cv = Curvature()
-    cn,cp = cv.horizonVolumetricCurvature(2,hv)
+    cn,cp = cv.horizonVolumetricCurvature(2,x1)
     writeImage(cnfile,cn)
     writeImage(cpfile,cp)
   else:
