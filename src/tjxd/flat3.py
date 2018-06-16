@@ -22,6 +22,18 @@ gtfile = "gt" # relative geologic time
 gifile = "gi" # interpolated volume
 cpfile = "cp" # most positive curvature
 cnfile = "cn" # most negative curvature
+v1file = "v1"
+v2file = "v2"
+v3file = "v3"
+w1file = "w1"
+w2file = "w2"
+w3file = "w3"
+smfile = "sm"
+ddfile = "dd"
+pdfile = "pd"
+pcfile = "pc"
+ncfile = "nc"
+
 
 #log information
 c2s = [670916,660065,659116,664891,661082,677668,
@@ -47,7 +59,11 @@ def main(args):
   #goCorrection(4,2,1,20,0.5,0.5)
   #goCorrection(4,2,2,5,0.25,0.5)
   #goRgtInterp()
-  goCurvature()
+  #goCurvature()
+  goSlopeVectors()
+  #goKaustEdge()
+  #goSlopes()
+
 
 def goSubset():
   gx = readImage3D(gxfile)
@@ -188,6 +204,74 @@ def goRgtInterp():
   plot3(gx,g=gi,s1=s1,samples=samples,k1=816,k3=k3,
         cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interp")
   
+def goSlopeVectors():
+  gx = readImage(gxfile)
+  v1 = zerofloat(n1,n2,n3)
+  v2 = zerofloat(n1,n2,n3)
+  v3 = zerofloat(n1,n2,n3)
+  w1 = zerofloat(n1,n2,n3)
+  w2 = zerofloat(n1,n2,n3)
+  w3 = zerofloat(n1,n2,n3)
+  lof = LocalOrientFilter(4,1)
+  lof.apply(gx,None,None,None,None,None,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
+  writeImage(v1file,v1)
+  writeImage(v2file,v2)
+  writeImage(v3file,v3)
+  writeImage(w1file,w1)
+  writeImage(w2file,w2)
+  writeImage(w3file,w3)
+
+def goPlaneWaveDestruction():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    ke = KaustEdge()
+    pd = ke.planeWaveDestruction(8,12,gx)
+    pd = sub(pd,min(pd));
+    pd = div(pd,max(pd));
+    ke = KaustEdge()
+    pd = ke.scale(pd)
+    writeImage(pdfile,pd)
+  else:
+    pd = readImage(pdfile)
+  plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),png="pd")
+
+def goKaustEdge():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    v1 = readImage(v1file)
+    v2 = readImage(v2file)
+    v3 = readImage(v3file)
+    w1 = readImage(w1file)
+    w2 = readImage(w2file)
+    w3 = readImage(w3file)
+    dd = zerofloat(n1,n2,n3)
+    ke = KaustEdge()
+    dd = ke.directionalDifference(gx,v1,v2,v3,w1,w2,w3)
+    dd = sub(dd,min(dd))
+    dd = div(dd,max(dd))
+    writeImage(ddfile,dd)
+  else:
+    dd = readImage(ddfile)
+  plot3(dd,cmin=0.01,cmax=0.5,clab="Kaust Edge",cint=0.1,png="dd")
+
+def goKaustEdgeEnhance():
+  gx = readImage(gxfile)
+  if not plotOnly:
+    pd = readImage(pdfile)
+    pd = KaustEdgeScanner.taper(10,0,0,pd)
+    ks = KaustEdgeScanner(sigmaPhi,sigmaTheta)
+    kl,kp,kt = ks.scan(minPhi,maxPhi,minTheta,maxTheta,pd)
+    print "kl min =",min(kl)," max =",max(kl)
+    print "kp min =",min(kp)," max =",max(kp)
+    print "kt min =",min(kt)," max =",max(kt)
+    writeImage(klfile+"620",kl)
+    writeImage(kpfile+"620",kp)
+    writeImage(ktfile+"620",kt)
+  else:
+    kl = readImage(klfile)
+  plot3(gx,kl,cmin=0.01,cmax=0.2,cmap=jetRamp(1.0),
+        clab="Fault likelihood",png="kl")
+
 def getLogSamples(curve):
   k1,k2,k3,fk=[],[],[],[]
   wldata = WellLog.Data(logDir, dvtDir)
