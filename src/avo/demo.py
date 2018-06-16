@@ -19,17 +19,22 @@ rvFile2 = "rv2"
 rvFile3 = "rv3"
 rvFile5 = "rv5"
 rvFile6 = "rv6"
-raFile = "RCMFOAas001"
-rbFile = "RCMFOAbs001"
-rpFile = "RCMFOAps001"
+raFile = "RCMFOAas006"
+rbFile = "RCMFOAbs006"
+rpFile = "RCMFOAps006"
 '''
 raFile = "SDMFOAas"
 rbFile = "SDMFOAbs"
 rpFile = "SDMFOAps"
 '''
-saFile = "AasInterp001"
-sbFile = "AbsInterp001"
-spFile = "ApsInterp001"
+saFile = "AasInterp006"
+sbFile = "AbsInterp006"
+spFile = "ApsInterp006"
+'''
+saFile = "AasInterpZero003"
+sbFile = "AbsInterpZero003"
+spFile = "ApsInterpZero003"
+'''
 sxFile = "SeismicDataZeroOffset"
 
 
@@ -43,9 +48,9 @@ plotOnly = False
 def main(args):
   #goLogCorrelation()
   #goModels()
-  #goInterpolation()
+  goInterpolation()
   #goModelSmooth()
-  goModelsWithOneLog()
+  #goModelsWithOneLog()
 
 def goModelsWithOneLog():
   lgs = readImage2DL(n1,3,"Logs")
@@ -254,13 +259,13 @@ def goModels():
   writeImage("Vp",rvs[1])
   writeImage("Vs",rvs[2])
 def goInterpolation():
-  n1,n2,nt=501,501,15
+  n1,n2,nt=421,401,19
   s1,s2=Sampling(n1),Sampling(n2)
-  sx = readImage2D(n1,n2,sxFile)
-  ra = readImage3D(n1,4,nt,raFile)
-  rb = readImage3D(n1,4,nt,rbFile)
-  rp = readImage3D(n1,4,nt,rpFile)
-  x2s = [60,180,320,420]
+  sx = readImage2DL(n1,n2,sxFile)
+  ra = readImage3D(n1,2,nt,raFile)
+  rb = readImage3D(n1,2,nt,rbFile)
+  rp = readImage3D(n1,2,nt,rpFile)
+  x2s = [150,300]
   if not plotOnly:
     lof = LocalOrientFilter(3.0,1.0)
     tensors = lof.applyForTensors(sx)
@@ -481,7 +486,7 @@ def plot2(f,x1,x2,s,s1,s2,g=None,gmin=None,gmax=None,
   n1 = len(s[0])
   panel = PlotPanel(1,1,PlotPanel.Orientation.X1DOWN_X2RIGHT,
     PlotPanel.AxesPlacement.LEFT_TOP)
-  panel.setVLimits(0,500)
+  panel.setVLimits(0,n1-1)
   panel.setHInterval(100)
   panel.setVInterval(100)
   panel.setHLabel("Lateral position (sample)")

@@ -41,7 +41,7 @@ u1file = "u1" # relateive geologic time volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 8,20
+sigmaPhi,sigmaTheta = 12,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -68,10 +68,10 @@ def main(args):
   #goScan()
   #goThin()
   #goSkin()
-  goReSkin()
-  '''
-  goSmooth()
+  #goReSkin()
+  #goSmooth()
   goSlip()
+  '''
   goUnfaultS()
   goFlatten()
   goHorizonExtraction()
@@ -165,12 +165,13 @@ def goFakeData():
   conical = False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
-  noise = 0.5 # (rms noise)/(rms signal) ratio
+  noise = 0.3 # (rms noise)/(rms signal) ratio
   gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
       sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
-  writeImage(gxfile,gx)
-  writeImage(p2kfile,p2)
-  writeImage(p3kfile,p3)
+  #writeImage(gxfile,gx)
+  #writeImage(p2kfile,p2)
+  #writeImage(p3kfile,p3)
+  writeImageL("fakeNoise50",gx[50])
   print "gx min =",min(gx)," max =",max(gx)
   print "p2 min =",min(p2)," max =",max(p2)
   print "p3 min =",min(p3)," max =",max(p3)
@@ -306,12 +307,19 @@ def goReSkin():
     skins = fsx.findSkinsXX(cells,fl)
     removeAllSkinFiles(fskgood)
     writeSkins(fskgood,skins)
-  skins = readSkins(fskgood)
+  #skins = readSkins(fskgood)
+  flt = zerofloat(n1,n2,n3)
+  fsx.getFl(skins,flt)
+  writeImage(fltfile,flt)
+  plot3(gx,flt,cmin=0.2,cmax=1.0,cmap=jetFillExceptMin(1.0),
+        clab="Fault likelihood",png="flt")
+  '''
   for skin in skins:
     skin.smoothCellNormals(4)
   plot3(gx,skins=skins,png="skinsNew")
   plot3(gx,skins=skins,links=True,png="skinsNewLinks")
   #plot3(gx,skins=[skins[2],skins[3]],png="skinsIntNew")
+  '''
   '''
   for iskin,skin in enumerate(skins):
     plot3(gx,skins=[skin],links=True,png="skin"+str(iskin))
@@ -343,9 +351,10 @@ def goSlip():
   gsx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  skins = readSkins(fskgood)
+  #skins = readSkins(fskgood)
+  skins = readSkins(fskbase)
   fsl = FaultSlipper(gsx,p2,p3)
-  fsl.setOffset(2.0) # the default is 2.0 samples
+  fsl.setOffset(3.0) # the default is 2.0 samples
   fsl.setZeroSlope(False) # True only if we want to show the error
   fsl.computeDipSlips(skins,minThrow,maxThrow)
   print "  dip slips computed, now reskinning ..."
@@ -354,12 +363,12 @@ def goSlip():
   fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsk.setMinSkinSize(minSkinSize)
   fsk.setMinMaxThrow(minThrow,maxThrow)
-  skins = fsk.reskin(skins)
+  #skins = fsk.reskin(skins)
   print ", after =",len(skins)
   removeAllSkinFiles(fslbase)
   writeSkins(fslbase,skins)
   smark = -999.999
-  s1,s2,s3 = fsl.getDipSlips(skins,smark)
+  s1,s2,s3 = fsl.getDipSlipsX(skins,smark)
   writeImage(fs1file,s1)
   writeImage(fs2file,s2)
   writeImage(fs3file,s3)

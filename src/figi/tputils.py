@@ -110,6 +110,18 @@ def writeImageM(name,image):
   aos.writeFloats(image)
   aos.close()
   return image
+def readImageM(n1,n2,name):
+  """ 
+  Writes an image to a file with specified name.
+  name: base name of image file; e.g., "tpgp"
+  image: the image
+  """
+  image = zerofloat(n1,n2)
+  fileName = seismicDir+name+".rsf@"
+  ais = ArrayInputStream(fileName,ByteOrder.LITTLE_ENDIAN)
+  ais.readFloats(image)
+  ais.close()
+  return image
 
 def readSlice3(name):
   fileName = seismicDir+name+".dat"

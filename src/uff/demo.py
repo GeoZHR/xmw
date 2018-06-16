@@ -71,7 +71,7 @@ maxThrow =  25.0
 # otherwise, must create the specified directory before running this script.
 pngDir = None
 pngDir = "../../../png/uff/"
-plotOnly = True
+plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
@@ -83,6 +83,7 @@ def main(args):
   #goSkin()
   #goSmooth()
   #goSlip()
+  #goUnfault()
   goUnfaultS()
   #goFlatten()
   #goUnfaultC()
@@ -298,7 +299,7 @@ def goSlip():
   removeAllSkinFiles(fslbase)
   writeSkins(fslbase,skins)
   smark = -999.999
-  s1,s2,s3 = fsl.getDipSlips(skins,smark)
+  s1,s2,s3 = fsl.getDipSlipsX(skins,smark)
   writeImage(fs1file,s1)
   writeImage(fs2file,s2)
   writeImage(fs3file,s3)
@@ -311,6 +312,8 @@ def goSlip():
   ss = zerofloat(n1,n2,n3)
   FaultSkin.setValueOnFaults(-100,skins,ss)
   t1,t2,t3 = fsl.getDipSlipsX(skins,smark)
+  uf = UnfaultS(4.0,4.0)
+  [t1,t2,t3] = uf.convertShifts(40,[t1,t2,t3])
   plot3(add(gx,ss),t1,cmin=-10,cmax=20.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gxss")
 
@@ -333,6 +336,41 @@ def goSlip():
   plot3(add(gw,ss),t1,cmin=-10,cmax=20.0,cmap=jetFillExceptMin(1.0),
         clab="Fault throw (samples)",png="gws")
 
+def goUnfault():
+  if not plotOnly:
+    gx = readImage(gxfile)
+    fw = zerofloat(n1,n2,n3)
+    lof = LocalOrientFilter(8.0,2.0,2.0)
+    et = lof.applyForTensors(gx)
+    et.setEigenvalues(0.001,1.0,1.0)
+
+    wp = fillfloat(1.0,n1,n2,n3)
+    mk = zerofloat(n1,n2,n3)
+    skins = readSkins(fslbase)
+
+    uf = Unfault(4.0,4.0)
+    uf.setIters(100)
+    uf.setTensors(et)
+    [t1,t2,t3] = uf.findShifts(skins,wp)
+    [t1,t2,t3] = uf.convertShifts(40,[t1,t2,t3])
+    uf.applyShifts([t1,t2,t3],gx,fw)
+    plot3(wp)
+    print min(t1)
+    print max(t1)
+  else :
+    gx = readImage(gxfile)
+    fw = readImage(fwsfile)
+    t1 = readImage(ft1file)
+    t2 = readImage(ft2file)
+    t3 = readImage(ft3file)
+  plot3(gx,png="gx")
+  plot3(fw,clab="Amplitude",png="ufs")
+  plot3(gx,t1,cmin=-10,cmax=10,cmap=jetFill(0.3),
+        clab="Vertical shift (samples)",png="gxs1")
+  plot3(gx,t2,cmin=-2.0,cmax=2.0,cmap=jetFill(0.3),
+        clab="Inline shift (samples)",png="gxs2")
+  plot3(gx,t3,cmin=-1.0,cmax=1.0,cmap=jetFill(0.3),
+        clab="Crossline shift (samples)",png="gxs3")
 
 def goUnfaultS():
   if not plotOnly:
@@ -348,8 +386,8 @@ def goUnfaultS():
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
 
-    uf = UnfaultS(4.0,4.0)
-    uf.setIters(100)
+    uf = UnfaultS(10.0,4.0)
+    uf.setIters(200)
     uf.setTensors(et)
     np =  len(sp[0][0])
     scale = (n1*n2*n3/np)
@@ -369,6 +407,7 @@ def goUnfaultS():
     writeImage(ft1file,t1)
     writeImage(ft2file,t2)
     writeImage(ft3file,t3)
+    plot3(wp)
   else :
     gx = readImage(gxfile)
     fw = readImage(fwsfile)

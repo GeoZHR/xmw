@@ -25,7 +25,7 @@ def setupForSubset(name):
   if name=="fake":
     """ fake image """
     print "setupForSubset: fake"
-    seismicDir = _datdir+"fake/"
+    seismicDir = _datdir+"fake/20171215-NiuLP-NewTest/"
     n1,n2,n3 = 121,152,153
     n1,n2,n3 = 273,1001,153
     s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)

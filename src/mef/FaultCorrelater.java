@@ -33,8 +33,8 @@ public class FaultCorrelater {
    * @param gs seismic image, smoothed up to (but not across) faults.
    */
   public FaultCorrelater(float[][] gs, float[][] p2) {
-    _p2 = p2;
     _gs = gs;
+    _p2 = p2;
   }
 
   public void setErrorPower(float power) {
@@ -82,7 +82,7 @@ public class FaultCorrelater {
     int lmin = (int)smin;
     int lmax = (int)smax;
     DynamicWarping dw = new DynamicWarping(lmin,lmax);
-    dw.setStrainMax(0.25); // TODO: always 0.25? goes with 4 below?
+    dw.setStrainMax(1.0); // TODO: always 0.25? goes with 4 below?
     computeAlignmentErrors(curve,lmin,lmax,_offset,_gs);
     extrapolateAlignmentErrors(lmin,lmax,cab);
     computeShifts(dw,cab);

@@ -60,6 +60,7 @@ pngDir = None
 # can comment out earlier parts that have already written results to files.
 def main(args):
   goFakeData()
+  '''
   goSlopes()
   goScan()
   goThin()
@@ -67,7 +68,6 @@ def main(args):
   goSkin()
   goFR()
   goSkinNew()
-  '''
   goTest()
   goSmoothTest()
   goSlipTest()

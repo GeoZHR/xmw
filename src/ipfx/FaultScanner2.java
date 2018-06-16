@@ -139,6 +139,14 @@ public class FaultScanner2 {
     return scan(st,p2,g);
   }
 
+  public float[][][] scanOverThetas(
+      double thetaMin, double thetaMax,
+      float[][] p2, float[][] g) {
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    return scanOverThetas(st,p2,g);
+  }
+
+
   public float[][][] scan(
       double thetaMin, double thetaMax,
       float sig1, float sig2, float smooth, float[][] g) {
@@ -175,6 +183,13 @@ public class FaultScanner2 {
     return scanTheta(thetaSampling,snd);
   }
 
+  public float[][][] scanOverThetas(
+      Sampling thetaSampling, float[][] p2, float[][] g) {
+    float[][][] snd = semblanceNumDen(p2,g);
+    return scanOverThetas(thetaSampling,snd);
+  }
+
+
   public float[][][] scan(
       Sampling thetaSampling, float sig1, float sig2, float smooth, float[][] g) {
     float[][][] snd = semblanceNumDen(sig1,sig2, smooth,g);
@@ -207,24 +222,25 @@ public class FaultScanner2 {
     int n2 = flpt[0].length;
     float[][] f = flpt[0];
     float[][] t = flpt[1];
-    f = copy(f);
+    float[][] fs = copy(f);
     RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1.0);
-    rgf.applyX0(f,f);
+    rgf.applyX0(fs,fs);
     float[][] ff = new float[n2][n1];
     float[][] tt = new float[n2][n1];
     for (int i2=0; i2<n2; ++i2) {
       int i2m = max(i2-1,0);
       int i2p = min(i2+1,n2-1);
-      float[] fm = f[i2m];
-      float[] f0 = f[i2 ];
-      float[] fp = f[i2p];
+      float[] fm = fs[i2m];
+      float[] f0 = fs[i2 ];
+      float[] fp = fs[i2p];
       float[] t0 = t[i2 ];
       for (int i1=0; i1<n1; ++i1) {
         float f00 = f0[i1];
         float t00 = t0[i1];
         if ((fm[i1]<f00 && fp[i1]<f00) ||
             (fp[i1]<f00 && fm[i1]<f00)){
-          ff[i2][i1] = f00;
+          ff[i2][i1] = f[i2][i1];
+          ff[i2m][i1] = f[i2][i1];
           tt[i2][i1] = t00;
         } else {
           tt[i2][i1] = NO_DIP;
@@ -458,6 +474,67 @@ public class FaultScanner2 {
     }
     return new float[][][]{f,t};
   }
+
+  private float[][][] scanOverThetas(Sampling thetaSampling, float[][][] snd) {
+    final int n2 = snd[0].length;
+    final int n1 = snd[0][0].length;
+    final float[][] sn = snd[0];
+    final float[][] sd = snd[1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    int nt = thetaSampling.getCount();
+    int kt = 0;
+    final float[][][] fs = new float[nt*2][n2][n1];
+    for (int it=0; it<nt; ++it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = -1.0f/tan(theta);
+      float[][] sns = shear(si,shear,sn);
+      float[][] sds = shear(si,shear,sd);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(sns,sns);
+      ref.apply1(sds,sds);
+      float[][] ss = semblanceFromNumDen(sns,sds);
+      float[][] s2 = unshear(si,shear,ss);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        st = st*st; // semblance^8
+        fs[kt][i2][i1] = 1-st;
+      }}
+      kt++;
+    }
+
+    for (int it=nt-1; it>=0; --it) {
+      System.out.println(it+"/"+(nt-1)+" done...");
+      float ti = (float)thetaSampling.getValue(it);
+      float theta = toRadians(ti);
+      float shear = 1.0f/tan(theta);
+      float[][] sns = shear(si,shear,sn);
+      float[][] sds = shear(si,shear,sd);
+      float sigma = (float)_sigmaTheta*sin(theta);
+      RecursiveExponentialFilter ref = makeRef(sigma);
+      ref.apply1(sns,sns);
+      ref.apply1(sds,sds);
+      float[][] ss = semblanceFromNumDen(sns,sds);
+      float[][] s2 = unshear(si,shear,ss);
+      for (int i2=0; i2<n2; ++i2) {
+      for (int i1=0; i1<n1; ++i1) {
+        float st = s2[i2][i1]; // semblance
+        st = st*st; // semblance^2
+        st = st*st; // semblance^4
+        st = st*st; // semblance^8
+        fs[kt][i2][i1] = 1.0f-st;
+      }}
+      kt++;
+    }
+    return fs;
+  }
+
 
   private float[][][] scanTheta(Sampling thetaSampling, float[][] el) {
     final int n2 = el.length;

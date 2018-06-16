@@ -33,9 +33,9 @@ sf1file = "sf1"
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = "../../../png/bh/"
 pngDir = None
-plotOnly = False
+pngDir = "../../../png/bh/"
+plotOnly = True
 def main(args):
   #goSlopes()
   goHorizonOne()
@@ -108,18 +108,26 @@ def goHorizonOne():
     writeImage(sf1file,sf1) 
   else:
     sf1 = readImage2D(n2,n3,sf1file)
-  plot3(gx,ks=[k1,k2,k3],cmap=gray,clab="Amplitude",png="seis")
-  mp = ColorMap(-1.5,1.5,gray)
+  plot3(gx,cmap=gray,clab="Amplitude",png="seis")
+  mp = ColorMap(-1,1,gray)
   r1,g1,b1 = gh.amplitudeRgb(mp,gx,sf1) 
   surf1 = [sf1,r1,g1,b1]
-  plot3(gx,hz=surf1,ks=[k1,k2,k3],cmap=gray,png="surf1m")
+  plot3(gx,hz=surf1,cmap=gray,png="sfSeis")
   hp = Helper();
   hp.horizonToImage(4,sf1,dx)
+<<<<<<< HEAD
   plot3(gx,g=dx,ks=[k1,k2,k3],cmin=2.2,cmax=2.7,cmap=jetRamp(0.6),png="surf1m")
   mp = ColorMap(2.2,2.7,jet)
   r2,g2,b2 = gh.amplitudeRgb(mp,dxc,sf1) 
   surf2 = [sf1,r2,g2,b2]
   plot3(gx,dxc,hz=surf2,cmin=2.2,cmax=2.7,cmap=jetRamp(0.4))
+=======
+  plot3(gx,g=dxc,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0),clab="Density",png="den")
+  mp = ColorMap(2.2,2.7,jet)
+  r2,g2,b2 = gh.amplitudeRgb(mp,dxc,sf1) 
+  surf2 = [sf1,r2,g2,b2]
+  plot3(gx,dxc,hz=surf2,cmin=2.2,cmax=2.7,cmap=jetRamp(1.0),clab="Density",png="sfDen")
+>>>>>>> bfeba1eb132e7d1054c11a88f8b5e8e06986dd85
 
 def goTopBottomHorizons():
   gs = readImage3D(n1,n2,n3,"gxs")
@@ -420,13 +428,13 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
     if cmin!=None and cmax!=None:
       ipg.setClips(cmin,cmax)
     else:
-      ipg.setClips(-1.5,1.5) # use for subset plots
+      ipg.setClips(-1,1) # use for subset plots
     if clab:
       cbar = addColorBar(sf,clab,cint)
       ipg.addColorMapListener(cbar)
   else:
     ipg = ImagePanelGroup2(s1,s2,s3,f,g)
-    ipg.setClips1(-1.5,1.5)
+    ipg.setClips1(-1,1)
     if cmin!=None and cmax!=None:
       ipg.setClips2(cmin,cmax)
     if cmap==None:
@@ -444,7 +452,7 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   if ks:
     pg = setPointGroup(ks[0],ks[1],ks[2],10)
     sf.world.addChild(pg)
-  ipg.setSlices(n1-1,n2-1,0)
+  ipg.setSlices(n1-1,85,n3-1)
   if cbar:
     sf.setSize(967,720)
   else:
@@ -458,9 +466,8 @@ def plot3(f,g=None,hz=None,ks=None,cmin=None,cmax=None,cmap=None,clab=None,cint=
   ov.setScale(1.6)
   ov.setScale(1.4)
   ov.setWorldSphere(BoundingSphere(BoundingBox(f3,f2,f1,l3,l2,l1)))
-  ov.setTranslate(Vector3(-0.08,0.00,0.05))
-  ov.setTranslate(Vector3( 0.02,0.00,0.05))
-  ov.setAzimuthAndElevation(130.0,45.0)
+  ov.setTranslate(Vector3(-0.08,0.05,0.05))
+  ov.setAzimuthAndElevation(-50.0,50.0)
   sf.setVisible(True)
   if png and pngDir:
     sf.paintToFile(pngDir+png+".png")

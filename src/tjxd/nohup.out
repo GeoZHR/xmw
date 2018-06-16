@@ -1,0 +1,150 @@
+setupForSubset: full
+Exception in thread "AWT-EventQueue-0" 	at java.io.FileInputStream.open0(Native Method)
+	at java.io.FileInputStream.open(FileInputStream.java:195)
+	at java.io.FileInputStream.<init>(FileInputStream.java:138)
+	at java.io.FileInputStream.<init>(FileInputStream.java:93)
+	at edu.mines.jtk.io.ArrayInputStream.<init>(ArrayInputStream.java:54)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.python.core.PyReflectedConstructor.constructProxy(PyReflectedConstructor.java:210)
+
+java.io.FileNotFoundException: java.io.FileNotFoundException: ../../../data/seis/tjxd/3d/seis/ep.dat (No such file or directory)
+setupForSubset: full
+0.0
+1.0
+setupForSubset: full
+FaultScanner.scan: done in 7291 seconds
+FaultScanner.scan: done in 7027 seconds
+FaultScanner.scan: done in 6881 seconds
+FaultScanner.scan: done in 6761 seconds
+FaultScanner.scan: done in 6653 seconds
+FaultScanner.scan: done in 6553 seconds
+FaultScanner.scan: done in 6488 seconds
+FaultScanner.scan: done in 6426 seconds
+FaultScanner.scan: done in 6407 seconds
+FaultScanner.scan: done in 6367 seconds
+FaultScanner.scan: done in 6331 seconds
+FaultScanner.scan: done in 6289 seconds
+FaultScanner.scan: done in 6257 seconds
+FaultScanner.scan: done in 6213 seconds
+FaultScanner.scan: done in 6163 seconds
+FaultScanner.scan: done in 6130 seconds
+FaultScanner.scan: done in 6082 seconds
+FaultScanner.scan: done in 6039 seconds
+FaultScanner.scan: done in 6009 seconds
+FaultScanner.scan: done in 5969 seconds
+FaultScanner.scan: done in 5936 seconds
+  File "interp.py", line 103
+    def gridWellLogs(logType):
+    ^
+SyntaxError: mismatched input 'def' expecting RPAREN
+setupForSubset: full
+setupForSubset: part
+-5.50099372864
+5.45765209198
+FINE CgSolver: begin: bnorm=429108.34 rnorm=429108.34
+FINER CgSolver: iter=0 rnorm=429108.34
+FINER CgSolver: iter=1 rnorm=715887.52
+FINER CgSolver: iter=2 rnorm=476747.40
+FINER CgSolver: iter=3 rnorm=328382.50
+FINER CgSolver: iter=4 rnorm=302285.51
+FINER CgSolver: iter=5 rnorm=316038.67
+FINER CgSolver: iter=6 rnorm=298758.23
+FINER CgSolver: iter=7 rnorm=241757.62
+FINER CgSolver: iter=8 rnorm=177771.23
+FINER CgSolver: iter=9 rnorm=139199.27
+FINER CgSolver: iter=10 rnorm=121767.17
+FINER CgSolver: iter=11 rnorm=111973.75
+FINER CgSolver: iter=12 rnorm=103659.11
+FINER CgSolver: iter=13 rnorm=95935.043
+FINER CgSolver: iter=14 rnorm=83890.313
+FINER CgSolver: iter=15 rnorm=79729.434
+FINER CgSolver: iter=16 rnorm=81082.226
+FINER CgSolver: iter=17 rnorm=86785.035
+FINER CgSolver: iter=18 rnorm=95279.867
+FINER CgSolver: iter=19 rnorm=95019.022
+FINER CgSolver: iter=20 rnorm=90524.786
+FINER CgSolver: iter=21 rnorm=87330.541
+FINER CgSolver: iter=22 rnorm=75864.998
+FINER CgSolver: iter=23 rnorm=72967.015
+FINER CgSolver: iter=24 rnorm=72896.911
+FINER CgSolver: iter=25 rnorm=68153.470
+FINER CgSolver: iter=26 rnorm=65177.474
+FINER CgSolver: iter=27 rnorm=60375.974
+FINER CgSolver: iter=28 rnorm=55922.279
+FINER CgSolver: iter=29 rnorm=53284.268
+FINER CgSolver: iter=30 rnorm=53154.316
+FINER CgSolver: iter=31 rnorm=52991.647
+FINER CgSolver: iter=32 rnorm=51227.848
+FINER CgSolver: iter=33 rnorm=49150.076
+FINER CgSolver: iter=34 rnorm=45286.493
+FINER CgSolver: iter=35 rnorm=41803.198
+FINER CgSolver: iter=36 rnorm=39822.032
+FINER CgSolver: iter=37 rnorm=37292.127
+FINER CgSolver: iter=38 rnorm=36407.296
+FINER CgSolver: iter=39 rnorm=33753.168
+FINER CgSolver: iter=40 rnorm=31439.080
+FINER CgSolver: iter=41 rnorm=28158.965
+FINER CgSolver: iter=42 rnorm=25340.334
+FINER CgSolver: iter=43 rnorm=24342.065
+FINER CgSolver: iter=44 rnorm=20623.535
+FINER CgSolver: iter=45 rnorm=17723.811
+FINER CgSolver: iter=46 rnorm=15562.338
+FINER CgSolver: iter=47 rnorm=13609.061
+FINER CgSolver: iter=48 rnorm=12062.917
+FINER CgSolver: iter=49 rnorm=10780.745
+FINER CgSolver: iter=50 rnorm=9983.0057
+FINER CgSolver: iter=51 rnorm=9549.4825
+FINER CgSolver: iter=52 rnorm=9155.8861
+FINER CgSolver: iter=53 rnorm=8625.0639
+FINER CgSolver: iter=54 rnorm=8895.5302
+FINER CgSolver: iter=55 rnorm=8474.0234
+FINER CgSolver: iter=56 rnorm=7936.0882
+FINER CgSolver: iter=57 rnorm=7468.3458
+FINER CgSolver: iter=58 rnorm=7362.5074
+FINER CgSolver: iter=59 rnorm=7512.4790
+FINER CgSolver: iter=60 rnorm=7532.3445
+FINER CgSolver: iter=61 rnorm=7435.4956
+FINER CgSolver: iter=62 rnorm=7310.5998
+FINER CgSolver: iter=63 rnorm=7094.0330
+FINER CgSolver: iter=64 rnorm=6846.5007
+FINER CgSolver: iter=65 rnorm=7179.4365
+FINER CgSolver: iter=66 rnorm=7578.4628
+FINER CgSolver: iter=67 rnorm=7056.2391
+FINER CgSolver: iter=68 rnorm=6864.4319
+FINER CgSolver: iter=69 rnorm=6999.1124
+FINER CgSolver: iter=70 rnorm=6751.3205
+FINER CgSolver: iter=71 rnorm=6457.5696
+FINER CgSolver: iter=72 rnorm=6337.1720
+FINER CgSolver: iter=73 rnorm=6237.6937
+FINER CgSolver: iter=74 rnorm=6231.0534
+FINER CgSolver: iter=75 rnorm=6149.1954
+FINER CgSolver: iter=76 rnorm=6206.9063
+FINER CgSolver: iter=77 rnorm=6533.3500
+FINER CgSolver: iter=78 rnorm=6392.7747
+FINER CgSolver: iter=79 rnorm=6475.0470
+FINER CgSolver: iter=80 rnorm=6422.0528
+FINER CgSolver: iter=81 rnorm=6210.7453
+FINER CgSolver: iter=82 rnorm=6183.7437
+FINER CgSolver: iter=83 rnorm=6242.7187
+FINER CgSolver: iter=84 rnorm=6219.8977
+FINER CgSolver: iter=85 rnorm=6178.5988
+FINER CgSolver: iter=86 rnorm=5978.9704
+FINER CgSolver: iter=87 rnorm=5582.9806
+FINER CgSolver: iter=88 rnorm=5500.1612
+FINER CgSolver: iter=89 rnorm=5592.5728
+FINER CgSolver: iter=90 rnorm=5505.4372
+FINER CgSolver: iter=91 rnorm=5062.9538
+FINER CgSolver: iter=92 rnorm=4711.3867
+FINER CgSolver: iter=93 rnorm=4341.4643
+FINE CgSolver: end: iter=94 rnorm=4246.6257
+Exception in thread "AWT-EventQueue-0" Traceback (most recent call last):
+  File "interp.py", line 705, in run
+    self.main(sys.argv)
+  File "interp.py", line 74, in main
+    goImageGuidedInterp()
+  File "interp.py", line 92, in goImageGuidedInterp
+    bg.setSmoothness(1.0)
+NameError: global name 'bg' is not defined

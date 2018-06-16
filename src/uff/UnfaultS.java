@@ -29,6 +29,12 @@ public class UnfaultS {
     _inner=inner;
   }
 
+
+  public void setIters(float small, int inner) {
+    _small = small;
+    _inner=inner;
+  }
+
   public void setTensors(Tensors3 d) {
     _d = d;
   }

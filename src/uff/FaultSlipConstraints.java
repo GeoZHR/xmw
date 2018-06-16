@@ -6,7 +6,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 ****************************************************************************/
 package uff;
 
-import ipfx.*;
+import ipf.*;
 import java.util.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 

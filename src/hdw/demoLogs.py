@@ -30,6 +30,7 @@ pngDir = None
 pngDir =  "../../../png/hdw/logs/seg/"
 
 plotOnly = True
+plotOnly = False
 
 lmin,lmax=-350,350
 
@@ -42,9 +43,9 @@ def main(args):
   #goDeepDensityLogs()
   #goDeepPorosityLogs()
   #goPorisityFlatten()
-  #goDensityFlatten()
+  goDensityFlatten()
   #goVelocityFlatten()
-  goVelocityFlattenSlides()
+  #goVelocityFlattenSlides()
   #goGammaFlatten()
   #goGammaFlattenError()
   #goDisplay()
@@ -467,49 +468,54 @@ def goDensityFlatten():
     ww.setStrainMax(0.1)
     ww.setErrorExtrapolation(ww.ErrorExtrapolation.AVERAGE)
     ww.setErrorExponent(0.125)
-    plot(sz,sw,dc,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdr")
+    #clab = "Density (g/cc)"
+    #plot(sz,sw,dc,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdr")
     #df = ww.flatten(dc)
     sm = zerofloat(nw)
     df = ww.flatten(dc,sm)
     #print len(df)
     #print len(df[0])
-    writeImage("den",dc)
-    writeImage("fden",df)
+    writeImage("denx",dc)
+    writeImage("fdenx",df)
     ndfz = [sz.count,sz.delta,sz.first]
     ndfw = [sw.count,sw.delta,sw.first]
-    writeImage("denndfz",ndfz)
-    writeImage("denndfw",ndfw)
+    writeImage("denndfzx",ndfz)
+    writeImage("denndfwx",ndfw)
   else:
-    ndfz = readImage1D(3,"denndfz")
-    ndfw = readImage1D(3,"denndfw")
+    ndfz = readImage1D(3,"denndfzx")
+    ndfw = readImage1D(3,"denndfwx")
     sz = Sampling(int(ndfz[0]),ndfz[1],ndfz[2])
     sw = Sampling(int(ndfw[0]),ndfw[1],ndfw[2])
     nz = sz.count
     nw = sw.count
-    wh = 12*nw
-    dc = readImage2D(nz,nw,"den")
-    df = readImage2D(nz,nw,"fden")
-    vlab = "Relative geologic time"
-    clab = "Density (g/cc)"
-    fz = sz.first
-    dz = sz.delta
-    sz = Sampling(nz+100,dz,fz)
-    dfe = fillfloat(-20,nz+100,nw)
-    dce = fillfloat(-20,nz+100,nw)
-    for iw in range(nw):
-      for iz in range(nz):
-        dce[iw][iz] = dc[iw][iz]
-        dfe[iw][iz] = df[iw][iz]
-    plot(sz,sw,dce,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdt")
-    plot(sz,sw,dfe,wh=wh,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,png="sdf")
-    cm = ww.confidence(df)
-    for kw in range(nw-1,nw,1):
-      sm = []
-      for k2 in range(kw+1):
-        dce[k2] = dfe[k2]
-        sm.append(sz.last-cm[k2]*0.3+0.1)
-      plot(sz,sw,dce,wh=wh,k=kw,sm=sm,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,
-            png="sdf"+str(kw))
+    dc = readImage2D(nz,nw,"denx")
+    df = readImage2D(nz,nw,"fdenx")
+  sz = Sampling(int(ndfz[0]),ndfz[1],ndfz[2])
+  sw = Sampling(int(ndfw[0]),ndfw[1],ndfw[2])
+  nz = sz.count
+  nw = sw.count
+  wh = 12*nw
+  vlab = "Relative geologic time"
+  clab = "Density (g/cc)"
+  fz = sz.first
+  dz = sz.delta
+  sz = Sampling(nz+100,dz,fz)
+  dfe = fillfloat(-20,nz+100,nw)
+  dce = fillfloat(-20,nz+100,nw)
+  for iw in range(nw):
+    for iz in range(nz):
+      dce[iw][iz] = dc[iw][iz]
+      dfe[iw][iz] = df[iw][iz]
+  plot(sz,sw,dce,wh=wh,cmin=2.0,cmax=2.8,hint=5,cbar=clab,png="sdtx")
+  plot(sz,sw,dfe,wh=wh,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,png="sdfx")
+  cm = ww.confidence(df)
+  for kw in range(nw-1,nw,1):
+    sm = []
+    for k2 in range(kw+1):
+      dce[k2] = dfe[k2]
+      sm.append(sz.last-cm[k2]*0.3+0.1)
+    plot(sz,sw,dce,wh=wh,k=kw,sm=sm,cmin=2.0,cmax=2.8,hint=5,vlab=vlab,cbar=clab,
+          png="sdf"+str(kw))
 
 def goPorisityFlatten():
   lmin,lmax=-350,350
@@ -674,8 +680,13 @@ def goDeepDensityLogs():
   #dr[0] = dr[1]
   #dr[1] = dr0
   tt = goTime(dp,lgs)
-  #dr = wh.sortLogs(dp)
-  dr = wh.sortByTravelTime(s2,s3,tt,lgs,dp)
+  ds = wh.sortLogs(dp)
+  dr = []
+  for k in range(len(ds)-1,-1,-1):
+    dr.append(ds[k])
+
+  #dr = wh.sortByTravelTime(s2,s3,tt,lgs,dp)
+  #dr = dp
   dt = wh.trim(ndf,dr)
   sz = Sampling(int(ndf[0]),ndf[1],ndf[2])
   #plot(sz,sw,dp,cmin=0.001,cmax=0.45,cbar="Porosity (%)")

@@ -227,6 +227,17 @@ public class FaultScanner {
     return scan(sp,st,p2,p3,g);
   }
 
+  public float[][][][][] scanForAllSemblance(
+      double phiMin, double phiMax,
+      double thetaMin, double thetaMax,
+      float[][][] p2, float[][][] p3, float[][][] g) {
+    Sampling sp = makePhiSampling(phiMin,phiMax);
+    Sampling st = makeThetaSampling(thetaMin,thetaMax);
+    float[][][][] snd = semblanceNumDen(p2,p3,g);
+    return scanForAllSemblance(sp,st,snd);
+  }
+
+
   /**
    * Scans with the specified sampling of fault strikes and dips.
    * @param phiSampling sampling of fault strikes, in degrees.
@@ -422,6 +433,61 @@ public class FaultScanner {
   private static void trace(String s) {
     System.out.println(s);
   }
+
+  // This scan smooths semblance numerators and denominators along fault
+  // planes by first rotating and shearing those images before applying
+  // fast recursive axis-aligned smoothing filters.
+  private float[][][][][] scanForAllSemblance(
+      Sampling phiSampling, Sampling thetaSampling,
+      float[][][][] snd) {
+    // Algorithm: given snum,sden (semblance numerators and denominators)
+    // initialize f,p,t (fault likelihood, phi, and theta)
+    // for all phi:
+    //   rotate snum,sden so that strike vector is aligned with axis 2
+    //   smooth snum,sden along fault strike (that is, along axis 2)
+    //   compute fphi,tphi (fault likelihood and dip) in 1-3 slices
+    //   unrotate fphi,tphi to original coordinates
+    //   update f,p,t for maximum likelihood
+
+    int np = phiSampling.getCount();
+    int nt = thetaSampling.getCount();
+    int mp = 0;
+    int dp = 4;
+    int dt = 2;
+    for (int ip=0; ip<np; ip+=dp)
+      mp++;
+    int mt = 0;
+    for (int it=0; it<nt; it+=dt)
+      mt++;
+    System.out.println("mp="+mp);
+    System.out.println("mt="+mt);
+    final int n3 = snd[0].length;
+    final int n2 = snd[0][0].length;
+    final int n1 = snd[0][0][0].length;
+    final float[][][][][] fs = new float[mp][mt][n3][n2][n1];
+    Stopwatch sw = new Stopwatch();
+    sw.start();
+    int kp = 0;
+    for (int ip=0; ip<np; ip+=dp) {
+      final float phi = (float)phiSampling.getValue(ip);
+      if (ip>0) {
+        double timeUsed = sw.time();
+        double timeLeft = ((double)np/(double)ip-1.0)*timeUsed;
+        int timeLeftSec = 1+(int)timeLeft;
+        trace("FaultScanner.scan: done in "+timeLeftSec+" seconds");
+      }
+      Rotator r = new Rotator(phi,n1,n2,n3);
+      float[][][][] rsnd = r.rotate(snd);
+      smooth2(rsnd);
+      float[][][][] rfts = scanForAllTheta(thetaSampling,rsnd);
+      rsnd = null; // enable gc to collect this large array
+      fs[kp++] = r.unrotate(rfts);
+    }
+    sw.stop();
+    trace("FaultScanner.scan: done");
+    return fs;
+  }
+
 
   // This scan smooths semblance numerators and denominators along fault
   // planes by first rotating and shearing those images before applying
@@ -663,11 +729,12 @@ public class FaultScanner {
 
   // Horizontal smoothing of rotated snum,sden along axis 2.
   private void smooth2(final float[][][][] snd) {
+    final int ns = snd.length;
     final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
     final RecursiveExponentialFilter ref = makeRef(_sigmaPhi);
     loop(n3,new LoopInt() {
     public void compute(int i3) {
-      for (int is=0; is<2; ++is) {
+      for (int is=0; is<ns; ++is) {
         float[][] s3 = extractSlice3(i3,snd[is]);
         if (s3!=null) {
           ref.apply2(s3,s3); 
@@ -743,6 +810,55 @@ public class FaultScanner {
     }});
     return ft;
   }
+
+  private float[][][][] scanForAllTheta(
+    Sampling thetaSampling, float[][][][] snd) {
+    final int n1 = n1(snd), n2 = n2(snd), n3 = n3(snd);
+    final Sampling st = thetaSampling;
+    final float[][][] sn = snd[0];
+    final float[][][] sd = snd[1];
+    final int nt = st.getCount();
+    final int mt = (int)(nt/3f)+1;
+    final float[][][][] f = new float[mt][n3][n2][n1];
+    final SincInterpolator si = new SincInterpolator();
+    si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
+    loop(n2,new LoopInt() {
+    public void compute(int i2) {
+      float[][] sn2 = extractSlice2(i2,sn);
+      float[][] sd2 = extractSlice2(i2,sd);
+      if (sn2==null)
+        return;
+      int n3 = sn2.length;
+      int kt = 0;
+      for (int it=0; it<nt; it+=3) {
+        float ti = (float)st.getValue(it);
+        float theta = toRadians(ti);
+        float shear = -1.0f/tan(theta);
+        float[][] sns = shear(si,shear,sn2);
+        float[][] sds = shear(si,shear,sd2);
+        float sigma = (float)_sigmaTheta*sin(theta);
+        RecursiveExponentialFilter ref = makeRef(sigma);
+        ref.apply1(sns,sns);
+        ref.apply1(sds,sds);
+        float[][] ss = semblanceFromNumDen(sns,sds);
+        float[][] s2 = unshear(si,shear,ss);
+        float[][][] fk = f[kt++];
+        for (int i3=0,j3=i3lo(i2,snd[0]); i3<n3; ++i3,++j3) {
+          float[] s32 = s2[i3];
+          float[] f32 = fk[j3][i2];
+          for (int i1=0; i1<n1; ++i1) {
+            float st = s32[i1]; // semblance
+            st = st*st; // semblance^2
+            st = st*st; // semblance^4
+            st = st*st; // semblance^8
+            f32[i1] = 1.0f-st;
+          }
+        }
+      }
+    }});
+    return f;
+  }
+
 
   // Makes an array like that specified, including any null arrays.
   private float[][][][] like(float[][][][] p) {
