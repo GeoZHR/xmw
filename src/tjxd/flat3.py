@@ -37,8 +37,8 @@ dvtDir = "../../../data/seis/tjxd/3d/logs/dvt/"
 logType = "velocity"
 wmin,wmax=1.8,6.0
 
-plotOnly = True
 plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSubset()
@@ -159,8 +159,8 @@ def goCurvature():
   else:
     cn = readImage3D(cnfile)
     cp = readImage3D(cpfile)
-  plot3(gx,g=cn,cmap=bwrFill(1.0),cmin=-0.001,cmax=0.001)
-  plot3(gx,g=cp,cmap=bwrFill(1.0),cmin=-0.001,cmax=0.001)
+  plot3(gx,g=cn,cmap=jetFillExceptMin(1.0),cmin=0.05,cmax=0.5)
+  #plot3(gx,g=cp,cmap=bwrFill(1.0),cmin=-0.5,cmax=0.5)
 
 def goRgtInterp():
   if not plotOnly:
