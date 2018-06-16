@@ -37,8 +37,8 @@ dvtDir = "../../../data/seis/tjxd/3d/logs/dvt/"
 logType = "velocity"
 wmin,wmax=1.8,6.0
 
-plotOnly = True
 plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSubset()
