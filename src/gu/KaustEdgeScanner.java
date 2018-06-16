@@ -457,6 +457,19 @@ public class KaustEdgeScanner {
     return x2;
   }
 
+  private static void restoreSlice2(int i2, float[][][] x, float[][] x2) {
+    int n1 = n1(x);
+    int n2 = n2(x);
+    int n3 = n3(x);
+    int i3lo = i3lo(i2,x);
+    int i3hi = i3hi(i2,x);
+    int m3 = 1+i3hi-i3lo;
+    assert x2.length==m3:"x2 length is correct";
+    for (int i3=0; i3<m3; ++i3)
+      copy(x2[i3],x[i3+i3lo][i2]);
+  }
+
+
   private static float[][] extractSlice3(int i3, float[][][] x) {
     int n1 = n1(x);
     int i2lo = i2lo(i3,x);
