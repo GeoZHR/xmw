@@ -40,8 +40,8 @@ def main(args):
   #goCampos2()
   #goWasson()
   #goQuin()
-  #goTjxd()
-  goNam()
+  goTjxd()
+  #goNam()
 def goGu():
   """
   ***************************************************************************
@@ -311,12 +311,14 @@ def goTjxd():
   firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
-  showImage = False # displays the image
+  showImage = False# displays the image
   combine = True
-  basedir = "../../../data/seis/tjxd/3d/"
-  sgyfile = basedir+"PSTM_iline251_400_xline301_1300_4ms_6000ms.sgy"
+  basedir = "../../../data/seis/tjxd/3d/seis/"
+  sgyfile = basedir+"PSTM_iline101_250_xline321_1320_4ms_6000ms.sgy"
+  sgyfile = basedir+"PSTM_iline251_400_xline321_1320_4ms_6000ms.sgy"
   datfile = basedir+"gx2.dat"
-  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,301,1300,251,400
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,321,1320,101,250
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,321,1320,251,400
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
   if firstLook:
@@ -339,13 +341,17 @@ def goTjxd():
     show3d(x,clip=max(x)/2)
     #show3d(x,xmin=2.2,xmax=2.7)
   if combine:
-    datfile1 = basedir+"gx.dat"
+    '''
+    datfile1 = basedir+"gx1.dat"
     datfile2 = basedir+"gx2.dat"
     x1 = readImage(datfile1,n1,n2,n3)
     x2 = readImage(datfile2,n1,n2,n3)
     xc = zerofloat(n1,n2,n3*2)
     copy(n1,n2,n3,0,0,0,x1,0,0,0,xc)
     copy(n1,n2,n3,0,0,0,x2,0,0,n3,xc)
+    writeImageX(basedir+"gx.dat",xc)
+    '''
+    xc = readImage(basedir+"gx.dat",n1,n2,n3*2)
     gain(100,xc)
     show3d(xc,clip=max(xc)/2)
 
@@ -1613,11 +1619,12 @@ def goLulia():
   '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
+    x = copy(525,680,736,0,0,0,x)
     print n1
     print n2
     show3d(x,clip=max(x))
     #writeImageX("lulia313.dat",x[313])
-    writeImageL("lulia313.dat",x[313])
+    #writeImageL("lulia313.dat",x[313])
     '''
     xs = copy(250,410,400,0,330,220,x)
     writeImageX(basedir+"gxs.dat",xs)
@@ -1711,13 +1718,14 @@ def goJake():
   '''
   firstLook = False # fast, does not read all trace headers
   secondLook = False # slow, must read all trace headers
-  writeImage = True # reads all traces, writes an image
-  showImage = False # displays the image
+  writeImage = False # reads all traces, writes an image
+  showImage = True # displays the image
   basedir = "../../../data/seis/beg/jake/sub2/"
   sgyfile = basedir+"Subset2.sgy"
   datfile = basedir+"gx.dat"
   i1min,i1max,i2min,i2max,i3min,i3max = 0,425,6500,10500,3300,4700
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
+  '''
   si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
@@ -1732,6 +1740,7 @@ def goJake():
     scale = 1.00
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,2,1)
   si.close()
+  '''
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     show3d(x,clip=max(x))
@@ -2388,8 +2397,14 @@ def goF3d():
     #writeImageX("xs",xs)
     #writeImageX("gx178",x[178])
     #writeImageX("f3d615.dat",x[615])
-    x = copy(300,200,100,80,540,112,x)
-    writeImageX("xs.dat",x)
+    #x = copy(300,200,100,80,540,112,x)
+    #writeImageX("xs.dat",x)
+    #x = copy(240,n2,600,220,0,0,x)
+    #writeImageX("xsub.dat",x)
+    x3 = x[188]
+    x3 = copy(220,n2,240,0,x3)
+    #x3 = copy(220,860,240,90,x3)
+    writeImageX("x188.dat",x3)
     show3d(x,clip=max(x)/10)
 
 def writeImageX(basename,image):

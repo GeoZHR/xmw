@@ -82,7 +82,7 @@ minSkinSize = 3500
 minThrow =  0.0
 maxThrow = 20.0
 
-plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSlopes()
@@ -93,11 +93,11 @@ def main(args):
   #goSmooth()
   #goSlip()
   #goInterp()
-  goInterpO()
+  #goInterpO()
   #goFigures()
   #goImpedance()
   #goTest()
-  #goSliceExtraction()
+  goSliceExtraction()
 
 
 def goSlopes():
@@ -337,13 +337,19 @@ def goSliceExtraction():
   gx = readImage(sfile)
   wx = readImage(gfile)
   gs,ws = hp.sliceExtraction(c2,c3,gx,wx)
-  writeImageM("seisSlice",gs)
-  writeImageM("wellSlice",ws)
-  s1 = Sampling(n1)
+  fl = readImageM(n1,n2,"flt")
+  gs = copy(315,n2,0,0,gs)
+  ws = copy(315,n2,0,0,ws)
+  fl = copy(315,n2,0,0,fl)
+  writeImage("seis",gs)
+  writeImage("log",ws)
+  writeImage("flt",fl)
+  s1 = Sampling(315)
   s2 = Sampling(n2)
   print n1
   print n2
   plot2(s1,s2,gs,g=ws,cmin=vmin,cmax=vmax,cmap=jetFillExceptMin(1.0))
+  plot2(s1,s2,fl)
 
 
 def goInterpO():

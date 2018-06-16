@@ -114,7 +114,7 @@ def main(args):
   #goTest()
   #goTest1()
   #goSkinBig()
-  goFlatten()
+  #goFlatten()
   #goResults()
   #fw = readImage("gx")
   '''
@@ -136,6 +136,8 @@ def main(args):
         k2 = k2+1
     writeImage(fname,fk1)
   '''
+  gx = readImage("gx")
+  plot3(gx)
 def goResults():
   gx = readImage("gx")
   #gw = readImage("gw150")

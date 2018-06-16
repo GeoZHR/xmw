@@ -148,7 +148,9 @@ public class Smoother3 {
 
   // Smoothing for dimension 1.
   private void smooth1(float sigma, float[][][] x) {
-    new RecursiveExponentialFilter(sigma).apply1(x,x);
+    RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
+    ref.setEdges(RecursiveExponentialFilter.Edges.OUTPUT_ZERO_SLOPE);
+    ref.apply1(x,x);
   }
 
 }

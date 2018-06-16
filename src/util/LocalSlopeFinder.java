@@ -161,6 +161,50 @@ public class LocalSlopeFinder {
       }
     }
   }
+
+  /**
+   * Finds slopes of features in the specified 3D image.
+   * Optionally estimates the planarities of image features.
+   * @param f array[n3][n2][n1] of input image samples.
+   * @param p2 array[n3][n2][n1] of output slopes p2.
+   * @param p3 array[n3][n2][n1] of output slopes p3.
+   */
+  public void findSlopes(
+    float[][][] f, float[][][] p2, float[][][] p3) {
+    int n1 = f[0][0].length;
+    int n2 = f[0].length;
+    int n3 = f.length;
+
+    // Normal vectors and linearities.
+    float[][][] u1 = new float[n3][n2][n1];
+    float[][][] u2 = p2;
+    float[][][] u3 = p3;
+    LocalOrientFilterP lof = new LocalOrientFilterP(_sigma1,_sigma2,_sigma3);
+    lof.applyForNormal(f,u1,u2,u3);
+
+    // Compute slopes from normal vectors.
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          float u1i = u1[i3][i2][i1];
+          float u2i = u2[i3][i2][i1];
+          float u3i = u3[i3][i2][i1];
+          if (-u2i<_p2min*u1i) u2i = -_p2min*u1i;
+          if (-u2i>_p2max*u1i) u2i = -_p2max*u1i;
+          if (-u3i<_p3min*u1i) u3i = -_p3min*u1i;
+          if (-u3i>_p3max*u1i) u3i = -_p3max*u1i;
+          if (u1i==0.0f) {
+            p2[i3][i2][i1] = (u2i<0.0f)?_p2max:_p2min;
+            p3[i3][i2][i1] = (u3i<0.0f)?_p3max:_p3min;
+          } else {
+            p2[i3][i2][i1] = -u2i/u1i;
+            p3[i3][i2][i1] = -u3i/u1i;
+          }
+        }
+      }
+    }
+  }
+
  
   /**
    * Finds slopes of features in the specified 3D image.

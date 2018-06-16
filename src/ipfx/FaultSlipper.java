@@ -7,6 +7,7 @@ available at http://www.eclipse.org/legal/cpl-v10.html
 package ipfx;
 
 
+import java.util.*;
 import edu.mines.jtk.interp.*;
 import edu.mines.jtk.util.*;
 import edu.mines.jtk.dsp.SincInterpolator;
@@ -204,7 +205,6 @@ public class FaultSlipper {
     float[][][] s1 = new float[n3][n2][n1];
     float[][][] s2 = new float[n3][n2][n1];
     float[][][] s3 = new float[n3][n2][n1];
-    float[][][] ss = new float[n3][n2][n1];
 
     // Initially set all slip vectors to the specified mark.
     for (int i3=0; i3<n3; ++i3) {
@@ -219,6 +219,12 @@ public class FaultSlipper {
 
     // For all cells in all skins, ...
     for (FaultSkin skin:skins) {
+      ArrayList<Float> x1a = new ArrayList<Float>();
+      ArrayList<Float> x2a = new ArrayList<Float>();
+      ArrayList<Float> x3a = new ArrayList<Float>();
+      ArrayList<Float> s1a = new ArrayList<Float>();
+      ArrayList<Float> s2a = new ArrayList<Float>();
+      ArrayList<Float> s3a = new ArrayList<Float>();
       for (FaultCell cell:skin) {
 
         // Get sample indices for the minus and plus sides of the cell.
@@ -232,50 +238,70 @@ public class FaultSlipper {
         if(i2m>=n2||i2p>=n2){continue;}
         if(i3m>=n3||i3p>=n3){continue;}
 
-        // Set or accumulate slip on the plus side.
-        if (s1[i3m][i2m][i1]==smark) {
-          s1[i3m][i2m][i1]  = cell.s1;
-          s2[i3m][i2m][i1]  = cell.s2;
-          s3[i3m][i2m][i1]  = cell.s3;
-          ss[i3m][i2m][i1]  = 1.0f;
-        } else {
-          s1[i3m][i2m][i1] += cell.s1;
-          s2[i3m][i2m][i1] += cell.s2;
-          s3[i3m][i2m][i1] += cell.s3;
-          ss[i3m][i2m][i1] += 1.0f;
-        }
 
+        // Set slip on the plus side.
+        s1[i3p][i2p][i1]  = 0.5f*cell.s1;
+        s2[i3p][i2p][i1]  = 0.5f*cell.s2;
+        s3[i3p][i2p][i1]  = 0.5f*cell.s3;
+        s1[i3m][i2m][i1]  = -0.5f*cell.s1;
+        s2[i3m][i2m][i1]  = -0.5f*cell.s2;
+        s3[i3m][i2m][i1]  = -0.5f*cell.s3;
 
-        // Set or accumulate slip on the plus side.
-        if (s1[i3p][i2p][i1]==smark) {
-          s1[i3p][i2p][i1]  = cell.s1;
-          s2[i3p][i2p][i1]  = cell.s2;
-          s3[i3p][i2p][i1]  = cell.s3;
-          ss[i3p][i2p][i1]  = 1.0f;
-        } else {
-          s1[i3p][i2p][i1] += cell.s1;
-          s2[i3p][i2p][i1] += cell.s2;
-          s3[i3p][i2p][i1] += cell.s3;
-          ss[i3p][i2p][i1] += 1.0f;
-        }
+        /*
+        x1a.add(i1 -cell.s1);
+        x2a.add(i2p-cell.s2);
+        x3a.add(i3p-cell.s3);
+        s1a.add(-0.5f*cell.s1);
+        s2a.add(-0.5f*cell.s2);
+        s3a.add(-0.5f*cell.s3);
+        x1a.add(i1 -cell.s1);
+        */
       }
+      /*
+      int np = x1a.size();
+      float[] x1s = new float[np];
+      float[] x2s = new float[np];
+      float[] x3s = new float[np];
+      float[] s1s = new float[np];
+      float[] s2s = new float[np];
+      float[] s3s = new float[np];
+      for (int ip=0; ip<np; ++ip) {
+        x1s[ip] = x1a.get(ip);
+        x2s[ip] = x2a.get(ip);
+        x3s[ip] = x3a.get(ip);
+        s1s[ip] = s1a.get(ip);
+        s2s[ip] = s2a.get(ip);
+        s3s[ip] = s3a.get(ip);
+      }
+      x1a.clear();
+      x2a.clear();
+      x3a.clear();
+      s1a.clear();
+      s2a.clear();
+      s3a.clear();
+      SibsonInterpolator3 s1i = new SibsonInterpolator3(s1s,x1s,x2s,x3s);
+      SibsonInterpolator3 s2i = new SibsonInterpolator3(s2s,x1s,x2s,x3s);
+      SibsonInterpolator3 s3i = new SibsonInterpolator3(s3s,x1s,x2s,x3s);
+      for (FaultCell cell:skin) {
+        int i1  = cell.i1;
+        int i2m = cell.i2m;
+        int i3m = cell.i3m;
+        if(i2m<0){continue;}
+        if(i3m<0){continue;}
+        if(i2m>=n2){continue;}
+        if(i3m>=n3){continue;}
+        // Set slip on the plus side.
+        s1[i3m][i2m][i1]  = s1i.interpolate(i1,i2m,i3m);
+        s2[i3m][i2m][i1]  = s2i.interpolate(i1,i2m,i3m);
+        s3[i3m][i2m][i1]  = s3i.interpolate(i1,i2m,i3m);
+      }
+      */
     }
 
-    // Where more than one slip was accumulated, compute the average.
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        for (int i1=0; i1<n1; ++i1) {
-          if (ss[i3][i2][i1]>1.0f) {
-            float si = 1.0f/ss[i3][i2][i1];
-            s1[i3][i2][i1] *= si;
-            s2[i3][i2][i1] *= si;
-            s3[i3][i2][i1] *= si;
-          }
-        }
-      }
-    }
     return new float[][][][]{s1,s2,s3};
   }
+
+
 
   /**
    * Interpolates specified dip-slip vectors.

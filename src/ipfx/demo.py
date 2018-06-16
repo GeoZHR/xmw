@@ -41,7 +41,7 @@ u1file = "u1" # relateive geologic time volume
 # See the class FaultScanner for more information.
 minPhi,maxPhi = 0,360
 minTheta,maxTheta = 65,85
-sigmaPhi,sigmaTheta = 20,40
+sigmaPhi,sigmaTheta = 12,20
 
 # These parameters control the construction of fault skins.
 # See the class FaultSkinner for more information.
@@ -63,15 +63,15 @@ plotOnly = False
 # Processing begins here. When experimenting with one part of this demo, we
 # can comment out earlier parts that have already written results to files.
 def main(args):
-  goFakeData()
+  #goFakeData()
   #goSlopes()
   #goScan()
   #goThin()
   #goSkin()
   #goReSkin()
-  '''
-  goSmooth()
+  #goSmooth()
   goSlip()
+  '''
   goUnfaultS()
   goFlatten()
   goHorizonExtraction()
@@ -351,9 +351,10 @@ def goSlip():
   gsx = readImage(gsxfile)
   p2 = readImage(p2file)
   p3 = readImage(p3file)
-  skins = readSkins(fskgood)
+  #skins = readSkins(fskgood)
+  skins = readSkins(fskbase)
   fsl = FaultSlipper(gsx,p2,p3)
-  fsl.setOffset(2.0) # the default is 2.0 samples
+  fsl.setOffset(3.0) # the default is 2.0 samples
   fsl.setZeroSlope(False) # True only if we want to show the error
   fsl.computeDipSlips(skins,minThrow,maxThrow)
   print "  dip slips computed, now reskinning ..."
@@ -362,12 +363,12 @@ def goSlip():
   fsk.setGrowLikelihoods(lowerLikelihood,upperLikelihood)
   fsk.setMinSkinSize(minSkinSize)
   fsk.setMinMaxThrow(minThrow,maxThrow)
-  skins = fsk.reskin(skins)
+  #skins = fsk.reskin(skins)
   print ", after =",len(skins)
   removeAllSkinFiles(fslbase)
   writeSkins(fslbase,skins)
   smark = -999.999
-  s1,s2,s3 = fsl.getDipSlips(skins,smark)
+  s1,s2,s3 = fsl.getDipSlipsX(skins,smark)
   writeImage(fs1file,s1)
   writeImage(fs2file,s2)
   writeImage(fs3file,s3)

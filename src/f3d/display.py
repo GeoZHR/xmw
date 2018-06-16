@@ -5,7 +5,7 @@ Version: 2015.05.07
 """
 from utils import *
 sys.setrecursionlimit(1500)
-setupForSubset("sub1")
+#setupForSubset("sub1")
 #setupForSubset("unc")
 setupForSubset("f3d")
 s1,s2,s3 = getSamplings()
@@ -77,7 +77,7 @@ def main(args):
   #goFaults()
   #goSalts()
   #goUncs()
-  #goSurfaces()
+  goSurfaces()
   #goDisplay()
   #goSlopes()
   #goScan()
@@ -93,7 +93,7 @@ def main(args):
   #goUncConvert()
   #goFlatten()
   #goHorizons()
-  goSeisAndWell()
+  #goSeisAndWell()
 def goSeisAndWell():
   gx = readImage3D(362,951,591,gxfile)
   wp,k1,k2,k3,wps,wrs = getF3dLogs()
@@ -158,8 +158,13 @@ def goSurfaces():
   plot3(gx,skins=sk2,slt=sf,png="faultSaltsM")
   plot3(gx,skins=sk2,slt=sf,hs=[hz2],png="faultSaltsHorizonM")
   plot3(gx,skins=sk2,slt=sf,hs=[hz2],uncs=[uc2],png="faultSaltsHorizonUncM")
-  '''
   plot3(gx,skins=sk2,slt=sf,hs=[hz2],uncs=[uc2])
+  '''
+  wp,k1,k2,k3,wps,wrs = getF3dLogs()
+  samples=wp,k1,k2,k3
+  plot3(gx,samples=samples,png="seis+Well")
+  plot3(gx,skins=sk2,slt=sf,hs=[hz2],uncs=[uc2],samples=samples,png="seis+surfs+Well")
+
 
 def goSalts():
   gx = readImage3D(362,951,591,gxfile)
@@ -719,13 +724,14 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         sf.world.addChild(lg)
   if hs:
     #for hi in hs:
-    tg = TriangleGroup(True,s3,s2,hs[1])
+    tg = TriangleGroup(True,s3,s2,hs[0])
     tg.setColor(Color.YELLOW)
     sf.world.addChild(tg)
+    '''
     tg = TriangleGroup(True,s3,s2,hs[0])
     tg.setColor(Color.CYAN)
     sf.world.addChild(tg)
-
+    '''
   if skins:
     sg = Group()
     ss = StateSet()
