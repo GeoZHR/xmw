@@ -1,8 +1,8 @@
 from utils3 import *
 setupForSubset("part")
 
-pngDir = getPngDir()
 pngDir = None
+pngDir = getPngDir()
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 f1,f2,f3 = s1.getFirst(),s2.getFirst(),s3.getFirst()
@@ -20,6 +20,7 @@ x1file = "x1" # horizon volume with slopes
 c1file = "c1" # corrected horizon volume with correlations
 gtfile = "gt" # relative geologic time
 gifile = "gi" # interpolated volume
+gffile = "gf" # interpolated velocity with low velocity at kaust
 cpfile = "cp" # most positive curvature
 cnfile = "cn" # most negative curvature
 v1file = "v1"
@@ -36,6 +37,7 @@ ncfile = "nc"
 klfile = "kl"
 kpfile = "kp"
 ktfile = "kt"
+gsfile = "gs" # flattened seismic image
 
 #log information
 c2s = [670916,660065,659116,664891,661082,677668,
@@ -51,8 +53,8 @@ dvtDir = "../../../data/seis/tjxd/3d/logs/dvt/"
 logType = "velocity"
 wmin,wmax=1.8,6.0
 
-plotOnly = True
 plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSubset()
@@ -60,13 +62,8 @@ def main(args):
   #goFlatten()
   #goCorrection(4,2,1,20,0.5,0.5)
   #goCorrection(4,2,2,5,0.25,0.5)
-  #goRgtInterp()
-  #goCurvature()
-  #goSlopeVectors()
+  goRgtInterp()
   #goKaustEdge()
-  #goPlaneWaveDestruction()
-  goKaustEdgeEnhance()
-  #goSlopes()
 
 
 def goSubset():
@@ -183,6 +180,7 @@ def goCurvature():
   #plot3(gx,g=cp,cmap=bwrFill(1.0),cmin=-0.5,cmax=0.5)
 
 def goRgtInterp():
+  gx = readImage3D(gxfile)
   if not plotOnly:
     x1 = readImage3D("xc3")
     fl = Flattener3Dw()
@@ -191,91 +189,77 @@ def goRgtInterp():
     fx,x1,x2,x3=getLogSamples(logType)
     samples=fx,x1,x2,x3
     gi = ri.apply(fx,x1,x2,x3,gt)
+    gi = ri.fill(gi)
+    gs = readImage3D(gsfile)
+    gf = ri.fillLowVelocity(0.1,gs,gi)
     writeImage(gifile,gi)
+    writeImage(gffile,gf)
   else:
-    fx,x1,x2,x3=getLogSamples(logType)
-    samples=fx,x1,x2,x3
+    #fx,x1,x2,x3=getLogSamples(logType)
+    #samples=fx,x1,x2,x3
+    ri = RgtInterpolator(s1,s2,s3,0.001)
+    gs = readImage3D(gsfile)
     gi = readImage3D(gifile)
-  print max(gi)
-  print min(gi)
-  gx = readImage3D(gxfile)
-  #gi = copy(n1-400,n2,n3,0,0,0,gi)
-  #gx = copy(n1-400,n2,n3,0,0,0,gx)
-  #c1 = Sampling(n1-400,d1,f1)
-  k3 = 72
-  plot3(gx,s1=s1,k1=816,k3=k3,clab="Amplitude",png="seisSub")
-  plot3(gx,s1=s1,samples=samples,k1=816,k3=k3,png="seisWellSub")
-  plot3(gx,g=gi,s1=s1,samples=samples,k1=816,k3=k3,
+    gf = ri.fillLowVelocity(0.18,gs,gi)
+  k3 = 29
+  k1 = 1242
+  '''
+  plot3(gx,s1=s1,k1=k1,k3=k3,clab="Amplitude",png="seisSub")
+  plot3(gx,s1=s1,samples=samples,k1=k1,k3=k3,png="seisWellSub")
+  plot3(gx,g=gi,s1=s1,samples=samples,k1=k1,k3=k3,
         cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interp")
-  
-def goSlopeVectors():
-  gx = readImage3D(gxfile)
-  v1 = zerofloat(n1,n2,n3)
-  v2 = zerofloat(n1,n2,n3)
-  v3 = zerofloat(n1,n2,n3)
-  w1 = zerofloat(n1,n2,n3)
-  w2 = zerofloat(n1,n2,n3)
-  w3 = zerofloat(n1,n2,n3)
-  lof = LocalOrientFilter(4,1)
-  lof.apply(gx,None,None,None,None,None,v1,v2,v3,w1,w2,w3,None,None,None,None,None)
-  writeImage(v1file,v1)
-  writeImage(v2file,v2)
-  writeImage(v3file,v3)
-  writeImage(w1file,w1)
-  writeImage(w2file,w2)
-  writeImage(w3file,w3)
-
-def goPlaneWaveDestruction():
-  gx = readImage3D(gxfile)
-  if not plotOnly:
-    ke = KaustEdge()
-    pd = ke.planeWaveDestruction(8,12,gx)
-    pd = sub(pd,min(pd));
-    pd = div(pd,max(pd));
-    ke = KaustEdge()
-    pd = ke.scale(pd)
-    writeImage(pdfile,pd)
-  else:
-    pd = readImage3D(pdfile)
-  plot3(gx,pd,cmin=0.2,cmax=1.0,cmap=jetRamp(1.0),png="pd")
-
+  plot3(gx,g=gf,s1=s1,samples=samples,k1=k1,k3=k3,
+        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interpFilled")
+  '''
+  plot3(gx,g=gs,k1=k1,k3=k3,cmap=jetFillExceptMin(1.0),cmin=0.18,cmax=0.4,clab="Kaust detection",png="kaust")
 def goKaustEdge():
   gx = readImage3D(gxfile)
+  rgf1 = RecursiveGaussianFilter(1)
+  rgf2 = RecursiveGaussianFilter(2)
+  rgf3 = RecursiveGaussianFilter(4)
   if not plotOnly:
-    v1 = readImage3D(v1file)
-    v2 = readImage3D(v2file)
-    v3 = readImage3D(v3file)
-    w1 = readImage3D(w1file)
-    w2 = readImage3D(w2file)
-    w3 = readImage3D(w3file)
-    dd = zerofloat(n1,n2,n3)
-    ke = KaustEdge()
-    dd = ke.directionalDifference(gx,v1,v2,v3,w1,w2,w3)
-    dd = sub(dd,min(dd))
-    dd = div(dd,max(dd))
-    writeImage(ddfile,dd)
-  else:
-    dd = readImage3D(ddfile)
-  plot3(dd,cmin=0.01,cmax=0.5,clab="Kaust Edge",cint=0.1,png="dd")
+    gc = readImage3D("gc3")
+    g2 = zerofloat(n1,n2,n3)
+    g3 = zerofloat(n1,n2,n3)
+    rgf2.applyX0X(gc,gc)
+    rgf2.applyXX0(gc,gc)
 
-def goKaustEdgeEnhance():
-  gx = readImage3D(gxfile)
-  if not plotOnly:
-    dd = readImage3D(ddfile)
-    dd = KaustEdgeScanner.taper(10,0,0,dd)
-    ks = KaustEdgeScanner(4,12)
-    kl,kp,kt = ks.scan(0,360,70,89,dd)
-    print "kl min =",min(kl)," max =",max(kl)
-    print "kp min =",min(kp)," max =",max(kp)
-    print "kt min =",min(kt)," max =",max(kt)
-    writeImage(klfile,kl)
-    writeImage(kpfile,kp)
-    writeImage(ktfile,kt)
-  else:
-    kl = readImage3D(klfile)
-  plot3(gx,kl,cmin=0.01,cmax=0.2,cmap=jetRamp(1.0),
-        clab="Edge likelihood",png="kl")
+    rgf1.applyX1X(gc,g2)
+    rgf1.applyXX1(gc,g3)
 
+    gs = sqrt(add(mul(g2,g2),mul(g3,g3)))
+    rgf3.apply0XX(gs,gs)
+    gs = sub(gs,min(gs))
+    gs = div(gs,max(gs))
+    fl = Flattener3Dw()
+    x1 = readImage3D("xc3")
+    u1 = fl.rgtFromHorizonVolume(Sampling(n1),x1)
+    gs = fl.unflatten(u1,gs)
+    writeImage(gsfile,gs)
+  else:
+    gs = readImage3D(gsfile)
+    #gs = cleanKaustEdge(gs)
+  plot3(gs,cmin=0.01,cmax=0.5,clab="Kaust Edge",cint=0.1,png="gs")
+  plot3(gx,g=gs,cmap=jetFillExceptMin(1.0),cmin=0.1,cmax=0.5)
+
+def cleanKaustEdge(gs):
+  for i3 in range(n3):
+    for i2 in range(n2):
+      for i1 in range(500):
+        gs[i3][i2][i1] = 0
+  for i3 in range(2):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        gs[i3][i2][i1] = 0
+  for i3 in range(n3-3,n3):
+    for i2 in range(n2):
+      for i1 in range(n1):
+        gs[i3][i2][i1] = 0
+
+  for i3 in range(n3):
+    for i2 in range(n2-3,n2):
+      for i1 in range(n1):
+        gs[i3][i2][i1] = 0
 def getLogSamples(curve):
   k1,k2,k3,fk=[],[],[],[]
   wldata = WellLog.Data(logDir, dvtDir)

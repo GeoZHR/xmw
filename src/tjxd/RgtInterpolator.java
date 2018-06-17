@@ -1,5 +1,6 @@
 package tjxd;
 
+import util.*;
 import java.util.*;
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
@@ -29,6 +30,93 @@ public class RgtInterpolator {
     _s2 = s2;
     _s3 = s3;
     _epsilon = epsilon;
+  }
+
+  public float[][][] fill(float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    float[][][] ff = copy(fx);
+    int[][] bx1 = new int[n3][n2];
+    int[][] tx1 = new int[n3][n2];
+    float[][] fxb = new float[n3][n2];
+    float[][] fxt = new float[n3][n2];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int b1 = n1-1;
+      for (int i1=n1-1; i1>=0; --i1) {
+	float fxi = fx[i3][i2][i1];
+        if(fxi!=0f) {
+          bx1[i3][i2] = i1;
+          fxb[i3][i2] = fxi;
+	  break;
+	}
+      }
+      int t1 = 0;
+      for (int i1=0; i1<n1; ++i1) {
+	float fxi = fx[i3][i2][i1];
+        if(fxi!=0f) {
+          tx1[i3][i2] = i1;
+	  fxt[i3][i2] = fxi;
+	  break;
+	}
+      }
+    }}
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(4);
+    rgf.apply00(fxt,fxt);
+    rgf.apply00(fxb,fxb);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+      int b1 = bx1[i3][i2];
+      int t1 = tx1[i3][i2];
+      for (int i1=0; i1<=t1; i1++)
+	ff[i3][i2][i1] = fxt[i3][i2];
+      for (int i1=b1; i1<n1; i1++)
+	ff[i3][i2][i1] = fxb[i3][i2];
+    }}
+    return ff;
+  }
+
+  public float[][][] fillLowVelocity(float emin, float[][][] ex, float[][][] vx) {
+    int n3 = vx.length;
+    int n2 = vx[0].length;
+    int n1 = vx[0][0].length;
+    float[][][] vf = copy(vx);
+    for (int i3=3; i3<n3-3; i3++) {
+    for (int i2=3; i2<n2-3; i2++) {
+    for (int i1=500; i1<n1; i1++) {
+      float exi = ex[i3][i2][i1];
+      if(exi>emin) {
+	vf[i3][i2][i1] = 0.8f;
+      }
+    }}}
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+    for (int i1=0; i1<500; i1++) {
+      ex[i3][i2][i1] = 0f;
+    }}}
+
+    for (int i3=0; i3<3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+    for (int i1=0; i1<n1; i1++) {
+      ex[i3][i2][i1] = 0f;
+    }}}
+    for (int i3=n3-3; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+    for (int i1=0; i1<n1; i1++) {
+      ex[i3][i2][i1] = 0f;
+    }}}
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<3; i2++) {
+    for (int i1=0; i1<n1; i1++) {
+      ex[i3][i2][i1] = 0f;
+    }}}
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=n2-3; i2<n2; i2++) {
+    for (int i1=0; i1<n1; i1++) {
+      ex[i3][i2][i1] = 0f;
+    }}}
+    return vf;
   }
 
 

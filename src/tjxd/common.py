@@ -21,8 +21,8 @@ from edu.mines.jtk.util.ArrayMath import *
 from util import *
 from uff import *
 from mef import *
-from gu import *
 from hvc import *
+from gu import *
 from tjxd import *
 
 #############################################################################
