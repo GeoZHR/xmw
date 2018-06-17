@@ -77,25 +77,37 @@ public class RgtInterpolator {
     return ff;
   }
 
-  public float[][][] fillLowVelocity(float emin, float[][][] ex, float[][][] vx) {
+  public float[][][] fillLowVelocity(
+    float i1min, float i1max, float vmin, float vmax, 
+    float[][][] ex, float[][][] vx) {
     int n3 = vx.length;
     int n2 = vx[0].length;
     int n1 = vx[0][0].length;
     float[][][] vf = copy(vx);
-    for (int i3=3; i3<n3-3; i3++) {
-    for (int i2=3; i2<n2-3; i2++) {
-    for (int i1=500; i1<n1; i1++) {
-      float exi = ex[i3][i2][i1];
-      if(exi>emin) {
-	vf[i3][i2][i1] = 0.8f;
-      }
-    }}}
+    float dv = vmax-vmin;
+    float d1 = i1max-i1min;
+    dv /= d1;
     for (int i3=0; i3<n3; i3++) {
     for (int i2=0; i2<n2; i2++) {
-    for (int i1=0; i1<500; i1++) {
-      ex[i3][i2][i1] = 0f;
+    for (int i1=0; i1<n1; i1++) {
+      if(ex[i3][i2][i1]>0f){
+        vf[i3][i2][i1] = vmin+(i1-i1min)*dv;
+      }
     }}}
+    return vf;
+  }
 
+  public void karstThreshold(float[][][] ex) {
+    int n3 = ex.length;
+    int n2 = ex[0].length;
+    int n1 = ex[0][0].length;
+    //zero the top (<450 samples)
+    for (int i3=3; i3<n3-3; i3++) {
+    for (int i2=3; i2<n2-3; i2++) {
+    for (int i1=0; i1<490;  i1++) {
+	    ex[i3][i2][i1] = 0.0f;
+    }}}
+    //zero the valued near boundaries
     for (int i3=0; i3<3; i3++) {
     for (int i2=0; i2<n2; i2++) {
     for (int i1=0; i1<n1; i1++) {
@@ -116,8 +128,48 @@ public class RgtInterpolator {
     for (int i1=0; i1<n1; i1++) {
       ex[i3][i2][i1] = 0f;
     }}}
-    return vf;
+    for (int i3=3; i3<n3-3; i3++) {
+    for (int i2=3; i2<n2-3; i2++) {
+    for (int i1=490; i1<900;  i1++) {
+      if(ex[i3][i2][i1]<0.18f) {
+	      ex[i3][i2][i1] = 0.0f;
+      }
+    }}}
+
+    for (int i3=3; i3<n3-3; i3++) {
+    for (int i2=3; i2<n2-3; i2++) {
+    for (int i1=900; i1<980;  i1++) {
+      if(ex[i3][i2][i1]<0.21f) {
+	      ex[i3][i2][i1] = 0.0f;
+      }
+    }}}
+
+    for (int i3=3; i3<n3-3; i3++) {
+    for (int i2=3; i2<n2-3; i2++) {
+    for (int i1=980; i1<1160;  i1++) {
+      if(ex[i3][i2][i1]<0.16f) {
+	      ex[i3][i2][i1] = 0.0f;
+      }
+    }}}
+
+    for (int i3=3; i3<n3-3; i3++) {
+    for (int i2=3; i2<n2-3; i2++) {
+    for (int i1=1160; i1<1280;  i1++) {
+      if(ex[i3][i2][i1]<0.23f) {
+	      ex[i3][i2][i1] = 0.0f;
+      }
+    }}}
+
+    for (int i3=3; i3<n3-3; i3++) {
+    for (int i2=3; i2<n2-3; i2++) {
+    for (int i1=1280; i1<n1;  i1++) {
+      if(ex[i3][i2][i1]<0.18f) {
+	      ex[i3][i2][i1] = 0.0f;
+      }
+    }}}
+
   }
+
 
 
   /**
@@ -141,6 +193,19 @@ public class RgtInterpolator {
     SincInterpolator si = new SincInterpolator();
     si.setExtrapolation(SincInterpolator.Extrapolation.CONSTANT);
     List<CubicInterpolator> cis = new ArrayList<CubicInterpolator>();
+    List<CubicInterpolator> ciw = new ArrayList<CubicInterpolator>();
+    for (int iw=0; iw<nw; iw++) {
+      int nl = x1[iw].length;
+      float[] ws = new float[n1];
+      for (int il=0; il<nl; ++il) {
+        int i1 = _s1.indexOfNearest(x1[iw][il]);
+        ws[i1] = 1f;
+      }
+      int i2 = _s2.indexOfNearest(x2[iw][0]);
+      int i3 = _s3.indexOfNearest(x3[iw][0]);
+      CubicInterpolator cii = new CubicInterpolator(t[i3][i2],ws);
+      ciw.add(cii);
+    }
     for (int iw=0; iw<nw; iw++) {
       ArrayList<Float> fxs = new ArrayList<Float>();
       ArrayList<Float> fts = new ArrayList<Float>();
@@ -184,12 +249,14 @@ public class RgtInterpolator {
         for (int iw=0; iw<nw; iw++) {
           int np = ft[iw].length;
           CubicInterpolator cii = cis.get(iw);
+          CubicInterpolator cwi = ciw.get(iw);
           if(txi>ft[iw][0]&&txi<ft[iw][np-1]) {
             float dx2 = x2i-x2[iw][0];
             float dx3 = x3i-x3[iw][0];
             float rxi = sqrt(dx2*dx2+dx3*dx3);
             float fxi = cii.interpolate(txi);
-            float sci = radialBasis(rxi);
+            float swi = cwi.interpolate(txi);
+            float sci = swi*radialBasis(rxi);
             scs += sci;
             fxs += fxi*sci;
           }
