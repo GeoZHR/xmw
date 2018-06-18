@@ -54,8 +54,8 @@ global logType
 global wmin
 global wmax
 
-plotOnly = False
 plotOnly = True
+plotOnly = False
 
 def main(args):
   #goSubset()
