@@ -54,8 +54,8 @@ global logType
 global wmin
 global wmax
 
-plotOnly = True
 plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSubset()
@@ -63,8 +63,8 @@ def main(args):
   #goFlatten()
   #goCorrection(4,2,1,20,0.5,0.5)
   #goCorrection(4,2,2,5,0.25,0.5)
-  goVelInterp()
-  #goDenInterp()
+  #goVelInterp()
+  goDenInterp()
   #goKaustEdge()
 
 
@@ -237,7 +237,7 @@ def goDenInterp():
     gi = ri.fill(gi)
     gs = readImage3D(gsfile)
     ri.karstThreshold(gs)
-    gf = ri.fillLowVelocity(490,n1,0.8,1.0,gs,gi)
+    gf = ri.fillLowVelocity(490,n1,0.3,0.45,gs,gi)
     writeImage(gifile+"-"+logType,gi)
     writeImage(gsfile,gs)
     writeImage(gffile+"-"+logType,gf)
