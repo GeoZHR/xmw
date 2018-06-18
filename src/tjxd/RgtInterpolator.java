@@ -388,11 +388,79 @@ public class RgtInterpolator {
     return fi;
   }
 
-  public void timeToDepth(final float[][][] vx) {
-    final int n3 = vx.length;
-    final int n2 = vx[0].length;
-    final int n1 = vx[0][0].length;
+  public float[][][] timeToDepth(
+    Sampling st, final float dz, final float[][][] vt) {
+    final int n3 = vt.length;
+    final int n2 = vt[0].length;
+    final int nt = vt[0][0].length;
+    final float[][][] zt = new float[n3][n2][nt];
+    final float dt = (float)st.getDelta();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] vti = vt[i3][i2];
+        float[] zti = zt[i3][i2];
+        for (int i1=1; i1<nt; ++i1)
+          zti[i1] = zti[i1-1]+vti[i1-1]*dt;
+      }
+    }});
+    float zmax = max(zt);
+    int nz = round(zmax/dz);
+    final float[][][] vz = new float[n3][n2][nz];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] vti = vt[i3][i2];
+        float[] zti = zt[i3][i2];
+        float[] vzi = vz[i3][i2];
+        CubicInterpolator ci = new CubicInterpolator(zti,vti);
+        for (int i1=1; i1<nz; ++i1)
+          vzi[i1] = ci.interpolate(i1*dz);
+      }
+    }});
+    return vz;
   }
+
+  public float[][][][] timeToDepth(
+    Sampling st, final float dz, final float[][][] vt, final float[][][] rt) {
+    final int n3 = vt.length;
+    final int n2 = vt[0].length;
+    final int nt = vt[0][0].length;
+    final float[][][] zt = new float[n3][n2][nt];
+    final float dt = (float)st.getDelta();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] vti = vt[i3][i2];
+        float[] zti = zt[i3][i2];
+        for (int i1=1; i1<nt; ++i1)
+          zti[i1] = zti[i1-1]+vti[i1-1]*dt;
+      }
+    }});
+    float zmax = max(zt);
+    int nz = round(zmax/dz);
+    final float[][][] vz = new float[n3][n2][nz];
+    final float[][][] rz = new float[n3][n2][nz];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        float[] vti = vt[i3][i2];
+        float[] rti = rt[i3][i2];
+        float[] zti = zt[i3][i2];
+        float[] vzi = vz[i3][i2];
+        float[] rzi = rz[i3][i2];
+        CubicInterpolator cvi = new CubicInterpolator(zti,vti);
+        CubicInterpolator cri = new CubicInterpolator(zti,rti);
+        for (int i1=1; i1<nz; ++i1) {
+          float zi = i1*dz;
+          vzi[i1] = cvi.interpolate(zi);
+          rzi[i1] = cri.interpolate(zi);
+        }
+      }
+    }});
+    return new float[][][][]{vz,rz};
+  }
+
 
   public float[][][] fillTop(int h, int b1, float[][][] vx) {
     int n3 = vx.length;
