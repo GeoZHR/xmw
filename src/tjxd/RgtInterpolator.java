@@ -414,13 +414,14 @@ public class RgtInterpolator {
         float[] vti = vt[i3][i2];
         float[] zti = zt[i3][i2];
         for (int i1=1; i1<nt; ++i1)
-          zti[i1] = zti[i1-1]+vti[i1-1]*dt*0.5f;
+          zti[i1] = zti[i1-1]+1000f*vti[i1-1]*dt*0.5f;//meter
       }
     }});
     return zt;
   }
 
-  public float[][][] timeToDepth(final float dz, final float[][][] zt, final float[][][] vt) {
+  public float[][][] timeToDepth(
+    final float dz, final float[][][] zt, final float[][][] vt) {
     clean(0.001f,zt); // make sure zt is vertically mononic
     float zmax = max(zt);
     final int n3 = vt.length;
