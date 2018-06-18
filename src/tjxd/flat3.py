@@ -258,6 +258,44 @@ def goDenInterp():
   plot3(gx,g=gs,s1=Sampling(n1),k1=k1,k3=k3,cmap=jetFillExceptMin(1.0),cmin=0.16,cmax=0.4,cint=0.1,
           clab="Karst detection",png="karst")
 
+def goVelInterpHR():
+  global logType, wmin, wmax
+  logType = "velocity"
+  wmin = 1.8
+  wmax = 6.0
+  gx = readImage3D(gxfile)
+  if not plotOnly:
+    x1 = readImage3D("xc3")
+    fl = Flattener3Dw()
+    gt = fl.rgtFromHorizonVolume(Sampling(n1),x1)
+    ri = RgtInterpolator(s1,s2,s3,0.001)
+    fx,x1,x2,x3=getLogSamples(logType)
+    samples=fx,x1,x2,x3
+    gi = ri.apply(fx,x1,x2,x3,gt)
+    gi = ri.fill(gi)
+    gs = readImage3D(gsfile)
+    ri.karstThreshold(gs)
+    gf = ri.fillLowVelocity(490,n1,0.8,1.0,gs,gi)
+    writeImage(gifile+"-"+logType,gi)
+    writeImage(gsfile,gs)
+    writeImage(gffile+"-"+logType,gf)
+  else:
+    fx,x1,x2,x3=getLogSamples(logType)
+    samples=fx,x1,x2,x3
+    gs = readImage3D(gsfile)
+    gi = readImage3D(gifile+"-"+logType)
+    gf = readImage3D(gffile+"-"+logType)
+  k3 = 29
+  k1 = 1242
+  plot3(gx,s1=s1,k1=k1,k3=k3,clab="Amplitude",png="seisSub")
+  plot3(gx,s1=s1,samples=samples,k1=k1,k3=k3,png="seisWellSub"+"-"+logType)
+  plot3(gx,g=gi,s1=s1,samples=samples,k1=k1,k3=k3,
+        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interp"+"-"+logType)
+  plot3(gx,g=gf,s1=s1,samples=samples,k1=k1,k3=k3,
+        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interpFilled"+"-"+logType)
+  plot3(gx,g=gs,s1=Sampling(n1),k1=k1,k3=k3,cmap=jetFillExceptMin(1.0),cmin=0.16,cmax=0.4,cint=0.1,
+          clab="Karst detection",png="karst")
+
 def goKaustEdge():
   gx = readImage3D(gxfile)
   rgf1 = RecursiveGaussianFilter(1)
