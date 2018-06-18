@@ -97,6 +97,29 @@ public class RgtInterpolator {
     return vf;
   }
 
+  public float[][][] fillLowVelocity(
+    Sampling s1i, float i1min, float i1max, float vmin, float vmax, 
+    float[][][] ex, float[][][] vx) {
+    int n3 = vx.length;
+    int n2 = vx[0].length;
+    int n1 = vx[0][0].length;
+    float[][][] vf = copy(vx);
+    float dv = vmax-vmin;
+    float d1 = i1max-i1min;
+    dv /= d1;
+    for (int i3=0; i3<n3; i3++) {
+    for (int i2=0; i2<n2; i2++) {
+    for (int i1=0; i1<n1; i1++) {
+      double x1i = s1i.getValue(i1);
+      int k1 = _s1.indexOfNearest(x1i);
+      if(ex[i3][i2][k1]>0f){
+        vf[i3][i2][i1] = vmin+(i1-i1min)*dv;
+      }
+    }}}
+    return vf;
+  }
+
+
   public void karstThreshold(float[][][] ex) {
     int n3 = ex.length;
     int n2 = ex[0].length;

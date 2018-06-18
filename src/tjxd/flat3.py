@@ -64,7 +64,8 @@ def main(args):
   #goCorrection(4,2,1,20,0.5,0.5)
   #goCorrection(4,2,2,5,0.25,0.5)
   #goVelInterp()
-  goDenInterp()
+  #goDenInterp()
+  goVelInterpHR()
   #goKaustEdge()
 
 
@@ -264,6 +265,8 @@ def goVelInterpHR():
   wmin = 1.8
   wmax = 6.0
   gx = readImage3D(gxfile)
+  s1i = Sampling(n1*4,d1*0.25,f1)
+  m1 = s1i.getCount()
   if not plotOnly:
     x1 = readImage3D("xc3")
     fl = Flattener3Dw()
@@ -271,30 +274,34 @@ def goVelInterpHR():
     ri = RgtInterpolator(s1,s2,s3,0.001)
     fx,x1,x2,x3=getLogSamples(logType)
     samples=fx,x1,x2,x3
-    gi = ri.apply(fx,x1,x2,x3,gt)
+    gi = ri.apply(s1i,fx,x1,x2,x3,gt)
     gi = ri.fill(gi)
     gs = readImage3D(gsfile)
-    ri.karstThreshold(gs)
-    gf = ri.fillLowVelocity(490,n1,0.8,1.0,gs,gi)
-    writeImage(gifile+"-"+logType,gi)
+    #ri.karstThreshold(gs)
+    gf = ri.fillLowVelocity(s1i,490*4,m1,0.8,1.0,gs,gi)
+    writeImage(gifile+"HR-"+logType,gi)
     writeImage(gsfile,gs)
-    writeImage(gffile+"-"+logType,gf)
+    writeImage(gffile+"HR-"+logType,gf)
   else:
     fx,x1,x2,x3=getLogSamples(logType)
     samples=fx,x1,x2,x3
     gs = readImage3D(gsfile)
-    gi = readImage3D(gifile+"-"+logType)
-    gf = readImage3D(gffile+"-"+logType)
+    gi = readImage3D(gifile+"HR-"+logType)
+    gf = readImage3D(gffile+"HR-"+logType)
   k3 = 29
   k1 = 1242
-  plot3(gx,s1=s1,k1=k1,k3=k3,clab="Amplitude",png="seisSub")
-  plot3(gx,s1=s1,samples=samples,k1=k1,k3=k3,png="seisWellSub"+"-"+logType)
-  plot3(gx,g=gi,s1=s1,samples=samples,k1=k1,k3=k3,
-        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interp"+"-"+logType)
-  plot3(gx,g=gf,s1=s1,samples=samples,k1=k1,k3=k3,
-        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interpFilled"+"-"+logType)
-  plot3(gx,g=gs,s1=Sampling(n1),k1=k1,k3=k3,cmap=jetFillExceptMin(1.0),cmin=0.16,cmax=0.4,cint=0.1,
-          clab="Karst detection",png="karst")
+  si = SincInterpolator()
+  gi = zerofloat(m1,n2,n3)
+  #upscale the seismic for displaying
+  for i3 in range(n3):
+    for i2 in range(n2):
+      si.interpolate(s1,gx[i3][i2],s1i,gi[i3][i2])
+  plot3(gx,s1=s1i,k1=k1,k3=k3,clab="Amplitude",png="seisSub")
+  plot3(gx,s1=s1i,samples=samples,k1=k1,k3=k3,png="seisWellSub"+"HR-"+logType)
+  plot3(gx,g=gi,s1=s1i,samples=samples,k1=k1,k3=k3,
+        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interp"+"HR-"+logType)
+  plot3(gx,g=gf,s1=s1i,samples=samples,k1=k1,k3=k3,
+        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interpFilled"+"HR-"+logType)
 
 def goKaustEdge():
   gx = readImage3D(gxfile)
