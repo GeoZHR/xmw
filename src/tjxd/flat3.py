@@ -355,6 +355,8 @@ def goTimeToDepth():
     rtf = readImage3DX(m1,n2,n3,gffile+"HR-"+"density")
     vtf = readImage3DX(m1,n2,n3,gffile+"HR-"+"velocity")
     ri = RgtInterpolator(s1,s2,s3,0.001)
+    rgf = RecursiveExponentialFilterP(1)
+    rgf.apply000(vt,vt)
     vt = ri.fillTop(4,190,vt)
     rt = ri.fillTop(4,190,rt)
     vtf = ri.fillTop(4,190,vtf)
@@ -384,6 +386,8 @@ def goTimeToDepth():
     rzf = readImage3DX(nz,n2,n3,rzffile)
   plot3(vt,g=zt,s1=st,k1=k1,k3=k3,
         cmin=0,cmax=max(zt),cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vt")
+  plot3(vt,g=vt,s1=st,k1=k1,k3=k3,
+        cmin=1.8,cmax=6.5,cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vt")
   plot3(vz,g=vz,s1=sz,k1=k1,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vz")
   '''
