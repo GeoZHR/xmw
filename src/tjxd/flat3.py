@@ -38,6 +38,10 @@ klfile = "kl"
 kpfile = "kp"
 ktfile = "kt"
 gsfile = "gs" # flattened seismic image
+vzfile = "vz"
+rzfile = "rz"
+vzffile = "vzf"
+rzffile = "rzf"
 
 #log information
 c2s = [670916,660065,659116,664891,661082,677668,
@@ -54,8 +58,8 @@ global logType
 global wmin
 global wmax
 
-plotOnly = False
 plotOnly = True
+plotOnly = False
 
 def main(args):
   #goSubset()
@@ -65,7 +69,9 @@ def main(args):
   #goCorrection(4,2,2,5,0.25,0.5)
   #goVelInterp()
   #goDenInterp()
-  goVelInterpHR()
+  #goVelInterpHR()
+  #goDenInterpHR()
+  goTimeToDepth()
   #goKaustEdge()
 
 
@@ -278,14 +284,13 @@ def goVelInterpHR():
     gi = ri.fill(gi)
     gs = readImage3D(gsfile)
     #ri.karstThreshold(gs)
+    #writeImage(gsfile,gs)
     gf = ri.fillLowVelocity(s1i,490*4,m1,0.8,1.0,gs,gi)
     writeImage(gifile+"HR-"+logType,gi)
-    writeImage(gsfile,gs)
     writeImage(gffile+"HR-"+logType,gf)
   else:
     fx,x1,x2,x3=getLogSamples(logType)
     samples=fx,x1,x2,x3
-    gs = readImage3D(gsfile)
     gi = readImage3DX(m1,n2,n3,gifile+"HR-"+logType)
     gf = readImage3DX(m1,n2,n3,gffile+"HR-"+logType)
   k3 = 29
@@ -302,6 +307,89 @@ def goVelInterpHR():
         cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interp"+"HR-"+logType)
   plot3(gxi,g=gf,s1=s1i,samples=samples,k1=k1,k3=k3,
         cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interpFilled"+"HR-"+logType)
+
+def goDenInterpHR():
+  global logType, wmin, wmax
+  logType = "density"
+  wmin = 1.5
+  wmax = 3.0
+  gx = readImage3D(gxfile)
+  s1i = Sampling(n1*4,d1*0.25,f1)
+  m1 = s1i.getCount()
+  ri = RgtInterpolator(s1,s2,s3,0.001)
+  if not plotOnly:
+    x1 = readImage3D("xc3")
+    fl = Flattener3Dw()
+    gt = fl.rgtFromHorizonVolume(Sampling(n1),x1)
+    fx,x1,x2,x3=getLogSamples(logType)
+    samples=fx,x1,x2,x3
+    gi = ri.apply(s1i,fx,x1,x2,x3,gt)
+    gi = ri.fill(gi)
+    gs = readImage3D(gsfile)
+    #ri.karstThreshold(gs)
+    #writeImage(gsfile,gs)
+    gf = ri.fillLowVelocity(s1i,490*4,m1,0.8,1.0,gs,gi)
+    writeImage(gifile+"HR-"+logType,gi)
+    writeImage(gffile+"HR-"+logType,gf)
+  else:
+    fx,x1,x2,x3=getLogSamples(logType)
+    samples=fx,x1,x2,x3
+    gi = readImage3DX(m1,n2,n3,gifile+"HR-"+logType)
+    gf = readImage3DX(m1,n2,n3,gffile+"HR-"+logType)
+  k3 = 29
+  k1 = 1242
+  gxi = ri.resampling(s1,s1i,gx)
+  plot3(gxi,s1=s1i,k1=k1,k3=k3,clab="Amplitude",png="seisSub")
+  plot3(gxi,s1=s1i,samples=samples,k1=k1,k3=k3,png="seisWellSub"+"HR-"+logType)
+  plot3(gxi,g=gi,s1=s1i,samples=samples,k1=k1,k3=k3,
+        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab=logType,png="interp"+"HR-"+logType)
+  plot3(gxi,g=gf,s1=s1i,samples=samples,k1=k1,k3=k3,
+        cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab=logType,png="interpFilled"+"HR-"+logType)
+
+def goTimeToDepth():
+  if not plotOnly:
+    s1i = Sampling(n1*4,d1*0.25,f1)
+    m1 = s1i.getCount()
+    rt = readImage3DX(m1,n2,n3,gifile+"HR-"+"density")
+    vt = readImage3DX(m1,n2,n3,gifile+"HR-"+"velocity")
+    rtf = readImage3DX(m1,n2,n3,gffile+"HR-"+"density")
+    vtf = readImage3DX(m1,n2,n3,gffile+"HR-"+"velocity")
+    ri = RgtInterpolator(s1,s2,s3,0.001)
+    vt = ri.fillTop(4,190,vt)
+    rt = ri.fillTop(4,190,rt)
+    vtf = ri.fillTop(4,190,vtf)
+    rtf = ri.fillTop(4,190,rtf)
+    nt = len(vt[0][0])
+    st = Sampling(nt,d1*0.25,0.0)
+    zt=ri.timeToDepthFunction(st,vt)
+    vz = ri.timeToDepth(2.5,zt,vt)
+    rz = ri.timeToDepth(2.5,zt,rt)
+    vzf = ri.timeToDepth(2.5,zt,vtf)
+    rzf = ri.timeToDepth(2.5,zt,rtf)
+    writeImage(vzfile,vz)
+    writeImage(rzfile,rz)
+    writeImage(vzffile,vzf)
+    writeImage(rzffile,rzf)
+    nz = len(vz[0][0])
+    print nz
+    sz = Sampling(nz,2.5,0.0)
+  else:
+    nz = 1000
+    sz = Sampling(nz,2.5,0.0)
+    vz = readImage3DX(nz,n2,n3,vzfile)
+    rz = readImage3DX(nz,n2,n3,rzfile)
+    vzf = readImage3DX(nz,n2,n3,vzffile)
+    rzf = readImage3DX(nz,n2,n3,rzffile)
+  plot3(vt,g=zt,s1=st,k1=k1,k3=k3,
+        cmin=0,cmax=max(zt),cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vt")
+  plot3(vz,g=vz,s1=sz,k1=k1,k3=k3,
+        cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vz")
+  plot3(vzf,g=vzf,s1=sz,k1=k1,k3=k3,
+        cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vzf")
+  plot3(rz,g=rz,s1=sz,k1=k1,k3=k3,
+        cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="density",png="rz")
+  plot3(rzf,g=rzf,s1=sz,k1=k1,k3=k3,
+        cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="density",png="rzf")
 
 def goKaustEdge():
   gx = readImage3D(gxfile)

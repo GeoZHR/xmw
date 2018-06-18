@@ -193,7 +193,20 @@ public class RgtInterpolator {
 
   }
 
-
+  public float[][][] resampling(final Sampling s1, final Sampling s1i, final float[][][] fx) {
+    final int n3 = fx.length;
+    final int n2 = fx[0].length;
+    final int m1 = s1i.getCount();
+    final float[][][] fi = new float[n3][n2][m1];
+    final SincInterpolator si = new SincInterpolator();
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) {
+	si.interpolate(s1,fx[i3][i2],s1i,fi[i3][i2]);
+      }
+    }});
+    return fi;
+  }
 
   /**
    * Compute interpolation.
@@ -388,8 +401,8 @@ public class RgtInterpolator {
     return fi;
   }
 
-  public float[][][] timeToDepth(
-    Sampling st, final float dz, final float[][][] vt) {
+  public float[][][] timeToDepthFunction(
+    Sampling st, final float[][][] vt) {
     final int n3 = vt.length;
     final int n2 = vt[0].length;
     final int nt = vt[0][0].length;
@@ -401,17 +414,24 @@ public class RgtInterpolator {
         float[] vti = vt[i3][i2];
         float[] zti = zt[i3][i2];
         for (int i1=1; i1<nt; ++i1)
-          zti[i1] = zti[i1-1]+vti[i1-1]*dt;
+          zti[i1] = zti[i1-1]+vti[i1-1]*dt*0.5f;
       }
     }});
+    return zt;
+  }
+
+  public float[][][] timeToDepth(final float dz, final float[][][] zt, final float[][][] vt) {
+    clean(0.001f,zt); // make sure zt is vertically mononic
     float zmax = max(zt);
-    int nz = round(zmax/dz);
+    final int n3 = vt.length;
+    final int n2 = vt[0].length;
+    final int nz = round(zmax/dz);
     final float[][][] vz = new float[n3][n2][nz];
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
       for (int i2=0; i2<n2; ++i2) {
-        float[] vti = vt[i3][i2];
         float[] zti = zt[i3][i2];
+        float[] vti = vt[i3][i2];
         float[] vzi = vz[i3][i2];
         CubicInterpolator ci = new CubicInterpolator(zti,vti);
         for (int i1=1; i1<nz; ++i1)
@@ -421,62 +441,29 @@ public class RgtInterpolator {
     return vz;
   }
 
-  public float[][][][] timeToDepth(
-    Sampling st, final float dz, final float[][][] vt, final float[][][] rt) {
-    final int n3 = vt.length;
-    final int n2 = vt[0].length;
-    final int nt = vt[0][0].length;
-    final float[][][] zt = new float[n3][n2][nt];
-    final float dt = (float)st.getDelta();
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        float[] vti = vt[i3][i2];
-        float[] zti = zt[i3][i2];
-        for (int i1=1; i1<nt; ++i1)
-          zti[i1] = zti[i1-1]+vti[i1-1]*dt;
-      }
-    }});
-    float zmax = max(zt);
-    int nz = round(zmax/dz);
-    final float[][][] vz = new float[n3][n2][nz];
-    final float[][][] rz = new float[n3][n2][nz];
-    Parallel.loop(n3,new Parallel.LoopInt() {
-    public void compute(int i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        float[] vti = vt[i3][i2];
-        float[] rti = rt[i3][i2];
-        float[] zti = zt[i3][i2];
-        float[] vzi = vz[i3][i2];
-        float[] rzi = rz[i3][i2];
-        CubicInterpolator cvi = new CubicInterpolator(zti,vti);
-        CubicInterpolator cri = new CubicInterpolator(zti,rti);
-        for (int i1=1; i1<nz; ++i1) {
-          float zi = i1*dz;
-          vzi[i1] = cvi.interpolate(zi);
-          rzi[i1] = cri.interpolate(zi);
-        }
-      }
-    }});
-    return new float[][][][]{vz,rz};
-  }
-
-
   public float[][][] fillTop(int h, int b1, float[][][] vx) {
     int n3 = vx.length;
     int n2 = vx[0].length;
     int n1 = vx[0][0].length;
-    int m1 = b1+n1+h*round((float)(_s1.getFirst()/_s1.getDelta()));
+    int d1 = h*round((float)(_s1.getFirst()/_s1.getDelta()));
+    int m1 = n1+d1;
     float[][][] vf = new float[n3][n2][m1];
+    float[][] vb = new float[n3][n2];
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
-    for (int i1=0; i1<m1; ++i1) {
-      vf[i3][i2][i1] = vx[i3][i2][b1];
+      vb[i3][i2] = vx[i3][i2][b1];
+    }}
+    RecursiveGaussianFilterP rgf = new RecursiveGaussianFilterP(5);
+    rgf.apply00(vb,vb);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<d1+b1; ++i1) {
+      vf[i3][i2][i1] = vb[i3][i2];
     }}}
     for (int i3=0; i3<n3; ++i3) {
     for (int i2=0; i2<n2; ++i2) {
     for (int i1=b1; i1<n1; ++i1) {
-      vf[i3][i2][m1+i1-b1] = vx[i3][i2][i1];
+      vf[i3][i2][d1+i1] = vx[i3][i2][i1];
     }}}
     return vf;
   }
@@ -489,6 +476,21 @@ public class RgtInterpolator {
    */
   public float radialBasis(float r) {
     return 1f/(1f+_epsilon*_epsilon*r*r);
+  }
+
+  private void clean(float dmin, float[][][] fx) {
+    int n3 = fx.length;
+    int n2 = fx[0].length;
+    int n1 = fx[0][0].length;
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=1; i1<n1; ++i1) {
+      float fxi = fx[i3][i2][i1];
+      float fxm = fx[i3][i2][i1-1];
+      float fxt = fxm+dmin;
+      if(fxi<fxt) fx[i3][i2][i1] = fxt;
+    }}}
+
   }
 
 
