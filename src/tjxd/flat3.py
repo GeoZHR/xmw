@@ -363,6 +363,7 @@ def goTimeToDepth():
     st = Sampling(nt,d1*0.25,0.0)
     zt=ri.timeToDepthFunction(st,vt)
     vz = ri.timeToDepth(2.5,zt,vt)
+    '''
     rz = ri.timeToDepth(2.5,zt,rt)
     vzf = ri.timeToDepth(2.5,zt,vtf)
     rzf = ri.timeToDepth(2.5,zt,rtf)
@@ -370,6 +371,7 @@ def goTimeToDepth():
     writeImage(rzfile,rz)
     writeImage(vzffile,vzf)
     writeImage(rzffile,rzf)
+    '''
     nz = len(vz[0][0])
     print nz
     sz = Sampling(nz,2.5,0.0)
@@ -384,12 +386,14 @@ def goTimeToDepth():
         cmin=0,cmax=max(zt),cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vt")
   plot3(vz,g=vz,s1=sz,k1=k1,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vz")
+  '''
   plot3(vzf,g=vzf,s1=sz,k1=k1,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="velocity",png="vzf")
   plot3(rz,g=rz,s1=sz,k1=k1,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="density",png="rz")
   plot3(rzf,g=rzf,s1=sz,k1=k1,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="density",png="rzf")
+  '''
 
 def goKaustEdge():
   gx = readImage3D(gxfile)
