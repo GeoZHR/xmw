@@ -355,7 +355,7 @@ def goTimeToDepth():
     rtf = readImage3DX(m1,n2,n3,gffile+"HR-"+"density")
     vtf = readImage3DX(m1,n2,n3,gffile+"HR-"+"velocity")
     ri = RgtInterpolator(s1,s2,s3,0.001)
-    rgf = RecursiveGaussianFilterP(1)
+    rgf = RecursiveGaussianFilterP(4)
     rgf.apply000(vt,vt)
     vt = ri.fillTop(4,190,vt)
     rt = ri.fillTop(4,190,rt)
