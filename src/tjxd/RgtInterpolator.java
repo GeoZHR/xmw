@@ -388,6 +388,31 @@ public class RgtInterpolator {
     return fi;
   }
 
+  public void timeToDepth(final float[][][] vx) {
+    final int n3 = vx.length;
+    final int n2 = vx[0].length;
+    final int n1 = vx[0][0].length;
+  }
+
+  public float[][][] fillTop(int h, int b1, float[][][] vx) {
+    int n3 = vx.length;
+    int n2 = vx[0].length;
+    int n1 = vx[0][0].length;
+    int m1 = b1+n1+h*round((float)(_s1.getFirst()/_s1.getDelta()));
+    float[][][] vf = new float[n3][n2][m1];
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<m1; ++i1) {
+      vf[i3][i2][i1] = vx[i3][i2][b1];
+    }}}
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=b1; i1<n1; ++i1) {
+      vf[i3][i2][m1+i1-b1] = vx[i3][i2][i1];
+    }}}
+    return vf;
+  }
+
 
   /**
    * Interpolation weigths defined by an inverse multiquadric function.
