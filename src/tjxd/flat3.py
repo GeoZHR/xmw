@@ -393,22 +393,21 @@ def goTimeToDepth():
   wmax = 6.0
   plot3(vt,g=vt,s1=st,samples=velSamples,k1=k1,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vt+wells")
+  logType = "density"
+  wmin = 1.5
+  wmax = 3.0
+  plot3(rt,g=rt,s1=st,samples=denSamples,k1=k1,k3=k3,
+        cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rt+wells")
   plot3(vt,g=vt,s1=st,k1=k1,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vt")
   plot3(vt,g=vtf,s1=st,k1=k1,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vtf")
   plot3(vt,g=zt,s1=st,k1=k1,k3=k3,
         cmin=0,cmax=max(zt),cint=0.5,cmap=jetFill(1.0),clab="Time-depth map",png="zt")
-  logType = "density"
-  wmin = 1.5
-  wmax = 3.0
-  plot3(rt,g=rt,s1=st,samples=denSamples,k1=k1,k3=k3,
-        cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rt+wells")
   plot3(rt,g=rt,s1=st,samples=denSamples,k1=k1,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rt")
   plot3(rt,g=rtf,s1=st,samples=denSamples,k1=k1,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rtf")
-
   plot3(vz,g=vz,s1=sz,k1=k1,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vz")
   plot3(vzf,g=vzf,s1=sz,k1=k1,k3=k3,
