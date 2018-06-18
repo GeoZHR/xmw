@@ -54,8 +54,8 @@ global logType
 global wmin
 global wmax
 
-plotOnly = True
 plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSubset()
@@ -286,21 +286,21 @@ def goVelInterpHR():
     fx,x1,x2,x3=getLogSamples(logType)
     samples=fx,x1,x2,x3
     gs = readImage3D(gsfile)
-    gi = readImage3D(gifile+"HR-"+logType)
-    gf = readImage3D(gffile+"HR-"+logType)
+    gi = readImage3DX(m1,n2,n3,gifile+"HR-"+logType)
+    gf = readImage3DX(m1,n2,n3,gffile+"HR-"+logType)
   k3 = 29
   k1 = 1242
   si = SincInterpolator()
-  gi = zerofloat(m1,n2,n3)
+  gxi = zerofloat(m1,n2,n3)
   #upscale the seismic for displaying
   for i3 in range(n3):
     for i2 in range(n2):
-      si.interpolate(s1,gx[i3][i2],s1i,gi[i3][i2])
-  plot3(gx,s1=s1i,k1=k1,k3=k3,clab="Amplitude",png="seisSub")
-  plot3(gx,s1=s1i,samples=samples,k1=k1,k3=k3,png="seisWellSub"+"HR-"+logType)
-  plot3(gx,g=gi,s1=s1i,samples=samples,k1=k1,k3=k3,
+      si.interpolate(s1,gx[i3][i2],s1i,gxi[i3][i2])
+  plot3(gxi,s1=s1i,k1=k1,k3=k3,clab="Amplitude",png="seisSubHR")
+  plot3(gxi,s1=s1i,samples=samples,k1=k1,k3=k3,png="seisWellSub"+"HR-"+logType)
+  plot3(gxi,g=gi,s1=s1i,samples=samples,k1=k1,k3=k3,
         cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interp"+"HR-"+logType)
-  plot3(gx,g=gf,s1=s1i,samples=samples,k1=k1,k3=k3,
+  plot3(gxi,g=gf,s1=s1i,samples=samples,k1=k1,k3=k3,
         cmin=wmin,cmax=wmax,cint=0.5,cmap=jetFill(0.9),clab="Velocity",png="interpFilled"+"HR-"+logType)
 
 def goKaustEdge():
