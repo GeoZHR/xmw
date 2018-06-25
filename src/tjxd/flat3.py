@@ -368,10 +368,12 @@ def goTimeToDepth():
     rz = ri.timeToDepth(2.5,zt,rt)
     vzf = ri.timeToDepth(2.5,zt,vtf)
     rzf = ri.timeToDepth(2.5,zt,rtf)
+    '''
     writeImage(vzfile,vz)
     writeImage(rzfile,rz)
     writeImage(vzffile,vzf)
     writeImage(rzffile,rzf)
+    '''
     nz = len(vz[0][0])
     print nz
     sz = Sampling(nz,2.5,0.0)
@@ -383,7 +385,11 @@ def goTimeToDepth():
     vzf = readImage3DX(nz,n2,n3,vzffile)
     rzf = readImage3DX(nz,n2,n3,rzffile)
   k3 = 29
-  k1 = 1242*4+100*4
+  k1t = round(nt*0.8)
+  k1z = round(nz*0.8)
+  zt = div(zt,1000)
+  plot3(vt,g=zt,s1=st,k1=k1t,k3=k3,
+        cmin=0.001,cmax=max(zt),cint=1.0,cmap=jetFill(1.0),clab="Time-depth map (km)",png="zt")
   denSamples=getLogSamples("density")
   velSamples=getLogSamples("velocity")
   global logType, wmin, wmax
@@ -391,30 +397,34 @@ def goTimeToDepth():
   logType = "velocity"
   wmin = 1.8
   wmax = 6.0
-  plot3(vt,g=vt,s1=st,samples=velSamples,k1=k1,k3=k3,
+  plot3(vt,g=vt,s1=st,samples=velSamples,k1=k1t,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vt+wells")
   logType = "density"
   wmin = 1.5
   wmax = 3.0
-  plot3(rt,g=rt,s1=st,samples=denSamples,k1=k1,k3=k3,
+  plot3(rt,g=rt,s1=st,samples=denSamples,k1=k1t,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rt+wells")
-  plot3(vt,g=vt,s1=st,k1=k1,k3=k3,
+  plot3(vt,g=vt,s1=st,k1=k1t,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vt")
-  plot3(vt,g=vtf,s1=st,k1=k1,k3=k3,
+  plot3(vt,g=vtf,s1=st,k1=k1t,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vtf")
-  plot3(vt,g=zt,s1=st,k1=k1,k3=k3,
-        cmin=0,cmax=max(zt),cint=0.5,cmap=jetFill(1.0),clab="Time-depth map",png="zt")
-  plot3(rt,g=rt,s1=st,samples=denSamples,k1=k1,k3=k3,
+
+  plot3(rt,g=rt,s1=st,samples=denSamples,k1=k1t,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rt")
-  plot3(rt,g=rtf,s1=st,samples=denSamples,k1=k1,k3=k3,
+
+  plot3(rt,g=rtf,s1=st,samples=denSamples,k1=k1t,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rtf")
-  plot3(vz,g=vz,s1=sz,k1=k1,k3=k3,
+
+  plot3(vz,g=vz,s1=sz,k1=k1z,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vz")
-  plot3(vzf,g=vzf,s1=sz,k1=k1,k3=k3,
+
+  plot3(vzf,g=vzf,s1=sz,k1=k1z,k3=k3,
         cmin=1.8,cmax=6.0,cint=0.5,cmap=jetFill(1.0),clab="Velocity",png="vzf")
-  plot3(rz,g=rz,s1=sz,k1=k1,k3=k3,
+
+  plot3(rz,g=rz,s1=sz,k1=k1z,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rz")
-  plot3(rzf,g=rzf,s1=sz,k1=k1,k3=k3,
+
+  plot3(rzf,g=rzf,s1=sz,k1=k1z,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rzf")
 
 def goKaustEdge():
