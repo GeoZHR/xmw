@@ -52,8 +52,16 @@ c3s = [4530909,4532272,4533012,4532232,4530130,4533492,
 
 wns =["YC1","YJ1-3","YJ1-5","YJ1-9X","YJ1X","YJ2-3","YJ2-7X",
       "YJ2-9","YJ2X","YJ3","YJ3-2","YJ3-3H"]
+
+c2s = [660065,664891,676987]	
+
+c3s = [4532272,4532232,4532326]
+
+wns =["YJ1-3","YJ1-9X","YJ3"]
+
 logDir = "../../../data/seis/tjxd/3d/logs/las/"
 dvtDir = "../../../data/seis/tjxd/3d/logs/dvt/"
+
 global logType
 global wmin
 global wmax
@@ -71,8 +79,30 @@ def main(args):
   #goDenInterp()
   #goVelInterpHR()
   #goDenInterpHR()
-  goTimeToDepth()
+  #goTimeToDepth()
   #goKaustEdge()
+  go2dFigures()
+
+def go2dFigures():
+  m1 = n1*4
+  logType = "velocity"
+  gx = readImage3D(gxfile)
+  vi = readImage3DX(m1,n2,n3,gifile+"HR-"+logType)
+  vf = readImage3DX(m1,n2,n3,gffile+"HR-"+logType)
+  k3 = s3.indexOfNearest(c3s[1])
+  gx = gx[k3]
+  vi = vi[k3]
+  vf = vf[k3]
+  si = SincInterpolator()
+  gxi = zerofloat(m1,n2)
+  s1i = Sampling(m1,d1*0.25,f1)
+  #upscale the seismic for displaying
+  for i2 in range(n2):
+    si.interpolate(s1,gx[i2],s1i,gxi[i2])
+  f,t,x=getLogSamplesX(logType)
+  plot2(f,t,x,gxi,s1i,s2,vmin=1.8,vmax=6.0,label="Velocity (km/s)", png="seis2d+well")
+  plot2(f,t,x,gxi,s1i,s2,g=vi,vmin=1.8,vmax=6.0,label="Velocity (km/s)", png="vi2d+well")
+  plot2(f,t,x,gxi,s1i,s2,g=vf,vmin=1.8,vmax=6.0,label="Velocity (km/s)", png="vf2d+well")
 
 
 def goSubset():
@@ -480,12 +510,38 @@ def getLogSamples(curve):
         fk.append(fx)
   return fk,k1,k2,k3
 
+def getLogSamplesX(curve):
+  k1,k2,fk=[],[],[]
+  wldata = WellLog.Data(logDir, dvtDir)
+  logs = wldata.getLogsWith(curve)
+  wi = 0
+  for log in logs:
+    print log.name
+    #if(log.name=="YJ2-7X"):
+    #  continue
+    log.smooth(10)
+    cs = getLogLocation(log.name)
+    if cs:
+      c2 = cs[0]
+      c3 = cs[1]
+      fxs = log.getSamplesX(curve)
+      if(fxs!=None):
+        fx,x1 = fxs[0],fxs[1]
+        if(fx!=None and x1!=None):
+          np = len(x1)
+          for ip in range(np):
+            k1.append(x1[ip])
+            fk.append(fx[ip])
+            k2.append(c2)
+  return fk,k1,k2
+
 def getLogLocation(name):
   wi = 0
   for wni in wns:
     if(wni==name):
       return c2s[wi],c3s[wi]
     wi = wi+1
+  return None
 
 def gain(x):
     g = mul(x,x) 
@@ -632,6 +688,94 @@ def plot3(f,g=None,s1=s1,s2=s2,s3=s3,k1=1100,k2=0,k3=22,au=60,cmin=-4,cmax=4,
     sf.paintToFile(pngDir+png+".png")
     if cbar:
       cbar.paintToPng(720,1,pngDir+png+"cbar.png")
+
+
+def plot2(f,x1,x2,s,s1,s2,g=None,vmin=1.2,vmax=2.0,
+        label=None,png=None,et=None):
+  n1 = len(s[0])
+  n2 = len(s)
+  panel = PlotPanel(1,1,
+    PlotPanel.Orientation.X1DOWN_X2RIGHT)
+    #PlotPanel.AxesPlacement.NONE)
+  panel.setHInterval(5000)
+  panel.setVInterval(0.5)
+  panel.setHLabel("Inline (trace)")
+  panel.setVLabel("Time (s)")
+  if label:
+    panel.addColorBar(label)
+  else:
+    panel.addColorBar()
+  panel.setColorBarWidthMinimum(60)
+  pv = panel.addPixels(s1,s2,s)
+  #pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pv.setColorModel(ColorMap.GRAY)
+  pv.setClips(-2,2)
+  if g:
+    alpha = 0.8
+  else:
+    g = zerofloat(n1,n2)
+    alpha = 0.0
+  pv = panel.addPixels(s1,s2,g)
+  #pv.setInterpolation(PixelsView.Interpolation.NEAREST)
+  pv.setColorModel(ColorMap.getJet(alpha))
+  pv.setClips(vmin,vmax)
+  if et:
+    tv = TensorsView(s1,s2,et)
+    tv.setOrientation(TensorsView.Orientation.X1DOWN_X2RIGHT)
+    tv.setLineColor(Color.YELLOW)
+    tv.setLineWidth(3.0)
+    tv.setScale(2.0)
+    panel.getTile(0,0).addTiledView(tv)
+  else:
+    cmap = ColorMap(vmin,vmax,ColorMap.JET)
+    fs,x1s,x2s = makePointSets(cmap,f,x1,x2)
+    for i in range(len(fs)):
+      color = cmap.getColor(fs[i][0])
+      pv = panel.addPoints(x1s[i],x2s[i])
+      pv.setLineStyle(PointsView.Line.NONE)
+      pv.setMarkStyle(PointsView.Mark.FILLED_SQUARE)
+      pv.setMarkSize(5)
+      pv.setMarkColor(color)
+  frame = PlotFrame(panel)
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+  frame.setFontSize(18)
+  frame.setSize(1000,700)
+  frame.setVisible(True)
+  if png and pngDir:
+    frame.paintToPng(720,3.33,pngDir+"/"+png+".png")
+  return frame
+
+
+def makePointSets(cmap,f,x1,x2):
+  sets = {}
+  for i in range(len(f)):
+    if f[i] in sets:
+      points = sets[f[i]]
+      points[0].append(f[i])
+      points[1].append(x1[i])
+      points[2].append(x2[i])
+    else:
+      points = [[f[i]],[x1[i]],[x2[i]]] # lists of f, x1, x2
+      sets[f[i]] = points
+  ns = len(sets)
+  fs = zerofloat(1,ns)
+  x1s = zerofloat(1,ns)
+  x2s = zerofloat(1,ns)
+  il = 0
+  for points in sets:
+    fl = sets[points][0]
+    x1l = sets[points][1]
+    x2l = sets[points][2]
+    nl = len(fl)
+    fs[il] = zerofloat(nl)
+    x1s[il] = zerofloat(nl)
+    x2s[il] = zerofloat(nl)
+    copy(fl,fs[il])
+    copy(x1l,x1s[il])
+    copy(x2l,x2s[il])
+    il += 1
+  return fs,x1s,x2s
+
 #############################################################################
 # Run the function main on the Swing thread
 import sys

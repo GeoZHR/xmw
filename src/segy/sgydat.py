@@ -82,9 +82,9 @@ def goSinopec():
   writeImage = False # reads all traces, writes an image
   showImage = False # displays the image
   basedir = "../../../data/seis/sinopec/"
-  sgyfile = basedir+"psdm_rtm_IL_301_1101_XL_501_801_3s_6s_new_fkpower_time.segy"
+  #sgyfile = basedir+"psdm_rtm_IL_301_1101_XL_501_801_3s_6s_new_fkpower_time.segy"
+  sgyfile = basedir+"seis.segy"
   datfile = basedir+"seis.dat"
-  #i1min,i1max,i2min,i2max,i3min,i3max = 0,461,300,1250,100,690
   i1min,i1max,i2min,i2max,i3min,i3max = 0,5500,388,1337,1508,2184
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
   si = SegyImage(sgyfile)
@@ -373,10 +373,10 @@ def goTjxd():
   ***************************************************************************
   """
   firstLook = False # fast, does not read all trace headers
-  secondLook = False # slow, must read all trace headers
+  secondLook = True # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
   showImage = False# displays the image
-  combine = True
+  combine = False
   basedir = "../../../data/seis/tjxd/3d/seis/"
   sgyfile = basedir+"PSTM_iline101_250_xline321_1320_4ms_6000ms.sgy"
   sgyfile = basedir+"PSTM_iline251_400_xline321_1320_4ms_6000ms.sgy"
