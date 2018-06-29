@@ -42,7 +42,65 @@ def main(args):
   #goQuin()
   #goTjxd()
   #goNam()
-  goSinopec()
+  #goSinopec()
+  goTongji2d()
+def goTongji2d():
+  """
+  ****** beginning of SEG-Y file info ******
+file name = ../../../data/seis/tjxd/2d/interp/seis.sgy
+byte order = BIG_ENDIAN
+number of bytes = 43683600
+number of traces = 7000
+format = 1 (4-byte IBM floating point)
+units for spatial coordinates: m (will be converted to km)
+indices and coordinates from trace headers:
+  i2min = 37001, i2max = 44000 (inline indices)
+  i3min =     0, i3max =     0 (crossline indices)
+  xmin =  639.044000, xmax =  662.599000 (x coordinates, in km)
+  ymin = 3483.044000, ymax = 3519.904000 (y coordinates, in km)
+grid sampling:
+  n1 =  1500 (number of samples per trace)
+  n2 =  7000 (number of traces in inline direction)
+  n3 =     1 (number of traces in crossline direction)
+  d1 = 0.004000 (time sampling interval, in s)
+  d2 = 0.006250 (inline sampling interval, in km)
+  d3 = 0.000000 (crossline sampling interval, in km)
+grid corner points:
+  i2min = 37001, i3min =     0, x =  662.599000, y = 3483.044000
+  i2max = 44000, i3min =     0, x =  639.044000, y = 3519.904000
+  i2min = 37001, i3max =     0, x =  662.599000, y = 3483.044000
+  i2max = 44000, i3max =     0, x =  639.044000, y = 3519.904000
+grid azimuth: -32.58 degrees
+****** end of SEG-Y file info ******
+  """
+  firstLook = False # fast, does not read all trace headers
+  secondLook = False # slow, must read all trace headers
+  writeImage = True # reads all traces, writes an image
+  showImage = True # displays the image
+  basedir = "../../../data/seis/tjxd/2d/interp/"
+  #sgyfile = basedir+"psdm_rtm_IL_301_1101_XL_501_801_3s_6s_new_fkpower_time.segy"
+  sgyfile = basedir+"seis.sgy"
+  datfile = basedir+"seis.dat"
+  i1min,i1max,i2min,i2max = 0,1499,37001,44000
+  n1,n2 = 1+i1max-i1min,1+i2max-i2min
+  si = SegyImage(sgyfile)
+  if firstLook:
+    si.printSummaryInfo();
+    si.printBinaryHeader()
+    si.printTraceHeader(0)
+    si.printTraceHeader(1)
+  if secondLook:
+    si.printAllInfo()
+    plot23(si)
+    plotXY(si)
+  if writeImage:
+    scale = 1.00
+    si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,1)
+  si.close()
+  if showImage:
+    x = readImage(datfile,n1,n2)
+    show2d(x,clip=max(x)/2)
+
 def goSinopec():
   """
   ***************************************************************************

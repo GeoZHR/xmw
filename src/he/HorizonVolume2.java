@@ -2,6 +2,7 @@ package he;
 
 import edu.mines.jtk.dsp.*;
 import edu.mines.jtk.util.*;
+import edu.mines.jtk.interp.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 import vec.*;
@@ -33,6 +34,25 @@ public class HorizonVolume2 {
     _exniter = exniter;
   }
 
+    // Interpolate an initial surface passing through control points
+  public float[] curveInitialization
+    (int n2, float lmt, float[] k1, float[] k2) 
+  {
+    if (k1.length==1) {
+      float[] y = zerofloat(n2);
+      add(y,k1[0],y);
+      return y; 
+    } else {
+      CubicInterpolator ci = new CubicInterpolator(k2,k1);
+      float[] x = new float[n2];
+      float[] y = new float[n2];
+      for (int i2=0; i2<n2; ++i2)
+        x[i2] = i2;
+      ci.interpolate(x,y);
+      return y;
+    }
+  }
+
 
   // Interpolate an initial surface passing through control points
   public float[][] applyForInitial(int n2, float lmt, 
@@ -62,6 +82,45 @@ public class HorizonVolume2 {
       hv[is][i2]=x1;
     }}
   }
+
+  public float[][] applyForHorizonVolume(
+    float[][] k1, float[][] k2, float[][] ep, float[][] p) 
+  {
+    int ns = k1.length;
+    int n2 = ep.length;
+    int n1 = ep[0].length;
+    float[][] hv = new float[ns][];
+    //initial horizon volume with horizontal surfaces
+    for (int is=0; is<ns; ++is) {
+      hv[is] = curveInitialization(n2,n1-1,k1[is],k2[is]); 
+    }
+    float lmt = (float)n1-1.f;
+    float[][] b  = new float[ns][n2]; 
+    float[][] pi = new float[ns][n2]; 
+    float[][] wi = new float[ns][n2]; 
+    float[][][] ks = new float[][][]{k1,k2};
+    float[][] hvt = copy(hv);
+    for (int n=1; n<=_exniter; n++){
+      System.out.println(" Iteration "+n+"......");
+      VecArrayFloat2 vb    = new VecArrayFloat2(b);
+      VecArrayFloat2 vhv = new VecArrayFloat2(hv);
+      updateSlopesAndWeights(p,ep,hv,pi,wi);
+      A2 a2 = new A2(wi,_weight);
+      M2 m2 = new M2(_sigma,wi,ks[1]);
+      CgSolver cs = new CgSolver(_small,_niter);
+      vb.zero();
+      makeRhs(wi,pi,b);
+      cs.solve(a2,m2,vb,vhv);
+      hv = vhv.getArray();
+      horizonCorrection(lmt,hv);
+      float ad = sum(abs(sub(hvt,hv)))/(n2*ns); 
+      System.out.println(" Average adjustments per sample = "+ad);
+      if (ad<0.02f) break;
+      hvt = copy(hv);
+    }
+    return hv;
+  }
+
 
   public float[][] applyForHorizonVolume(
     float[] k1, float[] k2, float[][] ep, float[][] p) 
@@ -163,6 +222,33 @@ public class HorizonVolume2 {
     return hv;
   }
 
+  public float[][] rgtFromHorizonVolume(int n1, int dv, float[][] hx) {
+    final int m1 = hx.length;
+    final int n2 = hx[0].length;
+    final float[][] ux = new float[n2][n1];
+    System.out.println("n2="+n2);
+    Parallel.loop(n2, new Parallel.LoopInt() {
+    public void compute(int i2) {
+      float[] x1s = new float[m1];
+      float[] u1s = new float[m1];
+      x1s[0] = hx[0][i2];
+      for (int k1=1; k1<m1; ++k1) {
+        u1s[k1] = k1*dv;
+        x1s[k1] = hx[k1][i2];
+        if(x1s[k1]<=x1s[k1-1]) {
+          x1s[k1] = x1s[k1-1]+0.001f;
+        }
+      }
+      CubicInterpolator ci  = new CubicInterpolator(x1s,u1s);
+      int b1 = round(hx[0][i2]); b1 = max(b1,0);
+      int e1 = round(hx[m1-1][i2]); e1 = min(e1,n1);
+      for (int k1=b1; k1<e1; k1++) {
+        ux[i2][k1] = ci.interpolate(k1);
+      }
+    }});
+    return ux;
+  }
+
   // Updates surfaces using the seismic normal vectors and control points.
   public void horizonUpdateFromSlopes(
      float[][] ep, float[][] p ,float[][][] q,
@@ -198,7 +284,6 @@ public class HorizonVolume2 {
       hvt = copy(hv);
     }
   }
-
 
   public float[][] updateWeights(float[][] surf, float[][][] w) {
     int n3 = w.length;
