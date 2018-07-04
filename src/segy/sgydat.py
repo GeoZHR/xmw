@@ -42,8 +42,8 @@ def main(args):
   #goQuin()
   #goTjxd()
   #goNam()
-  #goSinopec()
-  goTongji2d()
+  goSinopec()
+  #goTongji2d()
 def goTongji2d():
   """
   ****** beginning of SEG-Y file info ******
@@ -136,16 +136,16 @@ def goSinopec():
   ***************************************************************************
   """
   firstLook = False # fast, does not read all trace headers
-  secondLook = True # slow, must read all trace headers
+  secondLook = False # slow, must read all trace headers
   writeImage = False # reads all traces, writes an image
-  showImage = False # displays the image
+  showImage = True # displays the image
   basedir = "../../../data/seis/sinopec/"
   #sgyfile = basedir+"psdm_rtm_IL_301_1101_XL_501_801_3s_6s_new_fkpower_time.segy"
   sgyfile = basedir+"seis.segy"
   datfile = basedir+"seis.dat"
-  i1min,i1max,i2min,i2max,i3min,i3max = 0,5500,388,1337,1508,2184
+  i1min,i1max,i2min,i2max,i3min,i3max = 0,1500,301,1301,501,801
   n1,n2,n3 = 1+i1max-i1min,1+i2max-i2min,1+i3max-i3min
-  si = SegyImage(sgyfile)
+  #si = SegyImage(sgyfile)
   if firstLook:
     si.printSummaryInfo();
     si.printBinaryHeader()
@@ -159,7 +159,7 @@ def goSinopec():
     scale = 1
     #si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max)
     si.writeFloats(datfile,scale,i1min,i1max,i2min,i2max,i3min,i3max,1,1)
-  si.close()
+    si.close()
   if showImage:
     x = readImage(datfile,n1,n2,n3)
     show3d(x,clip=max(x)/10)

@@ -42,6 +42,10 @@ vzfile = "vz"
 rzfile = "rz"
 vzffile = "vzf"
 rzffile = "rzf"
+vtfile = "vt"
+rtfile = "rt"
+vtffile = "vtf"
+rtffile = "rtf"
 
 #log information
 c2s = [670916,660065,659116,664891,661082,677668,
@@ -53,11 +57,11 @@ c3s = [4530909,4532272,4533012,4532232,4530130,4533492,
 wns =["YC1","YJ1-3","YJ1-5","YJ1-9X","YJ1X","YJ2-3","YJ2-7X",
       "YJ2-9","YJ2X","YJ3","YJ3-2","YJ3-3H"]
 
-c2s = [660065,664891,676987]	
+#c2s = [660065,664891,676987]	
 
-c3s = [4532272,4532232,4532326]
+#c3s = [4532272,4532232,4532326]
 
-wns =["YJ1-3","YJ1-9X","YJ3"]
+#wns =["YJ1-3","YJ1-9X","YJ3"]
 
 logDir = "../../../data/seis/tjxd/3d/logs/las/"
 dvtDir = "../../../data/seis/tjxd/3d/logs/dvt/"
@@ -66,8 +70,8 @@ global logType
 global wmin
 global wmax
 
-plotOnly = True
 plotOnly = False
+plotOnly = True
 
 def main(args):
   #goSubset()
@@ -76,12 +80,12 @@ def main(args):
   #goCorrection(4,2,1,20,0.5,0.5)
   #goCorrection(4,2,2,5,0.25,0.5)
   #goVelInterp()
-  #goDenInterp()
+  goDenInterp()
   #goVelInterpHR()
   #goDenInterpHR()
   #goTimeToDepth()
   #goKaustEdge()
-  go2dFigures()
+  #go2dFigures()
 
 def go2dFigures():
   m1 = n1*4
@@ -392,12 +396,18 @@ def goTimeToDepth():
     vtf = ri.fillTop(4,190,vtf)
     rtf = ri.fillTop(4,190,rtf)
     nt = len(vt[0][0])
+    print nt
     st = Sampling(nt,d1*0.25,0.0)
     zt=ri.timeToDepthFunction(st,vt)
     vz = ri.timeToDepth(2.5,zt,vt)
     rz = ri.timeToDepth(2.5,zt,rt)
     vzf = ri.timeToDepth(2.5,zt,vtf)
     rzf = ri.timeToDepth(2.5,zt,rtf)
+    writeImage(vtfile,vt)
+    writeImage(rtfile,rt)
+    writeImage(vtffile,vtf)
+    writeImage(rtffile,rtf)
+
     '''
     writeImage(vzfile,vz)
     writeImage(rzfile,rz)
@@ -420,6 +430,7 @@ def goTimeToDepth():
   zt = div(zt,1000)
   plot3(vt,g=zt,s1=st,k1=k1t,k3=k3,
         cmin=0.001,cmax=max(zt),cint=1.0,cmap=jetFill(1.0),clab="Time-depth map (km)",png="zt")
+  '''
   denSamples=getLogSamples("density")
   velSamples=getLogSamples("velocity")
   global logType, wmin, wmax
@@ -456,6 +467,7 @@ def goTimeToDepth():
 
   plot3(rzf,g=rzf,s1=sz,k1=k1z,k3=k3,
         cmin=1.5,cmax=3.0,cint=0.5,cmap=jetFill(1.0),clab="Density",png="rzf")
+  '''
 
 def goKaustEdge():
   gx = readImage3D(gxfile)
