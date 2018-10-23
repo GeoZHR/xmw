@@ -40,10 +40,10 @@ Here are brief descriptions of key components:
 Estimate seismic normal vectors with vertical caucal and anti-caucal filters
 
 #### UncSurfer
-Calculates unconformity likelihoods from seismic normal vectors that are 
+1) Calculates unconformity likelihoods from seismic normal vectors that are 
 estimated by using caucal and anti-caucal filters
 
-Extracts unconformity surfaces from the unconformity likelihoods
+2) Extracts unconformity surfaces from the unconformity likelihoods
 
 
 ---
