@@ -1,4 +1,4 @@
-## Fault salt bounary interpretation with optimal path picking
+## 3D seismic image processing for unconformities
 
 This repository contains computer programs written and used by 
 [Xinming Wu](http://www.jsg.utexas.edu/wu/) 
@@ -8,16 +8,16 @@ for salt boundary interpretation that is discussed in our Geophysics paper
 
 If you find this work helpful in your research, please cite:
 
-    @article{doi:wu2018fast,
-        author = {Xinming Wu and Sergey Fomel and Michael Hudec},
-        title = {Fast salt boundary interpretation with optimal path picking},
+    @article{doi:wu2015unconformities,
+        author = {Xinming Wu and Dave Hale},
+        title = {3D seismic image processing for unconformities},
         journal = {GEOPHYSICS},
-        volume = {83},
-        number = {3},
-        pages = {O45-O53},
-        year = {2018},
-        doi = {10.1190/GEO2017-0481.1},
-        URL = {https://library.seg.org/doi/abs/10.1190/geo2017-0481.1},
+        volume = {80},
+        number = {2},
+        pages = {IM35-IM44},
+        year = {2015},
+        doi = {https://doi.org/10.1190/geo2014-0323.1},
+        URL = {https://library.seg.org/doi/10.1190/geo2014-0323.1},
     }
 
 This software depends on that in the [Mines Java Toolkit
@@ -36,16 +36,14 @@ repository.
 
 Here are brief descriptions of key components:
 
-#### OptimalPathPicker
-Implements the algorithm of optimal path picking
+#### LocalOrientFilterUM
+Estimate seismic normal vectors with vertical caucal and anti-caucal filters
 
-#### SaltBoundaryPicker2
-Implements the interactive 2D salt boundary picker
+#### UncSurfer
+Calculates unconformity likelihoods from seismic normal vectors that are 
+estimated by using caucal and anti-caucal filters
 
-#### run a test
-cd src/sbp/
-
-type ../../j sbp.SaltBoundaryPicker2 to run the 2D demo
+Extracts unconformity surfaces from the unconformity likelihoods
 
 
 ---
