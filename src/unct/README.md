@@ -2,7 +2,7 @@
 
 This repository contains computer programs written and used by 
 [Xinming Wu](http://www.jsg.utexas.edu/wu/) 
-for salt boundary interpretation that is discussed in our Geophysics paper 
+for unconformity interpretation that is discussed in our Geophysics paper 
 [3D seismic image processing for unconformities]
 (http://www.jsg.utexas.edu/wu/files/Wu153dSeismicImageProcessingForUnconformities.pdf)
 
