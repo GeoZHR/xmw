@@ -62,7 +62,14 @@ public class UnfaultS {
     s3.applyTranspose(b);
     cg.solve(ma,vb,vr);
     s3.applyOriginal(r);
-    //cleanShifts(wp,r);
+    /*
+    cleanShifts(r);
+    LocalSmoothingFilter lsf = new LocalSmoothingFilter();
+    lsf.apply(_d,8,wp,r[0],r[0]);
+    lsf.apply(_d,8,wp,r[1],r[1]);
+    lsf.apply(_d,8,wp,r[2],r[2]);
+    cleanShifts(wp,r);
+    */
     return r;
     //return convertShifts(40,r);
   }
@@ -78,24 +85,23 @@ public class UnfaultS {
   }
 
   private void nearestInterp(float[][][][] r, float[][][] ri, float[][][] ui) {
-    int n3 = ri.length;
-    int n2 = ri[0].length;
-    int n1 = ri[0][0].length;
-    float[][][] r1 = r[0], r2 = r[1], r3 = r[2];
-    for (int i3=0; i3<n3; ++i3) { 
-    for (int i2=0; i2<n2; ++i2) { 
-    for (int i1=0; i1<n1; ++i1) { 
-      float x1 = i1+r1[i3][i2][i1];
-      float x2 = i2+r2[i3][i2][i1];
-      float x3 = i3+r3[i3][i2][i1];
-      int k1 = round(x1);
-      int k2 = round(x2);
-      int k3 = round(x3);
-      if(k1<0){k1=0;}if(k1>=n1){k1=n1-1;}
-      if(k2<0){k2=0;}if(k2>=n2){k2=n2-1;}
-      if(k3<0){k3=0;}if(k3>=n3){k3=n3-1;}
-      ui[i3][i2][i1] = ri[k3][k2][k1];
-    }}}
+    final int n3 = ri.length;
+    final int n2 = ri[0].length;
+    final int n1 = ri[0][0].length;
+    final float[][][] r1 = r[0], r2 = r[1], r3 = r[2];
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+      for (int i2=0; i2<n2; ++i2) { 
+      for (int i1=0; i1<n1; ++i1) { 
+        int k1 = round(i1+r1[i3][i2][i1]);
+        int k2 = round(i2+r2[i3][i2][i1]);
+        int k3 = round(i3+r3[i3][i2][i1]);
+        if(k1<0){k1=0;}if(k1>=n1){k1=n1-1;}
+        if(k2<0){k2=0;}if(k2>=n2){k2=n2-1;}
+        if(k3<0){k3=0;}if(k3>=n3){k3=n3-1;}
+        ui[i3][i2][i1] = ri[k3][k2][k1];
+      }}
+    }});
   }
 
   private void cleanShifts(float[][][] wp, float[][][][] r) {
@@ -122,6 +128,69 @@ public class UnfaultS {
       }
     }}}
   }
+
+  public void cleanShifts(float[][][][] r) {
+    int n3 = r[0].length;
+    int n2 = r[0][0].length;
+    int n1 = r[0][0][0].length;
+    float[][][] g12 = new float[n3][n2][n1];
+    float[][][] g13 = new float[n3][n2][n1];
+    float[][][] g22 = new float[n3][n2][n1];
+    float[][][] g23 = new float[n3][n2][n1];
+    float[][][] g32 = new float[n3][n2][n1];
+    float[][][] g33 = new float[n3][n2][n1];
+    float[][][] mk = new float[n3][n2][n1];
+    RecursiveGaussianFilter rgf = new RecursiveGaussianFilter(1);
+    rgf.applyX1X(r[0],g12);
+    rgf.applyXX1(r[0],g13);
+    rgf.applyX1X(r[1],g22);
+    rgf.applyXX1(r[1],g23);
+    rgf.applyX1X(r[2],g32);
+    rgf.applyXX1(r[2],g33);
+    Parallel.loop(n3,new Parallel.LoopInt() {
+    public void compute(int i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float g12i = g12[i3][i2][i1];
+      float g13i = g13[i3][i2][i1];
+
+      float g22i = g22[i3][i2][i1];
+      float g23i = g23[i3][i2][i1];
+
+      float g32i = g32[i3][i2][i1];
+      float g33i = g33[i3][i2][i1];
+
+      float g1si = sqrt(g12i*g12i+g13i*g13i);
+      float g2si = sqrt(g22i*g22i+g23i*g23i);
+      float g3si = sqrt(g32i*g32i+g33i*g33i);
+      if(g1si>=2.0f||g2si>=0.5f||g3si>=0.5f) {
+        mk[i3][i2][i1] = 0f;
+      } else {
+        mk[i3][i2][i1] = 1f;
+      }
+    }}}});
+
+    float[][][] ds = new float[n3][n2][n1];
+    short[][][] k1 = new short[n3][n2][n1];
+    short[][][] k2 = new short[n3][n2][n1];
+    short[][][] k3 = new short[n3][n2][n1];
+    ClosestPointTransform cpt = new ClosestPointTransform();
+    cpt.apply(0.0f,mk,ds,k1,k2,k3);
+    for (int i3=0; i3<n3; ++i3) {
+    for (int i2=0; i2<n2; ++i2) {
+    for (int i1=0; i1<n1; ++i1) {
+      float mki = mk[i3][i2][i1];
+      if(mki==0.0f) {
+        int j1 = k1[i3][i2][i1];
+        int j2 = k2[i3][i2][i1];
+        int j3 = k3[i3][i2][i1];
+        r[0][i3][i2][i1] = r[0][j3][j2][j1];
+        r[1][i3][i2][i1] = r[1][j3][j2][j1];
+        r[2][i3][i2][i1] = r[2][j3][j2][j1];
+      }
+    }}}
+  }
+
 
 
 
@@ -309,11 +378,13 @@ public class UnfaultS {
     final int n3 = y[0].length;
     Parallel.loop(1,n3,2,new Parallel.LoopInt() {
     public void compute(int i3) {
-      applyLhsSlice3(i3,d,wp,x,y);
+      if(d==null){applyLhsSlice3(i3,wp,x,y);}
+      else       {applyLhsSlice3(i3,d,wp,x,y);}
     }});
     Parallel.loop(2,n3,2,new Parallel.LoopInt() {
     public void compute(int i3) {
-      applyLhsSlice3(i3,d,wp,x,y);
+      if(d==null){applyLhsSlice3(i3,wp,x,y);}
+      else       {applyLhsSlice3(i3,d,wp,x,y);}
     }});
   }
 
@@ -392,9 +463,9 @@ public class UnfaultS {
       float[] y310 = y3[i3-1][i2  ];
       float[] y311 = y3[i3-1][i2-1];
       for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
-        if(d!=null){d.getTensor(i1,i2,i3,di);}
+        d.getTensor(i1,i2,i3,di);
         float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
-        float wps = wpi*wpi;
+        float wps = wpi*wpi*0.0625f;
         float d11 = di[0];
         float d12 = di[1];
         float d13 = di[2];
@@ -443,17 +514,17 @@ public class UnfaultS {
         x3d += x311[i1 ];
         x3a -= x311[i1m];
 
-        float x11 = 0.25f*(x1a+x1b+x1c+x1d)*wps;
-        float x12 = 0.25f*(x1a-x1b+x1c-x1d)*wps;
-        float x13 = 0.25f*(x1a+x1b-x1c-x1d)*wps;
+        float x11 = (x1a+x1b+x1c+x1d)*wps;
+        float x12 = (x1a-x1b+x1c-x1d)*wps;
+        float x13 = (x1a+x1b-x1c-x1d)*wps;
 
-        float x21 = 0.25f*(x2a+x2b+x2c+x2d)*wps;
-        float x22 = 0.25f*(x2a-x2b+x2c-x2d)*wps;
-        float x23 = 0.25f*(x2a+x2b-x2c-x2d)*wps;
+        float x21 = (x2a+x2b+x2c+x2d)*wps;
+        float x22 = (x2a-x2b+x2c-x2d)*wps;
+        float x23 = (x2a+x2b-x2c-x2d)*wps;
 
-        float x31 = 0.25f*(x3a+x3b+x3c+x3d)*wps;
-        float x32 = 0.25f*(x3a-x3b+x3c-x3d)*wps;
-        float x33 = 0.25f*(x3a+x3b-x3c-x3d)*wps;
+        float x31 = (x3a+x3b+x3c+x3d)*wps;
+        float x32 = (x3a-x3b+x3c-x3d)*wps;
+        float x33 = (x3a+x3b-x3c-x3d)*wps;
 
         float y11 = d11*x11+d12*x12+d13*x13;
         float y12 = d12*x11+d22*x12+d23*x13;
@@ -467,20 +538,20 @@ public class UnfaultS {
         float y32 = d12*x31+d22*x32+d23*x33;
         float y33 = d13*x31+d23*x32+d33*x33;
 
-        float y1a = 0.25f*(y11+y12+y13);
-        float y1b = 0.25f*(y11-y12+y13);
-        float y1c = 0.25f*(y11+y12-y13);
-        float y1d = 0.25f*(y11-y12-y13);
+        float y1a = (y11+y12+y13);
+        float y1b = (y11-y12+y13);
+        float y1c = (y11+y12-y13);
+        float y1d = (y11-y12-y13);
 
-        float y2a = 0.25f*(y21+y22+y23);
-        float y2b = 0.25f*(y21-y22+y23);
-        float y2c = 0.25f*(y21+y22-y23);
-        float y2d = 0.25f*(y21-y22-y23);
+        float y2a = (y21+y22+y23);
+        float y2b = (y21-y22+y23);
+        float y2c = (y21+y22-y23);
+        float y2d = (y21-y22-y23);
 
-        float y3a = 0.25f*(y31+y32+y33);
-        float y3b = 0.25f*(y31-y32+y33);
-        float y3c = 0.25f*(y31+y32-y33);
-        float y3d = 0.25f*(y31-y32-y33);
+        float y3a = (y31+y32+y33);
+        float y3b = (y31-y32+y33);
+        float y3c = (y31+y32-y33);
+        float y3d = (y31-y32-y33);
 
         y100[i1 ] += y1a;
         y100[i1m] -= y1d;
@@ -511,6 +582,142 @@ public class UnfaultS {
       }
     }
   }
+
+
+  private static void applyLhsSlice3(
+    int i3, float[][][] wp, float[][][][] x, float[][][][] y)
+  {
+    int n2 = y[0][0].length;
+    int n1 = y[0][0][0].length;
+    float[][][] x1 = x[0]; float[][][] x2 = x[1]; float[][][] x3 = x[2];
+    float[][][] y1 = y[0]; float[][][] y2 = y[1]; float[][][] y3 = y[2];
+    for (int i2=1; i2<n2; ++i2) {
+      float[] x100 = x1[i3  ][i2  ];
+      float[] x101 = x1[i3  ][i2-1];
+      float[] x110 = x1[i3-1][i2  ];
+      float[] x111 = x1[i3-1][i2-1];
+      float[] x200 = x2[i3  ][i2  ];
+      float[] x201 = x2[i3  ][i2-1];
+      float[] x210 = x2[i3-1][i2  ];
+      float[] x211 = x2[i3-1][i2-1];
+      float[] x300 = x3[i3  ][i2  ];
+      float[] x301 = x3[i3  ][i2-1];
+      float[] x310 = x3[i3-1][i2  ];
+      float[] x311 = x3[i3-1][i2-1];
+      float[] y100 = y1[i3  ][i2  ];
+      float[] y101 = y1[i3  ][i2-1];
+      float[] y110 = y1[i3-1][i2  ];
+      float[] y111 = y1[i3-1][i2-1];
+      float[] y200 = y2[i3  ][i2  ];
+      float[] y201 = y2[i3  ][i2-1];
+      float[] y210 = y2[i3-1][i2  ];
+      float[] y211 = y2[i3-1][i2-1];
+      float[] y300 = y3[i3  ][i2  ];
+      float[] y301 = y3[i3  ][i2-1];
+      float[] y310 = y3[i3-1][i2  ];
+      float[] y311 = y3[i3-1][i2-1];
+      for (int i1=1,i1m=0; i1<n1; ++i1,++i1m) {
+        float wpi = (wp!=null)?wp[i3][i2][i1]:1.0f;
+        float wps = wpi*wpi*0.0625f;
+        float x1a = 0.0f;
+        float x1b = 0.0f;
+        float x1c = 0.0f;
+        float x1d = 0.0f;
+
+        float x2a = 0.0f;
+        float x2b = 0.0f;
+        float x2c = 0.0f;
+        float x2d = 0.0f;
+
+        float x3a = 0.0f;
+        float x3b = 0.0f;
+        float x3c = 0.0f;
+        float x3d = 0.0f;
+
+        x1a += x100[i1 ];
+        x1d -= x100[i1m];
+        x1b += x101[i1 ];
+        x1c -= x101[i1m];
+        x1c += x110[i1 ];
+        x1b -= x110[i1m];
+        x1d += x111[i1 ];
+        x1a -= x111[i1m];
+
+        x2a += x200[i1 ];
+        x2d -= x200[i1m];
+        x2b += x201[i1 ];
+        x2c -= x201[i1m];
+        x2c += x210[i1 ];
+        x2b -= x210[i1m];
+        x2d += x211[i1 ];
+        x2a -= x211[i1m];
+
+        x3a += x300[i1 ];
+        x3d -= x300[i1m];
+        x3b += x301[i1 ];
+        x3c -= x301[i1m];
+        x3c += x310[i1 ];
+        x3b -= x310[i1m];
+        x3d += x311[i1 ];
+        x3a -= x311[i1m];
+
+        float x11 = (x1a+x1b+x1c+x1d)*wps;
+        float x12 = (x1a-x1b+x1c-x1d)*wps;
+        float x13 = (x1a+x1b-x1c-x1d)*wps;
+
+        float x21 = (x2a+x2b+x2c+x2d)*wps;
+        float x22 = (x2a-x2b+x2c-x2d)*wps;
+        float x23 = (x2a+x2b-x2c-x2d)*wps;
+
+        float x31 = (x3a+x3b+x3c+x3d)*wps;
+        float x32 = (x3a-x3b+x3c-x3d)*wps;
+        float x33 = (x3a+x3b-x3c-x3d)*wps;
+
+        float y1a = (x11+x12+x13);
+        float y1b = (x11-x12+x13);
+        float y1c = (x11+x12-x13);
+        float y1d = (x11-x12-x13);
+
+        float y2a = (x21+x22+x23);
+        float y2b = (x21-x22+x23);
+        float y2c = (x21+x22-x23);
+        float y2d = (x21-x22-x23);
+
+        float y3a = (x31+x32+x33);
+        float y3b = (x31-x32+x33);
+        float y3c = (x31+x32-x33);
+        float y3d = (x31-x32-x33);
+
+        y100[i1 ] += y1a;
+        y100[i1m] -= y1d;
+        y101[i1 ] += y1b;
+        y101[i1m] -= y1c;
+        y110[i1 ] += y1c;
+        y110[i1m] -= y1b;
+        y111[i1 ] += y1d;
+        y111[i1m] -= y1a;  
+
+        y200[i1 ] += y2a;
+        y200[i1m] -= y2d;
+        y201[i1 ] += y2b;
+        y201[i1m] -= y2c;
+        y210[i1 ] += y2c;
+        y210[i1m] -= y2b;
+        y211[i1 ] += y2d;
+        y211[i1m] -= y2a;
+
+        y300[i1 ] += y3a;
+        y300[i1m] -= y3d;
+        y301[i1 ] += y3b;
+        y301[i1m] -= y3c;
+        y310[i1 ] += y3c;
+        y310[i1m] -= y3b;
+        y311[i1 ] += y3d;
+        y311[i1m] -= y3a;
+      }
+    }
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////
   

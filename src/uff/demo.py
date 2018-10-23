@@ -69,8 +69,8 @@ maxThrow =  25.0
 
 # Directory for saved png images. If None, png images will not be saved;
 # otherwise, must create the specified directory before running this script.
-pngDir = None
 pngDir = "../../../png/uff/"
+pngDir = None
 plotOnly = False
 
 # Processing begins here. When experimenting with one part of this demo, we
@@ -376,24 +376,21 @@ def goUnfaultS():
   if not plotOnly:
     gx = readImage(gxfile)
     fw = zerofloat(n1,n2,n3)
-    lof = LocalOrientFilter(8.0,2.0,2.0)
-    et = lof.applyForTensors(gx)
-    et.setEigenvalues(0.001,1.0,1.0)
-
     wp = fillfloat(1.0,n1,n2,n3)
     mk = zerofloat(n1,n2,n3)
     skins = readSkins(fslbase)
     fsc = FaultSlipConstraints(skins)
     sp = fsc.screenPoints(wp)
 
-    uf = UnfaultS(10.0,4.0)
+    uf = UnfaultS(8.0,8.0)
     uf.setIters(200)
-    uf.setTensors(et)
+    '''
     np =  len(sp[0][0])
     scale = (n1*n2*n3/np)
     print np
     print scale
     mul(sp[3][0],scale,sp[3][0])
+    '''
     [t1,t2,t3] = uf.findShifts(sp,wp)
     [t1,t2,t3] = uf.convertShifts(40,[t1,t2,t3])
     uf.applyShifts([t1,t2,t3],gx,fw)

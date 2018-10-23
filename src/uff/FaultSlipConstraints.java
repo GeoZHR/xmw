@@ -8,6 +8,7 @@ package uff;
 
 import ipf.*;
 import java.util.*;
+import static edu.mines.jtk.util.Parallel.*;
 import static edu.mines.jtk.util.ArrayMath.*;
 
 /**
@@ -48,7 +49,6 @@ public class FaultSlipConstraints {
       float dsi = ds[i3][i2][i1];
       if(dsi<=6f&&dsi>0f){fl[i3][i2][i1]=v;}
     }}}
- 
   }
 
 
@@ -115,96 +115,157 @@ public class FaultSlipConstraints {
   }
 
   public float[][][] screenPoints(float[][][] wp){
-    int n3 = wp.length;
-    int n2 = wp[0].length;
-    int n1 = wp[0][0].length;
+    final int n3 = wp.length;
+    final int n2 = wp[0].length;
+    final int n1 = wp[0][0].length;
     computeUnfaultShifts(_sks);
-    setCells(n1,n2,n3);
+    //setCells(n1,n2,n3);
     flNormalization();
-    ArrayList<float[][]> cl = new ArrayList<float[][]>();
-    for (FaultSkin sk:_sks) {
-      for (FaultCell fc:sk) {
-        float fl = fc.getFl();
-        float[] h1 = new float[3];
-        float[] f1 = new float[3];
-        float[] c1 = new float[3];
-        float[] h2 = new float[3];
-        float[] f2 = new float[3];
-        int i1i  = fc.getI1();
-        int i2i  = fc.getI2();
-        int i3i  = fc.getI3();
-        int i2m1 = bound(fc.getM2(),n2);
-        int i3m1 = bound(fc.getM3(),n3);
-        int i2p1 = bound(fc.getP2(),n2);
-        int i3p1 = bound(fc.getP3(),n3);
+    final FaultCell[] cells = FaultSkin.getCells(_sks);
+    final int nc = cells.length;
+    final float[][][] sp = new float[4][3][nc*5];
+    loop(nc,new LoopInt() {
+    public void compute(int ic) {
+      FaultCell fc = cells[ic];
+      float fl = fc.getFl();
+      int i1i  = fc.getI1();
+      int i2i  = fc.getI2();
+      int i3i  = fc.getI3();
+      int i2m1 = bound(fc.getM2(),n2);
+      int i3m1 = bound(fc.getM3(),n3);
+      int i2p1 = bound(fc.getP2(),n2);
+      int i3p1 = bound(fc.getP3(),n3);
 
-        h1[0] = i1i;  f1[0] = i1i;
-        h1[1] = i2p1; f1[1] = i2m1;
-        h1[2] = i3p1; f1[2] = i3m1;
-        wp[i3m1][i2m1][i1i] = 0.0f;
-        wp[i3p1][i2p1][i1i] = 0.0f;
+      wp[i3m1][i2m1][i1i] = 0.0f;
+      wp[i3p1][i2p1][i1i] = 0.0f;
 
-        int d2m = i2m1-i2i;
-        int d3m = i3m1-i3i;
-        int d2p = i2p1-i2i;
-        int d3p = i3p1-i3i;
-        int i2m2 = i2m1, i2p2=i2p1; 
-        int i3m2 = i3m1, i3p2=i3p1; 
-        if(abs(d2m)>0){i2p2-=d2m;i2m2+=d2m;}
-        else          {i2m2-=d2p;i2p2+=d2p;}
-        if(abs(d3m)>0){i3p2-=d3m;i3m2+=d3m;}
-        else          {i3m2-=d3p;i3p2+=d3p;}
-        i2m2=bound(i2m2,n2); 
-        i2p2=bound(i2p2,n2);
-        i3m2=bound(i3m2,n3); 
-        i3p2=bound(i3p2,n3);
-        h2[0] = i1i;  f2[0] = i1i;
-        h2[1] = i2p2; f2[1] = i2m2;
-        h2[2] = i3p2; f2[2] = i3m2;
+      int d2m = i2m1-i2i;
+      int d3m = i3m1-i3i;
+      int d2p = i2p1-i2i;
+      int d3p = i3p1-i3i;
+      int i2m2 = i2m1, i2p2=i2p1; 
+      int i3m2 = i3m1, i3p2=i3p1; 
 
-        float t1 = fc.getT1();
-        float t2 = fc.getT2();
-        float t3 = fc.getT3();
-        float[] ch = new float[3];
-        float[] cf = new float[3];
-        float[] ts = new float[]{t1,t2,t3};
-        c1[0] = fl; c1[1] = fl; c1[2] = fl;
-        cl.add(new float[][]{h1,f1,ts,c1});
-        cl.add(new float[][]{h2,h1,ch,c1});
-        cl.add(new float[][]{f2,f1,cf,c1});
+      int i2m3 = i2m1, i2p3=i2p1; 
+      int i3m3 = i3m1, i3p3=i3p1; 
+      if(abs(d2m)>0){
+        i2p2 = i2p2-d2m;
+        i2m2 = i2m2+d2m;
+
+        i2p3 = i2p2-d2m;
+        i2m3 = i2m2+d2m;
+      } else {
+        i2m2 = i2m2-d2p;
+        i2p2 = i2p2+d2p;
+
+        i2m3 = i2m2-d2p;
+        i2p3 = i2p2+d2p;
       }
-    }
-    int ns = cl.size();
-    System.out.println("sets of control points:"+ns);
-    float[][][] cs = new float[4][3][ns];
-    for (int is=0; is<ns; ++is) {
-      float[][] ps = cl.get(is);
-      cs[0][0][is] = ps[0][0];
-      cs[0][1][is] = ps[0][1];
-      cs[0][2][is] = ps[0][2];
+      if(abs(d3m)>0){
+        i3p2 = i3p2-d3m;
+        i3m2 = i3m2+d3m;
 
-      cs[1][0][is] = ps[1][0];
-      cs[1][1][is] = ps[1][1];
-      cs[1][2][is] = ps[1][2];
+        i3p3 = i3p2-d3m;
+        i3m3 = i3m2+d3m;
+      } else {
+        i3m2 = i3m2-d3p;
+        i3p2 = i3p2+d3p;
 
-      cs[2][0][is] = ps[2][0];
-      cs[2][1][is] = ps[2][1];
-      cs[2][2][is] = ps[2][2];
+        i3m3 = i3m2-d3p;
+        i3p3 = i3p2+d3p;
+      }
 
-      cs[3][0][is] = ps[3][0];
-      cs[3][1][is] = ps[3][1];
-      cs[3][2][is] = ps[3][2];
-    }
-    return cs;
+      i2m2=bound(i2m2,n2); 
+      i2p2=bound(i2p2,n2);
+      i3m2=bound(i3m2,n3); 
+      i3p2=bound(i3p2,n3);
+
+      i2m3=bound(i2m3,n2); 
+      i2p3=bound(i2p3,n2);
+      i3m3=bound(i3m3,n3); 
+      i3p3=bound(i3p3,n3);
+
+      int ip0 = ic*5;
+      int ip1 = ip0+1;
+      int ip2 = ip0+2;
+      int ip3 = ip0+3;
+      int ip4 = ip0+4;
+      sp[0][0][ip0] = i1i;
+      sp[0][1][ip0] = i2p1;
+      sp[0][2][ip0] = i3p1;
+      sp[1][0][ip0] = i1i;
+      sp[1][1][ip0] = i2m1;
+      sp[1][2][ip0] = i3m1;
+      sp[2][0][ip0] = fc.getT1();
+      sp[2][1][ip0] = fc.getT2();
+      sp[2][2][ip0] = fc.getT3();
+      sp[3][0][ip0] = fl;
+      sp[3][1][ip0] = fl;
+      sp[3][2][ip0] = fl;
+
+      sp[0][0][ip1] = i1i;
+      sp[0][1][ip1] = i2p2;
+      sp[0][2][ip1] = i3p2;
+      sp[1][0][ip1] = i1i;
+      sp[1][1][ip1] = i2p1;
+      sp[1][2][ip1] = i3p1;
+      sp[2][0][ip1] = 0f;
+      sp[2][1][ip1] = 0f;
+      sp[2][2][ip1] = 0f;
+      sp[3][0][ip1] = fl;
+      sp[3][1][ip1] = fl;
+      sp[3][2][ip1] = fl;
+
+      sp[0][0][ip2] = i1i;
+      sp[0][1][ip2] = i2m2;
+      sp[0][2][ip2] = i3m2;
+      sp[1][0][ip2] = i1i;
+      sp[1][1][ip2] = i2m1;
+      sp[1][2][ip2] = i3m1;
+      sp[2][0][ip2] = 0f;
+      sp[2][1][ip2] = 0f;
+      sp[2][2][ip2] = 0f;
+      sp[3][0][ip2] = fl;
+      sp[3][1][ip2] = fl;
+      sp[3][2][ip2] = fl;
+
+      sp[0][0][ip3] = i1i;
+      sp[0][1][ip3] = i2p3;
+      sp[0][2][ip3] = i3p3;
+      sp[1][0][ip3] = i1i;
+      sp[1][1][ip3] = i2p2;
+      sp[1][2][ip3] = i3p2;
+      sp[2][0][ip3] = 0f;
+      sp[2][1][ip3] = 0f;
+      sp[2][2][ip3] = 0f;
+      sp[3][0][ip3] = fl;
+      sp[3][1][ip3] = fl;
+      sp[3][2][ip3] = fl;
+
+      sp[0][0][ip4] = i1i;
+      sp[0][1][ip4] = i2m3;
+      sp[0][2][ip4] = i3m3;
+      sp[1][0][ip4] = i1i;
+      sp[1][1][ip4] = i2m2;
+      sp[1][2][ip4] = i3m2;
+      sp[2][0][ip4] = 0f;
+      sp[2][1][ip4] = 0f;
+      sp[2][2][ip4] = 0f;
+      sp[3][0][ip4] = fl;
+      sp[3][1][ip4] = fl;
+      sp[3][2][ip4] = fl;
+    }});
+    return sp;
   }
 
-  private void computeUnfaultShifts(FaultSkin[] skins) {
-    int ik = 0;
-    for (FaultSkin skin:skins) {
-      ik++;
+  private void computeUnfaultShifts(final FaultSkin[] skins) {
+    final int nk = skins.length;
+    loop(nk,new LoopInt() {
+    public void compute(int ik) {
       System.out.println("ik="+ik);
-      final FaultCell[] cells = skin.getCells();
-      final int nc = cells.length;
+      FaultSkin skin = skins[ik];
+      FaultCell[] cells = skin.getCells();
+      int nc = cells.length;
       for (int ic=0; ic<nc; ++ic) {
         FaultCell fci = cells[ic];
         FaultCell fcd = cells[ic];
@@ -237,9 +298,8 @@ public class FaultSlipConstraints {
         s1 -= (du+dd)*0.5f;
         fci.setUnfaultShifts(new float[]{s1,s2,s3});
       }
-    }
+    }});
   }
-
 
   /*
   private void computeUnfaultShifts(FaultSkin[] skins) {
